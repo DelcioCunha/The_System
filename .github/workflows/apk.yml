@@ -18,7 +18,10 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+      # O pacote antigo "tools" já não existe no SDK do Android: instala só os pacotes atuais.
       - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;34.0.0'
       - run: npm ci
       - run: npm test
       - run: npm run build
