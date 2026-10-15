@@ -166,7 +166,7 @@ const manifestFor = (base) => ({
   ]
 });
 const crypto = require('crypto');
-const version = crypto.createHash('sha1').update(full).update(JSON.stringify(copies.map((c) => [c[1], fs.statSync(c[0]).size]))).update(icons.join()).digest('hex').slice(0, 10);
+const version = crypto.createHash('sha1').update(full).update(JSON.stringify(copies.map((c) => [path.relative(ROOT, c[1]), fs.statSync(c[0]).size]))).update(icons.join()).digest('hex').slice(0, 10);
 const swFor = (base) => read('src/web/sw.js').replace('__VERSION__', version).replace('__ICONS__', base);
 // Android / www
 fs.writeFileSync(path.join(ROOT, 'www', 'manifest.webmanifest'), JSON.stringify(manifestFor('icons/'), null, 2));
