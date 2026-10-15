@@ -1,0 +1,382 @@
+{
+ "lz_cafe": {
+  "name": "Pausa para Café",
+  "art": "steaming coffee cup with a small magical blue swirl in the steam"
+ },
+ "lz_episodio": {
+  "name": "Episódio de Série",
+  "art": "small retro TV glowing with blue light"
+ },
+ "lz_doce": {
+  "name": "Doce Especial",
+  "art": "slice of layered cake with a glowing cherry"
+ },
+ "lz_jogo": {
+  "name": "Sessão de Jogo",
+  "art": "game controller with glowing buttons"
+ },
+ "lz_musica": {
+  "name": "Hora Livre",
+  "art": "headphones resting on a small hourglass"
+ },
+ "lz_refeicao": {
+  "name": "Refeição Livre",
+  "art": "big juicy burger with fries"
+ },
+ "lz_preguica": {
+  "name": "Manhã Preguiçosa",
+  "art": "soft pillow with a sleeping cap and floating Z-shaped wisps of light"
+ },
+ "lz_cinema": {
+  "name": "Noite de Cinema",
+  "art": "clapperboard with a bucket of popcorn"
+ },
+ "lz_passeio": {
+  "name": "Passeio Especial",
+  "art": "beach umbrella over a small treasure-map scroll"
+ },
+ "lz_descanso": {
+  "name": "Dia de Descanso Total",
+  "art": "crescent moon cradling a small hammock"
+ },
+ "lz_desejo": {
+  "name": "Compra de Desejo",
+  "art": "luxury shopping bag with a glowing ribbon"
+ },
+ "lz_dourado": {
+  "name": "Bilhete Dourado",
+  "art": "ornate golden ticket radiating light"
+ },
+ "w_guerreiro_1": {
+  "name": "Espada de Ferro",
+  "art": "plain iron longsword"
+ },
+ "w_guerreiro_2": {
+  "name": "Lâmina do Veterano",
+  "art": "sturdy steel longsword with a leather-wrapped hilt"
+ },
+ "w_guerreiro_3": {
+  "name": "Espada Rúnica",
+  "art": "longsword with glowing blue runes along the blade"
+ },
+ "w_guerreiro_4": {
+  "name": "Montante do Dragão Rubro",
+  "art": "huge greatsword with a red dragon-scale hilt and fiery edge"
+ },
+ "w_guerreiro_5": {
+  "name": "Lâmina do Rei Caído",
+  "art": "black royal greatsword with a crown-shaped guard and dark golden flames"
+ },
+ "w_assassino_1": {
+  "name": "Adagas Gémeas",
+  "art": "pair of simple crossed daggers"
+ },
+ "w_assassino_2": {
+  "name": "Presas de Víbora",
+  "art": "pair of curved daggers shaped like snake fangs, dripping poison"
+ },
+ "w_assassino_3": {
+  "name": "Adagas do Crepúsculo",
+  "art": "pair of dusk-purple daggers with a twilight glow"
+ },
+ "w_assassino_4": {
+  "name": "Garras do Eclipse",
+  "art": "pair of claw blades with an eclipse ring motif"
+ },
+ "w_assassino_5": {
+  "name": "Beijo da Morte Eterna",
+  "art": "pair of obsidian daggers trailing black and violet smoke"
+ },
+ "w_mago_1": {
+  "name": "Cajado de Carvalho",
+  "art": "simple oak staff with a small stone"
+ },
+ "w_mago_2": {
+  "name": "Cetro de Cristal",
+  "art": "crystal scepter with a clear glowing gem"
+ },
+ "w_mago_3": {
+  "name": "Cajado das Marés Astrais",
+  "art": "staff with a swirling starry orb"
+ },
+ "w_mago_4": {
+  "name": "Cetro do Arquimago",
+  "art": "ornate archmage scepter with orbiting runes"
+ },
+ "w_mago_5": {
+  "name": "Cajado da Origem",
+  "art": "staff holding a miniature galaxy at its tip"
+ },
+ "w_guardiao_1": {
+  "name": "Escudo Reforçado",
+  "art": "wooden shield reinforced with iron bands"
+ },
+ "w_guardiao_2": {
+  "name": "Escudo de Aço Templário",
+  "art": "steel templar shield with a cross emblem"
+ },
+ "w_guardiao_3": {
+  "name": "Bastião Rúnico",
+  "art": "tower shield with glowing runes"
+ },
+ "w_guardiao_4": {
+  "name": "Égide do Titã",
+  "art": "massive shield with a titan face relief"
+ },
+ "w_guardiao_5": {
+  "name": "Muralha Celestial",
+  "art": "radiant white-gold celestial shield with small wings"
+ },
+ "w_arqueiro_1": {
+  "name": "Arco Curto",
+  "art": "simple wooden short bow"
+ },
+ "w_arqueiro_2": {
+  "name": "Arco Longo de Teixo",
+  "art": "yew longbow with a leather grip"
+ },
+ "w_arqueiro_3": {
+  "name": "Arco do Vento Norte",
+  "art": "bow with wind-swirl carvings and a pale aura"
+ },
+ "w_arqueiro_4": {
+  "name": "Arco da Lua Prateada",
+  "art": "silver crescent-moon bow"
+ },
+ "w_arqueiro_5": {
+  "name": "Arco do Firmamento",
+  "art": "bow made of starlight with a constellation string"
+ },
+ "w_invocador_1": {
+  "name": "Grimório Gasto",
+  "art": "worn leather grimoire"
+ },
+ "w_invocador_2": {
+  "name": "Tomo das Almas",
+  "art": "tome with a soul gem on the cover"
+ },
+ "w_invocador_3": {
+  "name": "Grimório Espectral",
+  "art": "grimoire with ghostly pages floating out"
+ },
+ "w_invocador_4": {
+  "name": "Códice do Véu",
+  "art": "codex bound in chains with a veiled eye"
+ },
+ "w_invocador_5": {
+  "name": "Livro do Abismo Eterno",
+  "art": "black abyssal book with a void portal opening from its pages"
+ },
+ "ar_couro": {
+  "name": "Túnica de Couro",
+  "art": "simple leather tunic on a stand"
+ },
+ "ar_malha": {
+  "name": "Cota de Malha",
+  "art": "chainmail shirt"
+ },
+ "ar_escamas": {
+  "name": "Armadura de Escamas",
+  "art": "scale armor chest piece"
+ },
+ "ar_runica": {
+  "name": "Armadura Rúnica",
+  "art": "plate chest armor with glowing runes"
+ },
+ "ar_celeste": {
+  "name": "Armadura do Guardião Celeste",
+  "art": "white-gold celestial plate armor with wing motifs"
+ },
+ "ar_soberano": {
+  "name": "Armadura do Soberano",
+  "art": "black sovereign armor with a cosmic purple glow"
+ },
+ "ac_forca": {
+  "name": "Anel da Força",
+  "art": "iron ring with a red gem"
+ },
+ "ac_agi": {
+  "name": "Amuleto do Vento",
+  "art": "feather-shaped amulet"
+ },
+ "ac_vit": {
+  "name": "Colar da Vitalidade",
+  "art": "necklace with a heart-shaped green gem"
+ },
+ "ac_int": {
+  "name": "Brinco do Sábio",
+  "art": "earring with a blue crystal"
+ },
+ "ac_per": {
+  "name": "Anel do Falcão",
+  "art": "ring engraved with a falcon eye"
+ },
+ "ac_fortuna": {
+  "name": "Amuleto da Fortuna",
+  "art": "four-leaf clover amulet with gold coins"
+ },
+ "ac_insignia": {
+  "name": "Insígnia do Caçador",
+  "art": "hunter insignia badge medal"
+ },
+ "ac_vampiro": {
+  "name": "Anel do Vampiro",
+  "art": "ring with a blood-red gem and fang motif"
+ },
+ "ac_furia": {
+  "name": "Colar da Fúria",
+  "art": "necklace with a burning ember pendant"
+ },
+ "ac_titan": {
+  "name": "Cinto do Titã",
+  "art": "massive belt with a titan-head buckle"
+ },
+ "po_vida1": {
+  "name": "Poção de Vida Menor",
+  "art": "small round red health potion flask"
+ },
+ "po_vida2": {
+  "name": "Poção de Vida",
+  "art": "medium red health potion with a cork"
+ },
+ "po_vida3": {
+  "name": "Elixir de Vida Total",
+  "art": "ornate large crimson elixir with a glowing heart inside"
+ },
+ "po_mana1": {
+  "name": "Poção de Mana",
+  "art": "small blue mana potion"
+ },
+ "po_mana2": {
+  "name": "Elixir de Mana Total",
+  "art": "tall ornate blue elixir with swirling waves inside"
+ },
+ "po_furia": {
+  "name": "Tónico de Fúria",
+  "art": "orange potion with bubbling fiery liquid"
+ },
+ "po_pedra": {
+  "name": "Pele de Pedra Líquida",
+  "art": "grey stone-textured potion bottle"
+ },
+ "po_foco": {
+  "name": "Essência de Foco",
+  "art": "vial of golden liquid with a crosshair glow"
+ },
+ "po_antidoto": {
+  "name": "Antídoto Universal",
+  "art": "green herbal antidote vial with leaves"
+ },
+ "po_bomba": {
+  "name": "Bomba Rúnica",
+  "art": "round runic bomb with a lit fuse"
+ },
+ "po_fumo": {
+  "name": "Pó de Fumo",
+  "art": "small pouch releasing grey smoke"
+ },
+ "po_xp2": {
+  "name": "Pergaminho de XP Duplo",
+  "art": "glowing magic scroll with an upward arrow seal"
+ },
+ "po_coin2": {
+  "name": "Pergaminho da Fortuna",
+  "art": "golden scroll with a coin seal"
+ },
+ "po_escudo": {
+  "name": "Escudo de Penalidade",
+  "art": "small glowing protective ward talisman shaped like a shield"
+ },
+ "po_descanso": {
+  "name": "Remédio do Descanso",
+  "art": "calming lavender pill bottle with a moon symbol"
+ },
+ "el_str": {
+  "name": "Elixir de Força",
+  "art": "alchemy flask with red liquid and a fist symbol"
+ },
+ "el_agi": {
+  "name": "Elixir de Agilidade",
+  "art": "alchemy flask with yellow liquid and lightning"
+ },
+ "el_vit": {
+  "name": "Elixir de Vitalidade",
+  "art": "alchemy flask with pink liquid and a heart"
+ },
+ "el_int": {
+  "name": "Elixir de Inteligência",
+  "art": "alchemy flask with blue liquid and a brain-shaped glow"
+ },
+ "el_per": {
+  "name": "Elixir de Percepção",
+  "art": "alchemy flask with teal liquid and an eye"
+ },
+ "el_ponto": {
+  "name": "Fruto da Sabedoria",
+  "art": "glowing purple fruit of wisdom"
+ },
+ "el_reset": {
+  "name": "Pedra do Renascimento",
+  "art": "smooth rebirth stone with a circular arrow rune"
+ },
+ "bau_comum": {
+  "name": "Baú Comum",
+  "art": "plain wooden treasure chest"
+ },
+ "bau_raro": {
+  "name": "Baú Raro",
+  "art": "iron-banded chest with blue light leaking from the seams"
+ },
+ "bau_epico": {
+  "name": "Baú Épico",
+  "art": "ornate purple chest with runes"
+ },
+ "bau_lendario": {
+  "name": "Baú Lendário",
+  "art": "golden chest with a crown emblem radiating light"
+ },
+ "bau_secreto": {
+  "name": "Baú Secreto",
+  "art": "mysterious black chest with a glowing silver keyhole and floating runes"
+ },
+ "sx_ampulheta": {
+  "name": "Ampulheta Quebrada",
+  "art": "cracked hourglass with sand flowing upward"
+ },
+ "sx_coracao": {
+  "name": "Coração de Dragão Antigo",
+  "art": "still-beating ancient dragon heart"
+ },
+ "sx_fenix": {
+  "name": "Pena da Fénix",
+  "art": "phoenix feather burning with gentle flames"
+ },
+ "sx_moeda": {
+  "name": "Moeda Antiga",
+  "art": "ancient engraved coin"
+ },
+ "sx_mapa": {
+  "name": "Mapa do Portão Oculto",
+  "art": "old map revealing a glowing gate mark"
+ },
+ "sx_fragmento": {
+  "name": "Fragmento do Sistema",
+  "art": "blue crystal shard with holographic code inside"
+ },
+ "sx_nucleo": {
+  "name": "Núcleo do Sistema",
+  "art": "complete glowing diamond core made of five fused shards"
+ },
+ "sx_lamina": {
+  "name": "Lâmina Sem Nome",
+  "art": "nameless black sword absorbing light"
+ },
+ "sx_coroa": {
+  "name": "Coroa Esquecida",
+  "art": "forgotten broken crown with faded gems"
+ },
+ "sx_olho": {
+  "name": "Olho do Vigia",
+  "art": "watcher eye amulet that seems to look at the viewer"
+ }
+}

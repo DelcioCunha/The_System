@@ -1,0 +1,43 @@
+[
+ {
+  "title": "Emblemas dos port\u00f5es",
+  "cols": 4,
+  "rows": 3,
+  "ids": [
+   "gate_1",
+   "gate_2",
+   "gate_3",
+   "gate_4",
+   "gate_5",
+   "gate_6",
+   "gate_7",
+   "gate_8",
+   "gate_9",
+   "gate_10",
+   "gate_0",
+   "ui_trofeus"
+  ]
+ },
+ {
+  "title": "Loja, Bolsa e navega\u00e7\u00e3o",
+  "cols": 5,
+  "rows": 3,
+  "ids": [
+   "tab_lazer",
+   "tab_arma",
+   "tab_armadura",
+   "tab_acessorio",
+   "tab_consumivel",
+   "tab_atributo",
+   "tab_bau",
+   "bag_tudo",
+   "bag_equip",
+   "bag_secreto",
+   "nav_status",
+   "nav_missoes",
+   "nav_combate",
+   "nav_loja",
+   "nav_bolsa"
+  ]
+ }
+]

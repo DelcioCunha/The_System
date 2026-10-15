@@ -1,0 +1,18 @@
+[
+  "src/data/core.js",
+  "src/data/skills.js",
+  "src/data/bosses.js",
+  "src/data/dialogue.js",
+  "src/data/items.js",
+  "src/data/lore-items.js",
+  "src/data/lore-skills.js",
+  "src/data/lore-bosses.js",
+  "src/data/credits.js",
+  "src/data/achievements.js",
+  "src/engine/storage.js",
+  "src/engine/time.js",
+  "src/engine/engine.js",
+  "src/engine/missions.js",
+  "src/engine/combat.js",
+  "src/engine/lore.js"
+]
