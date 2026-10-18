@@ -1,0 +1,32 @@
+# Gera o APK automaticamente no GitHub (sem precisares do Android Studio).
+# Depois de enviar o projeto para o GitHub: separador "Actions" → "Gerar APK" →
+# abre a execução mais recente → descarrega "sistema-apk" em "Artifacts".
+name: Gerar APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      # O pacote antigo "tools" já não existe no SDK do Android: instala só os pacotes atuais.
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;34.0.0'
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: chmod +x android/gradlew && cd android && ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sistema-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk

@@ -1,0 +1,238 @@
+[
+ {
+  "title": "Emblemas dos portões",
+  "cols": 4,
+  "rows": 3,
+  "ids": [
+   "gate_1",
+   "gate_2",
+   "gate_3",
+   "gate_4",
+   "gate_5",
+   "gate_6",
+   "gate_7",
+   "gate_8",
+   "gate_9",
+   "gate_10",
+   "gate_0",
+   "ui_trofeus"
+  ]
+ },
+ {
+  "title": "Loja, Bolsa e navegação",
+  "cols": 5,
+  "rows": 3,
+  "ids": [
+   "tab_lazer",
+   "tab_arma",
+   "tab_armadura",
+   "tab_acessorio",
+   "tab_consumivel",
+   "tab_atributo",
+   "tab_bau",
+   "bag_tudo",
+   "bag_equip",
+   "bag_secreto",
+   "nav_status",
+   "nav_missoes",
+   "nav_combate",
+   "nav_loja",
+   "nav_bolsa"
+  ]
+ },
+ {
+  "title": "Atributos, classes e relógio",
+  "cols": 6,
+  "rows": 3,
+  "ids": [
+   "stat_str",
+   "stat_agi",
+   "stat_vit",
+   "stat_int",
+   "stat_per",
+   "class_guerreiro",
+   "class_assassino",
+   "class_mago",
+   "class_guardiao",
+   "class_arqueiro",
+   "class_invocador",
+   "phase_dia",
+   "phase_noite",
+   "phase_manha",
+   "phase_crepusculo",
+   "phase_horaMorta",
+   "ic_verify",
+   "ic_lock"
+  ]
+ },
+ {
+  "title": "Estados e efeitos",
+  "cols": 6,
+  "rows": 3,
+  "ids": [
+   "eff_xp2",
+   "eff_xp15",
+   "eff_sorte",
+   "eff_coin2",
+   "eff_exausto",
+   "st_burn",
+   "st_poison",
+   "st_bleed",
+   "st_stun",
+   "st_shield",
+   "st_buff",
+   "st_debuff",
+   "st_heal",
+   "st_mana",
+   "st_crit",
+   "st_summon",
+   "st_reflect",
+   "st_resist"
+  ]
+ },
+ {
+  "title": "Combate e missões",
+  "cols": 6,
+  "rows": 3,
+  "ids": [
+   "log_appear",
+   "log_advantage",
+   "log_pressure",
+   "log_hit",
+   "log_dot",
+   "log_reset",
+   "log_enrage",
+   "log_revive",
+   "log_victory",
+   "log_defeat",
+   "log_skill",
+   "log_item",
+   "log_cleanse",
+   "log_bomb",
+   "log_smoke",
+   "log_flee",
+   "h_mission_new",
+   "h_mission_done"
+  ]
+ },
+ {
+  "title": "Histórico e sistema",
+  "cols": 6,
+  "rows": 3,
+  "ids": [
+   "h_mission_fail",
+   "h_time",
+   "h_newday",
+   "h_levelup",
+   "h_buy",
+   "h_sell",
+   "h_map",
+   "h_core",
+   "h_secret_skill",
+   "h_achievement",
+   "h_transfer",
+   "h_awaken",
+   "h_shield",
+   "h_set",
+   "ui_unknown",
+   "ui_king",
+   "ui_battle",
+   "ui_sysday"
+  ]
+ },
+ {
+  "title": "Conquistas I",
+  "cols": 6,
+  "rows": 3,
+  "ids": [
+   "ach_m1",
+   "ach_m10",
+   "ach_m50",
+   "ach_m100",
+   "ach_m500",
+   "ach_mS",
+   "ach_d1",
+   "ach_d7",
+   "ach_d30",
+   "ach_d100",
+   "ach_l5",
+   "ach_l10",
+   "ach_l25",
+   "ach_l50",
+   "ach_l75",
+   "ach_l100",
+   "ach_b1",
+   "ach_b10"
+  ]
+ },
+ {
+  "title": "Conquistas II",
+  "cols": 6,
+  "rows": 3,
+  "ids": [
+   "ach_b25",
+   "ach_b50",
+   "ach_b100",
+   "ach_giant",
+   "ach_giant3",
+   "ach_clutch",
+   "ach_flawless",
+   "ach_lose5",
+   "ach_lose15",
+   "ach_brave",
+   "ach_secretboss",
+   "ach_architect",
+   "ach_tr25",
+   "ach_set1",
+   "ach_set5",
+   "ach_rich",
+   "ach_rich2",
+   "ach_spend"
+  ]
+ },
+ {
+  "title": "Conquistas III",
+  "cols": 7,
+  "rows": 2,
+  "ids": [
+   "ach_leisure",
+   "ach_collector",
+   "ach_arsenal",
+   "ach_chest25",
+   "ach_chest100",
+   "ach_secretchest",
+   "ach_potions",
+   "ach_core",
+   "ach_points",
+   "ach_all50",
+   "ach_night",
+   "ach_early",
+   "ach_fail1",
+   "ach_hidden"
+  ]
+ },
+ {
+  "title": "Recompensas personalizadas",
+  "cols": 4,
+  "rows": 2,
+  "ids": [
+   "lz_c_gift",
+   "lz_c_food",
+   "lz_c_game",
+   "lz_c_movie",
+   "lz_c_shop",
+   "lz_c_beach",
+   "lz_c_sweet",
+   "lz_c_phone"
+  ]
+ },
+ {
+  "title": "Vigilância do Sistema",
+  "cols": 2,
+  "rows": 1,
+  "ids": [
+   "ui_eye",
+   "eff_marcado"
+  ]
+ }
+]
