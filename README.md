@@ -2,8 +2,6 @@
 
 Criado por **Delcio Cunha** · [Portfólio](https://delciocunha.github.io/Meu-Portfolio/)
 
-> Para pôr a app no telemóvel (GitHub Pages ou APK), segue o guia **[PUBLICAR.md](PUBLICAR.md)**.
-
 App de evolução pessoal ao estilo de um "Sistema" de RPG: cumpres missões da vida real antes do horário de encerramento, ganhas XP e moedas, sobes de nível (1 a 100), compras itens e enfrentas 100 chefes num combate por turnos.
 
 ## O que tem
