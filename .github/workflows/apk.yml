@@ -1,6 +1,4 @@
-# Gera o APK automaticamente no GitHub (sem precisares do Android Studio).
-# Depois de enviar o projeto para o GitHub: separador "Actions" → "Gerar APK" →
-# abre a execução mais recente → descarrega "sistema-apk" em "Artifacts".
+# Gera o APK do jogo.
 name: Gerar APK
 on:
   push:

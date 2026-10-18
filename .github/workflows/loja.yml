@@ -1,11 +1,4 @@
-# Publica o servidor da Loja de Cristais na Cloudflare (Workers + D1).
-# Precisa destes segredos no GitHub (Settings → Secrets and variables → Actions → New repository secret):
-#   CLOUDFLARE_API_TOKEN   token da Cloudflare com permissão "Edit Cloudflare Workers" + "D1 Edit"
-#   CLOUDFLARE_ACCOUNT_ID  o ID da tua conta Cloudflare
-#   ADMIN_USER             o teu nome de utilizador do painel (ex.: delcio)
-#   ADMIN_PASSWORD         a palavra-passe do painel (mín. 10 caracteres). Só fica no servidor como hash.
-#   CODE_PEPPER            texto aleatório longo (40+ caracteres). NUNCA o mudes depois: os códigos dependem dele.
-# Opcional (Settings → Variables): LOJA_MODE = production quando fores receber pagamentos reais (por omissão: staging = teste).
+# Publica o servidor da loja.
 name: Publicar Loja (servidor)
 on:
   push:

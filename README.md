@@ -2,8 +2,6 @@
 
 Criado por **Delcio Cunha** · [Portfólio](https://delciocunha.github.io/Meu-Portfolio/)
 
-> Para pôr a app no telemóvel (GitHub Pages ou APK), segue o guia **[PUBLICAR.md](PUBLICAR.md)**.
-
 App de evolução pessoal ao estilo de um "Sistema" de RPG: cumpres missões da vida real antes do horário de encerramento, ganhas XP e moedas, sobes de nível (1 a 100), compras itens e enfrentas 100 chefes num combate por turnos.
 
 ## O que tem
@@ -27,9 +25,8 @@ App de evolução pessoal ao estilo de um "Sistema" de RPG: cumpres missões da 
 - **Segredos**: 10 habilidades secretas, 10 itens secretos, 2 chefes ocultos, conquistas secretas, Fragmentos do Sistema que se juntam num Núcleo.
 - **Baús e conquistas**: 5 tipos de baú, 46 conquistas com recompensas.
 
-- **Ala Premium e Loja de Cristais**: Cristais (◆) obtidos só com códigos de resgate comprados. Loja Exclusiva (equipamento soberano que acompanha o nível, relíquias de combate com limite de 1 por batalha, tesouros), proteções e atalhos pagos em Cristais, Câmbio do Sistema (Cristais → moedas), Aparência (8 molduras do retrato à venda + 1 moldura de recompensa, e 4 assinaturas do nome, só visuais) e o Coliseu dos Condenados: 10 arenas exclusivas, cada uma com 10 combates em escada (9 Guardiões com crónica e falas próprias, o 9.º é o Tenente com 2 fases, e o Campeão no fim). Abrem-se uma vez com Cristais (120 a 1 000) e ficam abertas para sempre. Cada Campeão tem dossiê, falas, fases e uma mecânica própria (execução, esquiva, roubo de mana, rebobinar, renascer, espelho, pele de pedra, tempestade, jardim venenoso e fúria crescente), relíquias e conquistas. Compra: pacotes vindos do servidor → pedido → WhatsApp → pagamento por MULTICAIXA Express → código → resgate (cada resgate só credita uma vez). Ver **LOJA.md**.
+- **Ala Premium e Loja de Cristais**: Cristais (◆) obtidos só com códigos de resgate comprados. Loja Exclusiva (equipamento soberano que acompanha o nível, relíquias de combate com limite de 1 por batalha, tesouros), proteções e atalhos pagos em Cristais, Câmbio do Sistema (Cristais → moedas), Aparência (8 molduras do retrato à venda + 1 moldura de recompensa, e 4 assinaturas do nome, só visuais) e o Coliseu dos Condenados: 10 arenas exclusivas, cada uma com 10 combates em escada (9 Guardiões com crónica e falas próprias, o 9.º é o Tenente com 2 fases, e o Campeão no fim). Abrem-se uma vez com Cristais (120 a 1 000) e ficam abertas para sempre. Cada Campeão tem dossiê, falas, fases e uma mecânica própria (execução, esquiva, roubo de mana, rebobinar, renascer, espelho, pele de pedra, tempestade, jardim venenoso e fúria crescente), relíquias e conquistas. Compra: pacotes vindos do servidor → pedido → WhatsApp → pagamento por MULTICAIXA Express → código → resgate (cada resgate só credita uma vez).
 - **Servidor da loja** (`server/`): Cloudflare Workers + D1. Pedidos, confirmação manual, códigos únicos guardados só como hash, resgate atómico, sessões do administrador, auditoria, idempotência e limites de tentativas. 24 testes, incluindo todos os testes de aceitação do Plano Mestre.
-- **APK Administrativo** (`admin/`): painel privado com pedidos pendentes em destaque, confirmação de pagamento, entrega automática ou por código, gestão de jogadores (ficha, procurar, suspender/desativar, nota interna), envio de Cristais e moedas (automático ou por código), ofertas, estatísticas, pacotes e preços, WhatsApp, sessões e auditoria. Gerado pelo workflow "Gerar APK Admin". Também é entregue como projeto separado (`sistema-admin`), para ter o seu próprio repositório.
 
 ## Salvamento
 
@@ -40,22 +37,6 @@ Cada ganho ou perda (missão, compra, turno de combate, baú, ponto de atributo)
 3. Uma batalha a meio continua de onde ficou se fechares a app.
 4. Ao abrir a app, os prazos dos dias em que esteve fechada (até 7 dias) são verificados e as penalidades aplicadas uma única vez.
 5. **Transferir conta** (Estado → Definições): gera um código curto (cabe numa mensagem de WhatsApp) com verificação de integridade. O aparelho que o gera perde a conta no mesmo instante: só pode haver uma conta ativa num aparelho de cada vez. O código só pode ser usado uma vez em cada aparelho e nunca no que o criou.
-
-## Gerar o APK
-
-### Opção A — GitHub (sem instalar nada)
-1. Cria um repositório no GitHub e envia esta pasta.
-2. No separador **Actions**, abre **Gerar APK** (corre sozinho a cada envio, ou carrega em *Run workflow*).
-3. Quando terminar, descarrega **sistema-apk** em *Artifacts*, descompacta e instala o `app-debug.apk` no telemóvel (ativa "Instalar apps desconhecidas").
-
-### Opção B — Android Studio
-1. Instala o [Node.js 20+](https://nodejs.org) e o [Android Studio](https://developer.android.com/studio).
-2. Nesta pasta: `npm install` e depois `npm run build`.
-3. No Android Studio: *Open* → pasta `android` → espera o Gradle → *Build* → *Build App Bundle(s) / APK(s)* → *Build APK(s)*.
-4. O APK fica em `android/app/build/outputs/apk/debug/app-debug.apk`.
-
-### Opção C — linha de comandos
-Com Android SDK e JDK 21 instalados: `npm install && npm run apk`.
 
 ## Avatares evolutivos
 
@@ -74,8 +55,9 @@ src/ui/          interface, estilos e avatar
 src/web/         service worker da versão web (offline)
 build.js         gera index.html na raiz (GitHub Pages), www/ (Android) e dist/preview.html (pré-visualização)
 index.html       a app para o GitHub Pages (gerada: usa as imagens de assets/)
-.github/         workflow que gera o APK
+.github/         automatizações do projeto
 android/         projeto Android (Capacitor 7)
+server/          servidor da loja (Cloudflare Workers + D1)
 tests/           testes do motor, da interface e simulação de equilíbrio
 ```
 

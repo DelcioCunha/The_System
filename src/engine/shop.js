@@ -112,6 +112,7 @@
 
   function call(method, path, body) {
     if (!SH.ready()) return Promise.resolve({ ok: false, offline: true, msg: 'A loja de Cristais ainda não está ligada ao servidor.' });
+    if (typeof fetch !== 'function') return Promise.resolve({ ok: false, offline: true, msg: 'Sem ligação ao servidor.' });
     var ctl = typeof AbortController === 'function' ? new AbortController() : null;
     var timer = ctl ? setTimeout(function () { ctl.abort(); }, 15000) : null;
     return fetch(base() + path, { method: method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined, signal: ctl ? ctl.signal : undefined })
