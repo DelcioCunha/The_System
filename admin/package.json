@@ -1,0 +1,15 @@
+{
+  "name": "sistema-admin",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Sistema · APK Administrativo (pedidos, pagamentos e códigos de Cristais). Criado por Delcio Cunha.",
+  "scripts": {
+    "android": "npx cap add android && npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.6.9",
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/cli": "^7.6.9",
+    "@capacitor/core": "^7.6.9"
+  }
+}

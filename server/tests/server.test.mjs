@@ -1,0 +1,508 @@
+/* Testes da API da Loja de Cristais.
+   Usa uma réplica do Cloudflare D1 por cima do SQLite do Node (node:sqlite) e corre o Worker tal como está.
+   Inclui todos os "Testes de aceitação obrigatórios" do Plano Mestre (secção 07). */
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { DatabaseSync } from 'node:sqlite';
+import { handle, hashPassword } from '../src/index.js';
+
+const DIR = path.dirname(fileURLToPath(import.meta.url));
+
+/* ---------- réplica do D1 ---------- */
+function d1() {
+  const db = new DatabaseSync(':memory:');
+  const mig = fs.readdirSync(path.join(DIR, '..', 'migrations')).sort();
+  mig.forEach((f) => db.exec(fs.readFileSync(path.join(DIR, '..', 'migrations', f), 'utf8')));
+  function stmt(sql, args) {
+    const exec = (fn) => { const s = db.prepare(sql); return fn(s, args.map((a) => (a === undefined ? null : a))); };
+    return {
+      bind: (...a) => stmt(sql, a),
+      first: async () => exec((s, a) => s.get(...a) || null),
+      all: async () => ({ results: exec((s, a) => s.all(...a)) }),
+      run: async () => exec((s, a) => { const r = s.run(...a); return { meta: { changes: Number(r.changes), last_row_id: Number(r.lastInsertRowid) } }; }),
+      _sync: () => exec((s, a) => { if (/^\s*(SELECT|.*RETURNING)/is.test(sql)) return { results: s.all(...a) }; const r = s.run(...a); return { meta: { changes: Number(r.changes) } }; })
+    };
+  }
+  return {
+    raw: db,
+    prepare: (sql) => stmt(sql, []),
+    batch: async (list) => {
+      db.exec('BEGIN');
+      try { const out = list.map((s) => s._sync()); db.exec('COMMIT'); return out; }
+      catch (e) { db.exec('ROLLBACK'); throw e; }
+    }
+  };
+}
+
+let T0 = Date.UTC(2026, 9, 18, 10, 0, 0);
+let clock = T0;
+Date.now = () => clock;
+const tick = (ms) => { clock += ms; };
+
+async function setup(mode) {
+  const DB = d1();
+  const env = { DB, MODE: mode || 'staging', ADMIN_USER: 'delcio', ADMIN_PASS_HASH: await hashPassword('palavra-passe-forte-123'), CODE_PEPPER: 'pimenta-de-teste' };
+  let ip = '10.0.0.1';
+  async function call(method, url, body, headers) {
+    const req = new Request('https://api.test' + url, { method, headers: Object.assign({ 'Content-Type': 'application/json', 'CF-Connecting-IP': ip }, headers || {}), body: body ? JSON.stringify(body) : undefined });
+    const res = await handle(req, env, null);
+    return { status: res.status, ...(await res.json()) };
+  }
+  const api = {
+    env, DB, call, setIp: (v) => { ip = v; },
+    async login() { const r = await call('POST', '/api/admin/auth/login', { user: 'delcio', password: 'palavra-passe-forte-123' }); assert.equal(r.status, 200, r.error); return r.token; },
+    admin(token) {
+      const H = (k) => Object.assign({ Authorization: 'Bearer ' + token }, k ? { 'Idempotency-Key': k } : {});
+      return {
+        get: (u) => call('GET', u, null, H()),
+        post: (u, b, k) => call('POST', u, b || {}, H(k)),
+        put: (u, b) => call('PUT', u, b, H())
+      };
+    }
+  };
+  return api;
+}
+async function activate(A, id, price) { const r = await A.put('/api/admin/packages/' + id, { price_kz: price, active: true }); assert.equal(r.status, 200, r.error); }
+const P1 = 'jogador_abc12345', P2 = 'jogador_xyz98765';
+const key = (n) => 'chave-idempotencia-' + n + '-aaaaaa';
+
+let passed = 0;
+async function test(name, fn) {
+  clock = T0;
+  try { await fn(); passed++; console.log('  ✓ ' + name); }
+  catch (e) { console.error('  ✗ ' + name + '\n    ' + (e.stack || e)); process.exitCode = 1; }
+}
+
+console.log('API da Loja de Cristais');
+
+await test('loja: tabela de preços inicial (6 pacotes, bónus crescente); pacote sem preço não se ativa', async () => {
+  const S = await setup();
+  let c = await S.call('GET', '/api/config');
+  assert.deepEqual(c.packages.map((p) => [p.id, p.crystals, p.price_kz]), [['p_punhado', 60, 600], ['p_bolsa', 130, 1200], ['p_saco', 280, 2500], ['p_cofre', 600, 5000], ['p_tesouro', 1300, 10000], ['p_monarca', 2800, 20000]]);
+  const per = c.packages.map((p) => p.price_kz / p.crystals);
+  per.slice(1).forEach((v, i) => assert.ok(v < per[i], 'quanto maior o pacote, mais barato o Cristal'));
+  assert.equal(c.packages.find((p) => p.id === 'p_saco').badge, 'Mais popular');
+  assert.equal(c.test, true, 'ambiente de teste identificado');
+  const A = S.admin(await S.login());
+  const bad = await A.put('/api/admin/packages/c250', { active: true });
+  assert.equal(bad.status, 400, 'não ativa sem preço');
+  await activate(A, 'c250', 2500);
+  await A.put('/api/admin/packages/p_monarca', { badge: 'Oferta de lançamento' });
+  c = await S.call('GET', '/api/config');
+  assert.ok(c.packages.some((p) => p.id === 'c250' && p.price_kz === 2500));
+  assert.equal(c.packages.find((p) => p.id === 'p_monarca').badge, 'Oferta de lançamento');
+});
+
+await test('aceitação: credenciais inválidas e sessão expirada bloqueiam todas as operações', async () => {
+  const S = await setup();
+  const r = await S.call('POST', '/api/admin/auth/login', { user: 'delcio', password: 'errada' });
+  assert.equal(r.status, 401);
+  const r2 = await S.call('POST', '/api/admin/auth/login', { user: 'outro', password: 'palavra-passe-forte-123' });
+  assert.equal(r2.status, 401);
+  assert.equal((await S.call('GET', '/api/admin/dashboard')).status, 401, 'sem sessão');
+  assert.equal((await S.admin('token-inventado-0123456789abcdef').get('/api/admin/orders')).status, 401, 'token falso');
+  const tk = await S.login();
+  const A = S.admin(tk);
+  assert.equal((await A.get('/api/admin/dashboard')).status, 200);
+  tick(2 * 3600000 + 1000);
+  assert.equal((await A.get('/api/admin/dashboard')).status, 401, 'expira sem uso (2 h)');
+  const B = S.admin(await S.login());
+  for (let i = 0; i < 14; i++) { tick(55 * 60000); assert.equal((await B.get('/api/admin/session')).status, i < 13 ? 200 : 401, 'expira às 12 h mesmo em uso: ' + i); }
+  const C = S.admin(await S.login());
+  assert.equal((await C.post('/api/admin/auth/logout')).status, 200);
+  assert.equal((await C.get('/api/admin/dashboard')).status, 401, 'depois de sair');
+});
+
+await test('segurança: 5 palavras-passe erradas bloqueiam o login durante 15 minutos', async () => {
+  const S = await setup();
+  for (let i = 0; i < 5; i++) assert.equal((await S.call('POST', '/api/admin/auth/login', { user: 'delcio', password: 'x' + i })).status, 401);
+  const r = await S.call('POST', '/api/admin/auth/login', { user: 'delcio', password: 'palavra-passe-forte-123' });
+  assert.equal(r.status, 429, 'bloqueado mesmo com a certa');
+  tick(16 * 60000);
+  assert.ok(await S.login());
+  const au = (await S.admin(await S.login()).get('/api/admin/audit')).audit;
+  assert.ok(au.filter((a) => a.action === 'auth.login' && a.result === 'denied').length === 5);
+});
+
+async function flow(S, A, player) {
+  const o = await S.call('POST', '/api/orders', { package_id: 'c250', player_id: player || P1, player_name: 'Delcio' });
+  assert.equal(o.status, 200, o.error);
+  return o;
+}
+
+await test('pedido: o jogo cria o pedido, recebe o link do WhatsApp e consulta o estado com o token', async () => {
+  const S = await setup();
+  const A = S.admin(await S.login());
+  await activate(A, 'c250', 2500);
+  await A.put('/api/admin/settings', { whatsapp: '+244 923 000 000' });
+  const o = await flow(S, A);
+  assert.match(o.order.id, /^SIS-\d{6}$/);
+  assert.equal(o.order.crystals, 250);
+  assert.ok(o.whatsapp_url.startsWith('https://wa.me/244923000000?text='));
+  assert.ok(decodeURIComponent(o.whatsapp_url).includes(o.order.id));
+  const st = await S.call('GET', '/api/orders/' + o.order.id + '?token=' + o.token);
+  assert.equal(st.order.status, 'pending_payment');
+  assert.equal((await S.call('GET', '/api/orders/' + o.order.id + '?token=errado')).status, 404, 'sem token não revela o pedido');
+  const o2 = await flow(S, A);
+  assert.equal(+o2.order.id.slice(4), +o.order.id.slice(4) + 1, 'números seguidos');
+  // o preço fica fixo no pedido, mesmo que mude depois
+  await A.put('/api/admin/packages/c250', { price_kz: 3000 });
+  const d = await A.get('/api/admin/orders/' + o.order.id);
+  assert.equal(d.order.price_kz, 2500);
+});
+
+await test('aceitação: um pedido pendente não permite emitir código', async () => {
+  const S = await setup();
+  const A = S.admin(await S.login());
+  await activate(A, 'c250', 2500);
+  const o = await flow(S, A);
+  const r = await A.post('/api/admin/orders/' + o.order.id + '/issue-code', {}, key(1));
+  assert.equal(r.status, 409);
+  assert.match(r.error, /não foi confirmado/);
+  assert.equal(S.DB.raw.prepare('SELECT COUNT(*) AS n FROM codes').get().n, 0);
+});
+
+await test('confirmação exige verificação real e referência; captura de ecrã não basta', async () => {
+  const S = await setup();
+  const A = S.admin(await S.login());
+  await activate(A, 'c250', 2500);
+  const o = await flow(S, A);
+  assert.equal((await A.post('/api/admin/orders/' + o.order.id + '/confirm-payment', { payment_ref: 'MCX123' })).status, 400, 'sem "verifiquei"');
+  assert.equal((await A.post('/api/admin/orders/' + o.order.id + '/confirm-payment', { verified: true })).status, 400, 'sem referência');
+  const ok = await A.post('/api/admin/orders/' + o.order.id + '/confirm-payment', { verified: true, payment_ref: 'MCX123' });
+  assert.equal(ok.order.status, 'payment_confirmed');
+  // a mesma referência noutro pedido é avisada (provável pagamento repetido)
+  const o2 = await flow(S, A);
+  const dup = await A.post('/api/admin/orders/' + o2.order.id + '/confirm-payment', { verified: true, payment_ref: 'MCX123' });
+  assert.equal(dup.status, 409); assert.equal(dup.duplicate_of, o.order.id);
+});
+
+await test('aceitação: uma confirmação duplicada não cria uma segunda venda', async () => {
+  const S = await setup();
+  const A = S.admin(await S.login());
+  await activate(A, 'c250', 2500);
+  const o = await flow(S, A);
+  const u = '/api/admin/orders/' + o.order.id + '/confirm-payment', b = { verified: true, payment_ref: 'MCX-777' };
+  const r1 = await A.post(u, b), r2 = await A.post(u, b), r3 = await A.post(u, b);
+  assert.equal(r1.repeated, false); assert.equal(r2.repeated, true); assert.equal(r3.repeated, true);
+  const d = await A.get('/api/admin/dashboard?period=today');
+  assert.equal(d.confirmed_sales, 1); assert.equal(d.revenue_kz, 2500);
+  assert.equal((await A.get('/api/admin/audit')).audit.filter((a) => a.action === 'order.confirm_payment').length, 1);
+});
+
+await test('aceitação: um pedido não recebe dois códigos ativos por repetição da chamada', async () => {
+  const S = await setup();
+  const A = S.admin(await S.login());
+  await activate(A, 'c250', 2500);
+  const o = await flow(S, A);
+  await A.post('/api/admin/orders/' + o.order.id + '/confirm-payment', { verified: true, payment_ref: 'REF-001' });
+  const u = '/api/admin/orders/' + o.order.id + '/issue-code';
+  assert.equal((await A.post(u, {})).status, 400, 'exige chave de idempotência');
+  const c1 = await A.post(u, {}, key(1));
+  assert.match(c1.code, /^SIS-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/);
+  const c2 = await A.post(u, {}, key(1)); // rede caiu: repete com a mesma chave → mesmo código
+  assert.equal(c2.code, c1.code); assert.equal(c2.repeated, true);
+  const c3 = await A.post(u, {}, key(2)); // nova chave → recusado
+  assert.equal(c3.status, 409);
+  assert.equal(S.DB.raw.prepare("SELECT COUNT(*) AS n FROM codes WHERE status != 'revoked'").get().n, 1);
+  // o código nunca fica guardado em claro
+  const row = S.DB.raw.prepare('SELECT * FROM codes').get();
+  assert.ok(!JSON.stringify(row).includes(c1.code.slice(4)) && row.code_hash.length === 64);
+  const det = await A.get('/api/admin/orders/' + o.order.id);
+  assert.ok(!JSON.stringify(det).includes(c1.code.replace(/^SIS-/, '')), 'o detalhe não revela o código');
+  // passados 15 min a resposta guardada desaparece
+  tick(16 * 60000);
+  await S.call('GET', '/'); // (limpeza é ocasional; força a verificação pela expiração)
+  const c4 = await A.post(u, {}, key(1));
+  assert.equal(c4.status, 409, 'depois de 15 min já não mostra o código outra vez');
+});
+
+await test('aceitação: o código não pode ser resgatado duas vezes nem por outro jogador; cristais só uma vez', async () => {
+  const S = await setup();
+  const A = S.admin(await S.login());
+  await activate(A, 'c250', 2500);
+  const o = await flow(S, A);
+  await A.post('/api/admin/orders/' + o.order.id + '/confirm-payment', { verified: true, payment_ref: 'REF-001' });
+  const { code } = await A.post('/api/admin/orders/' + o.order.id + '/issue-code', {}, key(1));
+  const r1 = await S.call('POST', '/api/redeem', { code: code.toLowerCase().replace(/-/g, ' '), player_id: P1 }); // escrito à pressa
+  assert.equal(r1.status, 200, r1.error); assert.equal(r1.crystals, 250); assert.equal(r1.repeated, false);
+  // o mesmo jogador repete (a rede caiu): o servidor devolve o MESMO resgate (o jogo não credita duas vezes)
+  const r2 = await S.call('POST', '/api/redeem', { code, player_id: P1 });
+  assert.equal(r2.redemption_id, r1.redemption_id); assert.equal(r2.repeated, true);
+  // outro jogador: recusado, sem dizer que o código existe
+  const r3 = await S.call('POST', '/api/redeem', { code, player_id: P2 });
+  assert.equal(r3.status, 400); assert.equal(r3.error, 'Código inválido ou já utilizado.');
+  const inv = await S.call('POST', '/api/redeem', { code: 'SIS-AAAA-BBBB-CCCC', player_id: P2 });
+  assert.equal(inv.error, r3.error, 'mesma mensagem para código inexistente');
+  const d = await A.get('/api/admin/orders/' + o.order.id);
+  assert.equal(d.order.status, 'redeemed'); assert.equal(d.codes[0].redeemed_player, P1);
+  assert.equal((await A.get('/api/admin/audit')).audit.filter((a) => a.action === 'code.redeem' && a.result === 'ok').length, 1);
+  // um pedido resgatado não pode ser cancelado (os cristais já foram entregues)
+  assert.equal((await A.post('/api/admin/orders/' + o.order.id + '/cancel', { reason: 'teste' })).status, 409);
+});
+
+await test('resgate simultâneo: duas tentativas ao mesmo tempo, só uma ganha', async () => {
+  const S = await setup();
+  const A = S.admin(await S.login());
+  await activate(A, 'c250', 2500);
+  const o = await flow(S, A);
+  await A.post('/api/admin/orders/' + o.order.id + '/confirm-payment', { verified: true, payment_ref: 'REF-001' });
+  const { code } = await A.post('/api/admin/orders/' + o.order.id + '/issue-code', {}, key(1));
+  const rs = await Promise.all([S.call('POST', '/api/redeem', { code, player_id: P1 }), S.call('POST', '/api/redeem', { code, player_id: P2 })]);
+  assert.equal(rs.filter((r) => r.status === 200).length, 1);
+  assert.equal(S.DB.raw.prepare("SELECT COUNT(*) AS n FROM codes WHERE status = 'redeemed'").get().n, 1);
+});
+
+await test('segurança: tentativas de adivinhar códigos são limitadas', async () => {
+  const S = await setup();
+  for (let i = 0; i < 8; i++) assert.equal((await S.call('POST', '/api/redeem', { code: 'SIS-AAAA-AAAA-AAA' + 'BCDEFGHJ'[i], player_id: P1 })).status, 400);
+  assert.equal((await S.call('POST', '/api/redeem', { code: 'SIS-AAAA-AAAA-AAAK', player_id: P1 })).status, 429);
+  tick(16 * 60000);
+  assert.equal((await S.call('POST', '/api/redeem', { code: 'SIS-AAAA-AAAA-AAAK', player_id: P1 })).status, 400);
+});
+
+await test('substituir código: revoga o antigo (com motivo na auditoria) e o antigo deixa de funcionar', async () => {
+  const S = await setup();
+  const A = S.admin(await S.login());
+  await activate(A, 'c250', 2500);
+  const o = await flow(S, A);
+  await A.post('/api/admin/orders/' + o.order.id + '/confirm-payment', { verified: true, payment_ref: 'REF-001' });
+  const c1 = await A.post('/api/admin/orders/' + o.order.id + '/issue-code', {}, key(1));
+  assert.equal((await A.post('/api/admin/orders/' + o.order.id + '/reissue-code', {}, key(2))).status, 400, 'motivo obrigatório');
+  const c2 = await A.post('/api/admin/orders/' + o.order.id + '/reissue-code', { reason: 'Jogador apagou a mensagem' }, key(3));
+  assert.notEqual(c2.code, c1.code);
+  assert.equal((await S.call('POST', '/api/redeem', { code: c1.code, player_id: P1 })).status, 400);
+  assert.equal((await S.call('POST', '/api/redeem', { code: c2.code, player_id: P1 })).status, 200);
+  const au = (await A.get('/api/admin/audit')).audit.filter((a) => a.action === 'code.reissue');
+  assert.equal(au.length, 1); assert.match(au[0].detail, /apagou a mensagem/);
+});
+
+await test('cancelar / reembolsar: revoga o código e regista; o jogador pode cancelar o seu pedido pendente', async () => {
+  const S = await setup();
+  const A = S.admin(await S.login());
+  await activate(A, 'c250', 2500);
+  const o = await flow(S, A);
+  await A.post('/api/admin/orders/' + o.order.id + '/confirm-payment', { verified: true, payment_ref: 'REF-001' });
+  const c = await A.post('/api/admin/orders/' + o.order.id + '/issue-code', {}, key(1));
+  const r = await A.post('/api/admin/orders/' + o.order.id + '/cancel', { reason: 'Pagamento estornado pelo banco', refunded: true });
+  assert.equal(r.order.status, 'refunded');
+  assert.equal((await S.call('POST', '/api/redeem', { code: c.code, player_id: P1 })).status, 400, 'código revogado');
+  const o2 = await flow(S, A);
+  const pc = await S.call('POST', '/api/orders/' + o2.order.id + '/cancel', { token: o2.token });
+  assert.equal(pc.order.status, 'cancelled');
+  assert.equal((await S.call('POST', '/api/orders/' + o2.order.id + '/cancel', { token: 'x' })).status, 404);
+});
+
+await test('limites: no máximo 3 pedidos pendentes por jogador; pendentes expiram ao fim de 7 dias', async () => {
+  const S = await setup();
+  const A = S.admin(await S.login());
+  await activate(A, 'c250', 2500);
+  await flow(S, A); await flow(S, A); await flow(S, A);
+  const r = await S.call('POST', '/api/orders', { package_id: 'c250', player_id: P1, player_name: 'Delcio' });
+  assert.equal(r.status, 409);
+  tick(8 * 86400000);
+  const real = Math.random; Math.random = () => 0; // força a limpeza neste pedido
+  await S.call('GET', '/api/config');
+  Math.random = real;
+  assert.equal(S.DB.raw.prepare("SELECT COUNT(*) AS n FROM orders WHERE status = 'cancelled'").get().n, 3);
+  assert.equal((await S.call('POST', '/api/orders', { package_id: 'c250', player_id: P1, player_name: 'Delcio' })).status, 200);
+});
+
+await test('aceitação: após falha de rede, o estado é recuperado por consulta à API', async () => {
+  const S = await setup();
+  const A = S.admin(await S.login());
+  await activate(A, 'c250', 2500);
+  const o = await flow(S, A);
+  await A.post('/api/admin/orders/' + o.order.id + '/confirm-payment', { verified: true, payment_ref: 'REF-009' });
+  // o APK perdeu a resposta: consulta o pedido e vê que já está confirmado
+  const d = await A.get('/api/admin/orders/' + o.order.id);
+  assert.equal(d.order.status, 'payment_confirmed'); assert.equal(d.order.payment_ref, 'REF-009');
+  // o jogo perdeu a resposta do resgate: repete e recebe o mesmo
+  const { code } = await A.post('/api/admin/orders/' + o.order.id + '/issue-code', {}, key(5));
+  const a = await S.call('POST', '/api/redeem', { code, player_id: P1 });
+  const b = await S.call('POST', '/api/redeem', { code, player_id: P1 });
+  assert.equal(a.redemption_id, b.redemption_id);
+  const st = await S.call('GET', '/api/orders/' + o.order.id + '?token=' + o.token);
+  assert.equal(st.order.status, 'redeemed');
+});
+
+await test('aceitação: o painel identifica dados de teste e não os mistura com produção', async () => {
+  const S = await setup('staging');
+  const A = S.admin(await S.login());
+  await activate(A, 'c250', 2500);
+  const o = await flow(S, A);
+  assert.equal(o.order.test, true);
+  assert.equal((await A.get('/api/admin/dashboard')).test, true);
+  const P = await setup('production');
+  const B = P.admin(await P.login());
+  await activate(B, 'c250', 2500);
+  const o2 = await flow(P, B);
+  assert.equal(o2.order.test, false);
+  assert.equal((await P.call('GET', '/api/config')).test, false);
+});
+
+await test('painel: pendentes primeiro, estatísticas por período e por pacote, sessões e definições', async () => {
+  const S = await setup();
+  const A = S.admin(await S.login());
+  await activate(A, 'c250', 2500); await activate(A, 'c100', 1200);
+  const a = await flow(S, A);
+  const b = await S.call('POST', '/api/orders', { package_id: 'c100', player_id: P2, player_name: 'Ana' });
+  await A.post('/api/admin/orders/' + a.order.id + '/confirm-payment', { verified: true, payment_ref: 'REF-A01' });
+  const d = await A.get('/api/admin/dashboard?period=today');
+  assert.equal(d.pending, 1); assert.equal(d.awaiting_code, 1); assert.equal(d.queue[0].id, a.order.id, 'mais antigo primeiro');
+  const s = await A.get('/api/admin/stats?days=30');
+  assert.equal(s.total_sales, 1); assert.equal(s.total_kz, 2500); assert.equal(s.daily.length, 1);
+  const l = await A.get('/api/admin/orders?status=pending_payment');
+  assert.deepEqual(l.orders.map((x) => x.id), [b.order.id]);
+  const f = await A.get('/api/admin/orders?q=Ana');
+  assert.equal(f.orders.length, 1);
+  const B = S.admin(await S.login());
+  assert.equal((await A.get('/api/admin/sessions')).sessions.length, 2);
+  await A.post('/api/admin/sessions/revoke-others');
+  assert.equal((await B.get('/api/admin/session')).status, 401, 'outras sessões terminadas');
+  const st = await A.put('/api/admin/settings', { shop_open: false });
+  assert.equal(st.settings.shop_open, '0');
+  assert.equal((await S.call('POST', '/api/orders', { package_id: 'c250', player_id: P2, player_name: 'Ana' })).status, 403, 'loja fechada');
+  assert.equal((await A.put('/api/admin/settings', { whatsapp: '12' })).status, 400);
+});
+
+await test('sem administrador configurado, ninguém entra', async () => {
+  const S = await setup();
+  delete S.env.ADMIN_PASS_HASH;
+  assert.equal((await S.call('POST', '/api/admin/auth/login', { user: 'delcio', password: 'palavra-passe-forte-123' })).status, 503);
+});
+
+await test('produção: os pedidos feitos em teste não entram nas contas nem nas listas', async () => {
+  const S = await setup('staging');
+  const A = S.admin(await S.login());
+  await activate(A, 'c250', 2500);
+  const t = await flow(S, A);
+  await A.post('/api/admin/orders/' + t.order.id + '/confirm-payment', { verified: true, payment_ref: 'TESTE-001' });
+  S.env.MODE = 'production'; // a mesma base de dados passa a produção
+  const B = S.admin(await S.login());
+  const r = await flow(S, B);
+  await B.post('/api/admin/orders/' + r.order.id + '/confirm-payment', { verified: true, payment_ref: 'REAL-001' });
+  const d = await B.get('/api/admin/dashboard?period=today');
+  assert.equal(d.confirmed_sales, 1); assert.equal(d.test, false);
+  assert.deepEqual((await B.get('/api/admin/orders?status=all')).orders.map((o) => o.id), [r.order.id]);
+  assert.equal((await B.get('/api/admin/orders?status=all&test=1')).orders.length, 2, 'ainda consultáveis se pedido');
+  assert.equal((await B.get('/api/admin/stats?days=30')).total_sales, 1);
+});
+
+const TOK1 = 'segredo-do-jogador-um-0123456789', TOK2 = 'segredo-do-jogador-dois-987654321';
+const syncP = (S, pid, tok, extra) => S.call('POST', '/api/player/sync', Object.assign({ player_id: pid, token: tok, name: 'Delcio', cls: 'mago', level: 12, crystals: 40, coins: 900, stats: { missions: 30, bosses: 4, streak: 5, hack: 'x' }, app_version: '1.0.0', platform: 'android' }, extra || {}));
+
+await test('jogadores: o jogo regista-se com um segredo; outro aparelho não pode usar o mesmo ID', async () => {
+  const S = await setup();
+  const r = await syncP(S, P1, TOK1);
+  assert.equal(r.status, 200); assert.equal(r.account, 'active'); assert.deepEqual(r.inbox, []);
+  const again = await syncP(S, P1, TOK1, { level: 13 });
+  assert.equal(again.ok, true);
+  const thief = await syncP(S, P1, TOK2);
+  assert.equal(thief.status, 403); assert.equal(thief.conflict, true);
+  const A = S.admin(await S.login());
+  const l = await A.get('/api/admin/players?q=' + P1.slice(0, 8));
+  assert.equal(l.players.length, 1); assert.equal(l.players[0].level, 13); assert.equal(l.totals.players, 1);
+  assert.equal(l.players[0].stats.hack, undefined, 'só guarda os números conhecidos');
+  const d = await A.get('/api/admin/players/' + P1);
+  assert.equal(d.player.name, 'Delcio'); assert.equal(d.player.syncs, 2);
+});
+
+await test('banir: o jogo recebe o bloqueio, não compra nem resgata; temporário levanta-se sozinho; desbanir', async () => {
+  const S = await setup();
+  const A = S.admin(await S.login());
+  await activate(A, 'c250', 2500);
+  await syncP(S, P1, TOK1);
+  assert.equal((await A.post('/api/admin/players/' + P1 + '/ban', {})).status, 400, 'motivo obrigatório');
+  const b = await A.post('/api/admin/players/' + P1 + '/ban', { reason: 'Uso de batota', days: 3 });
+  assert.equal(b.player.status, 'banned');
+  const s1 = await syncP(S, P1, TOK1);
+  assert.equal(s1.account, 'banned'); assert.equal(s1.ban.reason, 'Uso de batota'); assert.ok(s1.ban.until > Date.now());
+  const o = await S.call('POST', '/api/orders', { package_id: 'c250', player_id: P1, player_name: 'Delcio' });
+  assert.equal(o.status, 403); assert.equal(o.banned, true);
+  assert.equal((await S.call('POST', '/api/redeem', { code: 'SIS-AAAA-BBBB-CCCC', player_id: P1 })).status, 403);
+  tick(3 * 86400000 + 1000);
+  assert.equal((await syncP(S, P1, TOK1)).account, 'active', 'suspensão de 3 dias acabou');
+  const A2 = S.admin(await S.login()); // a sessão anterior expirou (2 h sem uso)
+  await A2.post('/api/admin/players/' + P1 + '/ban', { reason: 'Conta desativada' }); // permanente
+  tick(400 * 86400000);
+  const s2 = await syncP(S, P1, TOK1); assert.equal(s2.account, 'banned'); assert.equal(s2.ban.until, null);
+  const A3 = S.admin(await S.login());
+  await A3.post('/api/admin/players/' + P1 + '/unban', { reason: 'Recurso aceite' });
+  assert.equal((await syncP(S, P1, TOK1)).account, 'active');
+  const au = (await A3.get('/api/admin/players/' + P1)).audit.map((a) => a.action);
+  ['player.ban', 'player.disable', 'player.unban'].forEach((x) => assert.ok(au.includes(x), x));
+});
+
+await test('ofertas automáticas: chegam ao jogo na sincronização e só se recebem uma vez', async () => {
+  const S = await setup();
+  const A = S.admin(await S.login());
+  assert.equal((await A.post('/api/admin/grants', { player_id: P1, crystals: 100, reason: 'Evento', mode: 'auto' }, key(1))).status, 404, 'jogador ainda não registado');
+  await syncP(S, P1, TOK1);
+  const g = await A.post('/api/admin/grants', { player_id: P1, crystals: 100, coins: 500, reason: 'Vencedor do evento', message: 'Parabéns, Jogador.', mode: 'auto' }, key(2));
+  assert.equal(g.status, 200, g.error); assert.equal(g.code, undefined, 'sem código');
+  const again = await A.post('/api/admin/grants', { player_id: P1, crystals: 100, coins: 500, reason: 'Vencedor do evento', mode: 'auto' }, key(2));
+  assert.equal(again.repeated, true, 'repetir com a mesma chave não duplica');
+  const s = await syncP(S, P1, TOK1);
+  assert.equal(s.inbox.length, 1); assert.equal(s.inbox[0].crystals, 100); assert.equal(s.inbox[0].message, 'Parabéns, Jogador.');
+  assert.equal((await S.call('POST', '/api/player/claim', { player_id: P1, token: TOK2, grant_id: s.inbox[0].id })).status, 403, 'outro aparelho não recebe');
+  const c1 = await S.call('POST', '/api/player/claim', { player_id: P1, token: TOK1, grant_id: s.inbox[0].id });
+  const c2 = await S.call('POST', '/api/player/claim', { player_id: P1, token: TOK1, grant_id: s.inbox[0].id });
+  assert.equal(c1.crystals, 100); assert.equal(c1.coins, 500); assert.equal(c2.repeated, true); assert.equal(c1.redemption_id, c2.redemption_id);
+  assert.equal((await syncP(S, P1, TOK1)).inbox.length, 0, 'já recebido');
+  // anular uma oferta pendente
+  const g2 = await A.post('/api/admin/grants', { player_id: P1, crystals: 50, reason: 'Engano', mode: 'auto' }, key(3));
+  assert.equal((await A.post('/api/admin/grants/' + g2.grant.id + '/revoke', { reason: 'Enviado por engano' })).grant.status, 'revoked');
+  assert.equal((await syncP(S, P1, TOK1)).inbox.length, 0);
+  assert.equal((await A.post('/api/admin/grants/' + g.grant.id + '/revoke', { reason: 'tarde' })).status, 409, 'já recebida não se anula');
+});
+
+await test('ofertas por código: presas a um jogador ou para qualquer um; uso único', async () => {
+  const S = await setup();
+  const A = S.admin(await S.login());
+  const g = await A.post('/api/admin/grants', { player_id: P1, crystals: 30, reason: 'Compensação', mode: 'code' }, key(4));
+  assert.match(g.code, /^SIS-/); assert.ok(g.message.includes(g.code));
+  assert.equal((await S.call('POST', '/api/redeem', { code: g.code, player_id: P2 })).status, 400, 'só na conta indicada');
+  const r = await S.call('POST', '/api/redeem', { code: g.code, player_id: P1 });
+  assert.equal(r.crystals, 30); assert.ok(r.redemption_id.startsWith('g_'));
+  assert.equal((await S.call('POST', '/api/redeem', { code: g.code, player_id: P1 })).repeated, true);
+  const open = await A.post('/api/admin/grants', { crystals: 10, reason: 'Sorteio no Instagram', mode: 'code' }, key(5));
+  assert.equal((await S.call('POST', '/api/redeem', { code: open.code, player_id: P2 })).crystals, 10, 'código aberto: qualquer jogador');
+  assert.equal((await S.call('POST', '/api/redeem', { code: open.code, player_id: P1 })).status, 400, 'mas só uma vez');
+  assert.ok(!JSON.stringify(S.DB.raw.prepare('SELECT * FROM grants').all()).includes(g.code.slice(4)), 'código nunca guardado em claro');
+});
+
+await test('entrega automática de uma compra: sem código, o pedido fica resgatado quando o jogo recebe', async () => {
+  const S = await setup();
+  const A = S.admin(await S.login());
+  await activate(A, 'c250', 2500);
+  await syncP(S, P1, TOK1);
+  const o = await flow(S, A);
+  assert.equal((await A.post('/api/admin/orders/' + o.order.id + '/deliver', {}, key(6))).status, 409, 'não entrega sem pagamento');
+  await A.post('/api/admin/orders/' + o.order.id + '/confirm-payment', { verified: true, payment_ref: 'REF-AUTO-1' });
+  const d = await A.post('/api/admin/orders/' + o.order.id + '/deliver', {}, key(7));
+  assert.equal(d.status, 200, d.error); assert.equal(d.registered, true);
+  assert.equal((await A.post('/api/admin/orders/' + o.order.id + '/deliver', {}, key(7))).repeated, true);
+  assert.equal((await A.post('/api/admin/orders/' + o.order.id + '/deliver', {}, key(8))).status, 409, 'não entrega duas vezes');
+  assert.equal((await A.post('/api/admin/orders/' + o.order.id + '/issue-code', {}, key(9))).status, 409, 'nem código depois da entrega');
+  let det = await A.get('/api/admin/orders/' + o.order.id);
+  assert.equal(det.order.status, 'code_issued'); assert.equal(det.order.delivery, 'auto'); assert.equal(det.grants.length, 1);
+  const s = await syncP(S, P1, TOK1);
+  const c = await S.call('POST', '/api/player/claim', { player_id: P1, token: TOK1, grant_id: s.inbox[0].id });
+  assert.equal(c.crystals, 250); assert.equal(c.order_id, o.order.id);
+  det = await A.get('/api/admin/orders/' + o.order.id);
+  assert.equal(det.order.status, 'redeemed');
+  assert.equal((await S.call('GET', '/api/orders/' + o.order.id + '?token=' + o.token)).order.status, 'redeemed');
+  // cancelar uma compra com entrega ainda por receber anula a entrega
+  const o2 = await flow(S, A);
+  await A.post('/api/admin/orders/' + o2.order.id + '/confirm-payment', { verified: true, payment_ref: 'REF-AUTO-2' });
+  await A.post('/api/admin/orders/' + o2.order.id + '/deliver', {}, key(10));
+  await A.post('/api/admin/orders/' + o2.order.id + '/cancel', { reason: 'Estorno', refunded: true });
+  assert.equal((await syncP(S, P1, TOK1)).inbox.length, 0);
+  const dash = await A.get('/api/admin/dashboard');
+  assert.equal(dash.players.total, 1);
+});
+
+console.log('\n' + passed + ' testes do servidor passaram' + (process.exitCode ? ' (com falhas)' : ''));

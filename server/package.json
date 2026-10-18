@@ -1,0 +1,9 @@
+{
+  "name": "sistema-loja",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --no-warnings tests/server.test.mjs",
+    "hash": "node tools/hash-password.mjs"
+  }
+}

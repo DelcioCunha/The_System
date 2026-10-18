@@ -112,6 +112,9 @@
       case 'unlockSkill': rows.push(['Efeito', 'Aprendes a habilidade secreta ' + S.ALL_SKILLS[u.skill].name]); break;
       case 'revive': rows.push(['Efeito', 'Ao morrer em combate, renasces com ' + u.pct + '% da vida (gasta-se)']); break;
       case 'coins': rows.push(['Efeito', 'Recebes ' + fmt(u.amount) + ' moedas']); break;
+      case 'judgment': rows.push(['Efeito', 'Tira ' + S.PREMIUM_RULES.judgmentPct + '% da vida máxima do chefe'], ['Contra Campeões e chefes finais', S.PREMIUM_RULES.judgmentPctPremium + '% da vida máxima'], ['Limite', S.PREMIUM_RULES.perBattle + ' relíquia premium por batalha']); break;
+      case 'monarch': rows.push(['Efeito', 'Vida e mana a 100%, remove efeitos negativos e +40% de ataque e ataque mágico durante 3 turnos'], ['Limite', S.PREMIUM_RULES.perBattle + ' relíquia premium por batalha (não conta para o limite de poções)']); break;
+      case 'monarchChest': rows.push(['Contém', 'Baú Lendário + 1 relíquia de combate premium ao acaso + moedas que acompanham o teu nível']); break;
       case 'revealBoss': rows.push(['Efeito', 'Revela um portão escondido']); break;
       case 'fragment': rows.push(['Efeito', 'Junta ' + u.need + ' para formar o ' + S.ITEMS[u.result].name]); break;
       case 'core': rows.push(['Efeito', '+' + u.points + ' pontos livres e a habilidade ' + S.ALL_SKILLS[u.skill].name]); break;
@@ -245,6 +248,7 @@
   var ARCH_TEXT = {
     equilibrado: 'Sem pontos fortes nem fracos evidentes.',
     tanque: 'Muita vida e defesa, ataque mais fraco. Batalha longa: leva mana e poções.',
+    muralha: 'Resistente, com defesa e vida acima do normal, mas sem a teimosia dos tanques dos portões. Mantém a pressão e passa.',
     feroz: 'Ataque muito alto mas pouca vida e defesa. Mata depressa ou morres depressa.',
     conjurador: 'Usa efeitos: venenos, maldições e drenagem de mana. Leva antídotos.',
     berserker: 'Muita vida e muito ataque, pouca defesa. Fica mais perigoso com o tempo.',

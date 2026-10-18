@@ -81,6 +81,7 @@
   function classIcon(id, cls) { return uiIcon('class_' + id, S.CLASSES[id].icon, cls || 'class-img'); }
   function customIcon(emoji, cls) { return LZ_CUSTOM[emoji] ? uiIcon(LZ_CUSTOM[emoji], emoji, cls) : emoji; }
   function coins(n) { return '<span class="coins"><i class="coin-ico"></i><b class="cn">' + fmt(n) + '</b></span>'; }
+  function crys(n) { return '<span class="crys"><i class="crys-ico"></i><b>' + fmt(n) + '</b></span>'; }
   function rc(r) { return (S.RARITY[r] || S.RARITY.comum).color; }
   function now() { return S.clock.now(); }
   function cdText(ts) {
@@ -235,12 +236,13 @@
     return '<header class="top"><div class="top-row">' +
       '<span class="rank" style="color:' + r.color + '">' + r.rank + '</span>' +
       '<span class="top-lv">Nv ' + st.level + '</span>' +
-      '<span class="top-name">' + esc(st.name) + '</span>' +
+      '<span class="top-name' + nameCls(st) + '"' + nameStyle(st) + '>' + esc(st.name) + '</span>' +
       '<span class="top-time' + (S.time.tampered(st) ? ' bad' : '') + '" title="' + (S.time.tampered(st) ? 'Relógio do telemóvel atrasado: o Sistema não aceita' : 'Hora do aparelho') + '">' +
         '<span class="phase-chip" title="' + S.time.PHASES[S.time.current()].name + '">' + phaseIcon(S.time.current()) + '</span>' +
         '<b id="top-clock" class="mono">' + clockText() + '</b></span>' +
       '<span class="save-dot' + (S.storage.lastError ? ' err' : '') + '" title="' + (S.storage.lastError ? 'Erro ao gravar' : 'Progresso gravado') + '"></span>' +
-      '<span id="top-coins">' + coins(st.coins) + '</span></div>' +
+      '<span id="top-coins">' + coins(st.coins) + '</span>' +
+      '<button class="top-crys" data-a="prem-open" aria-label="Ala Premium: ' + (st.crystals || 0) + ' Cristais">' + crys(st.crystals || 0) + '</button></div>' +
       '<div class="top-xp" data-k="top-xp" data-p="' + pct.toFixed(2) + '"><i style="width:' + pct.toFixed(1) + '%"></i></div></header>';
   }
   function navHtml(st) {
@@ -264,6 +266,7 @@
     if (ui.page === 'settings') return settingsPage(st);
     if (ui.page === 'credits') return creditsPage(st);
     if (ui.page === 'reports') return reportsPage(st);
+    if (ui.page === 'premium') return premiumPage(st);
     var cls = S.CLASSES[st.cls];
     var cs = E.combatStats(st);
     var t = E.totalStats(st);
@@ -271,9 +274,9 @@
     var r = S.rankFor(st.level);
     var h = '';
     h += '<section class="win"><div class="win-h">Estado <small>' + uiIcon('ui_sysday', '', 'tag-ico') + 'Dia ' + S.time.systemDay(st) + ' do Sistema · Poder ' + fmt(cs.power) + '</small></div>' +
-      '<div class="hero" style="--aura:' + r.color + '">' + S.avatar.html(st.cls, st.level) +
+      '<div class="hero" style="--aura:' + r.color + '">' + heroAvatar(st) +
       '<div class="stack" style="gap:8px;min-width:0">' +
-      '<div><div class="hero-name">' + esc(st.name) + '</div><div class="hero-title shine">' + esc(S.titleFor(st.level)) + '</div></div>' +
+      '<div><div class="hero-name' + nameCls(st) + '"' + nameStyle(st) + '>' + esc(st.name) + '</div><div class="hero-title shine">' + esc(S.titleFor(st.level)) + '</div></div>' +
       '<div class="row" style="align-items:flex-end"><div><div class="lv-lab">Nível</div><div class="lv-big">' + st.level + '</div></div>' +
       '<div class="grow" style="padding-bottom:4px"><div class="lv-lab">Classe</div><div style="color:' + cls.color + ';font-family:var(--f-display);font-weight:700">' + classIcon(st.cls) + ' ' + cls.name + '</div>' +
       '<div class="lv-lab" style="margin-top:4px">Rank <b style="color:' + r.color + '">' + r.rank + '</b></div></div></div>' +
@@ -380,6 +383,8 @@
   }
   function trophyInfoModal(m) {
     var st = E.state, b = S.BOSS_BY_ID[m.id], tr = S.TROPHIES[m.id];
+    if (b && b.premium && tr && st.trophies[b.id]) return '<div class="sheet-h"><h2 style="color:' + b.color + '">' + esc(tr.name) + '</h2>' + backOrClose(m) + '</div>' +
+      loreHtml(S.lore.bossText(b)) + infoSecs([{ title: 'Registo', rows: [['Campeão', b.name + ' (Nv ' + b.level + ')'], ['Arena', b.arenaName], ['Vitórias', String(st.arena.wins[b.id] || 0)]] }]);
     if (!b || !tr || !st.trophies[b.id]) return '<div class="sheet-h"><h2>Troféu bloqueado</h2>' + backOrClose(m) + '</div><div class="empty">🔒</div>';
     var art = trophyArt(b) || (S.BOSS_ART && S.BOSS_ART[b.id]);
     var g = S.GATES.filter(function (x) { return x.id === b.gate; })[0];
@@ -448,6 +453,239 @@
       '<div><span class="muted">Dia do Sistema</span><b>' + S.time.systemDay(st) + '</b></div><div><span class="muted">Despertar</span><b>' + timeStr(S.time.ensure(st).first) + '</b></div></div></section>';
     return h;
   }
+  /* ================= ALA PREMIUM ================= */
+  function dossierHtml(b) {
+    var x = b.story;
+    if (!x) return '';
+    return '<div class="dossier" style="--ac:' + b.color + '"><div class="dos-h"><span>DOSSIÊ DO SISTEMA</span><span class="mono">' + esc(b.arenaName) + '</span></div>' +
+      '<blockquote class="dos-quote">«' + esc(x.quote) + '»</blockquote>' +
+      '<dl class="dos-kv"><dt>Registo</dt><dd class="mono">' + esc(x.record) + '</dd><dt>Crime</dt><dd>' + esc(x.crime) + '</dd><dt>Sentença</dt><dd>' + esc(x.sentence) + '</dd><dt>Arena</dt><dd>' + esc(x.arenaDesc) + '</dd></dl>' +
+      '<div class="dos-sig"><b>◆ ' + esc(x.sig.name) + '</b><span>' + esc(x.sig.desc) + '</span></div></div>';
+  }
+  function arenaFoot(st, b) {
+    var ps = S.premium.status(st, b), h = '';
+    var rules = '<p class="hint">Na arena não se perde nível: se caíres, perdes 25% do XP do nível. Cada adversário vencido volta ' + S.PREMIUM_RULES.arenaCooldownH + ' horas depois (revanche: ' + Math.round(S.PREMIUM_RULES.repeatPct * 100) + '% das recompensas). Só podes usar ' + S.PREMIUM_RULES.perBattle + ' relíquia premium por batalha.</p>';
+    if (b.champion) {
+      var rl = S.ITEMS[b.relic];
+      h = dossierHtml(b) + '<div class="card prem-card" style="margin-top:12px;--ac:' + b.color + '"><div class="small muted">Relíquia da primeira vitória</div><div class="card-h" style="margin-top:6px">' + tapInfo(itemIco(rl), 'item', rl.id) +
+        '<div class="grow"><div class="card-t" style="color:' + rc(rl.rarity) + '">' + esc(rl.name) + '</div><div class="meta">' + equipSummary(rl) + '</div></div>' + (st.inv[rl.id] || ps.wins ? '<span class="tag good">Tua</span>' : '') + '</div></div>';
+    } else {
+      var ch = S.BOSS_BY_ID[b.arenaKey];
+      h = '<div class="card prem-card" style="margin-top:12px;--ac:' + b.color + '"><div class="small muted">' + esc(b.arenaName) + ' · combate ' + b.slot + ' de 10</div>' +
+        '<div class="small" style="margin-top:4px">' + (b.lieutenant ? 'O Tenente guarda a porta de ' : 'Ao fundo da escada espera ') + '<b style="color:' + b.color + '">' + esc(ch.name) + '</b>.</div></div>';
+    }
+    h += rules;
+    if (!ps.unlocked) h += '<button class="btn prem block" data-a="arena-unlock" data-id="' + b.arenaKey + '"><i class="crys-ico"></i> Desbloquear a arena por ' + S.BOSS_BY_ID[b.arenaKey].cost + ' Cristais</button>';
+    else if (!ps.open) h += '<div class="empty">🔒 Vence primeiro ' + esc(ps.prev.name) + '.</div>';
+    else if (ps.readyAt) h += '<div class="empty">' + esc(b.champion ? 'O Campeão' : b.name.split(',')[0]) + ' recupera em ' + cd(ps.readyAt) + '.</div>';
+    else h += '<button class="btn pri block" data-a="fight" data-id="' + b.id + '">' + (ps.wins ? 'Revanche na arena' : 'Entrar na arena') + '</button>';
+    return h;
+  }
+  function premItemCard(st, it) {
+    var owned = it.equip && (E.count(st, it.id) > 0 || Object.keys(st.equip).some(function (k) { return st.equip[k] === it.id; }));
+    var price = S.premium.price(it.id);
+    var can = (st.crystals || 0) >= price;
+    return '<div class="card prem-card"><div class="card-h">' + tapInfo(itemIco(it), 'item', it.id) + '<div class="grow">' +
+      '<div class="card-t" style="color:' + rc(it.rarity) + '">' + esc(it.name) + '</div><div class="small muted">' + esc(it.desc) + '</div>' +
+      (it.equip ? '<div class="meta">' + equipSummary(it) + '</div>' : '') + (st.inv[it.id] && !it.equip ? '<div class="hint">Tens ' + st.inv[it.id] + '</div>' : '') + '</div></div>' +
+      '<div class="row between" style="margin-top:8px">' + crys(price) +
+      (owned ? '<span class="tag good">Já é teu</span>' : '<button class="btn sm prem" data-a="prem-buy" data-id="' + it.id + '"' + (can ? '' : ' disabled') + '>' + (can ? 'Comprar' : 'Faltam ' + (price - (st.crystals || 0))) + '</button>') + '</div></div>';
+  }
+  var ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+  function arenaCard(st, b) {
+    var pg = S.premium.arenaProgress(st, b.arena), art = S.BOSS_ART && S.BOSS_ART[b.id], ps = S.premium.status(st, b);
+    var g1 = S.ARENA_LADDER[b.arena][0];
+    var state = !pg.unlocked ? '<span class="ar-cost">' + crys(b.cost) + '</span>' : '<span class="ar-st' + (pg.won < pg.total ? ' ok' : '') + '">' + (pg.won >= pg.total ? 'Completa' : 'Combate ' + (pg.won + 1) + '/10') + '</span>';
+    return '<button class="arena-card' + (pg.unlocked ? ' open' : ' locked') + (ps.wins ? ' won' : '') + '" data-a="arena-view" data-n="' + b.arena + '" style="--ac:' + b.color + '">' +
+      '<span class="ar-art">' + (art ? '<img src="' + art + '" alt="" loading="lazy">' : '<span class="ar-ico">' + b.icon + '</span>') + '</span>' +
+      '<span class="ar-n mono">' + ROMAN[b.arena - 1] + '</span>' +
+      (ps.wins ? '<span class="ar-crown">' + uiIcon('ui_king', '♛', 'crown-img') + (ps.wins > 1 ? '×' + ps.wins : '') + '</span>' : '') +
+      '<span class="ar-info"><span class="ar-arena">' + esc(b.arenaName) + '</span><span class="ar-boss">' + esc(b.name) + '</span>' +
+      '<span class="ar-row"><span class="mono">Nv ' + g1.level + '–' + b.level + '</span><span>10 combates</span>' + state + '</span>' +
+      (pg.unlocked ? '<span class="ar-prog"><i style="width:' + Math.round(pg.won / pg.total * 100) + '%"></i></span>' : '') + '</span></button>';
+  }
+  /* dentro de uma arena: a escada de 10 combates */
+  function arenaView(st, n) {
+    var champ = S.BOSS_BY_ID['ar' + n], pg = S.premium.arenaProgress(st, n), x = champ.story || {};
+    var h = '<section class="win prem-win arena-view" style="--ac:' + champ.color + '"><div class="win-h"><button class="btn sm ghost" data-a="arena-view" data-n="0">‹ Arenas</button><small>' + pg.won + '/10 vencidos</small></div>' +
+      '<div class="av-head"><span class="ar-n mono">ARENA ' + ROMAN[n - 1] + '</span><h2 class="av-title">' + esc(champ.arenaName) + '</h2>' +
+      (x.arenaDesc ? '<p class="small muted" style="margin:4px 0 0">' + esc(x.arenaDesc) + '</p>' : '') + '</div>' +
+      '<div class="ar-prog big"><i style="width:' + Math.round(pg.won / pg.total * 100) + '%"></i></div>';
+    if (!pg.unlocked) h += '<p class="small" style="margin:10px 0 6px">10 combates em escada: 9 Guardiões e, no fim, o Campeão. A arena fica aberta para sempre.</p>' +
+      '<button class="btn prem block" data-a="arena-unlock" data-id="' + champ.id + '"><i class="crys-ico"></i> Desbloquear a arena por ' + champ.cost + ' Cristais</button>' +
+      ((st.crystals || 0) < champ.cost ? '<p class="hint" style="text-align:center">Tens ' + (st.crystals || 0) + ' Cristais. <button class="btn sm ghost" data-a="prem-open" data-t="obter">Obter Cristais</button></p>' : '');
+    h += '<ol class="ladder">' + S.ARENA_LADDER[n].map(function (b) {
+      var ps = S.premium.status(st, b), art = S.BOSS_ART && S.BOSS_ART[b.id], dg = C.danger(st, b);
+      var cls = !pg.unlocked ? 'sealed' : ps.wins ? 'won' : ps.open ? 'next' : 'locked';
+      var tag = !pg.unlocked ? '🔒' : ps.wins ? (ps.readyAt ? '<span class="mono">' + cd(ps.readyAt) + '</span>' : '✓') : ps.open ? (ps.readyAt ? '<span class="mono">' + cd(ps.readyAt) + '</span>' : '<b>Lutar</b>') : '🔒';
+      var role = b.champion ? 'Campeão' : b.lieutenant ? 'Tenente' : 'Guardião ' + b.slot;
+      var hide = !b.champion && (!pg.unlocked || (!ps.wins && !ps.open && b.slot > pg.won + 2));
+      return '<li><button class="lad ' + cls + (b.champion ? ' champ' : '') + '"' + (hide ? ' disabled' : ' data-a="boss" data-id="' + b.id + '"') + '>' +
+        '<span class="lad-n mono">' + b.slot + '</span>' +
+        '<span class="lad-ico">' + (hide ? '❔' : art ? '<img src="' + art + '" alt="" loading="lazy">' : b.icon) + '</span>' +
+        '<span class="lad-info"><span class="lad-role">' + role + ' · Nv ' + b.level + '</span><span class="lad-name">' + (cls === 'sealed' || cls === 'locked' && !b.champion && b.slot > pg.won + 2 ? '???' : esc(b.name)) + '</span>' +
+        (cls === 'next' ? '<span class="lad-dg" style="color:' + dg.color + '">' + dg.label + '</span>' : '') + '</span>' +
+        '<span class="lad-st">' + tag + '</span></button></li>';
+    }).join('') + '</ol></section>';
+    return h;
+  }
+  /* ---------- conta suspensa pelo administrador ---------- */
+  function banHtml(st, b) {
+    var v = S.shop.banVoice(st, b);
+    return '<div class="ban-screen' + (v.perm ? ' perm' : '') + '"><div class="ban-veil"></div><div class="ban-box" id="ban-box">' +
+      '<div class="watch-eye">' + uiIcon('ui_eye', '<span class="eye-fallback big"></span>', 'eye-big') + '</div>' +
+      '<div class="ban-tag">AVISO DO SISTEMA · ' + (v.perm ? 'SENTENÇA FINAL' : 'SENTENÇA') + '</div><h1 class="glitch" data-t="' + esc(v.title) + '">' + esc(v.title) + '</h1>' +
+      '<p class="ban-voice">' + esc(v.line) + '</p>' +
+      '<div class="ban-card"><div class="small muted">Motivo registado</div><div>' + esc(b.reason) + '</div>' +
+      '<div class="small muted" style="margin-top:8px">Pena</div><div>' + (b.until ? 'Até ' + timeStr(b.until) + ' <span class="muted">(' + cdText(b.until) + ')</span>' : '<b style="color:#ff4d66">Permanente</b>') + '</div>' +
+      '<div class="small muted" style="margin-top:8px">Jogador</div><div class="mono">' + esc(st.name) + ' · ' + esc(st.playerId) + '</div></div>' +
+      '<p class="ban-sub">' + esc(v.sub) + '</p>' +
+      (ui.banLine ? '<p class="ban-reply glitch" data-t="' + esc(ui.banLine) + '">«' + esc(ui.banLine) + '»</p>' : '') +
+      '<button class="btn bad block" data-a="ban-check">Verificar com o Sistema</button></div></div>';
+  }
+  /* ---------- aparência no retrato e no nome ---------- */
+  /* retrato com moldura: imagem da moldura (assets/frames) por cima; sem imagem, moldura em CSS */
+  function framed(inner, c, small) {
+    if (!c) return inner;
+    var art = S.FRAME_ART && S.FRAME_ART[c.id];
+    return '<div class="frame-wrap ' + c.id + (art ? ' has-art' : ' css-frame') + (small ? ' small' : '') + '" style="--fc:' + c.color + '">' + inner +
+      (art ? '<img class="frame-img" src="' + art + '" alt="">' : '<i class="fc tl"></i><i class="fc tr"></i><i class="fc bl"></i><i class="fc br"></i>') + '</div>';
+  }
+  function heroAvatar(st) {
+    var c = S.premium && S.premium.cosmeticOn(st, 'moldura');
+    return framed(S.avatar.html(st.cls, st.level), c);
+  }
+  function nameCls(st) { var n = S.premium && S.premium.cosmeticOn(st, 'nome'); return n ? (n.prism ? ' name-prism' : ' name-cos') : ''; }
+  function nameStyle(st) { var n = S.premium && S.premium.cosmeticOn(st, 'nome'); return n && !n.prism ? ' style="--nc:' + n.color + '"' : ''; }
+  /* ---------- Obter Cristais: pacotes do servidor, pedidos e resgate ---------- */
+  function kz(n) { return fmt(n) + ' Kz'; }
+  /* o que dá para fazer com um pacote (ajuda o jogador a escolher) */
+  function pkgHint(c) {
+    if (c >= 2500) return 'As 7 primeiras arenas: 70 combates';
+    if (c >= 1200) return 'As 4 primeiras arenas e uma moldura';
+    if (c >= 550) return 'As 3 primeiras arenas: 30 combates';
+    if (c >= 250) return 'A 2.ª arena e uma relíquia, ou uma moldura épica';
+    if (c >= 120) return 'A 1.ª arena inteira: 10 combates';
+    return 'Uma moldura ou proteções';
+  }
+  function obterHtml(st) {
+    var cfg = S.shop.cached(), ready = S.shop.ready(), orders = (st.shop && st.shop.orders) || [];
+    var h = '<section class="win prem-win"><div class="win-h"><span class="prem-t">Obter Cristais</span>' + (cfg && cfg.test ? '<small class="test-tag">MODO DE TESTE</small>' : '') + '</div>' +
+      (st.shop && st.shop.conflict ? '<p class="small" style="margin-top:0;color:var(--warn)">Esta conta está registada noutro aparelho. Se mudaste de telemóvel, usa a Transferência de conta. Se não foste tu, fala com o atendimento com o teu ID de Jogador.</p>' : '');
+    var live = ready && cfg && cfg.open && cfg.packages && cfg.packages.length;
+    var note = '';
+    if (!ready) note = '';
+    else if (!cfg) note = ui.shopErr ? esc(ui.shopErr) + ' <button class="btn sm" data-a="shop-load">Tentar outra vez</button>' : 'A ligar ao Sistema…';
+    else if (!cfg.open) note = 'A loja de Cristais está fechada de momento. Volta mais tarde.';
+    else if (!cfg.packages.length) note = 'Ainda não há pacotes à venda.';
+    if (live && cfg.test) h += '<p class="hint test-note" style="margin-top:0">O servidor está em modo de teste. Não faças pagamentos reais.</p>';
+    if (note) h += '<p class="small" style="margin-top:0">' + note + '</p>';
+    var packs = live ? cfg.packages : S.CRYSTAL_PACKS;
+    var sel = packs.filter(function (p) { return p.id === ui.pack; })[0];
+    h += '<div class="win-h" style="margin:4px 0 6px"><span class="prem-t" style="font-size:13px">Tabela de preços</span></div>' +
+      '<p class="small muted" style="margin:0 0 8px">Escolhe o pacote. Quanto maior, mais Cristais de bónus.</p><div class="pkg-grid">' + packs.map(function (p) {
+      var pct = p.bonus && p.base ? Math.round(p.bonus / p.base * 100) : 0;
+      return '<button class="pkg' + (p.badge ? ' hot' : '') + (sel && sel.id === p.id ? ' sel' : '') + '" data-a="pack-pick" data-id="' + p.id + '">' + (p.badge ? '<span class="pkg-badge">' + esc(p.badge) + '</span>' : '') +
+        '<span class="pkg-cr">' + crys(p.crystals) + '</span>' + (p.bonus ? '<span class="pkg-bonus">' + (p.base || p.crystals - p.bonus) + ' + ' + p.bonus + ' de bónus (+' + pct + '%)</span>' : '<span class="pkg-bonus muted">sem bónus</span>') +
+        '<span class="pkg-name">' + esc(p.name) + '</span><span class="pkg-price mono">' + kz(p.price_kz) + '</span><span class="pkg-hint">' + esc(pkgHint(p.crystals)) + '</span>' +
+        '<span class="pkg-buy">' + (sel && sel.id === p.id ? '✓ Escolhido' : 'Comprar') + '</span></button>';
+    }).join('') + '</div>';
+    h += '<div class="buy-box' + (sel ? ' on' : '') + '" id="buy-box">' + (sel
+      ? '<div class="row between"><span>' + crys(sel.crystals) + ' <span class="small muted">' + esc(sel.name) + '</span></span><b class="mono" style="color:var(--gold)">' + kz(sel.price_kz) + '</b></div>' +
+        '<button class="btn wa block" data-a="buy-wa" data-id="' + sel.id + '" style="margin-top:10px">Comprar pelo WhatsApp</button>' +
+        '<p class="small muted" style="margin:8px 0 0;text-align:center">Atendimento: <span class="mono">' + esc(S.SHOP_WHATSAPP_SHOW) + '</span></p>'
+      : '<p class="small muted" style="margin:0;text-align:center">Toca num pacote para o comprar.</p>') + '</div>' +
+      '<ol class="small prem-steps"><li>Escolhe o pacote e toca em <b>Comprar pelo WhatsApp</b>: abre a conversa com o administrador, com a mensagem já escrita.</li><li>Faz a transferência do valor por <b>MULTICAIXA Express</b>, com os dados que o administrador te envia.</li><li>Depois de confirmada a transferência, o administrador envia-te um <b>código de resgate</b>.</li><li>Escreve o código aqui em baixo e os Cristais entram na tua conta.</li></ol>' +
+      '<p class="hint">Fala só com o número oficial ' + esc(S.SHOP_WHATSAPP_SHOW) + '. Nunca te pediremos o PIN nem códigos de confirmação do banco.</p>';
+    h += '<label class="f" style="margin-top:10px">Código de resgate<input class="in mono" id="redeem-code" placeholder="SIS-XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>' +
+      '<button class="btn prem block" data-a="redeem"' + (ready ? '' : ' disabled') + '>Resgatar código</button>' +
+      (S.PREVIEW ? '<button class="btn ghost block" data-a="prev-crys" style="margin-top:10px">Só na pré-visualização: +500 Cristais de teste</button>' : '') + '</section>';
+    if (orders.length) {
+      h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">Os meus pedidos</span><button class="btn sm ghost" data-a="ord-refresh">Atualizar</button></div><div class="list">' +
+        orders.slice(0, 10).map(function (o) {
+          var stt = S.shop.STATUS[o.status] || { name: o.status, tone: '' };
+          return '<div class="card ord-card"><div class="row between"><b class="mono">' + esc(o.id) + '</b><span class="ord-st ' + stt.tone + '">' + esc(stt.name) + '</span></div>' +
+            '<div class="meta">' + crys(o.crystals) + '<span class="mono">' + kz(o.price) + '</span><span>' + timeStr(o.at) + '</span>' + (o.test ? '<span class="test-tag">teste</span>' : '') + '</div>' +
+            (o.status === 'pending_payment' ? '<div class="row" style="margin-top:8px"><button class="btn sm pri grow" data-a="ord-open" data-id="' + o.id + '">Instruções / WhatsApp</button><button class="btn sm ghost" data-a="ord-cancel" data-id="' + o.id + '">Cancelar</button></div>' : '') +
+            (o.status === 'code_issued' ? '<p class="hint" style="margin:6px 0 0">O código foi-te enviado no WhatsApp. Escreve-o acima.</p>' : '') + '</div>';
+        }).join('') + '</div></section>';
+    }
+    h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">ID de Jogador</span></div><p class="small muted" style="margin-top:0">Identifica a tua conta nos pedidos e nos presentes do Sistema. Se mudares de telemóvel, usa a Transferência de conta: os Cristais vão contigo.</p><p class="hint" style="margin-top:0">Com internet, o jogo envia ao servidor o teu ID, nome, classe, nível e números de progresso (Cristais, moedas, missões, chefes), para a loja, os presentes e o apoio. Nada mais.</p>' +
+      '<button class="mono id-chip" data-a="id-copy">' + esc(st.playerId) + '</button></section>';
+    return h;
+  }
+  function orderModal(m) {
+    var o = ((E.state.shop && E.state.shop.orders) || []).filter(function (x) { return x.id === m.id; })[0];
+    if (!o) return '<div class="sheet-h"><h2>Pedido</h2><button class="btn sm ghost" data-a="close">Fechar</button></div><div class="empty">Pedido não encontrado.</div>';
+    var cfg = S.shop.cached();
+    return '<div class="sheet-h"><h2>Pedido ' + esc(o.id) + '</h2><button class="btn sm ghost" data-a="close">Fechar</button></div>' +
+      (o.test ? '<p class="hint test-note">Modo de teste: não faças pagamentos reais.</p>' : '') +
+      '<div class="ord-sum"><div>' + crys(o.crystals) + '<div class="small muted">' + esc(o.pkg) + '</div></div><div class="ord-price mono">' + kz(o.price) + '</div></div>' +
+      '<ol class="small prem-steps"><li>Toca em <b>Abrir WhatsApp</b>: a mensagem com o número do pedido já vai escrita.</li><li>Segue as instruções de pagamento por MULTICAIXA Express que vais receber.</li><li>Depois de confirmado, recebes um código. Resgata-o em Ala Premium → Obter Cristais.</li></ol>' +
+      (cfg && cfg.payment_info ? '<p class="hint">' + esc(cfg.payment_info) + '</p>' : '') +
+      (o.wa ? '<button class="btn wa block" data-a="ext" data-url="' + esc(o.wa) + '">Abrir WhatsApp</button>' : '<p class="small" style="color:var(--warn)">O número de atendimento ainda não está configurado. Copia a mensagem e envia-a ao atendimento.</p>') +
+      '<button class="btn ghost block" data-a="ord-copy" data-id="' + o.id + '" style="margin-top:8px">Copiar mensagem</button>';
+  }
+  function coliseuHtml(st) {
+    S.premium.ensure(st);
+    if (ui.arenaN) return arenaView(st, ui.arenaN);
+    var won = S.ARENA_BOSSES.filter(function (b) { return st.arena.wins[b.id]; }).length;
+    return '<section class="win prem-win"><div class="win-h"><span class="prem-t"><i class="crys-ico"></i> Coliseu dos Condenados</span><small>' + won + '/10 Campeões vencidos</small></div>' +
+      '<p class="small muted" style="margin-top:0">' + esc(S.GATE_LORE.arena) + '</p>' +
+      '<p class="hint" style="margin-top:0">Cada arena tem 10 combates: 9 Guardiões em escada e o Campeão no fim. Pagas uma vez e fica aberta para sempre.</p>' +
+      '<div class="row" style="margin-bottom:10px"><span class="small">Os teus Cristais: ' + crys(st.crystals || 0) + '</span><button class="btn sm prem" style="margin-left:auto" data-a="prem-open" data-t="obter">Obter Cristais</button></div>' +
+      '<div class="arena-list">' + S.ARENA_BOSSES.map(function (b) { return arenaCard(st, b); }).join('') + '</div></section>';
+  }
+  function premiumPage(st) {
+    var t = ui.premTab || 'arenas';
+    var h = backBtn('Ala Premium');
+    h += '<section class="win prem-win prem-head"><div class="prem-bal"><span class="small muted">Os teus Cristais</span><span class="prem-big">' + crys(st.crystals || 0) + '</span></div>' +
+      '<div class="prem-id"><span class="small muted">ID de Jogador</span><button class="mono id-chip" data-a="id-copy">' + esc(st.playerId) + '</button></div>' +
+      '<button class="btn prem block" data-a="prem-tab" data-t="obter" style="margin-top:10px"><i class="crys-ico"></i> Obter Cristais</button></section>';
+    h += '<div class="chips" style="margin-top:12px">' + [['arenas', 'Arenas'], ['loja', 'Loja Exclusiva'], ['aparencia', 'Aparência'], ['obter', 'Obter Cristais']].map(function (x) {
+      return '<button class="chip' + (t === x[0] ? ' on' : '') + '" data-a="prem-tab" data-t="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
+    if (t === 'arenas') {
+      h += coliseuHtml(st);
+    } else if (t === 'loja') {
+      S.PREMIUM_SHOP.forEach(function (g) {
+        h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">' + esc(g.title) + '</span></div>' + (g.note ? '<p class="hint" style="margin-top:0">' + esc(g.note) + '</p>' : '') +
+          '<div class="list">' + g.ids.map(function (id) { return premItemCard(st, S.ITEMS[id]); }).join('') + '</div></section>';
+      });
+      h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">Câmbio do Sistema</span></div><p class="hint" style="margin-top:0">Troca Cristais por moedas do jogo. O contrário não existe.</p><div class="list">' +
+        S.PREMIUM_EXCHANGE.map(function (x) {
+          var can = (st.crystals || 0) >= x.crystals;
+          return '<div class="card prem-card"><div class="row between"><div><div class="card-t">' + esc(x.name) + '</div><div class="meta">' + crys(x.crystals) + ' <span class="muted">→</span> ' + coins(x.coins) + '</div></div>' +
+            '<button class="btn sm prem" data-a="prem-ex" data-id="' + x.id + '"' + (can ? '' : ' disabled') + '>' + (can ? 'Trocar' : 'Faltam ' + (x.crystals - (st.crystals || 0))) + '</button></div></div>';
+        }).join('') + '</div></section>';
+    } else if (t === 'aparencia') {
+      var mold = S.premium.cosmeticOn(st, 'moldura'), nm = S.premium.cosmeticOn(st, 'nome');
+      h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">Aparência</span><small>Só visual: não dá vantagem</small></div>' +
+        '<div class="hero cos-preview" style="--aura:' + S.rankFor(st.level).color + '">' + heroAvatar(st) +
+        '<div class="stack" style="gap:6px;min-width:0"><div class="hero-name' + nameCls(st) + '"' + nameStyle(st) + '>' + esc(st.name) + '</div><div class="hero-title">' + esc(S.titleFor(st.level)) + '</div>' +
+        '<div class="small muted">' + (mold ? esc(mold.name) : 'Moldura simples') + ' · ' + (nm ? esc(nm.name) : 'Assinatura normal') + '</div></div></div></section>';
+      var TIER = { raro: 'Rara', epico: 'Épica', lendario: 'Lendária', mitico: 'Mítica', secreto: 'Exclusiva' };
+      h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">Molduras do retrato</span></div><p class="hint" style="margin-top:0">Substituem o quadrado simples à volta do teu personagem, no Estado e no teu perfil.</p><div class="cos-grid">' +
+        S.COSMETICS.filter(function (c) { return c.kind === 'moldura'; }).map(function (c) {
+          var own = !!st.cosmetics.owned[c.id], on = st.cosmetics.moldura === c.id, can = (st.crystals || 0) >= c.crystals;
+          var act = own ? '<button class="btn sm ' + (on ? 'ghost' : 'pri') + ' block" data-a="cos-wear" data-id="' + c.id + '">' + (on ? 'Tirar' : 'Usar') + '</button>'
+            : c.reward ? '<span class="tag prem-tag">Vence O Primeiro Jogador</span>'
+            : '<div class="row between">' + crys(c.crystals) + '<button class="btn sm prem" data-a="cos-buy" data-id="' + c.id + '"' + (can ? '' : ' disabled') + '>' + (can ? 'Comprar' : 'Faltam ' + (c.crystals - (st.crystals || 0))) + '</button></div>';
+          return '<div class="cos-card' + (on ? ' on' : '') + '" style="--cc:' + c.color + '"><div class="cos-frame">' + framed(S.avatar.html(st.cls, st.level), c, true) + '</div>' +
+            '<div class="card-t">' + esc(c.name) + '</div><div class="tier t-' + c.tier + '">' + (TIER[c.tier] || '') + '</div><div class="small muted">' + esc(c.desc) + '</div>' + act + '</div>';
+        }).join('') + '</div></section>';
+      h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">Assinaturas do nome</span></div><div class="cos-grid">' +
+        S.COSMETICS.filter(function (c) { return c.kind === 'nome'; }).map(function (c) {
+          var own = !!st.cosmetics.owned[c.id], on = st.cosmetics.nome === c.id, can = (st.crystals || 0) >= c.crystals;
+          return '<div class="cos-card' + (on ? ' on' : '') + '" style="--cc:' + c.color + '"><div class="cos-sw nome' + (c.prism ? ' prism' : '') + '"><b>' + esc(st.name) + '</b></div>' +
+            '<div class="card-t">' + esc(c.name) + '</div><div class="small muted">' + esc(c.desc) + '</div>' +
+            (own ? '<button class="btn sm ' + (on ? 'ghost' : 'pri') + ' block" data-a="cos-wear" data-id="' + c.id + '">' + (on ? 'Tirar' : 'Usar') + '</button>'
+              : '<div class="row between">' + crys(c.crystals) + '<button class="btn sm prem" data-a="cos-buy" data-id="' + c.id + '"' + (can ? '' : ' disabled') + '>' + (can ? 'Comprar' : 'Faltam ' + (c.crystals - (st.crystals || 0))) + '</button></div>') + '</div>';
+        }).join('') + '</div></section>';
+    } else {
+      h += obterHtml(st);
+    }
+    return h;
+  }
   function trophiesPage(st) {
     var h = backBtn('Sala de Troféus');
     var total = Object.keys(S.TROPHIES).length, have = E.trophyCount(st);
@@ -457,6 +695,14 @@
       '<div class="bar xp" style="margin-top:10px"><i style="width:' + (have / total * 100).toFixed(1) + '%"></i></div></section>';
     var gates = S.GATES.map(function (g) { return { id: g.id, ico: uiIcon('gate_' + g.id, g.icon), name: g.name, color: g.color, bosses: S.BOSSES.filter(function (b) { return b.gate === g.id; }) }; });
     if (S.SECRET_BOSSES.some(function (b) { return st.trophies[b.id] || S.combat.bossUnlocked(st, b); })) gates.push({ id: 0, ico: uiIcon('gate_0', '🗝️'), name: 'Portões Ocultos', color: 'var(--gold)', bosses: S.SECRET_BOSSES });
+    if (S.ARENA_BOSSES.some(function (b) { return st.trophies[b.id] || (st.arena && st.arena.unlocked[b.id]); })) {
+      h += '<section class="win prem-win"><div class="win-h"><span class="prem-t"><i class="crys-ico"></i> Coliseu dos Condenados</span><small>' + S.ARENA_BOSSES.filter(function (b) { return st.trophies[b.id]; }).length + '/10</small></div><div class="trophy-grid">' +
+        S.ARENA_BOSSES.map(function (b) {
+          var tr = S.TROPHIES[b.id], art = S.BOSS_ART && S.BOSS_ART[b.id];
+          if (!st.trophies[b.id]) return '<div class="trophy locked"><span class="tr-seal"></span><span class="tr-lock">' + uiIcon('ic_lock', '🔒', 'lock-img') + '</span></div>';
+          return '<button class="trophy got" style="--rc:' + b.color + '" data-a="boss" data-id="' + b.id + '">' + (art ? '<img src="' + art + '" alt="" loading="lazy">' : '<span class="tr-ico">' + b.icon + '</span>') + '<span class="tr-name">' + esc(tr.name) + '</span></button>';
+        }).join('') + '</div></section>';
+    }
     gates.forEach(function (g) {
       var t = E.gateTrophies(st, g.id), done = sets.indexOf(g.id) >= 0;
       h += '<section class="win' + (done ? ' gold' : '') + '"><div class="win-h"><span style="color:' + g.color + '">' + g.ico + ' ' + esc(g.name) + '</span><small>' + t.have + '/' + t.total + '</small></div>' +
@@ -758,7 +1004,9 @@
     var h = hpHtml + '<div class="chips" style="margin-top:14px">' + gates.map(function (g) {
       var k = S.BOSSES.filter(function (b) { return b.gate === g.id && st.defeated[b.id]; }).length;
       return '<button class="chip' + (ui.gate === g.id ? ' on' : '') + '" data-a="gate" data-g="' + g.id + '">' + uiIcon('gate_' + g.id, g.icon) + ' ' + g.id + (k === 10 ? ' ✓' : '') + '</button>';
-    }).join('') + (secretOn ? '<button class="chip' + (ui.gate === 0 ? ' on' : '') + '" data-a="gate" data-g="0">' + uiIcon('gate_0', '🗝️') + ' Oculto</button>' : '') + '</div>';
+    }).join('') + (secretOn ? '<button class="chip' + (ui.gate === 0 ? ' on' : '') + '" data-a="gate" data-g="0">' + uiIcon('gate_0', '🗝️') + ' Oculto</button>' : '') +
+      '<button class="chip prem-chip' + (ui.gate === 'arena' ? ' on' : '') + '" data-a="gate" data-g="arena"><i class="crys-ico"></i> Arenas</button></div>';
+    if (ui.gate === 'arena') return h + coliseuHtml(st);
     var list, gname, gcolor;
     if (ui.gate === 0) { list = S.SECRET_BOSSES.filter(function (b) { return C.bossUnlocked(st, b); }); gname = 'Portões Ocultos'; gcolor = 'var(--gold)'; }
     else { var g = S.GATES[ui.gate - 1]; list = S.BOSSES.filter(function (b) { return b.gate === g.id; }); gname = g.name; gcolor = g.color; }
@@ -787,15 +1035,16 @@
     var bs = C.bossStats(st, b), r = C.rewards(st, b), dg = C.danger(st, b), dead = st.defeated[b.id];
     var pr = C.pressure(b.level - st.level);
     var drops = ['+1 ' + S.ITEMS['bau_' + r.chest].name];
+    if (b.premium && !r.first) drops.push('15% de hipótese de uma relíquia de combate premium');
     if (r.special) (r.special.items || []).forEach(function (x) { drops.push('+1 ' + (st.seen[x] || !S.ITEMS[x].secret ? S.ITEMS[x].name : 'Item secreto')); });
     if (r.special && r.special.skill) drops.push('Habilidade secreta');
     return '<div class="sheet-h"><h2>' + esc(b.name) + '</h2><button class="btn sm ghost" data-a="close">Fechar</button></div>' +
       (S.BOSS_ART && S.BOSS_ART[b.id] ? '<div class="boss-hero">' + bossArt(b, 'boss-hero-img') + '</div>' : '') +
       '<div class="row" style="align-items:flex-start">' + (S.BOSS_ART && S.BOSS_ART[b.id] ? '' : '<div class="ico big">' + b.icon + '</div>') + '<div class="grow"><div class="meta"><span class="mono">Nível ' + b.level + '</span><span>' + S.ARCHETYPES[b.arch].name + '</span>' +
-      (b.king ? '<span class="tag" style="color:var(--gold)">Rei do portão: 2 fases</span>' : '') + '</div>' +
+      (b.champion ? '<span class="tag prem-tag">Campeão da Arena: 3 fases</span>' : b.lieutenant ? '<span class="tag prem-tag">Tenente da Arena: 2 fases</span>' : b.guardian ? '<span class="tag prem-tag">Guardião ' + b.slot + ' de 9</span>' : (b.king ? '<span class="tag" style="color:var(--gold)">Rei do portão: 2 fases</span>' : '')) + '</div>' +
       (b.lore ? '<p class="small muted" style="font-style:italic;margin:6px 0 0">«' + esc(b.lore) + '»</p>' : '') + '</div></div>' +
       '<div class="chronicle"><div class="info-h">Crónica</div>' + loreHtml(S.lore.bossText(b), 'boss-lore') +
-      (S.lore.gateText(b) ? '<details class="gate-lore"><summary>' + (b.gate ? 'Sobre o portão: ' + esc((S.GATES[b.gate - 1] || {}).name || '') : 'Sobre os portões ocultos') + '</summary>' + loreHtml(S.lore.gateText(b)) + '</details>' : '') + '</div>' +
+      (S.lore.gateText(b) ? '<details class="gate-lore"><summary>' + (b.premium ? 'Sobre o Coliseu dos Condenados' : b.gate ? 'Sobre o portão: ' + esc((S.GATES[b.gate - 1] || {}).name || '') : 'Sobre os portões ocultos') + '</summary>' + loreHtml(S.lore.gateText(b)) + '</details>' : '') + '</div>' +
       '<div class="kv" style="margin-top:12px"><div><span class="muted">Vida</span><b>' + fmt(bs.maxHp) + '</b></div><div><span class="muted">Ataque</span><b>' + fmt(bs.atk) + '</b></div>' +
       '<div><span class="muted">Defesa</span><b>' + fmt(bs.def) + '</b></div><div><span class="muted">Perigo</span><b style="color:' + dg.color + '">' + dg.label + '</b></div></div>' +
       (b.level > st.level + 2 ? '<p class="small" style="color:var(--warn)">Pressão de nível: o teu dano -' + Math.round((1 - pr.playerDmg) * 100) + '%, o dano dele +' + Math.round((pr.bossDmg - 1) * 100) + '%.</p>' : '') +
@@ -806,8 +1055,9 @@
       '<div class="card" style="margin-top:12px"><div class="small muted">Recompensas</div><div class="reward">+' + fmt(r.xp) + ' XP · +' + fmt(r.coins) + ' moedas</div><div class="small">' + drops.map(esc).join(' · ') + '</div></div>' +
       (function () { var mx = E.combatStats(st).maxHp, cu = E.curHp(st);
         return '<div style="margin-top:10px">' + bar('hp', cu, mx, 'A tua vida ao entrar') + '</div>' + (cu < mx * 0.5 ? '<p class="small" style="color:var(--warn)">Estás com pouca vida. Bebe uma poção antes de entrar.</p>' : ''); })() +
+      (b.premium ? arenaFoot(st, b) :
       '<p class="hint">Se morreres, desces um nível e o Sistema reanima-te com ' + C.REVIVE_PCT + '% da vida. A vida só recupera com poções ou à meia-noite, quando o Sistema restaura vida e mana. Fuga: perdes 5% das moedas (sem perdas com Pó de Fumo).</p>' +
-      (dead ? '<div class="empty">Derrotado em ' + timeStr(dead) + '. Não volta.</div>' : '<button class="btn pri block" data-a="fight" data-id="' + b.id + '">Entrar no portão</button>');
+      (dead ? '<div class="empty">Derrotado em ' + timeStr(dead) + '. Não volta.</div>' : '<button class="btn pri block" data-a="fight" data-id="' + b.id + '">Entrar no portão</button>'));
   }
   function statusTags(list, isBoss) {
     return list.map(function (s) {
@@ -943,11 +1193,12 @@
   }
 
   /* ================= BOLSA ================= */
-  var BAG_FILTERS = [['tudo', 'Tudo'], ['equip', 'Equipamento'], ['consumivel', 'Poções'], ['bau', 'Baús'], ['lazer', 'Lazer'], ['atributo', 'Atributos'], ['secreto', 'Secretos']];
+  var BAG_FILTERS = [['tudo', 'Tudo'], ['equip', 'Equipamento'], ['consumivel', 'Poções'], ['bau', 'Baús'], ['lazer', 'Lazer'], ['atributo', 'Atributos'], ['secreto', 'Secretos'], ['premium', 'Premium']];
   function bagMatch(it, f) {
     if (f === 'tudo') return true;
     if (f === 'equip') return !!it.equip;
-    if (f === 'secreto') return !!it.secret;
+    if (f === 'secreto') return !!it.secret && !it.premium;
+    if (f === 'premium') return !!it.premium;
     return it.cat === f;
   }
   function bagHtml(st) {
@@ -1036,6 +1287,7 @@
     else if (m.type === 'slot') inner = slotModal(m.slot);
     else if (m.type === 'bsheet') inner = battleSheet();
     else if (m.type === 'leisure') inner = leisureForm();
+    else if (m.type === 'order') inner = orderModal(m);
     var fresh = ui.modal !== ui.shownModal;
     return '<div class="overlay' + (fresh ? ' fresh' : '') + '" data-a="overlay"><div class="sheet' + (fresh ? ' fresh' : '') + '" role="dialog" aria-modal="true">' + inner + '</div></div>';
   }
@@ -1120,7 +1372,10 @@
     } else if (ev.type === 'mission') {
       body = '<h2>' + esc(ev.title) + '</h2><div class="muted">' + esc(ev.name) + '</div><ul class="sys-lines">' + lines + '</ul>';
     } else {
-      extra = ev.type === 'skill' || ev.type === 'info' ? '<div class="rays blue"></div>' : '';
+      extra = ev.type === 'skill' || ev.type === 'info' || ev.type === 'arena' ? '<div class="rays blue"></div>' : '';
+      if (ev.type === 'arena') { cls = 'prem-pop'; tag = 'COLISEU'; }
+      if (ev.type === 'crystals') { cls = 'prem-pop'; tag = 'CRISTAIS'; extra = '<div class="rays blue"></div>'; }
+      if (ev.type === 'gift') { cls = 'prem-pop gift-pop'; tag = 'PRESENTE'; extra = '<div class="rays"></div>'; }
       body = '<h2>' + esc(ev.title) + '</h2>' + (ev.name ? '<div class="muted">' + esc(ev.name) + '</div>' : '') + '<ul class="sys-lines">' + lines + '</ul>';
     }
     return '<div class="overlay sys-pop' + (fresh ? ' fresh' : '') + '">' + extra + '<div class="sys-box ' + cls + (fresh ? ' fresh' : '') + '" id="sys-box" role="alertdialog" data-type="' + ev.type + '"><span class="sys-tag">' + tag + '</span>' + body +
@@ -1161,8 +1416,13 @@
       FX.flash('#ff1f3d', .18 + ev.level * .08); FX.vignette();
       FX.vibrate(ev.level >= 3 ? [300, 80, 300, 80, 600] : [80, 60, 80, 60, 220]);
       setTimeout(function () { FX.shake(ev.level >= 2 ? 3 : 1); }, 350);
+    } else if (ev.type === 'crystals' || ev.type === 'gift') {
+      FX.flash('#67d5ff', .35); FX.vibrate([40, 40, 40, 40, 200]);
+      setTimeout(function () { FX.shock(c.x, c.y - 40, '#67d5ff'); FX.burst(c.x, c.y - 40, '#67d5ff', 90, { speed: 11 }); FX.rise(c.x, window.innerHeight, 260, '#67d5ff', 50); }, 400);
     } else if (ev.restore) {
       setTimeout(function () { FX.burst(c.x, c.y - 40, '#5be08a', 46, { speed: 7 }); FX.burst(c.x, c.y - 40, '#6fd6ff', 30, { speed: 5 }); }, 400);
+    } else if (ev.type === 'arena') {
+      FX.flash('#67d5ff', .3); FX.vibrate([60, 40, 60, 40, 200]); setTimeout(function () { FX.shock(c.x, c.y, '#67d5ff'); FX.burst(c.x, c.y, '#e0f6ff', 60, { speed: 9 }); FX.shake(1); }, 400);
     } else if (ev.type === 'mission' || ev.type === 'skill') {
       setTimeout(function () { FX.burst(c.x, c.y - 40, ev.type === 'skill' ? '#b56cff' : '#5be08a', 40, { speed: 8 }); }, 500);
     }
@@ -1233,6 +1493,18 @@
       return;
     }
     var st = E.state;
+    var ban = S.shop && S.shop.banned(st);
+    if (ban) {
+      FX.battle(false); root.innerHTML = banHtml(st, ban);
+      // a primeira vez que a sentença aparece: o Sistema faz-se sentir
+      var key = (ban.since || 0) + '';
+      if (ui.banShown !== key) {
+        ui.banShown = key;
+        setTimeout(function () { FX.flash('#ff1f3d', .45); FX.vignette(); FX.vibrate([300, 80, 300, 80, 600]); setTimeout(function () { FX.shake(3); }, 300); }, 150);
+      }
+      return;
+    }
+    ui.banShown = null; ui.banLine = null;
     var body = '';
     if (st.battle && ui.tab !== 'combate') body += '<button class="btn bad block" style="margin-top:12px" data-a="tab" data-t="combate">' + uiIcon('ui_battle', '⚔', 'btn-ico') + ' Batalha em curso: voltar</button>';
     if (ui.tab === 'status') body += statusHtml(st);
@@ -1446,6 +1718,7 @@
       if (!r.ok) return toast(r.msg, true);
       ui.popups.push({ _id: ++ui.popSeq, type: 'info', title: 'BEM-VINDO, JOGADOR', name: E.state.name, lines: ['Classe: ' + S.CLASSES[E.state.cls].name, 'Começas com 100 moedas, poções e um Baú Comum.', 'Cria as tuas missões no separador Missões.'] });
       ui.tab = 'status';
+      setTimeout(function () { shopSync(true); }, 5000);
       if (Notify.available()) { E.state.settings.notifAsked = true; setTimeout(function () { Notify.ask().then(function () { Notify.sync(true); }); }, 3500); }
       if (FX.full()) {
         FX.awaken(S.CLASSES[E.state.cls].color);
@@ -1492,6 +1765,96 @@
       m.fn();
     },
     'pop-ok': function () { ui.popups.shift(); render(); },
+    'prem-open': function (d) { ui.tab = 'status'; ui.page = 'premium'; ui.premTab = d.t || ui.premTab || 'arenas'; ui.modal = null; render(); window.scrollTo(0, 0); if (ui.premTab === 'obter') loadShop(); },
+    'prem-tab': function (d) { ui.premTab = d.t; render(); if (d.t === 'obter') loadShop(); },
+    'prem-buy': function (d) {
+      var it = S.ITEMS[d.id], p = { x: ui.pt.x, y: ui.pt.y };
+      confirmBox('Loja Exclusiva', 'Comprar ' + it.name + ' por ' + S.premium.price(d.id) + ' Cristais?', 'Comprar', function () {
+        var r = act(S.premium.buy(d.id, 1));
+        if (r.ok) { FX.burst(p.x, p.y, '#67d5ff', 40, { speed: 8 }); FX.flash('#67d5ff', .2); FX.vibrate([30, 30, 60]); }
+      });
+    },
+    'arena-view': function (d) { ui.arenaN = +d.n || 0; render(); window.scrollTo(0, 0); },
+    'arena-unlock': function (d) {
+      var b = S.BOSS_BY_ID[d.id];
+      var g1 = S.ARENA_LADDER[b.arena][0], gap = g1.level - E.state.level;
+      confirmBox('Abrir a arena', b.arenaName + '\n10 combates: 9 Guardiões (Nv ' + g1.level + ' a ' + (b.level - 1) + ') e ' + b.name + ' (Nv ' + b.level + ').\n\nTributo: ' + b.cost + ' Cristais. A arena fica aberta para sempre.' +
+        (gap >= 8 ? '\n\n⚠️ O primeiro Guardião é nível ' + g1.level + ' e tu és nível ' + E.state.level + '. Vais lutar com pressão de nível.' : ''), 'Pagar tributo', function () {
+        var r = S.premium.unlock(d.id);
+        if (!r.ok) { if (r.need) { ui.page = 'premium'; ui.premTab = 'obter'; loadShop(); } return act(r); }
+        ui.modal = null; ui.arenaN = b.arena;
+        act(r);
+      });
+    },
+    'id-copy': function () {
+      var id = E.state.playerId;
+      try { navigator.clipboard.writeText(id).then(function () { toast('ID copiado: ' + id); }, function () { toast(id); }); } catch (e) { toast(id); }
+    },
+    redeem: function () {
+      var code = ((document.getElementById('redeem-code') || {}).value || '').trim();
+      if (!code) return toast('Escreve o código.', true);
+      if (!S.shop || !S.shop.ready()) return toast('A loja de Cristais ainda não está ligada ao servidor.', true);
+      S.shop.redeem(code).then(function (r) { act(r); if (r.ok) { FX.flash('#67d5ff', .35); FX.burst(window.innerWidth / 2, window.innerHeight / 2, '#67d5ff', 80, { speed: 10 }); } });
+    },
+    'prem-ex': function (d) {
+      var x = S.PREMIUM_EXCHANGE.filter(function (e) { return e.id === d.id; })[0];
+      confirmBox('Câmbio do Sistema', 'Trocar ' + x.crystals + ' Cristais por ' + fmt(x.coins) + ' moedas?', 'Trocar', function () { act(S.premium.exchange(d.id)); });
+    },
+    'cos-buy': function (d) {
+      var c = S.COSMETIC_BY_ID[d.id];
+      confirmBox('Aparência', 'Comprar ' + c.name + ' por ' + c.crystals + ' Cristais?\nÉ só visual e fica tua para sempre.', 'Comprar', function () {
+        var r = act(S.premium.buyCosmetic(d.id));
+        if (r.ok) { FX.flash(c.color, .3); FX.burst(window.innerWidth / 2, window.innerHeight * .3, c.color, 60, { speed: 9 }); }
+      });
+    },
+    'cos-wear': function (d) { act(S.premium.wear(d.id)); },
+    'shop-load': function () { loadShop(true); },
+    'ban-check': function () {
+      if (!S.shop.ready()) return toast('Sem ligação ao servidor.', true);
+      toast('A verificar…');
+      S.shop.sync(true).then(function (r) {
+        if (r.ok && r.banned) { ui.banLine = S.shop.banCheckLine(); FX.flash('#ff1f3d', .2); FX.vibrate([60, 40, 120]); setTimeout(function () { FX.shake(1); }, 120); }
+        else ui.banLine = null;
+        pullEvents(); render();
+        if (!r.ok) toast(r.msg || 'Sem ligação ao servidor. A suspensão mantém-se.', true);
+      });
+    },
+    'pack-pick': function (d) {
+      ui.pack = d.id; render();
+      var bx = document.getElementById('buy-box'); if (bx && bx.scrollIntoView) bx.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    },
+    'buy-wa': function (d) {
+      var cfg = S.shop.cached(), live = S.shop.ready() && cfg && cfg.open && cfg.packages && cfg.packages.length;
+      if (live) return H['prem-order'](d);
+      var p = S.CRYSTAL_PACKS.filter(function (x) { return x.id === d.id; })[0], st = E.state;
+      if (!p) return;
+      var msg = 'Olá! Quero comprar Cristais no Sistema.\n\n' +
+        'Pacote: ' + p.name + '\nCristais: ' + p.crystals + (p.bonus ? ' (' + p.base + ' + ' + p.bonus + ' de bónus)' : '') + '\nValor: ' + kz(p.price_kz) +
+        '\n\nJogador: ' + st.name + '\nID de Jogador: ' + st.playerId +
+        '\n\nVou pagar por MULTICAIXA Express. Fico à espera dos dados para a transferência.';
+      H.ext({ url: 'https://wa.me/' + S.SHOP_WHATSAPP + '?text=' + encodeURIComponent(msg) });
+    },
+    'prem-order': function (d) {
+      var p = (S.shop.cached().packages || []).filter(function (x) { return x.id === d.id; })[0];
+      if (!p) return;
+      confirmBox('Pedir Cristais', p.crystals + ' Cristais por ' + kz(p.price_kz) + '.\n\nO pedido fica registado e abre-se o WhatsApp com a mensagem pronta. Só pagas depois de receberes as instruções.', 'Fazer pedido', function () {
+        toast('A registar o pedido…');
+        S.shop.order(p.id).then(function (r) {
+          if (!r.ok) return toast(r.msg, true);
+          ui.toast = null; var tt = document.getElementById('toast'); if (tt) tt.remove();
+          ui.modal = { type: 'order', id: r.order.id }; pullEvents(); render();
+        });
+      });
+    },
+    'ord-open': function (d) { ui.modal = { type: 'order', id: d.id }; render(); },
+    'ord-refresh': function () { toast('A verificar os pedidos…'); S.shop.refresh().then(function (r) { render(); toast(r.changed ? 'Pedidos atualizados.' : 'Sem novidades.'); }); },
+    'ord-cancel': function (d) { confirmBox('Cancelar pedido', 'Cancelar o pedido ' + d.id + '? Só deves cancelar se ainda não pagaste.', 'Cancelar pedido', function () { S.shop.cancel(d.id).then(function (r) { act(r); }); }, true); },
+    'ord-copy': function (d) {
+      var o = E.state.shop.orders.filter(function (x) { return x.id === d.id; })[0];
+      var txt = (o && o.msg) || ('Pedido ' + d.id);
+      try { navigator.clipboard.writeText(txt).then(function () { toast('Mensagem copiada.'); }, function () { toast(txt); }); } catch (e) { toast(txt); }
+    },
+    'prev-crys': function () { if (!S.PREVIEW) return; S.premium.grant(E.state, 500, 'teste da pré-visualização'); E.commit('teste'); render(); toast('+500 Cristais de teste.'); },
     'talk-pick': function (d) {
       var ev = ui.popups[0];
       if (!ev || ev.type !== 'talk' || ev.res) return;
@@ -1597,10 +1960,10 @@
     },
 
     // combate
-    gate: function (d) { ui.gate = +d.g; render(); },
+    gate: function (d) { ui.gate = d.g === 'arena' ? 'arena' : +d.g; render(); },
     boss: function (d) { ui.modal = { type: 'boss', id: d.id }; render(); talkTry('boss', { boss: S.BOSS_BY_ID[d.id] }, 1100); },
     fight: function (d) {
-      ui.modal = null;
+      ui.modal = null; ui.tab = 'combate'; ui.page = null;
       var b = S.BOSS_BY_ID[d.id];
       var g = S.GATES[b.gate - 1];
       ui.spawn = true;
@@ -1906,6 +2269,20 @@
       box.innerHTML = h.join('<br>');
     });
   }
+  /* sincronização com o servidor: presentes do administrador e suspensões */
+  function shopSync(force) {
+    if (!E.state || !S.shop || !S.shop.ready()) return;
+    S.shop.sync(force).then(function (r) { if (r && r.changed) { pullEvents(); render(); } });
+  }
+  /* Loja de Cristais: pacotes do servidor e estado dos pedidos */
+  function loadShop(force) {
+    if (!S.shop || !S.shop.ready()) return;
+    ui.shopErr = null;
+    S.shop.config(force).then(function (c) {
+      if (!c.ok) ui.shopErr = c.msg;
+      if (E.state && S.shop.pending(E.state).length) return S.shop.refresh();
+    }).then(function () { if (ui.page === 'premium') render(); });
+  }
   function greet() {
     if (!E.state || !S.live) return;
     var l = S.live.ensure(E.state), away = Math.floor((now() - (l.lastSeen || now())) / 86400000);
@@ -1994,6 +2371,13 @@
     FX.init();
     root.addEventListener('click', onClick);
     Notify.setup();
+    if (S.shop) S.shop.init().then(function () {
+      if (!E.state || !S.shop.ready()) return;
+      shopSync(true);
+      if (S.shop.pending(E.state).length) S.shop.refresh().then(function (r) { if (r.changed) render(); });
+    });
+    // sincroniza com o servidor de 10 em 10 minutos enquanto a app está aberta (presentes, suspensões)
+    setInterval(function () { if (document.visibilityState === 'visible') shopSync(false); }, 600000);
     root.addEventListener('input', onInput);
     root.addEventListener('change', onChange);
     document.addEventListener('keydown', onKey);
@@ -2023,7 +2407,12 @@
       talkTry('idle', {}, 700);
     }, 60000);
     document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'visible') { checkDeadlines(); if (E.state) { greet(); pullEvents(); } }
+      if (document.visibilityState === 'visible') {
+        checkDeadlines(); if (E.state) { greet(); pullEvents(); }
+        shopSync(false);
+        // voltou do WhatsApp: vê se o pedido já foi pago
+        if (E.state && S.shop && S.shop.ready() && S.shop.pending(E.state).length) S.shop.refresh().then(function (r) { if (r.changed) render(); });
+      }
       else if (E.state) { S.storage.write(E.state); Notify.sync(true); }
     });
     window.addEventListener('pagehide', function () { if (E.state) S.storage.write(E.state); });

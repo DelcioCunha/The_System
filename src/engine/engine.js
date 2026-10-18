@@ -73,7 +73,7 @@
     var now = S.clock.now();
     var today = E.dateKey(now);
     var st = {
-      schema: S.SAVE_SCHEMA, appVersion: S.VERSION, created: now, lastRestore: today, watch: { trust: 100, text: [], quick: [], lastDay: today, total: 0 }, live: { hidden: {}, reports: [], reacted: {}, emDay: '', emCount: 0, emNext: 0, lastSeen: now }, talk: { seen: {}, last: 0, day: '', count: 0, att: { o: 0, d: 0, q: 0 }, skips: 0, damp: 1, talks: 0, done: {} },
+      schema: S.SAVE_SCHEMA, appVersion: S.VERSION, created: now, lastRestore: today, watch: { trust: 100, text: [], quick: [], lastDay: today, total: 0 }, live: { hidden: {}, reports: [], reacted: {}, emDay: '', emCount: 0, emNext: 0, lastSeen: now }, talk: { seen: {}, last: 0, day: '', count: 0, att: { o: 0, d: 0, q: 0 }, skips: 0, damp: 1, talks: 0, done: {} }, crystals: 0, arena: { unlocked: {}, wins: {}, last: {} }, cosmetics: { owned: {}, moldura: null, nome: null }, shop: { orders: [], redeemed: {} }, playerId: S.premium ? S.premium.newId() : '',
       name: String(name).trim().slice(0, 24), cls: cls,
       level: 1, xp: 0, coins: 100, freePoints: 0,
       alloc: zeroStats(), trained: zeroStats(), bonus: zeroStats(),
@@ -108,6 +108,7 @@
     E.addItem(st, 'po_mana1', 2);
     E.addItem(st, 'bau_comum', 1);
     E.history(st, '✨', 'O Sistema escolheu ' + st.name + ' como ' + S.CLASSES[cls].name + '.');
+    if (S.shop) S.shop.ensure(st);
     return st;
   };
 
@@ -122,6 +123,8 @@
     if (S.watch) S.watch.ensure(st);
     if (S.live) S.live.ensure(st);
     if (S.talk) S.talk.ensure(st);
+    if (S.premium) S.premium.ensure(st);
+    if (S.shop) S.shop.ensure(st);
     if (st.hp === undefined) st.hp = null;
     // troféus de chefes derrotados antes desta versão
     Object.keys(st.defeated || {}).forEach(function (id) { if (S.TROPHIES[id] && !st.trophies[id]) st.trophies[id] = st.defeated[id]; });
@@ -359,12 +362,14 @@
     if (E.hasEffect(st, 'xp2')) m *= 2;
     if (E.hasEffect(st, 'xp15')) m *= 1.5;
     if (E.hasEffect(st, 'exausto')) m *= 0.8;
+    if (E.hasEffect(st, 'monarca')) m *= 1.5;
     m *= 1 + E.combatStats(st).xpPct / 100;
     return m;
   };
   E.coinMultiplier = function (st) {
     var m = 1;
     if (E.hasEffect(st, 'coin2')) m *= 2;
+    if (E.hasEffect(st, 'monarca')) m *= 1.5;
     m *= 1 + E.combatStats(st).coinPct / 100;
     return m;
   };
@@ -463,7 +468,7 @@
   };
   E.sellValue = function (st, id) {
     var it = E.item(id, st);
-    if (!it || it.custom || it.cat === 'lazer') return 0;
+    if (!it || it.custom || it.cat === 'lazer' || it.premium) return 0;
     if (it.price) return Math.max(1, Math.floor(it.price * 0.35));
     var byR = { comum: 20, incomum: 60, raro: 250, epico: 900, lendario: 3000, mitico: 6000, secreto: 4000 };
     return byR[it.rarity] || 10;
@@ -656,6 +661,17 @@
         E.emit({ type: 'loot', title: it.name, icon: it.icon, tier: u.tier, coins: loot.coins, items: loot.items });
         E.history(st, it.icon, 'Abriu ' + it.name + ': ' + loot.coins + ' moedas' + (loot.items.length ? ', ' + loot.items.map(function (x) { return E.item(x).name; }).join(', ') : '') + '.');
         break;
+      case 'monarchChest': {
+        E.removeItem(st, id);
+        var got = ['bau_lendario', S.PREMIUM_CONSUMABLES[Math.floor(S.rng.random() * S.PREMIUM_CONSUMABLES.length)]];
+        got.forEach(function (x) { E.addItem(st, x, 1); });
+        var mc = E.gainCoins(st, Math.round(1500 * S.levelMult(st.level)), false);
+        E.bump(st, 'chestsOpened');
+        res.msg = 'Baú do Monarca aberto!';
+        E.emit({ type: 'loot', title: it.name, icon: it.icon, tier: 'monarca', coins: mc, items: got });
+        E.history(st, it.icon, 'Abriu ' + it.name + ': ' + mc + ' moedas, ' + got.map(function (x) { return E.item(x).name; }).join(', ') + '.');
+        break;
+      }
       case 'coins':
         E.removeItem(st, id);
         var g = E.gainCoins(st, u.amount, false);

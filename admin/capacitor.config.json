@@ -1,0 +1,6 @@
+{
+  "appId": "com.delciocunha.sistema.admin",
+  "appName": "Sistema Admin",
+  "webDir": "www",
+  "android": { "allowMixedContent": false }
+}

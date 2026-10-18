@@ -268,7 +268,7 @@
     }
     if (kind === 'streak' && [3, 7, 14, 30, 50, 100, 365].indexOf(ctx.n) >= 0) return note(st, null, REACT.streak, { n: ctx.n });
     if (kind === 'boss') {
-      if (ctx.def && ctx.def.king && ctx.def.gate) return note(st, 'king_' + ctx.def.id, REACT.king, { portao: S.GATES[ctx.def.gate - 1].name });
+      if (ctx.def && ctx.def.king && typeof ctx.def.gate === 'number' && ctx.def.gate) return note(st, 'king_' + ctx.def.id, REACT.king, { portao: S.GATES[ctx.def.gate - 1].name });
       if (ctx.gap >= 3) return note(st, null, REACT.giant, { g: ctx.gap });
     }
     return false;

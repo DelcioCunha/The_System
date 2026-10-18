@@ -1,0 +1,15 @@
+# Cloudflare Worker: API da Loja de Cristais do Sistema
+name = "sistema-loja"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+[vars]
+# "staging" marca pedidos como TESTE. Muda para "production" quando fores receber pagamentos reais.
+MODE = "staging"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "sistema-loja"
+# Preenchido no primeiro deploy (ver LOJA.md). O workflow do GitHub substitui este valor.
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"

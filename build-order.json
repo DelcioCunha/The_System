@@ -13,6 +13,9 @@
   "src/data/talk-life.js",
   "src/data/talk-random.js",
   "src/data/achievements.js",
+  "src/data/arena-story.js",
+  "src/data/arena-guardians.js",
+  "src/data/premium.js",
   "src/engine/storage.js",
   "src/engine/time.js",
   "src/engine/engine.js",
@@ -21,5 +24,7 @@
   "src/engine/live.js",
   "src/engine/talk.js",
   "src/engine/combat.js",
+  "src/engine/premium.js",
+  "src/engine/shop.js",
   "src/engine/lore.js"
 ]

@@ -1,0 +1,39 @@
+# Gera o APK Administrativo (privado: só para ti).
+# Separador "Actions" → "Gerar APK Admin" → execução mais recente → "Artifacts" → sistema-admin-apk.
+name: Gerar APK Admin
+on:
+  push:
+    branches: [main]
+    paths: ['admin/**', 'loja.json', '.github/workflows/admin-apk.yml']
+  workflow_dispatch:
+jobs:
+  admin-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;34.0.0'
+      - name: Preparar o projeto Android do Admin
+        working-directory: admin
+        run: |
+          npm ci
+          cp ../loja.json www/loja.json
+          npx cap add android
+          cp -r res/* android/app/src/main/res/
+          npx cap sync android
+      - name: Compilar
+        working-directory: admin/android
+        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      - run: mv admin/android/app/build/outputs/apk/debug/app-debug.apk admin/sistema-admin.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sistema-admin-apk
+          path: admin/sistema-admin.apk

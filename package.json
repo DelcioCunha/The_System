@@ -7,7 +7,7 @@
   },
   "scripts": {
     "build": "node build.js && npx cap sync android",
-    "test": "node build.js && node tests/engine.test.js && node tests/ui.test.js && node tests/fx.test.js",
+    "test": "node build.js && node tests/engine.test.js && node tests/ui.test.js && node tests/fx.test.js && node --no-warnings server/tests/server.test.mjs",
     "balance": "node tests/balance.js",
     "icons": "python3 tools/icons.py",
     "apk": "npm run build && cd android && ./gradlew assembleDebug"

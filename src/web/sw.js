@@ -44,6 +44,6 @@ self.addEventListener('fetch', function (e) {
   var url = new URL(req.url);
   if (url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com') { e.respondWith(cacheFirst(req, FONTS)); return; }
   if (url.origin !== self.location.origin) return;
-  if (req.mode === 'navigate' || /\.(html|webmanifest)$/.test(url.pathname) || url.pathname.slice(-1) === '/') { e.respondWith(networkFirst(req)); return; }
+  if (req.mode === 'navigate' || /\.(html|webmanifest|json)$/.test(url.pathname) || url.pathname.slice(-1) === '/') { e.respondWith(networkFirst(req)); return; }
   e.respondWith(cacheFirst(req, MEDIA));
 });

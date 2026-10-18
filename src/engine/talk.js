@@ -107,7 +107,7 @@
     if (ctx.boss) {
       var b = ctx.boss, g = S.GATES[b.gate - 1];
       V.boss = b.name; V.blvl = b.level; V.gap = b.level - st.level; V.king = !!b.king; V.final = b.special === 'final' || b.level >= 100;
-      V.secret = !!b.secret; V.dead = !!st.defeated[b.id]; V.portao = g ? g.name : ''; V.gate = b.gate;
+      V.secret = !!b.secret; V.dead = !!st.defeated[b.id]; V.portao = g ? g.name : (b.arenaName || ''); V.premium = !!b.premium; V.gate = b.gate;
     }
     ['missao', 'diff', 'item', 'rarity', 'skill', 'tab', 'tier', 'slot', 'price', 'diaria'].forEach(function (k) { if (ctx[k] !== undefined) V[k] = ctx[k]; });
     if (ctx.level) { V.nivel = ctx.level; V.rankup = !!ctx.rankup; }

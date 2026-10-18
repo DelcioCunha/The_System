@@ -15,6 +15,13 @@
   function now() { return S.clock.now(); }
 
   C.bossUnlocked = function (st, b) {
+    if (b.premium) {
+      // arena aberta com Cristais + escada: cada combate exige o anterior vencido
+      if (!(st.arena && st.arena.unlocked[b.arenaKey || b.id])) return false;
+      if (st.arena.wins[b.id]) return true;
+      var prev = S.premium.prevBoss(b);
+      return !prev || !!st.arena.wins[prev.id];
+    }
     if (!b.secret) return true;
     if (b.unlock === 'map') return !!st.revealed[b.id];
     if (b.unlock === 'all100') return S.BOSSES.every(function (x) { return st.defeated[x.id]; });
@@ -37,7 +44,7 @@
       atk = Math.max(atk * 0.6, Math.max(ps.atk, ps.matk) * 0.75);
       def = Math.max(def * 0.6, ps.def);
     }
-    if (b.special === 'final') hp *= 1.3;
+    if (b.special === 'final' || (b.phases === 3 && !b.premium)) hp *= 1.3; // os Campeões já têm mecânicas próprias
     return { maxHp: Math.round(hp), atk: Math.round(atk), def: Math.round(def) };
   };
 
@@ -45,6 +52,24 @@
 
   C.rewards = function (st, b) {
     var L = b.level;
+    if (b.guardian) {
+      // Guardiões: acima dos chefes normais do mesmo nível; o Tenente vale como um rei
+      var gf = !(st.arena && st.arena.wins[b.id]);
+      var gk = gf ? 1 : S.PREMIUM_RULES.repeatPct;
+      var tier = L <= 20 ? 0 : L <= 50 ? 1 : L <= 80 ? 2 : 3;
+      var gchest = gf ? (b.lieutenant ? ['epico', 'lendario', 'lendario', 'secreto'] : ['raro', 'epico', 'lendario', 'lendario'])[tier] : (['comum', 'raro', 'raro', 'epico'])[tier];
+      var gsp = null;
+      if (gf && b.slot === 5) gsp = { items: [S.PREMIUM_CONSUMABLES[(b.arena - 1) % S.PREMIUM_CONSUMABLES.length]] };
+      return { xp: Math.round((S.xpToNext(Math.min(L, 99)) * (b.lieutenant ? 0.8 : 0.45) + 25) * gk), coins: Math.round((30 + 12 * L + 0.6 * L * L) * (b.lieutenant ? 3 : 1.6) * gk),
+        chest: gchest, special: gsp, first: gf };
+    }
+    if (b.premium) {
+      // Campeões da Arena: a primeira vitória vale muito mais; as revanches dão 35%
+      var first = !(st.arena && st.arena.wins[b.id]);
+      var k = first ? 1 : S.PREMIUM_RULES.repeatPct;
+      return { xp: Math.round((S.xpToNext(Math.min(L, 99)) * 1.3 + 50) * k), coins: Math.round((30 + 12 * L + 0.6 * L * L) * 4 * k),
+        chest: first ? (L >= 75 ? 'secreto' : 'lendario') : 'epico', special: first ? { items: [b.relic] } : null, first: first };
+    }
     var emp = st.battle && st.battle.bossId === b.id && st.battle.empowered;
     // um chefe dá ~35% de um nível (rei: ~80%): para continuar a avançar é preciso fazer missões
     var xp = Math.round(S.xpToNext(Math.min(L, 99)) * (b.king ? 0.8 : 0.35) + 20);
@@ -91,8 +116,14 @@
     if (st.battle && !st.battle.over) return { ok: false, msg: 'Já estás numa batalha.' };
     var b = S.BOSS_BY_ID[bossId];
     if (!b) return { ok: false, msg: 'Chefe desconhecido.' };
-    if (st.defeated[b.id]) return { ok: false, msg: 'Este chefe já foi derrotado e não volta.' };
-    if (!C.bossUnlocked(st, b)) return { ok: false, msg: 'Este portão ainda está selado.' };
+    if (!b.premium && st.defeated[b.id]) return { ok: false, msg: 'Este chefe já foi derrotado e não volta.' };
+    if (b.premium) S.premium.ensure(st);
+    if (!C.bossUnlocked(st, b)) {
+      if (!b.premium) return { ok: false, msg: 'Este portão ainda está selado.' };
+      if (!st.arena.unlocked[b.arenaKey]) return { ok: false, msg: 'Esta arena ainda está selada. Desbloqueia-a com Cristais.' };
+      return { ok: false, msg: 'Vence primeiro ' + S.premium.prevBoss(b).name + '.' };
+    }
+    if (b.premium && S.premium.cooldown(st, b) > now()) return { ok: false, msg: (b.champion ? 'O Campeão' : b.name) + ' ainda está a recuperar. Volta mais tarde.' };
     var ps = E.combatStats(st);
     if (E.curHp(st) < 1) return { ok: false, msg: 'Não tens vida para lutar. Bebe uma poção de vida na Bolsa.' };
     var bs = C.bossStats(st, b);
@@ -112,12 +143,29 @@
     if (b.lore) log(st.battle, b.lore, 'lore');
     if (emp) log(st.battle, (emp === 'noite' ? '🌙 A noite fortalece ' : '☀️ O sol fortalece ') + b.name + ': +15% vida e ataque, mas +20% recompensas.', 'warn');
     var lines = (S.BOSS_LINES || {})[b.id];
-    if (lines) log(st.battle, b.name + ': «' + lines[0] + '»', 'say');
+    var rematch = b.premium && st.arena && st.arena.wins[b.id];
+    if (b.story && rematch) log(st.battle, b.name + ': «' + b.story.rematch[Math.floor(S.rng.random() * b.story.rematch.length)] + '»', 'say');
+    else if (lines) log(st.battle, b.name + ': «' + lines[0] + '»', 'say');
+    var champ = b.guardian && S.BOSS_BY_ID[b.arenaKey];
+    if (champ && champ.story && b.slot === 1) {
+      st.arena.seen = st.arena.seen || {};
+      if (!st.arena.seen[b.arenaKey + '_in']) { st.arena.seen[b.arenaKey + '_in'] = now(); E.emit({ type: 'arena', title: champ.story.intro[0], name: b.arenaName, boss: champ.id, lines: champ.story.intro.slice(1).concat(['No fim da escada espera-te ' + champ.name + '. Primeiro, os seus 9 Guardiões.']) }); }
+    }
+    if (b.lieutenant) log(st.battle, '⚠️ ' + b.name + ' é o Tenente da arena: 2 fases. Atrás dele está ' + S.BOSS_BY_ID[b.arenaKey].name + '.', 'warn');
+    if (b.story) {
+      log(st.battle, '◆ ' + b.story.sig.name + ': ' + b.story.sig.desc, 'warn');
+      st.arena.seen = st.arena.seen || {};
+      if (!st.arena.seen[b.id]) { st.arena.seen[b.id] = now(); E.emit({ type: 'arena', title: b.story.intro[0], name: b.name, boss: b.id, lines: b.story.intro.slice(1).concat(['«' + b.story.quote + '»']) }); }
+    }
     if (st.battle.gap <= -3) log(st.battle, '✨ Vantagem de nível: estás ' + (-st.battle.gap) + ' níveis acima do chefe (o teu dano +' + Math.round((C.pressure(st.battle.gap).playerDmg - 1) * 100) + '%, o dele -' + Math.round((1 - C.pressure(st.battle.gap).bossDmg) * 100) + '%).', 'good');
     if (st.battle.gap >= 3) log(st.battle, '⚠️ Pressão de nível: o chefe está ' + st.battle.gap + ' níveis acima de ti (o teu dano -' + Math.round((1 - C.pressure(st.battle.gap).playerDmg) * 100) + '%, o dele +' + Math.round((C.pressure(st.battle.gap).bossDmg - 1) * 100) + '%).', 'warn');
     E.commit('batalha iniciada');
     return { ok: true };
   };
+
+  /* ---------------- mecânicas de assinatura dos Campeões do Coliseu ---------------- */
+  function sigOf(bt) { var d = S.BOSS_BY_ID[bt.bossId]; return (d && d.sig) || null; }
+  function sayOf(bt, key) { var d = S.BOSS_BY_ID[bt.bossId]; return d && d.story ? d.story[key] : null; }
 
   /* ---------------- dano do jogador ---------------- */
   function playerBase(bt, kind) {
@@ -135,6 +183,7 @@
   }
   function damageBoss(bt, amount, label) {
     var b = bt.b;
+    if (sigOf(bt) === 'stone' && bt.phase === 1) amount *= 0.75; // Pele de Pedra Rúnica
     var dmg = Math.max(1, Math.round(amount));
     if (b.shield > 0) {
       var ab = Math.min(b.shield, dmg);
@@ -158,8 +207,9 @@
       case 'dmg': {
         var hits = op.hits || 1;
         var base = playerBase(bt, op.kind === 'phys' || op.kind === 'mag' || op.kind === 'def' || op.kind === 'best' ? op.kind : ps.main);
-        var total = 0, crits = 0;
+        var total = 0, crits = 0, dodged = 0, bsig = sigOf(bt);
         for (var i = 0; i < hits && b.hp > 0; i++) {
+          if (bsig === 'evade' && chance(0.2)) { dodged++; continue; } // Mil Passos
           var raw = base * op.mult * rnd(0.9, 1.1);
           var critChance = (ps.crit + sum(p.st, 'buff', 'crit') + (op.crit || 0)) / 100;
           var isCrit = op.alwaysCrit || chance(critChance);
@@ -172,6 +222,8 @@
           if (ls > 0) healPlayer(bt, dmg * ls);
         }
         log(bt, '➤ ' + srcName + ': ' + total + ' de dano' + (hits > 1 ? ' (' + hits + ' golpes)' : '') + (crits ? ' — CRÍTICO' + (crits > 1 ? ' ×' + crits : '') + '!' : '.'), crits ? 'crit' : 'dmg');
+        if (dodged) log(bt, '🌸 Mil Passos: ' + (dodged === hits ? 'cortaste só pétalas. Ela já não estava lá.' : dodged + ' golpe(s) cortaram só pétalas.'), 'muted');
+        if (bsig === 'mirror' && total > 0 && p.hp > 0) { var rf = damagePlayer(bt, total * 0.15); log(bt, '🪞 Reflexo Partido: o espelho devolve-te ' + rf + ' de dano.', 'hurt'); }
         break;
       }
       case 'dot': {
@@ -231,7 +283,13 @@
   function bossAtk(bt) {
     var b = bt.b;
     var m = 1 + (sum(b.st, 'buff', 'atk') + b.bonusAtk - sum(b.st, 'debuff', 'atk')) / 100;
-    return b.atk * Math.max(0.2, m) * C.pressure(bt.gap).bossDmg;
+    var sig = sigOf(bt), x = 1;
+    if (sig === 'execute' && bt.p.hp < bt.p.maxHp * 0.35) {
+      x = 1.6;
+      if (!bt.sigExec) { bt.sigExec = true; log(bt, '🪓 EXECUÇÃO: a tua vida está abaixo de 35%. Cada golpe dele é agora uma sentença (+60%).', 'warn'); }
+    }
+    if (sig === 'first') x *= 1 + Math.min(45, bt.firstGrow || 0) / 100;
+    return b.atk * Math.max(0.2, m) * x * C.pressure(bt.gap).bossDmg;
   }
   function damagePlayer(bt, amount) {
     var p = bt.p;
@@ -285,7 +343,8 @@
         break;
       }
       case 'shield':
-        b.shield += Math.round(b.maxHp * op.pct / 100);
+        // um escudo novo substitui o anterior (fica o maior): os escudos não se acumulam
+        b.shield = Math.max(b.shield, Math.round(b.maxHp * op.pct / 100));
         log(bt, '🛡️ O chefe cria um escudo de ' + b.shield + '.', 'hurt');
         break;
       case 'buff':
@@ -329,6 +388,39 @@
     var sk = S.BOSS_SKILLS[k];
     if (sk.cd) b.cds[k] = sk.cd + 1;
     sk.ops.forEach(function (op) { if (bt.p.hp > 0) doBossOp(bt, op, sk.name); });
+    signatureTurn(bt, def);
+  }
+  /* o que cada Campeão faz no fim do seu turno */
+  function signatureTurn(bt, def) {
+    var p = bt.p, b = bt.b, sig = def.sig;
+    if (!sig || p.hp <= 0) return;
+    if (sig === 'hoard') {
+      var mp = Math.min(p.mp, Math.round(p.maxMp * 0.06)), hh = Math.round(b.maxHp * 0.015);
+      p.mp -= mp; b.hp = Math.min(b.maxHp, b.hp + hh);
+      log(bt, '🌊 Avareza Abissal: Leviarch rouba ' + mp + ' de mana e recupera ' + hh + ' de vida.', 'hurt');
+    } else if (sig === 'storm' && bt.turn % 3 === 0) {
+      var d = damagePlayer(bt, bossAtk(bt) * 0.8 * 100 / (100 + p.stats.def * (1 - sum(p.st, 'debuff', 'def') / 100)));
+      var stun = p.stunImmune <= 0 && chance(0.3);
+      if (stun) { p.stunned = Math.max(p.stunned, 1); p.stunImmune = 3; }
+      log(bt, '◀ ⚡ Tempestade Crescente: um relâmpago atinge-te: ' + d + ' de dano' + (stun ? '. Ficaste atordoado!' : '.'), 'hurt');
+    } else if (sig === 'garden') {
+      var stacks = p.st.filter(function (x) { return x.kind === 'dot' && x.type === 'garden'; }).length;
+      if (stacks < 3) { var per = Math.max(1, Math.round(p.maxHp * 0.015)); p.st.push({ kind: 'dot', type: 'garden', val: per, turns: 4 }); log(bt, '🥀 Jardim que Cresce: uma rosa negra nasce em ti (' + (stacks + 1) + '/3, ' + per + '/turno).', 'hurt'); }
+    } else if (sig === 'first') {
+      bt.firstGrow = Math.min(45, (bt.firstGrow || 0) + 3);
+      if (bt.firstGrow % 15 === 0) log(bt, '👤 Aprende Contigo: O Primeiro Jogador está ' + bt.firstGrow + '% mais forte. Já se mexe como tu.', 'warn');
+    }
+  }
+  /* Renascer Imperial: a primeira vez que cai, volta */
+  function rebirth(bt) {
+    var def = S.BOSS_BY_ID[bt.bossId];
+    if (def.sig !== 'rebirth' || bt.reborn || bt.b.hp > 0) return false;
+    bt.reborn = true;
+    bt.b.hp = Math.round(bt.b.maxHp * 0.25);
+    bt.b.st = bt.b.st.filter(function (x) { return x.kind !== 'dot'; });
+    log(bt, '🔥 RENASCER IMPERIAL! Ignivar ergue-se das cinzas com ' + bt.b.hp + ' de vida.', 'warn');
+    log(bt, def.name + ': «Eu renasço sempre. Tu só morres uma vez.»', 'say');
+    return true;
   }
   function checkPhases(bt) {
     var b = bt.b;
@@ -338,13 +430,23 @@
       bt.phase = 2;
       b.bonusAtk += 20;
       log(bt, '⚠️ ' + def.name + ' entra na FASE 2: ataque +20%!', 'warn');
+      if (def.story) log(bt, def.story.phase2, 'say');
+      if (def.sig === 'rewind' && !bt.rewound) {
+        bt.rewound = true;
+        var rh = Math.round(b.maxHp * 0.2), had = bt.p.st.filter(function (x) { return x.kind === 'buff'; }).length;
+        b.hp = Math.min(b.maxHp, b.hp + rh);
+        bt.p.st = bt.p.st.filter(function (x) { return x.kind !== 'buff'; });
+        log(bt, '⏳ REBOBINAR! O tempo recua: Chronos-9 recupera ' + rh + ' de vida' + (had ? ' e os teus reforços desaparecem.' : '.'), 'warn');
+      }
+      if (def.sig === 'stone') log(bt, '🪨 A Pele de Pedra Rúnica racha: Gorrath já recebe o dano todo.', 'good');
     }
-    if (def.special === 'final' && bt.phase === 2 && b.hp <= b.maxHp * 0.25) {
+    if ((def.special === 'final' || def.phases === 3) && bt.phase === 2 && b.hp <= b.maxHp * 0.25) {
       bt.phase = 3;
       b.bonusAtk += 20;
       var h = Math.round(b.maxHp * 0.15);
       b.hp = Math.min(b.maxHp, b.hp + h);
       log(bt, '⚠️ FASE FINAL! ' + def.name + ' liberta todo o seu poder e recupera ' + h + ' de vida!', 'warn');
+      if (def.story) log(bt, def.story.phase3, 'say');
     }
   }
 
@@ -382,6 +484,7 @@
     if (p.hp > 0) return;
     if (p.stats.lastStand && !p.lastStandUsed) { p.lastStandUsed = true; p.hp = 1; log(bt, '🔥 Vontade Inabalável! Sobreviveste com 1 de vida.', 'warn'); return; }
     if (p.stats.revive && !p.reviveUsed) { p.reviveUsed = true; p.hp = Math.round(p.maxHp * p.stats.revive / 100); log(bt, '🔥 Renasceste das cinzas com ' + p.hp + ' de vida!', 'warn'); return; }
+    if (E.removeItem(st, 'pr_fenix', 1)) { p.hp = p.maxHp; log(bt, '🖤 A Lágrima da Fénix Negra arde: renasces com a vida toda!', 'warn'); return; }
     if (E.removeItem(st, 'sx_fenix', 1)) { p.hp = Math.round(p.maxHp * 0.5); log(bt, '🪶 A Pena da Fénix arde e devolve-te à vida!', 'warn'); }
   }
 
@@ -389,7 +492,11 @@
     var def = S.BOSS_BY_ID[bt.bossId];
     var r = C.rewards(st, def);
     bt.over = 'win';
-    st.defeated[def.id] = now();
+    if (def.premium) {
+      st.arena.wins[def.id] = (st.arena.wins[def.id] || 0) + 1;
+      (S.COSMETICS || []).forEach(function (c) { if (c.reward === def.id) S.premium.award(st, c.id); });
+      st.arena.last[def.id] = now();
+    } else st.defeated[def.id] = now();
     var trophy = S.TROPHIES[def.id];
     if (trophy && !st.trophies[def.id]) st.trophies[def.id] = now();
     var levelBefore = st.level;
@@ -399,6 +506,7 @@
     E.addItem(st, 'bau_' + r.chest, 1);
     if (r.special) (r.special.items || []).forEach(function (id) { E.addItem(st, id, 1); items.push(id); });
     // drop raro aleatório
+    if (def.premium && !r.first && chance(def.guardian ? 0.05 : 0.15)) { var pc = S.PREMIUM_CONSUMABLES[Math.floor(S.rng.random() * S.PREMIUM_CONSUMABLES.length)]; E.addItem(st, pc, 1); items.push(pc); }
     if (chance(0.04 + def.level / 2500)) { var sx = ['sx_moeda', 'sx_fenix', 'sx_fragmento'][Math.floor(S.rng.random() * 3)]; E.addItem(st, sx, 1); items.push(sx); }
     E.bump(st, 'bossesKilled');
     E.bump(st, 'battlesWon');
@@ -406,11 +514,11 @@
     if (bt.p.hp < bt.p.maxHp * 0.1) E.bump(st, 'lowHpWins');
     if (bt.took === 0 && def.level >= 10) E.bump(st, 'flawlessWins');
     bt.result = { xp: xp, coins: coins, items: items, trophy: trophy ? trophy.name : null };
-    var last = ((S.BOSS_LINES || {})[def.id] || [])[1] || null;
+    var last = def.story && st.arena && st.arena.wins[def.id] > 1 ? def.story.rematchLast : (((S.BOSS_LINES || {})[def.id] || [])[1] || null);
     if (last) { log(bt, def.name + ': «' + last + '»', 'say'); bt.result.lastWords = last; }
-    log(bt, '🏆 VITÓRIA! ' + def.name + ' foi derrotado para sempre.', 'win');
+    log(bt, '🏆 VITÓRIA! ' + def.name + (def.premium ? ' caiu na arena.' : ' foi derrotado para sempre.'), 'win');
     E.emit({ type: 'victory', title: 'VITÓRIA', name: def.name, lastWords: last, trophy: trophy ? trophy.name : null, lines: ['+' + xp + ' XP', '+' + coins + ' moedas'].concat(items.map(function (id) { return '+1 ' + S.ITEMS[id].name; })) });
-    if (trophy) {
+    if (trophy && !def.premium) {
       var g = def.gate, set = E.gateTrophies(st, g);
       if (set.have === set.total) {
         var sd = S.TROPHY_SETS[g];
@@ -420,12 +528,24 @@
     }
     if (r.special && r.special.skill) E.grantSkill(st, r.special.skill);
     if (S.live) S.live.react(st, 'boss', { def: def, gap: def.level - levelBefore });
-    E.history(st, '🏆', 'Derrotou ' + def.name + ' (Nv. ' + def.level + '): +' + xp + ' XP, +' + coins + ' moedas.');
+    E.history(st, '🏆', (def.premium ? 'Venceu na arena ' : 'Derrotou ') + def.name + ' (Nv. ' + def.level + '): +' + xp + ' XP, +' + coins + ' moedas.');
   }
   function finishLose(st, bt) {
     var def = S.BOSS_BY_ID[bt.bossId];
     bt.over = 'lose';
     E.bump(st, 'battlesLost');
+    if (def.premium) {
+      // na arena não se perde nível: o Coliseu humilha, não mata
+      var lx = E.loseXp(st, st.xp * S.PREMIUM_RULES.loseXpPct);
+      E.setHp(st, E.combatStats(st).maxHp * C.REVIVE_PCT / 100);
+      bt.result = { level: st.level, levelFrom: st.level, xpLost: lx };
+      log(bt, '💀 CAÍSTE NA ARENA. Perdeste ' + lx + ' XP.', 'lose');
+      var taunt = def.story ? def.story.taunt[Math.floor(S.rng.random() * def.story.taunt.length)] : null;
+      if (taunt) log(bt, def.name + ': «' + taunt + '»', 'say');
+      E.emit({ type: 'defeat', title: 'CAÍSTE NA ARENA', name: def.name, lines: (taunt ? ['«' + taunt + '»'] : []).concat(['Na arena não se perde nível.', 'Perdeste ' + lx + ' XP (25% do XP deste nível).', 'O Sistema reanimou-te com ' + C.REVIVE_PCT + '% da vida.']) });
+      E.history(st, '💀', 'Caiu na arena contra ' + def.name + ': -' + lx + ' XP.');
+      return;
+    }
     var lv = E.loseLevel(st);
     // o Sistema reanima-te com 10% da vida
     E.setHp(st, E.combatStats(st).maxHp * C.REVIVE_PCT / 100);
@@ -487,6 +607,8 @@
         if (!it || !it.battle) return { ok: false, msg: 'Este item não se usa em combate.' };
         if (E.count(st, id) < 1) return { ok: false, msg: 'Não tens este item.' };
         if (!S.time.itemActive(it)) return { ok: false, msg: 'Este item só funciona ' + S.time.PHASES[it.phase].desc + '.' };
+        if (it.premium && (bt.premiumUsed || 0) >= S.PREMIUM_RULES.perBattle) return { ok: false, msg: 'O Sistema só permite ' + S.PREMIUM_RULES.perBattle + ' relíquia premium por batalha.' };
+        if (it.premium) bt.premiumUsed = (bt.premiumUsed || 0) + 1;
         var isHeal = it.use.type === 'heal' || it.use.type === 'restore';
         if (isHeal && (bt.healsUsed || 0) >= C.HEAL_LIMIT) return { ok: false, msg: 'Já usaste ' + C.HEAL_LIMIT + ' poções de cura nesta batalha. O corpo não aguenta mais.' };
         if (isHeal) bt.healsUsed = (bt.healsUsed || 0) + 1;
@@ -506,6 +628,17 @@
         else if (u.type === 'restore') {
           doPlayerOp(bt, { op: 'heal', pct: u.hp }); doPlayerOp(bt, { op: 'mp', pct: u.mp });
           if (u.cleanse) { p.st = p.st.filter(function (s) { return s.kind === 'buff'; }); log(bt, '🌿 Efeitos negativos removidos.', 'good'); }
+        }
+        else if (u.type === 'judgment') {
+          var bdef = S.BOSS_BY_ID[bt.bossId], R = S.PREMIUM_RULES;
+          var jp = (bdef.premium || bdef.secret || bdef.special === 'final') ? R.judgmentPctPremium : R.judgmentPct;
+          var jd = damageBoss(bt, bt.b.maxHp * jp / 100);
+          log(bt, '💥 O Juízo Final corta ' + jd + ' de vida (' + jp + '%)!', 'dmg');
+        }
+        else if (u.type === 'monarch') {
+          doPlayerOp(bt, { op: 'heal', pct: 100 }); doPlayerOp(bt, { op: 'mp', pct: 100 });
+          p.st = p.st.filter(function (s) { return s.kind === 'buff'; });
+          doPlayerOp(bt, { op: 'buff', key: 'atk', val: 40, turns: 3 }); doPlayerOp(bt, { op: 'buff', key: 'matk', val: 40, turns: 3 });
         }
         else if (u.type === 'ops') u.ops.forEach(function (op) { if (bt.b.hp > 0 || op.op !== 'dmg') doPlayerOp(bt, op); });
         else if (u.type === 'smoke') {
@@ -552,11 +685,11 @@
     }
     if (bt.b.hp > 0) tickDots(bt, bt.b.st, true);
     checkPhases(bt);
-    if (bt.b.hp <= 0) { finishWin(st, bt); E.commit('vitória'); return { ok: true }; }
+    if (bt.b.hp <= 0 && !rebirth(bt)) { finishWin(st, bt); E.commit('vitória'); return { ok: true }; }
 
     bossTurn(bt);
     tryRevive(st, bt);
-    if (bt.b.hp <= 0) { finishWin(st, bt); E.commit('vitória'); return { ok: true }; }
+    if (bt.b.hp <= 0 && !rebirth(bt)) { finishWin(st, bt); E.commit('vitória'); return { ok: true }; }
     if (p.hp > 0) { tickDots(bt, p.st, false); tryRevive(st, bt); }
     if (p.hp <= 0) { finishLose(st, bt); E.commit('derrota'); return { ok: true }; }
     endRound(bt);
@@ -579,6 +712,6 @@
     return { ok: true };
   };
 
-  C.DOT_NAMES = { burn: 'queimadura', poison: 'veneno', bleed: 'sangramento' };
+  C.DOT_NAMES = { burn: 'queimadura', poison: 'veneno', bleed: 'sangramento', garden: 'rosa negra' };
   C.BUFF_NAMES = { atk: 'Ataque', matk: 'Ataque mágico', def: 'Defesa', crit: 'Crítico', eva: 'Esquiva', lifesteal: 'Roubo de vida', reflect: 'Reflexão' };
 })(globalThis.SYS = globalThis.SYS || {});
