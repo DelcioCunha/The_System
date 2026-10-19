@@ -3,7 +3,7 @@
    - Imagens e fontes ficam guardadas depois da primeira vez que aparecem, para funcionar offline.
    - O progresso do jogador NÃO está aqui: fica no armazenamento do navegador e nunca é apagado por atualizações. */
 'use strict';
-var VERSION = '197706d5f6';
+var VERSION = '28df6b87ed';
 var CORE = 'sistema-core-' + VERSION;
 var MEDIA = 'sistema-media-' + VERSION;
 var FONTS = 'sistema-fonts';

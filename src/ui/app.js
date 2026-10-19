@@ -281,6 +281,7 @@
       '<div class="grow" style="padding-bottom:4px"><div class="lv-lab">Classe</div><div style="color:' + cls.color + ';font-family:var(--f-display);font-weight:700">' + classIcon(st.cls) + ' ' + cls.name + '</div>' +
       '<div class="lv-lab" style="margin-top:4px">Rank <b style="color:' + r.color + '">' + r.rank + '</b></div></div></div>' +
       '<div>' + (need ? bar('xp', st.xp, need, 'XP', 'st-xp') : '<div class="hint" style="color:var(--gold)">NÍVEL MÁXIMO</div>') + '</div>' +
+      formsHtml(st) +
       '</div></div>' +
       '<div class="stack" style="margin-top:12px;gap:8px">' + bar('hp', E.curHp(st), cs.maxHp, 'Vida', 'st-hp') + bar('mp', cs.maxMp, cs.maxMp, 'Mana') + '</div>' +
       '<div class="kv" style="margin-top:12px">' +
@@ -501,6 +502,14 @@
       (owned ? '<span class="tag good">Já é teu</span>' : '<button class="btn sm prem" data-a="prem-buy" data-id="' + it.id + '"' + (can ? '' : ' disabled') + '>' + (can ? 'Comprar' : 'Faltam ' + (price - (st.crystals || 0))) + '</button>') + '</div></div>';
   }
   var ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+  /* próxima evolução da aparência (muda a cada 3 níveis) */
+  function formsHtml(st) {
+    var f = S.avatar.forms && S.avatar.forms(st.cls, st.level);
+    if (!f) return '';
+    var left = f.next ? f.next - st.level : 0;
+    return '<div class="evo-next"><span class="lv-lab">Forma ' + f.n + '/' + f.total + '</span>' +
+      (f.next ? '<span>Próxima evolução no <b>nível ' + f.next + '</b>' + (left > 1 ? ' · faltam ' + left + ' níveis' : ' · falta 1 nível') + '</span>' : '<span style="color:var(--gold)">Forma final</span>') + '</div>';
+  }
   function arenaCard(st, b) {
     var pg = S.premium.arenaProgress(st, b.arena), art = S.BOSS_ART && S.BOSS_ART[b.id], ps = S.premium.status(st, b);
     var g1 = S.ARENA_LADDER[b.arena][0];
@@ -2254,6 +2263,7 @@
   /* ---------------- relógio ---------------- */
   var lastDay = null;
   function tick() {
+    if (FX.scrolling && FX.scrolling()) return; // não mexe na página enquanto se rola
     var unlocked = false;
     document.querySelectorAll('[data-lock]').forEach(function (el) {
       var ts = +el.getAttribute('data-lock');

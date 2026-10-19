@@ -42,7 +42,7 @@ Cada ganho ou perda (missão, compra, turno de combate, baú, ponto de atributo)
 
 Põe as imagens em `assets/avatars/<classe>/<nível>.png` (também aceita .jpg e .webp). Classes: `guerreiro`, `assassino`, `mago`, `guardiao`, `arqueiro`, `invocador`.
 
-Não precisas de 100 imagens por classe: a app mostra a imagem do nível mais alto que o jogador já atingiu. Por exemplo, com `1.png`, `10.png`, `20.png` … `100.png`, um jogador no nível 17 vê a `10.png`. Sem imagens, a app desenha um avatar provisório que evolui a cada 10 níveis.
+A aparência muda a cada 3 níveis: 34 formas por classe, nos níveis 1, 4, 7, 10 … 97, 100 (`assets/avatars/<classe>/<nível>.webp`). A app mostra sempre a imagem do nível mais alto que o jogador já atingiu: no nível 17 vê a `16.webp`. Se faltar uma fase, fica a anterior até à seguinte. Sem imagens, a app desenha um avatar provisório que evolui a cada 10 níveis.
 
 Depois de adicionar imagens, corre `npm run build` outra vez.
 

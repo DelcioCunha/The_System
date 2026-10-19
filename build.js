@@ -138,7 +138,7 @@ const rootPage = webPage(rootJs, 'assets/web/');
 
 // Pré-visualização: os troféus e os ícones da interface vão embutidos na página (limite de ficheiros por publicação)
 const INLINE = { TROPHY_ART: trophyArt, UI_ART: uiArt, SKILL_ART: skillArt, FRAME_ART: frameArt, ARENA_ART: arenaArt };
-const inlineMap = (m) => { const o = {}; Object.keys(m).forEach((k) => { const f = path.join(ROOT, 'assets', m[k]); const ext = path.extname(f).slice(1).replace('jpg', 'jpeg'); o[k] = 'data:image/' + ext + ';base64,' + fs.readFileSync(f).toString('base64'); }); return o; };
+const inlineMap = (m) => { const o = {}; Object.keys(m).forEach((k) => { const pv = path.join(ROOT, 'dist', 'pv', m[k]); const f = fs.existsSync(pv) ? pv : path.join(ROOT, 'assets', m[k]); const ext = path.extname(f).slice(1).replace('jpg', 'jpeg'); o[k] = 'data:image/' + ext + ';base64,' + fs.readFileSync(f).toString('base64'); }); return o; };
 let previewJs = 'globalThis.SYS = { PREVIEW: true };\n' + safeJs;
 Object.keys(INLINE).forEach((name) => { previewJs = previewJs.replace('SYS.' + name + ' = ' + JSON.stringify(INLINE[name]) + ';', 'SYS.' + name + ' = ' + JSON.stringify(inlineMap(INLINE[name])) + ';'); });
 // as imagens das classes são iguais ao retrato de nível 1: a pré-visualização usa essas (limite de 512 ficheiros)
@@ -147,12 +147,11 @@ previewJs = previewJs.replace(/"classes\/([a-z]+)\.webp"/g, '"avatars/$1/1.webp"
 const PUB_LIST = path.join(ROOT, 'tools', 'preview-published.json');
 if (fs.existsSync(PUB_LIST)) {
   const pub = new Set(JSON.parse(fs.readFileSync(PUB_LIST, 'utf8')));
-  Object.keys(itemArt).forEach((id) => {
-    const rel = itemArt[id];
-    if (pub.has(rel)) return;
-    const data = 'data:image/webp;base64,' + fs.readFileSync(path.join(ROOT, 'assets', rel)).toString('base64');
-    previewJs = previewJs.split('"' + rel + '"').join('"' + data + '"');
-  });
+  const light = (rel) => { const pv = path.join(ROOT, 'dist', 'pv', rel); return fs.existsSync(pv) ? pv : path.join(ROOT, 'assets', rel); };
+  const embed = (rel) => { previewJs = previewJs.split('"' + rel + '"').join('"data:image/webp;base64,' + fs.readFileSync(light(rel)).toString('base64') + '"'); };
+  Object.keys(itemArt).forEach((id) => { if (!pub.has(itemArt[id])) embed(itemArt[id]); });
+  // avatares das fases novas (a cada 3 níveis) que não estão publicados como ficheiros
+  Object.keys(manifest).forEach((cls) => Object.keys(manifest[cls]).forEach((lv) => { const rel = manifest[cls][lv]; if (!pub.has(rel)) embed(rel); }));
 }
 const preview = '<title>Sistema do Caçador</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n' + fonts + '\n<style>\n' + css + '\n</style>\n<div id="app"></div>\n<script>\n' + previewJs + '</script>\n';
 

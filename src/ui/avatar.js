@@ -102,6 +102,13 @@
     },
     svg: drawSvg,
     /* verdadeiro quando o nível L mostra uma imagem diferente do nível L-1 */
-    evolved: function (cls, level) { var a = imageFor(cls, level), b = imageFor(cls, level - 1); return !!a && a !== b; }
+    evolved: function (cls, level) { var a = imageFor(cls, level), b = imageFor(cls, level - 1); return !!a && a !== b; },
+    /* forma atual e próxima: { n, total, next } (next = nível da próxima forma, ou null) */
+    forms: function (cls, level) {
+      var lv = Object.keys(S.AVATARS[cls] || {}).map(Number).sort(function (a, b) { return a - b; });
+      if (!lv.length) return null;
+      var n = lv.filter(function (x) { return x <= level; }).length, next = lv.filter(function (x) { return x > level; })[0];
+      return { n: Math.max(1, n), total: lv.length, next: next || null };
+    }
   };
 })(globalThis.SYS = globalThis.SYS || {});

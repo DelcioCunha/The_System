@@ -2,9 +2,13 @@
    ANIMAÇÕES E EFEITOS
    ========================================================== */
 #app { position: relative; z-index: 1; }
-#bg-fx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
-#fx-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 72; pointer-events: none; }
-#fx-layer { position: fixed; inset: 0; z-index: 70; pointer-events: none; overflow: hidden; }
+#bg-fx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;
+  background: radial-gradient(1200px 600px at 50% -10%, rgba(64, 140, 255, 0.14), transparent 60%), radial-gradient(800px 500px at 100% 110%, rgba(140, 90, 255, 0.10), transparent 60%); }
+/* camadas de efeitos só existem enquanto há um efeito a decorrer (sobre o ecrã inteiro pesavam no scroll) */
+#fx-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 72; pointer-events: none; display: none; }
+#fx-canvas.on { display: block; }
+#fx-layer { position: fixed; inset: 0; z-index: 70; pointer-events: none; overflow: hidden; display: none; }
+#fx-layer.on { display: block; }
 #fx-layer > * { position: absolute; }
 
 /* vinheta e linhas de varrimento discretas sobre todo o ecrã */
@@ -46,12 +50,13 @@ body::after {
 .scanline { position: absolute; left: 0; right: 0; top: 0; height: 18%; pointer-events: none; z-index: 3;
   background: linear-gradient(180deg, transparent, rgba(111, 214, 255, .22), transparent); animation: scanSweep 1.1s ease-in both; }
 
-/* janelas vivas: brilho que percorre a borda */
-@keyframes borderPulse { 0%, 100% { box-shadow: 0 0 0 1px rgba(111, 214, 255, .06) inset, 0 0 22px rgba(60, 150, 255, .10); } 50% { box-shadow: 0 0 0 1px rgba(111, 214, 255, .16) inset, 0 0 34px rgba(60, 150, 255, .22); } }
-.fx-full .win { animation: borderPulse 5s ease-in-out infinite; }
-.fx-full .win.gold { animation-name: borderPulseGold; }
-@keyframes borderPulseGold { 0%, 100% { box-shadow: 0 0 20px rgba(255, 200, 90, .08); } 50% { box-shadow: 0 0 34px rgba(255, 200, 90, .25); } }
-.fx-full .enter .win { animation: winOpen .55s cubic-bezier(.2, .8, .2, 1) both, borderPulse 5s ease-in-out 1s infinite; animation-delay: calc(var(--i, 0) * 70ms), 1s; }
+/* janelas vivas: os cantos luminosos pulsam.
+   Antes animava-se a sombra da janela inteira (repintura contínua de janelas enormes: partes em branco ao rolar no Android).
+   Agora só muda a opacidade dos cantos, que o telemóvel faz sem redesenhar nada. */
+@keyframes cornerPulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+.fx-full .win::before, .fx-full .win::after { animation: cornerPulse 5s ease-in-out infinite; }
+.fx-full .win.gold::before, .fx-full .win.gold::after { border-color: var(--gold); }
+.fx-full .enter .win { animation: winOpen .55s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 70ms); }
 
 /* ---------------- botões ---------------- */
 .btn { position: relative; overflow: hidden; }
@@ -94,7 +99,7 @@ body::after {
 @keyframes badgePop { from { transform: scale(0); } }
 
 /* ---------------- ecrã de estado ---------------- */
-.fx-full .avatar { animation: auraPulse 3.2s ease-in-out infinite; }
+.fx-full .avatar { box-shadow: 0 0 22px -2px var(--aura, var(--glow)); } /* brilho fixo: animar a sombra repintava o retrato sem parar */
 @keyframes auraPulse { 0%, 100% { box-shadow: 0 0 12px -2px var(--aura, var(--glow)); } 50% { box-shadow: 0 0 30px 2px var(--aura, var(--glow)); } }
 .fx-full .avatar svg, .fx-full .avatar img { animation: breathe 4s ease-in-out infinite; transform-origin: 50% 90%; }
 @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
@@ -104,7 +109,7 @@ body::after {
 }
 .fx-full .hero-title.shine { animation: titleShine 4s linear infinite; }
 @keyframes titleShine { from { background-position: 100% 0; } to { background-position: -150% 0; } }
-.fx-full .lv-big { animation: lvGlow 2.6s ease-in-out infinite; }
+.fx-full .lv-big { text-shadow: 0 0 22px rgba(111, 214, 255, .75); }
 @keyframes lvGlow { 50% { text-shadow: 0 0 30px rgba(111, 214, 255, .95), 0 0 6px #fff; } }
 .fx-full .btn.icon.gold { animation: pointPulse 1.6s ease-in-out infinite; }
 @keyframes pointPulse { 50% { box-shadow: 0 0 16px rgba(255, 200, 90, .6); transform: scale(1.06); } }
@@ -452,3 +457,6 @@ body::after {
 .trophy.locked::after { display: none; }
 .trophy.locked .tr-seal { position: absolute; inset: 22%; border: 1px solid #1d2b47; transform: rotate(45deg); }
 .trophy.locked .tr-lock { top: 50%; opacity: .45; filter: grayscale(1); font-size: 18px; }
+
+/* durante o scroll todas as animações decorativas param: o telemóvel só desenha a página */
+.is-scrolling *, .is-scrolling *::before, .is-scrolling *::after { animation-play-state: paused !important; }

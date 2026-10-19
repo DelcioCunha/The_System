@@ -33,7 +33,6 @@ body {
   background-image:
     radial-gradient(1200px 600px at 50% -10%, rgba(64, 140, 255, 0.14), transparent 60%),
     radial-gradient(800px 500px at 100% 110%, rgba(140, 90, 255, 0.10), transparent 60%);
-  background-attachment: fixed;
   color: var(--text);
   font-family: var(--f-body);
   font-size: 15px;
@@ -77,7 +76,7 @@ button { cursor: pointer; }
   position: relative;
   background: var(--panel);
   border: 1px solid var(--line-hi);
-  box-shadow: 0 0 0 1px rgba(111, 214, 255, .06) inset, 0 0 24px rgba(60, 150, 255, .10);
+  box-shadow: 0 0 0 1px rgba(111, 214, 255, .06) inset; /* o brilho exterior era cortado pelos cantos: só pesava */
   padding: 14px;
   margin-top: 14px;
   clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
@@ -155,8 +154,7 @@ h1, h2, h3 { font-family: var(--f-display); margin: 0; text-wrap: balance; }
 .nav {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
   padding: 0 max(8px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(8px, env(safe-area-inset-left, 0px));
-  background: rgba(6, 10, 20, .94); border-top: 1px solid var(--line);
-  backdrop-filter: blur(8px);
+  background: rgba(6, 10, 20, .97); border-top: 1px solid var(--line);
 }
 .nav-in { max-width: 520px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); height: var(--nav-h); }
 .nav button {
@@ -779,3 +777,7 @@ button.trophy { font: inherit; color: inherit; padding: 0; cursor: pointer; appe
 .donate .prem-t { color: #ff8fb0; }
 .don-btn { border-color: rgba(255, 110, 150, .6); color: #ffb3c7; }
 .donate-chips { flex-wrap: wrap; }
+
+/* próxima evolução da aparência */
+.evo-next { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: 12px; color: var(--muted); }
+.evo-next b { color: var(--text, #e8f1ff); }
