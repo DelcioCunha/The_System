@@ -138,10 +138,22 @@
       summons: [], log: [], result: null
     };
     if (ps.openShield) { st.battle.p.shield = Math.round(ps.maxHp * ps.openShield / 100); }
+    // servos (sombras convocadas) entram no combate
+    var squad = S.shadows ? S.shadows.battleSquad(st, ps, C.pressure(st.battle.gap).playerDmg) : [];
+    st.battle.shadows = squad;
+    st.battle.cmd = S.shadows ? S.shadows.commandBonus(st) : 0;
     if (b.level >= st.level + 20) E.bump(st, 'braveFights');
     E.bump(st, 'battlesStarted');
     log(st.battle, '⚔️ ' + b.name + ' (Nv. ' + b.level + ') aparece!', 'sys');
     if (b.lore) log(st.battle, b.lore, 'lore');
+    if (squad.length) {
+      log(st.battle, '🌑 ' + squad.map(function (x) { return x.name; }).join(', ') + (squad.length > 1 ? ' erguem-se' : ' ergue-se') + ' das tuas sombras.', 'good');
+      squad.forEach(function (x) {
+        if (x.shieldPct) st.battle.p.shield += Math.round(ps.maxHp * x.shieldPct / 100);
+        if (x.defBreak) addStatus(st.battle.b.st, { kind: 'debuff', key: 'def', val: x.defBreak, turns: 3 });
+      });
+      if (st.battle.cmd) log(st.battle, '👑 Comandante convocado: o teu dano +' + st.battle.cmd + '%.', 'good');
+    }
     if (st.battle.p.shield) log(st.battle, '🛡️ Entras em combate com um escudo de ' + st.battle.p.shield + '.', 'good');
     if (emp) log(st.battle, (emp === 'noite' ? '🌙 A noite fortalece ' : '☀️ O sol fortalece ') + b.name + ': +15% vida e ataque, mas +20% recompensas.', 'warn');
     var lines = (S.BOSS_LINES || {})[b.id];
@@ -181,6 +193,7 @@
     else if (kind === 'best') v = Math.max(atk, matk);
     else v = atk;
     if (ps.lowHpAtk && bt.p.hp < bt.p.maxHp * 0.3) v *= 1 + ps.lowHpAtk / 100;
+    if (bt.cmd) v *= 1 + bt.cmd / 100; // comandantes das sombras
     return v * C.pressure(bt.gap).playerDmg;
   }
   function damageBoss(bt, amount, label) {
@@ -537,6 +550,8 @@
       }
     }
     if (r.special && r.special.skill) E.grantSkill(st, r.special.skill);
+    // sombra: o Sistema deteta-a e abre a extração (3 tentativas)
+    if (S.shadows && S.shadows.onVictory(st, def)) { bt.result.shadow = def.id; log(bt, '🌑 A sombra de ' + def.name + ' ainda não se dissipou...', 'sys'); }
     if (S.live) S.live.react(st, 'boss', { def: def, gap: def.level - levelBefore });
     E.history(st, '🏆', (def.premium ? 'Venceu na arena ' : 'Derrotou ') + def.name + ' (Nv. ' + def.level + '): +' + xp + ' XP, +' + coins + ' moedas.');
   }
@@ -692,6 +707,15 @@
         var effDef = bt.b.def * (1 - sum(bt.b.st, 'debuff', 'def') / 100);
         var d = damageBoss(bt, s.power * rnd(0.9, 1.1) * 100 / (100 + effDef));
         log(bt, '💀 ' + s.name + ' ataca: ' + d + '.', 'dmg');
+      });
+    }
+    // servos: as sombras convocadas atacam
+    if (bt.b.hp > 0 && bt.shadows && bt.shadows.length) {
+      bt.shadows.forEach(function (x) {
+        if (bt.b.hp <= 0) return;
+        var effDef = bt.b.def * (1 - sum(bt.b.st, 'debuff', 'def') / 100);
+        var d = damageBoss(bt, x.power * rnd(0.9, 1.1) * 100 / (100 + effDef));
+        log(bt, '🌑 ' + x.name + ' ataca: ' + d + '.', 'dmg');
       });
     }
     if (bt.b.hp > 0) tickDots(bt, bt.b.st, true);

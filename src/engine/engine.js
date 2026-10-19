@@ -125,6 +125,7 @@
     if (S.talk) S.talk.ensure(st);
     if (S.premium) S.premium.ensure(st);
     if (S.shop) S.shop.ensure(st);
+    if (S.shadows) S.shadows.ensure(st);
     if (st.hp === undefined) st.hp = null;
     // troféus de chefes derrotados antes desta versão
     Object.keys(st.defeated || {}).forEach(function (id) { if (S.TROPHIES[id] && !st.trophies[id]) st.trophies[id] = st.defeated[id]; });
@@ -870,6 +871,7 @@
     if (name.length < 2) return { ok: false, msg: 'O nome precisa de pelo menos 2 letras.' };
     S.storage.clearMoved();
     E.state = E.newState(name, cls);
+    if (S.shadows) S.shadows.ensure(E.state);
     E.commit('novo jogo');
     return { ok: true };
   };

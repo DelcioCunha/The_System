@@ -264,6 +264,7 @@
     if (ui.page === 'collection') return collectionPage(st);
     if (ui.page === 'history') return historyPage(st);
     if (ui.page === 'trophies') return trophiesPage(st);
+    if (ui.page === 'servos') return servantsPage(st);
     if (ui.page === 'settings') return settingsPage(st);
     if (ui.page === 'credits') return creditsPage(st);
     if (ui.page === 'reports') return reportsPage(st);
@@ -314,7 +315,8 @@
       '<button class="btn prem menu-prem" data-a="prem-open" data-t="loja"><i class="crys-ico"></i> Loja Premium <span class="muted">' + fmt(st.crystals || 0) + '</span></button>' +
       '<button class="btn" data-a="page" data-p="skills">Habilidades <span class="muted">' + E.unlockedSkills(st).length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="ach">Conquistas <span class="muted">' + achDone + '/' + S.ACHIEVEMENTS.length + '</span></button>' +
-      '<button class="btn" data-a="page" data-p="trophies">' + uiIcon('ui_trofeus', '', 'menu-img') + 'Troféus <span class="muted">' + E.trophyCount(st) + '/' + Object.keys(S.TROPHIES).length + '</span></button>' +
+      '<button class="btn" data-a="page" data-p="trophies">Troféus <span class="muted">' + E.trophyCount(st) + '/' + Object.keys(S.TROPHIES).length + '</span></button>' +
+      '<button class="btn sh-menu" data-a="page" data-p="servos">Servos <span class="muted">' + Sh.owned(st).length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="collection">Coleção</button>' +
       '<button class="btn" data-a="page" data-p="history">Histórico</button>' +
       '<button class="btn" data-a="page" data-p="settings">Definições</button>' +
@@ -717,6 +719,98 @@
     } else {
       h += obterHtml(st);
     }
+    return h;
+  }
+  /* ================= SOMBRAS: Tornar Servo e menu Servos ================= */
+  var Sh = S.shadows;
+  /* aparência sombria: imagem própria (assets/shadows) ou a do chefe escurecida */
+  function shadowArt(b, cls) {
+    var own = S.SHADOW_ART && S.SHADOW_ART[b.id], art = S.BOSS_ART && S.BOSS_ART[b.id];
+    if (own) return '<span class="sh-art own ' + (cls || '') + '"><img src="' + own + '" alt="" loading="lazy"></span>';
+    return '<span class="sh-art shade ' + (cls || '') + '">' + (art ? '<img src="' + art + '" alt="" loading="lazy">' : '<span class="sh-ico">' + b.icon + '</span>') + '</span>';
+  }
+  function preShadowArt(b, cls) {
+    var art = S.BOSS_ART && S.BOSS_ART[b.id];
+    return '<span class="sh-art ' + (cls || '') + '">' + (art ? '<img src="' + art + '" alt="" loading="lazy">' : '<span class="sh-ico">' + b.icon + '</span>') + '</span>';
+  }
+  function triesDots(left) {
+    var h = ''; for (var i = 0; i < S.SHADOW_RULES.tries; i++) h += '<i class="' + (i < left ? 'on' : '') + '"></i>';
+    return '<span class="sh-tries" aria-label="' + left + ' tentativas">' + h + '</span>';
+  }
+  function ariseModal(m) {
+    var st = E.state, b = S.BOSS_BY_ID[m.id], res = m.res, left = Sh.triesLeft(st, b.id), status = Sh.status(st, b.id);
+    var pend = st.shadows.pending[b.id], ch = Math.round(Sh.chance(st, b) * 100);
+    var h = '<div class="arise' + (res && res.success ? ' risen' : '') + (res && res.lost ? ' gone' : '') + '">' +
+      '<div class="arise-tag">SISTEMA · EXTRAÇÃO DE SOMBRA</div>' +
+      '<div class="arise-stage" id="arise-stage">' + (status === 'owned' ? shadowArt(b, 'big') : preShadowArt(b, 'big dead')) + '<div class="arise-smoke"></div></div>';
+    if (res && res.success) {
+      h += '<div class="arise-cry">LEVANTA-TE.</div>' +
+        '<p class="arise-say">«' + esc(Sh.line(st, b.id)) + '»</p>' +
+        '<p class="arise-txt">A sombra de <b>' + esc(b.name) + '</b> obedece-te. É agora o teu servo.<br><span class="muted">' + (res.auto ? 'Já está convocado e luta ao teu lado no próximo combate.' : 'Convoca-o no menu Servos quando tiveres um lugar livre.') + '</span></p>' +
+        '<div class="row" style="margin-top:12px"><button class="btn ghost grow" data-a="close">Fechar</button><button class="btn pri grow" data-a="sh-open" data-id="' + b.id + '">Ver servo</button></div>';
+    } else if (status === 'lost') {
+      h += '<h2 class="arise-name">' + esc(b.name) + '</h2>' +
+        '<p class="arise-txt bad">A sombra resistiu ' + S.SHADOW_RULES.tries + ' vezes e dissipou-se para sempre.<br><span class="muted">Este inimigo nunca poderá ser teu servo.</span></p>' +
+        triesDots(0) + '<button class="btn block" style="margin-top:14px" data-a="close">Fechar</button>';
+    } else if (status === 'pending') {
+      h += '<h2 class="arise-name">' + esc(b.name) + '</h2>' +
+        (res && !res.success ? '<p class="arise-txt bad">A sombra resistiu. ' + (left === 1 ? 'Resta uma última tentativa.' : 'Restam ' + left + ' tentativas.') + '</p>'
+          : '<p class="arise-txt">A sombra deste inimigo ainda não se dissipou. O Sistema permite-te tentar extraí-la e torná-la tua serva.</p>') +
+        '<div class="arise-info">' + triesDots(left) +
+        '<div><span class="muted small">Hipótese por tentativa</span><b class="mono">' + ch + '%</b></div>' +
+        '<div><span class="muted small">' + (pend.exp ? 'A sombra desvanece em' : 'Sombra adormecida') + '</span><b class="mono">' + (pend.exp ? '<span data-cd="' + pend.exp + '">' + cdText(pend.exp) + '</span>' : 'sem prazo') + '</b></div></div>' +
+        '<p class="hint" style="text-align:center;margin:6px 0 0">Se falhares as ' + S.SHADOW_RULES.tries + ' tentativas, a sombra perde-se para sempre.' + (st.cls === 'invocador' ? ' Como Invocador, as almas ouvem-te melhor (+12%).' : '') + '</p>' +
+        '<button class="btn arise-btn block" data-a="arise-try" data-id="' + b.id + '">EXTRAIR SOMBRA</button>' +
+        '<button class="btn ghost block sm" style="margin-top:8px" data-a="close">' + (pend.exp ? 'Deixar para depois' : 'Fechar') + '</button>';
+    } else {
+      h += '<h2 class="arise-name">' + esc(b.name) + '</h2><p class="arise-txt">Esta sombra já é tua.</p><button class="btn block" data-a="close">Fechar</button>';
+    }
+    return h + '</div>';
+  }
+  function shadowModal(m) {
+    var st = E.state, b = S.BOSS_BY_ID[m.id], role = Sh.role(b), ri = S.SHADOW_ROLES[role];
+    var on = st.shadows.active.indexOf(b.id) >= 0, f = Math.round(Sh.factor(st, b) * 100);
+    var g = S.GATES[b.gate - 1];
+    var fx = role === 'guarda' ? 'Escudo inicial de ' + (4 + Math.round(b.level / 20)) + '% da tua vida' : role === 'arcano' ? 'Defesa do inimigo -8% nos primeiros turnos' : role === 'comandante' ? 'O teu dano +5%' : null;
+    return '<div class="sheet-h"><h2>' + esc(Sh.name(st, b.id)) + '</h2><button class="btn sm ghost" data-a="close">Fechar</button></div>' +
+      '<button class="sh-say" data-a="sh-talk" data-id="' + b.id + '"><span class="sh-say-t">«' + esc(m.line || Sh.line(st, b.id)) + '»</span><span class="sh-say-h">toca para ouvir outra vez</span></button>' +
+      '<div class="sh-detail">' + shadowArt(b, 'big') + '<div class="stack" style="gap:6px;min-width:0">' +
+      '<div class="small muted">Sombra de ' + esc(b.name) + '<br>' + esc(g ? g.name : '') + ' · Nv ' + b.level + (b.king ? ' · Rei do Portão' : '') + '</div>' +
+      '<div><span class="tag sh-role ' + role + '">' + ri.name + '</span> ' + (on ? '<span class="tag good">Convocado</span>' : '') + '</div>' +
+      '<div class="small">' + esc(ri.desc) + '</div>' +
+      '<ul class="sh-stats"><li>Ataca em cada turno com <b>' + f + '%</b> do teu ataque</li>' + (fx ? '<li>' + fx + '</li>' : '') + '</ul>' +
+      '</div></div>' +
+      '<label class="f" style="margin-top:12px"><span class="small muted">Nome do servo</span><div class="row"><input class="in grow" id="sh-name" maxlength="18" value="' + esc(st.shadows.names[b.id] || '') + '" placeholder="' + esc('Sombra de ' + b.name.split(',')[0]) + '"><button class="btn sm" data-a="sh-rename" data-id="' + b.id + '">Guardar</button></div></label>' +
+      '<button class="btn block ' + (on ? 'ghost' : 'arise-btn') + '" style="margin-top:12px" data-a="sh-toggle" data-id="' + b.id + '">' + (on ? 'Dispensar (regressa às sombras)' : 'Convocar para os combates') + '</button>';
+  }
+  function shadowCard(st, b, act) {
+    var on = st.shadows.active.indexOf(b.id) >= 0;
+    return '<button class="sh-card' + (on ? ' on' : '') + (b.king ? ' king' : '') + '" data-a="sh-open" data-id="' + b.id + '">' + shadowArt(b) +
+      '<span class="sh-lv mono">' + b.level + '</span>' + (b.king ? '<span class="sh-crown">' + uiIcon('ui_king', '♛', 'crown-img') + '</span>' : '') +
+      '<span class="sh-info"><span class="sh-name">' + esc(Sh.name(st, b.id)) + '</span><span class="sh-sub">' + S.SHADOW_ROLES[Sh.role(b)].name + (on ? ' · convocado' : '') + '</span></span></button>';
+  }
+  function servantsPage(st) {
+    var h = backBtn('Servos');
+    Sh.expire(st);
+    var owned = Sh.owned(st), active = Sh.active(st), pend = Sh.pendingList(st), slots = Sh.slots(st), next = Sh.nextSlotLevel(st);
+    var lost = Object.keys(st.shadows.lost).length, total = S.BOSSES.length;
+    h += '<section class="win sh-win"><div class="win-h">Exército das Sombras <small>' + owned.length + '/' + total + '</small></div>' +
+      '<p class="small muted" style="margin:0">Quando derrotas um chefe, a sua sombra fica para trás. Tens 3 tentativas para a extrair e torná-la tua serva; se falharem todas, perde-se para sempre. Os servos convocados lutam ao teu lado em todos os combates.</p>' +
+      '<div class="kv" style="margin-top:10px"><div><span class="muted">Convocados</span><b>' + active.length + '/' + slots + '</b></div>' +
+      '<div><span class="muted">Próximo lugar</span><b>' + (next ? 'Nível ' + next : 'Todos') + '</b></div>' +
+      '<div><span class="muted">À espera</span><b>' + pend.length + '</b></div><div><span class="muted">Perdidas</span><b>' + lost + '</b></div></div>' +
+      (st.cls === 'invocador' ? '<p class="hint" style="margin:8px 0 0">Invocador: +1 lugar, servos 25% mais fortes e +12% na extração.</p>' : '') + '</section>';
+    if (pend.length) {
+      h += '<section class="win sh-win"><div class="win-h">Sombras por extrair <small>' + pend.length + '</small></div><div class="stack" style="gap:8px">' + pend.map(function (p) {
+        return '<div class="card sh-pend"><div class="card-h">' + preShadowArt(p.def, 'sm dead') + '<div class="grow"><div class="card-t">' + esc(p.def.name) + '</div>' +
+          '<div class="meta">' + triesDots(p.tries) + '<span>' + Math.round(Sh.chance(st, p.def) * 100) + '%</span><span>' + (p.exp ? 'desvanece em <span data-cd="' + p.exp + '">' + cdText(p.exp) + '</span>' : 'adormecida') + '</span></div></div>' +
+          '<button class="btn sm arise-btn" data-a="arise-open" data-id="' + p.id + '">Extrair</button></div></div>';
+      }).join('') + '</div></section>';
+    }
+    if (active.length) h += '<section class="win sh-win"><div class="win-h">Convocados <small>lutam contigo</small></div><div class="sh-grid">' + active.map(function (b) { return shadowCard(st, b); }).join('') + '</div></section>';
+    h += '<section class="win sh-win"><div class="win-h">Exército <small>' + owned.length + '</small></div>' +
+      (owned.length ? '<div class="sh-grid">' + owned.map(function (b) { return shadowCard(st, b); }).join('') + '</div>'
+        : '<div class="empty">Ainda não tens servos. Derrota um chefe e extrai a sua sombra.</div>') + '</section>';
     return h;
   }
   function trophiesPage(st) {
@@ -1364,8 +1458,10 @@
     else if (m.type === 'bsheet') inner = battleSheet();
     else if (m.type === 'leisure') inner = leisureForm();
     else if (m.type === 'order') inner = orderModal(m);
+    else if (m.type === 'arise') inner = ariseModal(m);
+    else if (m.type === 'shadow') inner = shadowModal(m);
     var fresh = ui.modal !== ui.shownModal;
-    return '<div class="overlay' + (fresh ? ' fresh' : '') + '" data-a="overlay"><div class="sheet' + (fresh ? ' fresh' : '') + '" role="dialog" aria-modal="true">' + inner + '</div></div>';
+    return '<div class="overlay' + (fresh ? ' fresh' : '') + (m.type === 'arise' ? ' arise-ov' : '') + '" data-a="overlay"><div class="sheet' + (fresh ? ' fresh' : '') + (m.type === 'arise' ? ' arise-sheet' : '') + '" role="dialog" aria-modal="true">' + inner + '</div></div>';
   }
   function topRarity(ids) {
     var best = 'comum';
@@ -1581,6 +1677,8 @@
       return;
     }
     ui.banShown = null; ui.banLine = null;
+    // depois da vitória (e das janelas do Sistema), abre a extração da sombra
+    if (ui.ariseId && !ui.popups.length && !ui.modal && Date.now() >= (ui.holdUntil || 0)) { ui.modal = { type: 'arise', id: ui.ariseId }; ui.ariseId = null; sfx('system'); }
     var body = '';
     if (st.battle && ui.tab !== 'combate') body += '<button class="btn bad block" style="margin-top:12px" data-a="tab" data-t="combate">' + uiIcon('ui_battle', '⚔', 'btn-ico') + ' Batalha em curso: voltar</button>';
     if (ui.tab === 'status') body += statusHtml(st);
@@ -1622,7 +1720,7 @@
       if (!ui.holdTimer) ui.holdTimer = setTimeout(function () { ui.holdTimer = null; render(); }, ui.holdUntil - Date.now() + 20);
     } else if (pop && pop._id !== ui.shownPop) {
       ui.shownPop = pop._id;
-      sfx('system');
+      sfx({ levelup: 'levelup', victory: 'quest', mission: 'quest', crystals: 'gain', gift: 'gain' }[pop.type] || 'system');
       popupFx(pop);
     }
     ui.fxMission = null; ui.fxDaily = false; ui.spawn = false;
@@ -1772,6 +1870,7 @@
     if (type === 'item') sfx(drinkable(E.item(id)) ? 'potion' : 'click');
     var over = E.state.battle && E.state.battle.over;
     if (over === 'win') ui.victoryAnim = true;
+    if (over === 'win' && E.state.battle.result && E.state.battle.result.shadow) ui.ariseId = E.state.battle.result.shadow;
     if (over === 'fled') talkTry('flee', { boss: S.BOSS_BY_ID[bt.bossId] }, 1800);
     if (FX.full()) {
       ui.busyUntil = Date.now() + 900;
@@ -1847,6 +1946,29 @@
       m.fn();
     },
     'pop-ok': function () { ui.popups.shift(); render(); },
+    // sombras
+    'arise-open': function (d) { ui.modal = { type: 'arise', id: d.id }; render(); },
+    'arise-try': function (d) {
+      if (ui.ariseBusy) return;
+      ui.ariseBusy = true;
+      var stage = document.getElementById('arise-stage');
+      if (stage) stage.classList.add('pulling');
+      sfx('system'); FX.vibrate([30, 40, 30, 40, 30]);
+      setTimeout(function () {
+        ui.ariseBusy = false;
+        var r = S.shadows.extract(d.id);
+        if (!r.ok) { toast(r.msg, true); render(); return; }
+        ui.modal = { type: 'arise', id: d.id, res: r };
+        pullEvents(); render();
+        var c = FX.center(document.getElementById('arise-stage'));
+        if (r.success) { sfx('levelup'); FX.flash('#7b4dff', .55); FX.burst(c.x, c.y, '#8b6bff', 90, { speed: 10 }); FX.rise(c.x, c.y + 80, 220, '#5a3dff', 60); FX.shake(2); FX.vibrate([80, 40, 220]); }
+        else { sfx(r.lost ? 'back' : 'hurt'); FX.shake(r.lost ? 2 : 1); FX.vibrate(r.lost ? [120, 60, 120] : 60); }
+      }, FX.full() ? 1150 : 150);
+    },
+    'sh-open': function (d) { ui.modal = { type: 'shadow', id: d.id, line: S.shadows.line(E.state, d.id, true) }; S.storage.write(E.state); render(); },
+    'sh-talk': function (d) { ui.modal.line = S.shadows.line(E.state, d.id, true); S.storage.write(E.state); render(); },
+    'sh-toggle': function (d) { var r = S.shadows.toggle(d.id); act(r); },
+    'sh-rename': function (d) { var el = document.getElementById('sh-name'); act(S.shadows.rename(d.id, el ? el.value : '')); },
     'prem-open': function (d) { ui.tab = 'status'; ui.page = 'premium'; ui.premTab = d.t || ui.premTab || 'arenas'; ui.modal = null; render(); window.scrollTo(0, 0); if (ui.premTab === 'obter') loadShop(); },
     'prem-tab': function (d) { ui.premTab = d.t; render(); if (d.t === 'obter') loadShop(); },
     'prem-buy': function (d) {
@@ -1879,7 +2001,7 @@
       var code = ((document.getElementById('redeem-code') || {}).value || '').trim();
       if (!code) return toast('Escreve o código.', true);
       if (!S.shop || !S.shop.ready()) return toast('A loja de Cristais ainda não está ligada ao servidor.', true);
-      S.shop.redeem(code).then(function (r) { act(r); if (r.ok) { sfx('crystal'); FX.flash('#67d5ff', .35); FX.burst(window.innerWidth / 2, window.innerHeight / 2, '#67d5ff', 80, { speed: 10 }); } });
+      S.shop.redeem(code).then(function (r) { act(r); if (r.ok) { sfx('gain'); FX.flash('#67d5ff', .35); FX.burst(window.innerWidth / 2, window.innerHeight / 2, '#67d5ff', 80, { speed: 10 }); } });
     },
     'prem-ex': function (d) {
       var x = S.PREMIUM_EXCHANGE.filter(function (e) { return e.id === d.id; })[0];
@@ -1996,6 +2118,7 @@
         if (FX.full()) ui.holdUntil = Date.now() + 900;
         var res = act(M.complete(d.id));
         if (!res.ok) return;
+        sfx('quest');
         if (!ui.popups.some(function (p) { return p.type === 'watch'; })) talkTry('done', { missao: m.title, diff: m.difficulty }, 1500);
         var c = FX.center(root.querySelector('[data-mid="' + d.id + '"] .stamp'));
         FX.text('+' + res.xp + ' XP', c.x - 30, c.y - 10, '#6fd6ff');
@@ -2007,18 +2130,18 @@
     'e-done': function () {
       var em = S.live.emergency(E.state);
       if (!em) return;
-      confirmBox('Missão de Emergência', '«' + em.text + '»\n\nCumpriste mesmo?', 'Sim, cumpri', function () { act(S.live.completeEmergency()); });
+      confirmBox('Missão de Emergência', '«' + em.text + '»\n\nCumpriste mesmo?', 'Sim, cumpri', function () { var r = act(S.live.completeEmergency()); if (r && r.ok) sfx('quest'); });
     },
     'h-done': function () {
       var hq = S.live.hiddenActive(E.state);
       if (!hq) return;
-      confirmBox('Missão Oculta', '«' + hq.def.task + '»\n\nCumpriste mesmo? O Sistema vai saber se mentires.', 'Sim, cumpri', function () { act(S.live.completeHidden()); });
+      confirmBox('Missão Oculta', '«' + hq.def.task + '»\n\nCumpriste mesmo? O Sistema vai saber se mentires.', 'Sim, cumpri', function () { var r = act(S.live.completeHidden()); if (r && r.ok) sfx('quest'); });
     },
     'z-step': function (d) {
       var z = S.live.zone(E.state); if (!z) return;
       act(S.live.setZoneValue(d.id, Math.max(0, (z.values[d.id] || 0) + (+d.d))));
     },
-    'z-complete': function () { act(S.live.completeZone()); },
+    'z-complete': function () { var r = act(S.live.completeZone()); if (r && r.ok) sfx('quest'); },
     'd-step': function (d) {
       var v = (M.dailyValues(E.state)[d.id] || 0) + (+d.d);
       act(M.setDailyValue(d.id, Math.max(0, v)));
@@ -2028,6 +2151,7 @@
       if (FX.full()) ui.holdUntil = Date.now() + 900;
       var res = act(M.completeDaily());
       if (!res.ok) return;
+      sfx('quest');
       talkTry('daily', {}, 1500);
       var c = FX.center(root.querySelector('#daily-win .stamp'));
       FX.burst(c.x, c.y, '#ffc85a', 60, { speed: 9 }); FX.shock(c.x, c.y, '#ffc85a');
@@ -2141,6 +2265,7 @@
       var it = E.item(d.id), v = E.sellValue(E.state, d.id);
       confirmBox('Vender', 'Vender 1× ' + it.name + ' por ' + v + ' moedas?', 'Vender', function () {
         var r = E.sell(d.id, 1);
+        if (r.ok) sfx('sell');
         if (r.ok && E.count(E.state, d.id) < 1) ui.modal = null;
         act(r, r.ok ? '+' + r.coins + ' moedas.' : null);
       }, true);
@@ -2231,7 +2356,7 @@
   };
 
   /* sons: estes botões tocam o seu próprio som quando a ação resulta */
-  var SFX_SELF = { buy: 1, use: 1, 'b-item': 1, unequip: 1, 'b-attack': 1, 'b-skill': 1 };
+  var SFX_SELF = { buy: 1, use: 1, 'b-item': 1, unequip: 1, 'b-attack': 1, 'b-skill': 1, 'arise-try': 1 };
   var SFX_BACK = { back: 1, close: 1, 'info-back': 1, 'tr-back': 1, 'pop-ok': 1, overlay: 1 };
   function sfx(n, g) { if (S.sfx) S.sfx.play(n, g); }
   /* poções e elixires que se bebem (bombas e fumo não) */

@@ -95,7 +95,8 @@ function scanDir(dir, pub, map) {
     copies.push([path.join(src, file), path.join(ROOT, 'www', pub, file)]);
   });
 }
-const trophyArt = {}, skillArt = {}, frameArt = {}, arenaArt = {};
+const trophyArt = {}, skillArt = {}, frameArt = {}, arenaArt = {}, shadowArt = {};
+scanDir('shadows', 'shadows', shadowArt); // aparência das sombras extraídas (assets/shadows/b<n>.webp)
 scanDir('trophies', 'trophies', trophyArt);
 scanDir('frames', 'frames', frameArt);
 scanDir('arenas', 'arenas', arenaArt);
@@ -108,7 +109,7 @@ try { SHOP_API = String(JSON.parse(read('loja.json')).api || ''); } catch (e) { 
 const js = order.map((f) => '/* ' + f + ' */\n' + read(f)).join('\n') +
   '\nSYS.SHOP_API = ' + JSON.stringify(SHOP_API) + ';' +
   '\nSYS.SFX_DATA = ' + JSON.stringify(sfxData) + ';' +
-  '\nSYS.AVATARS = ' + JSON.stringify(manifest) + ';\nSYS.CLASS_ART = ' + JSON.stringify(classArt) + ';\nSYS.BOSS_ART = ' + JSON.stringify(bossArt) + ';\nSYS.ITEM_ART = ' + JSON.stringify(itemArt) + ';\nSYS.UI_ART = ' + JSON.stringify(uiArt) + ';\nSYS.TROPHY_ART = ' + JSON.stringify(trophyArt) + ';\nSYS.SKILL_ART = ' + JSON.stringify(skillArt) + ';\nSYS.FRAME_ART = ' + JSON.stringify(frameArt) + ';\nSYS.ARENA_ART = ' + JSON.stringify(arenaArt) + ';\nSYS.boot(document.getElementById("app"));\n';
+  '\nSYS.AVATARS = ' + JSON.stringify(manifest) + ';\nSYS.CLASS_ART = ' + JSON.stringify(classArt) + ';\nSYS.BOSS_ART = ' + JSON.stringify(bossArt) + ';\nSYS.ITEM_ART = ' + JSON.stringify(itemArt) + ';\nSYS.UI_ART = ' + JSON.stringify(uiArt) + ';\nSYS.TROPHY_ART = ' + JSON.stringify(trophyArt) + ';\nSYS.SKILL_ART = ' + JSON.stringify(skillArt) + ';\nSYS.FRAME_ART = ' + JSON.stringify(frameArt) + ';\nSYS.ARENA_ART = ' + JSON.stringify(arenaArt) + ';\nSYS.SHADOW_ART = ' + JSON.stringify(shadowArt) + ';\nSYS.boot(document.getElementById("app"));\n';
 const css = read('src/ui/styles.css') + '\n' + read('src/ui/fx.css');
 const fonts = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' +
   '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Oxanium:wght@500;600;700;800&display=swap">';
@@ -136,14 +137,14 @@ function webPage(code, iconBase) {
 const full = webPage(safeJs, 'icons/');
 
 /* versão da raiz: os caminhos das imagens passam a começar por assets/ */
-const ART_MAPS = { CLASS_ART: classArt, BOSS_ART: bossArt, ITEM_ART: itemArt, UI_ART: uiArt, TROPHY_ART: trophyArt, SKILL_ART: skillArt, FRAME_ART: frameArt, ARENA_ART: arenaArt };
+const ART_MAPS = { CLASS_ART: classArt, BOSS_ART: bossArt, ITEM_ART: itemArt, UI_ART: uiArt, TROPHY_ART: trophyArt, SKILL_ART: skillArt, FRAME_ART: frameArt, ARENA_ART: arenaArt, SHADOW_ART: shadowArt };
 const prefixMap = (m) => { const o = {}; Object.keys(m).forEach((k) => { o[k] = 'assets/' + m[k]; }); return o; };
 let rootJs = safeJs.replace('SYS.AVATARS = ' + JSON.stringify(manifest) + ';', 'SYS.AVATARS = ' + JSON.stringify(Object.keys(manifest).reduce((o, c) => { o[c] = prefixMap(manifest[c]); return o; }, {})) + ';');
 Object.keys(ART_MAPS).forEach((name) => { rootJs = rootJs.replace('SYS.' + name + ' = ' + JSON.stringify(ART_MAPS[name]) + ';', 'SYS.' + name + ' = ' + JSON.stringify(prefixMap(ART_MAPS[name])) + ';'); });
 const rootPage = webPage(rootJs, 'assets/web/');
 
 // Pré-visualização: os troféus e os ícones da interface vão embutidos na página (limite de ficheiros por publicação)
-const INLINE = { TROPHY_ART: trophyArt, UI_ART: uiArt, SKILL_ART: skillArt, FRAME_ART: frameArt, ARENA_ART: arenaArt };
+const INLINE = { TROPHY_ART: trophyArt, UI_ART: uiArt, SKILL_ART: skillArt, FRAME_ART: frameArt, ARENA_ART: arenaArt, SHADOW_ART: shadowArt };
 const inlineMap = (m) => { const o = {}; Object.keys(m).forEach((k) => { const pv = path.join(ROOT, 'dist', 'pv', m[k]); const f = fs.existsSync(pv) ? pv : path.join(ROOT, 'assets', m[k]); const ext = path.extname(f).slice(1).replace('jpg', 'jpeg'); o[k] = 'data:image/' + ext + ';base64,' + fs.readFileSync(f).toString('base64'); }); return o; };
 let previewJs = 'globalThis.SYS = { PREVIEW: true };\n' + safeJs;
 Object.keys(INLINE).forEach((name) => { previewJs = previewJs.replace('SYS.' + name + ' = ' + JSON.stringify(INLINE[name]) + ';', 'SYS.' + name + ' = ' + JSON.stringify(inlineMap(INLINE[name])) + ';'); });
@@ -170,6 +171,7 @@ fs.rmSync(path.join(ROOT, 'www', 'trophies'), { recursive: true, force: true });
 fs.rmSync(path.join(ROOT, 'www', 'skills'), { recursive: true, force: true });
 fs.rmSync(path.join(ROOT, 'www', 'frames'), { recursive: true, force: true });
 fs.rmSync(path.join(ROOT, 'www', 'arenas'), { recursive: true, force: true });
+fs.rmSync(path.join(ROOT, 'www', 'shadows'), { recursive: true, force: true });
 fs.rmSync(path.join(ROOT, 'www', 'icons'), { recursive: true, force: true });
 fs.mkdirSync(path.join(ROOT, 'www'), { recursive: true });
 fs.mkdirSync(path.join(ROOT, 'dist'), { recursive: true });

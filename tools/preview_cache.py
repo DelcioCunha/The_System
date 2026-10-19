@@ -21,4 +21,9 @@ for f in os.listdir(os.path.join(ROOT, 'assets', 'arenas')):
     rel = 'arenas/' + f
     im = Image.open(os.path.join(ROOT, 'assets', rel)).convert('RGB').resize((800, 450), Image.LANCZOS)
     im.save(out(rel), 'WEBP', quality=60, method=6); n += 1
+sd = os.path.join(ROOT, 'assets', 'shadows')
+for f in (os.listdir(sd) if os.path.isdir(sd) else []):
+    rel = 'shadows/' + f
+    im = Image.open(os.path.join(ROOT, 'assets', rel)).convert('RGB').resize((200, 200), Image.LANCZOS)
+    im.save(out(rel), 'WEBP', quality=64, method=6); n += 1
 print(n, 'imagens leves em dist/pv')

@@ -1516,4 +1516,78 @@ test('Artefatos: o Sistema comenta as compras (com moderação) e a Trégua bloq
   assert.ok(seen, 'sem trégua voltam as emergências');
 });
 
+test('Sombras: vitória abre a extração; 3 tentativas; falhar 3 vezes perde a sombra para sempre', () => {
+  const { S } = boot();
+  at(S, 2026, 10, 19, 9);
+  const E = S.engine, C = S.combat, Sh = S.shadows;
+  E.start('Delcio', 'guerreiro');
+  const st = E.state; st.level = 15;
+  const win = (id) => { C.start(id); st.battle.b.hp = 1; st.battle.p.hp = st.battle.p.maxHp = 99999; C.act('attack'); assert.strictEqual(st.battle.over, 'win', id); const r = st.battle.result; C.close(); return r; };
+  // vitória: a sombra fica à espera, com 3 tentativas
+  const r1 = win('b1'); assert.strictEqual(r1.shadow, 'b1');
+  assert.strictEqual(Sh.status(st, 'b1'), 'pending'); assert.strictEqual(Sh.triesLeft(st, 'b1'), 3);
+  // chance: chefe normal acima do nível do chefe
+  assert.ok(Math.abs(Sh.chance(st, S.BOSS_BY_ID.b1) - Math.min(0.9, 0.55 + 14 * 0.025)) < 1e-9);
+  // falha 3 vezes: perdida para sempre
+  S.rng.random = () => 0.99;
+  let r = Sh.extract('b1'); assert.ok(r.ok && !r.success && r.left === 2);
+  r = Sh.extract('b1'); assert.ok(!r.success && r.left === 1);
+  r = Sh.extract('b1'); assert.ok(!r.success && r.lost);
+  assert.strictEqual(Sh.status(st, 'b1'), 'lost');
+  assert.strictEqual(Sh.extract('b1').ok, false, 'não há 4ª tentativa');
+  // sucesso: torna-se servo e é convocado (1 lugar no início)
+  win('b2'); S.rng.random = () => 0.01;
+  r = Sh.extract('b2'); assert.ok(r.success && r.auto);
+  assert.strictEqual(Sh.status(st, 'b2'), 'owned'); assert.strictEqual(JSON.stringify(st.shadows.active), '["b2"]');
+  // segundo servo: sem lugar livre, fica no exército
+  win('b3'); r = Sh.extract('b3'); assert.ok(r.success && !r.auto);
+  assert.strictEqual(Sh.toggle('b3').ok, false, 'lugares cheios');
+  st.level = 25; assert.strictEqual(Sh.slots(st), 2); assert.ok(Sh.toggle('b3').ok);
+  // nome próprio
+  assert.ok(Sh.rename('b2', '  Igris  ').ok); assert.strictEqual(Sh.name(st, 'b2'), 'Igris');
+  // prazo: sem extrair, desvanece ao fim de 24 h
+  win('b4'); assert.strictEqual(Sh.status(st, 'b4'), 'pending');
+  at(S, 2026, 10, 20, 10); Sh.expire(st); assert.strictEqual(Sh.status(st, 'b4'), 'lost');
+  // chefes das arenas premium e secretos ainda não têm sombra
+  assert.ok(!Sh.eligible(S.BOSS_BY_ID.secret_1)); assert.ok(!Sh.eligible(S.BOSS_BY_ID.ar1));
+});
+
+test('Sombras: os servos lutam ao teu lado (ataque, escudo do Guarda, quebra do Arcano, bónus do Comandante)', () => {
+  const { S } = boot();
+  at(S, 2026, 10, 19, 9);
+  const E = S.engine, C = S.combat, Sh = S.shadows;
+  E.start('Delcio', 'invocador');
+  const st = E.state; st.level = 60;
+  // Invocador: +1 lugar e mais chance
+  assert.strictEqual(Sh.slots(st), 4);
+  assert.ok(Sh.chance(st, S.BOSS_BY_ID.b70) > Sh.chance(Object.assign({}, st, { cls: 'mago' }), S.BOSS_BY_ID.b70));
+  const sh = Sh.ensure(st);
+  const tank = S.BOSSES.filter((b) => b.arch === 'tanque' && !b.king)[0], arc = S.BOSSES.filter((b) => b.arch === 'conjurador' && !b.king)[0];
+  ['b10', tank.id, arc.id, 'b1'].forEach((id) => { sh.owned[id] = 1; sh.active.push(id); });
+  C.start('b61');
+  const bt = st.battle;
+  assert.strictEqual(bt.shadows.length, 4);
+  assert.strictEqual(bt.cmd, 5, 'um rei convocado = +5% de dano');
+  assert.ok(bt.p.shield > 0, 'o Guarda dá escudo');
+  assert.ok(bt.b.st.some((x) => x.kind === 'debuff' && x.key === 'def'), 'o Arcano quebra a defesa');
+  const hp0 = bt.b.hp; C.act('attack');
+  const attacks = bt.log.filter((l) => /^🌑 .* ataca: \d+/.test(l.t));
+  assert.strictEqual(attacks.length, 4, 'cada servo ataca uma vez por turno');
+  assert.ok(bt.b.hp < hp0);
+  C.close();
+  // sem servos convocados, o combate é como antes
+  st.battle = null; sh.active = []; C.start('b61'); assert.strictEqual(st.battle.shadows.length, 0); assert.strictEqual(st.battle.cmd, 0);
+});
+
+test('Sombras: chefes derrotados antes desta versão ficam com a sombra adormecida (sem prazo)', () => {
+  const { S } = boot();
+  at(S, 2026, 10, 19, 9);
+  const E = S.engine, Sh = S.shadows;
+  E.start('Delcio', 'mago');
+  const st = E.state; delete st.shadows; st.defeated = { b1: 1, b2: 2, b10: 3 };
+  E.migrate(st);
+  assert.strictEqual(Object.keys(st.shadows.pending).sort().join(), 'b1,b10,b2');
+  at(S, 2027, 1, 1, 9); Sh.expire(st); assert.strictEqual(Sh.status(st, 'b10'), 'pending', 'não desvanece');
+});
+
 console.log('\n' + passed + ' testes passaram' + (process.exitCode ? ' (com falhas)' : ''));

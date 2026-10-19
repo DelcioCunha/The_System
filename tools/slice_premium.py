@@ -8,6 +8,7 @@ Uso:
   python3 tools/slice_premium.py cristal <imagem.png>        -> assets/ui/ui_crystal.webp (fundo verde tirado)
   python3 tools/slice_premium.py arena <1-10> <imagem.png>   -> assets/arenas/ar<n>.webp
   python3 tools/slice_premium.py guardioes <1-10> <folha.png> -> assets/bosses/ar<n>g1..9.webp
+  python3 tools/slice_premium.py sombras <1-10> <folha.png>   -> assets/shadows/b<n>.webp (sombras dos 10 chefes do portão, 5x2)
 
 As molduras e o cristal são gerados sobre verde puro (#00FF00): o verde passa a transparente.
 """
@@ -189,6 +190,17 @@ def main(a):
                 w, h = tile.size; d = int(w * 0.02)
                 tile = tile.crop((d, d, w - d, h - d))  # tira o resto da borda néon da carta
                 save(tile, os.path.join(ROOT, 'assets', 'bosses', 'ar%dg%d.webp' % (n, k)), 480)
+    elif mode == 'sombras':
+        g = int(a[1])
+        im = Image.open(a[2]).convert('RGB')
+        xs, ys = cuts(profile(im, 'x'), 5), cuts(profile(im, 'y'), 2)
+        k = 0
+        for r in range(2):
+            for c in range(5):
+                k += 1
+                t = trim(im.crop((xs[c], ys[r], xs[c + 1], ys[r + 1]))); w, h = t.size; d = max(3, int(min(w, h) * 0.02))
+                t = t.crop((d, d, w - d, h - d))  # painel inteiro (vertical), sem a borda
+                save(t, os.path.join(ROOT, 'assets', 'shadows', 'b%d.webp' % ((g - 1) * 10 + k)), 360)
     else:
         print(__doc__)
         sys.exit(1)

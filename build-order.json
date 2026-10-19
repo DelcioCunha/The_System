@@ -8,6 +8,7 @@
   "src/data/items-new.js",
   "src/data/lore-skills.js",
   "src/data/lore-bosses.js",
+  "src/data/shadow-lines.js",
   "src/data/credits.js",
   "src/data/talk-open.js",
   "src/data/talk-combat.js",
@@ -25,6 +26,7 @@
   "src/engine/live.js",
   "src/engine/talk.js",
   "src/engine/combat.js",
+  "src/engine/shadows.js",
   "src/engine/premium.js",
   "src/engine/shop.js",
   "src/engine/lore.js"
