@@ -808,6 +808,8 @@
           '<div id="notif-status" class="notif-status small muted">A verificar autorizações…</div>' +
           '<button class="btn sm ghost block" data-a="notif-test" style="margin:6px 0 12px">Testar lembrete (chega em 5 segundos)</button>'
         : '<p class="hint" style="margin:0 0 10px">Lembretes do Sistema no telemóvel: disponíveis na app Android (APK).</p>') +
+      '<label class="row between" style="margin-bottom:6px"><span>Sons do Sistema</span><input type="checkbox" id="set-snd" data-a="set-snd"' + (st.settings.sound !== false ? ' checked' : '') + '></label>' +
+      (st.settings.sound !== false ? '<label class="row between" style="margin-bottom:10px;gap:12px"><span class="small muted">Volume</span><input type="range" min="0" max="100" step="5" style="flex:1;max-width:200px" data-a="set-vol" value="' + Math.round((st.settings.soundVol == null ? .8 : st.settings.soundVol) * 100) + '"></label>' : '') +
       '<label class="row between"><span>Vibrar ao subir de nível e em vitórias</span><input type="checkbox" id="set-vib" data-a="set-vib"' + (st.settings.vibrate ? ' checked' : '') + '></label>' +
       '<div class="f" style="margin-top:12px"><span class="small muted">Animações</span><div class="seg">' +
       [['full', 'Completas'], ['reduced', 'Reduzidas']].map(function (o) { return '<button class="' + ((st.settings.fx || FX.defaultMode()) === o[0] ? 'on' : '') + '" data-a="set-fx" data-v="' + o[0] + '">' + o[1] + '</button>'; }).join('') +
@@ -1761,6 +1763,7 @@
     var prevN = bt.logN || 0;
     var res = C.act(type, id);
     if (res && res.ok === false) { toast(res.msg, true); return; }
+    if (type === 'item') sfx(drinkable(E.item(id)) ? 'potion' : 'click');
     var over = E.state.battle && E.state.battle.over;
     if (over === 'win') ui.victoryAnim = true;
     if (over === 'fled') talkTry('flee', { boss: S.BOSS_BY_ID[bt.bossId] }, 1800);
@@ -1846,7 +1849,7 @@
         var r0 = S.premium.buy(d.id, 1);
         if (r0.ok && it.cat === 'sistema') sysAfter(it);
         var r = act(r0);
-        if (r.ok) { FX.burst(p.x, p.y, '#67d5ff', 40, { speed: 8 }); FX.flash('#67d5ff', .2); FX.vibrate([30, 30, 60]); }
+        if (r.ok) { sfx('crystal'); FX.burst(p.x, p.y, '#67d5ff', 40, { speed: 8 }); FX.flash('#67d5ff', .2); FX.vibrate([30, 30, 60]); }
       });
     },
     'arena-view': function (d) { ui.arenaN = +d.n || 0; render(); window.scrollTo(0, 0); },
@@ -1858,6 +1861,7 @@
         var r = S.premium.unlock(d.id);
         if (!r.ok) { if (r.need) { ui.page = 'premium'; ui.premTab = 'obter'; loadShop(); } return act(r); }
         ui.modal = null; ui.arenaN = b.arena;
+        sfx('crystal');
         act(r);
       });
     },
@@ -1869,17 +1873,17 @@
       var code = ((document.getElementById('redeem-code') || {}).value || '').trim();
       if (!code) return toast('Escreve o código.', true);
       if (!S.shop || !S.shop.ready()) return toast('A loja de Cristais ainda não está ligada ao servidor.', true);
-      S.shop.redeem(code).then(function (r) { act(r); if (r.ok) { FX.flash('#67d5ff', .35); FX.burst(window.innerWidth / 2, window.innerHeight / 2, '#67d5ff', 80, { speed: 10 }); } });
+      S.shop.redeem(code).then(function (r) { act(r); if (r.ok) { sfx('crystal'); FX.flash('#67d5ff', .35); FX.burst(window.innerWidth / 2, window.innerHeight / 2, '#67d5ff', 80, { speed: 10 }); } });
     },
     'prem-ex': function (d) {
       var x = S.PREMIUM_EXCHANGE.filter(function (e) { return e.id === d.id; })[0];
-      confirmBox('Câmbio do Sistema', 'Trocar ' + x.crystals + ' Cristais por ' + fmt(x.coins) + ' moedas?', 'Trocar', function () { act(S.premium.exchange(d.id)); });
+      confirmBox('Câmbio do Sistema', 'Trocar ' + x.crystals + ' Cristais por ' + fmt(x.coins) + ' moedas?', 'Trocar', function () { var r = act(S.premium.exchange(d.id)); if (r && r.ok) sfx('crystal'); });
     },
     'cos-buy': function (d) {
       var c = S.COSMETIC_BY_ID[d.id];
       confirmBox('Aparência', 'Comprar ' + c.name + ' por ' + c.crystals + ' Cristais?\nÉ só visual e fica tua para sempre.', 'Comprar', function () {
         var r = act(S.premium.buyCosmetic(d.id));
-        if (r.ok) { FX.flash(c.color, .3); FX.burst(window.innerWidth / 2, window.innerHeight * .3, c.color, 60, { speed: 9 }); }
+        if (r.ok) { sfx('crystal'); FX.flash(c.color, .3); FX.burst(window.innerWidth / 2, window.innerHeight * .3, c.color, 60, { speed: 9 }); }
       });
     },
     'cos-wear': function (d) { act(S.premium.wear(d.id)); },
@@ -2076,10 +2080,11 @@
         if (r.ok && it.cat === 'sistema') sysAfter(it);
         act(r, r.ok ? 'Compraste ' + (q > 1 ? q + '× ' : '') + it.name + '.' : null);
         if (r.ok && it.cat !== 'sistema') talkTry('buy', { item: it.name, rarity: it.rarity }, 1200);
+        if (r.ok) sfx('buy');
         if (r.ok) { FX.text('-' + fmt(r.total) + ' ◈', p.x, p.y - 10, '#ffc85a'); FX.burst(p.x, p.y, rc(it.rarity), 24, { speed: 6 }); FX.vibrate(30); }
       };
       var before = it.cat === 'sistema' && E.state.coins >= E.price(E.state, d.id) * q ? E.sysVoice(E.state, d.id, 'before') : null;
-      if (before) { S.storage.write(E.state); return confirmBox('O SISTEMA OBSERVA', '«' + before + '»\n\nComprar ' + it.name + '?', 'Comprar', go); }
+      if (before) { sfx('click'); S.storage.write(E.state); return confirmBox('O SISTEMA OBSERVA', '«' + before + '»\n\nComprar ' + it.name + '?', 'Comprar', go); }
       go();
     },
     'cl-new': function () { ui.form = { name: '', price: 150, icon: '🎁' }; ui.modal = { type: 'leisure' }; render(); },
@@ -2097,9 +2102,11 @@
     item: function (d) { ui.modal = { type: 'item', id: d.id }; render(); },
     use: function (d) {
       var it = E.item(d.id);
+      if (!drinkable(it)) sfx('click');
       var go = function () {
         var p = { x: ui.pt.x, y: ui.pt.y };
         var r = E.useItem(d.id);
+        if (drinkable(it)) sfx(r.ok ? 'potion' : 'click');
         if (r.ok && E.count(E.state, d.id) < 1) ui.modal = null;
         act(r, r.ok && it.cat !== 'bau' ? r.msg : null);
         if (!r.ok || it.cat === 'bau') return;
@@ -2123,7 +2130,7 @@
       var r = E.equip(d.id, d.s); if (r.ok) ui.modal = null; act(r, r.ok ? 'Equipado.' : null);
       if (r.ok) { FX.rise(window.innerWidth / 2, window.innerHeight * .6, 200, rc(it.rarity), 40); FX.flash(rc(it.rarity), .2); FX.vibrate(40); talkTry('equip', { item: it.name, rarity: it.rarity, slot: d.s === 'weapon' ? 'weapon' : d.s === 'armor' ? 'armor' : 'acc' }, 1200); }
     },
-    unequip: function (d) { var r = E.unequip(d.s); if (r.ok) ui.modal = null; act(r, r.ok ? 'Item guardado na bolsa.' : null); },
+    unequip: function (d) { var r = E.unequip(d.s); if (r.ok) { ui.modal = null; sfx('unequip'); } else sfx('click'); act(r, r.ok ? 'Item guardado na bolsa.' : null); },
     sell: function (d) {
       var it = E.item(d.id), v = E.sellValue(E.state, d.id);
       confirmBox('Vender', 'Vender 1× ' + it.name + ' por ' + v + ' moedas?', 'Vender', function () {
@@ -2207,6 +2214,7 @@
     },
     'notif-exact': function () { Notify.openExact().then(function () { setTimeout(notifStatus, 800); }); },
     'notif-perm': function () { Notify.ask().then(function () { notifStatus(); Notify.sync(true); }); },
+    'set-snd': function (d, el) { E.state.settings.sound = el.checked; E.commit('definições'); render(); if (el.checked) sfx('click'); },
     'set-vib': function (d, el) { E.state.settings.vibrate = el.checked; E.commit('definições'); },
     'set-fx': function (d) { E.state.settings.fx = d.v; E.commit('definições'); FX.setMode(d.v); render(); toast(d.v === 'full' ? 'Animações completas.' : 'Animações reduzidas.'); },
     reset: function () {
@@ -2216,6 +2224,12 @@
     }
   };
 
+  /* sons: estes botões tocam o seu próprio som quando a ação resulta */
+  var SFX_SELF = { buy: 1, use: 1, 'b-item': 1, unequip: 1 };
+  var SFX_BACK = { back: 1, close: 1, 'info-back': 1, 'tr-back': 1, 'pop-ok': 1, overlay: 1 };
+  function sfx(n, g) { if (S.sfx) S.sfx.play(n, g); }
+  /* poções e elixires que se bebem (bombas e fumo não) */
+  function drinkable(it) { var t = (it.use || {}).type; return !!it && ((/^(po|el|elg)_/.test(it.id) && t !== 'bomb' && t !== 'smoke' && t !== 'chest') || it.id === 'pr_elixir'); }
   function onClick(ev) {
     var el = ev.target.closest('[data-a]');
     if (!el || !root.contains(el)) return;
@@ -2229,6 +2243,7 @@
     else { var c0 = FX.center(el); ui.pt = { x: c0.x, y: c0.y }; }
     if (a !== 'overlay' && el.tagName === 'BUTTON') FX.tap(ui.pt.x, ui.pt.y);
     if (a === 'overlay' && ev.target !== el) return;
+    if (!SFX_SELF[a]) sfx(SFX_BACK[a] || (a === 'arena-view' && !+el.getAttribute('data-n')) ? 'back' : 'click');
     if (el.type === 'checkbox') { fn(el.dataset, el, ev); return; }
     ev.preventDefault();
     fn(el.dataset, el, ev);
@@ -2250,6 +2265,9 @@
     var el = ev.target;
     if (el.getAttribute('data-a') === 'd-input') {
       act(M.setDailyValue(el.dataset.id, +el.value || 0));
+    }
+    if (el.getAttribute('data-a') === 'set-vol') {
+      E.state.settings.soundVol = Math.max(0, Math.min(1, (+el.value || 0) / 100)); E.commit('definições'); sfx('buy');
     }
     if (el.getAttribute('data-a') === 'z-input') {
       act(S.live.setZoneValue(el.dataset.id, +el.value || 0));

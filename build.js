@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = __dirname;
-const order = require('./build-order.json').concat(['src/ui/fx.js', 'src/ui/avatar.js', 'src/ui/app.js']);
+const order = require('./build-order.json').concat(['src/ui/fx.js', 'src/ui/sfx.js', 'src/ui/avatar.js', 'src/ui/app.js']);
 const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
 /* --- avatares: assets/avatars/<classe>/<nivel>.(png|jpg|jpeg|webp) --- */
@@ -42,6 +42,11 @@ if (fs.existsSync(CL_SRC)) {
     copies.push([path.join(CL_SRC, file), path.join(ROOT, 'www', 'classes', file)]);
   });
 }
+
+/* --- efeitos sonoros: assets/sfx/<nome>.mp3, embutidos (são pequenos e assim funcionam sem rede) --- */
+const SFX_SRC = path.join(ROOT, 'assets', 'sfx');
+const sfxData = {};
+if (fs.existsSync(SFX_SRC)) fs.readdirSync(SFX_SRC).forEach((f) => { const m = f.match(/^([a-z_]+)\.mp3$/); if (m) sfxData[m[1]] = 'data:audio/mpeg;base64,' + fs.readFileSync(path.join(SFX_SRC, f)).toString('base64'); });
 
 /* --- chefes: assets/bosses/<id>.(png|jpg|webp), ex.: b1.webp, secret_1.webp --- */
 const BS_SRC = path.join(ROOT, 'assets', 'bosses');
@@ -102,6 +107,7 @@ try { SHOP_API = String(JSON.parse(read('loja.json')).api || ''); } catch (e) { 
 
 const js = order.map((f) => '/* ' + f + ' */\n' + read(f)).join('\n') +
   '\nSYS.SHOP_API = ' + JSON.stringify(SHOP_API) + ';' +
+  '\nSYS.SFX_DATA = ' + JSON.stringify(sfxData) + ';' +
   '\nSYS.AVATARS = ' + JSON.stringify(manifest) + ';\nSYS.CLASS_ART = ' + JSON.stringify(classArt) + ';\nSYS.BOSS_ART = ' + JSON.stringify(bossArt) + ';\nSYS.ITEM_ART = ' + JSON.stringify(itemArt) + ';\nSYS.UI_ART = ' + JSON.stringify(uiArt) + ';\nSYS.TROPHY_ART = ' + JSON.stringify(trophyArt) + ';\nSYS.SKILL_ART = ' + JSON.stringify(skillArt) + ';\nSYS.FRAME_ART = ' + JSON.stringify(frameArt) + ';\nSYS.ARENA_ART = ' + JSON.stringify(arenaArt) + ';\nSYS.boot(document.getElementById("app"));\n';
 const css = read('src/ui/styles.css') + '\n' + read('src/ui/fx.css');
 const fonts = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' +
