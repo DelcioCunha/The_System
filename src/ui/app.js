@@ -130,6 +130,7 @@
     var close = function () { if (!d.parentNode) return; d.classList.add('out'); setTimeout(function () { d.remove(); if (ui.notes.length) setTimeout(showNote, 500); }, 350); };
     d.addEventListener('click', close);
     document.body.appendChild(d);
+    sfx('notify');
     FX.vibrate(25);
     setTimeout(close, Math.max(5000, text.length * 70));
   }
@@ -1621,6 +1622,7 @@
       if (!ui.holdTimer) ui.holdTimer = setTimeout(function () { ui.holdTimer = null; render(); }, ui.holdUntil - Date.now() + 20);
     } else if (pop && pop._id !== ui.shownPop) {
       ui.shownPop = pop._id;
+      sfx('system');
       popupFx(pop);
     }
     ui.fxMission = null; ui.fxDaily = false; ui.spawn = false;
@@ -1641,7 +1643,7 @@
     var bossEl = document.getElementById('boss-ico'), pp = document.getElementById('ppanel');
     var bc = FX.center(bossEl), pc = FX.center(pp);
     var cls = st.cls, color = S.CLASSES[cls].color, style = STYLE[cls];
-    var t = 0, bossTurn = false;
+    var t = 0, bossTurn = false, usedSkill = false;
     var at = function (ms, fn) { setTimeout(fn, ms); };
     var hitBoss = function () { if (!bossEl || !bossEl.isConnected) return; bossEl.classList.remove('hit'); void bossEl.offsetWidth; bossEl.classList.add('hit'); setTimeout(function () { bossEl.classList.remove('hit'); }, 420); };
     var panel = function (c) { if (!pp || !pp.isConnected) return; pp.classList.remove('hit', 'healed'); void pp.offsetWidth; pp.classList.add(c); };
@@ -1651,6 +1653,7 @@
       var isBossSide = /^◀|O chefe regenera|O chefe cria|O chefe fica|A tua defesa desce|O chefe drena|Ficaste atordoado|Resististe|causam-te|está atordoado e perde/.test(txt);
       if (isBossSide && !bossTurn) { bossTurn = true; t = Math.max(t + 120, 550); }
       if (txt.indexOf('✦ Usaste') === 0) {
+        usedSkill = true;
         var nm = txt.replace('✦ Usaste ', '').replace(/\.$/, '');
         var sk = Object.keys(S.ALL_SKILLS).map(function (k) { return S.ALL_SKILLS[k]; }).filter(function (x) { return x.name === nm; })[0];
         skillColor = sk && sk.secret ? '#ffc85a' : color;
@@ -1660,12 +1663,14 @@
       } else if (txt.indexOf('➤') === 0) {
         v = num(/: (\d+) de dano/, txt);
         var hits = num(/\((\d+) golpes\)/, txt) || 1, crit = e.c === 'crit';
-        (function (t0, v, hits, crit, col) {
+        (function (t0, v, hits, crit, col, sk) {
           at(t0, function () {
+            sfx(sk ? 'skill' : 'attack', crit ? 1.15 : 1);
             var d = FX.attack(style, bc.x, bc.y, col, hits, crit);
             setTimeout(function () { hitBoss(); FX.number(fmt(v), bc.x, bc.y - 30, crit ? 'crit' : ''); if (crit) { FX.shake(1); FX.vibrate(40); } }, Math.min(d, 400) + 120);
           });
-        })(t, v, hits, crit, skillColor);
+        })(t, v, hits, crit, skillColor, usedSkill);
+        usedSkill = false;
         t += Math.min(hits * (hits > 4 ? 70 : 110), 700) + 250;
         skillColor = color;
       } else if (/ataca: (\d+)/.test(txt)) {
@@ -1691,7 +1696,7 @@
         var dn = (txt.match(/sofre (\w+)/) || [])[1];
         (function (t0, c) { at(t0, function () { FX.burst(bc.x, bc.y, c, 20, { speed: 4, gravity: -.05 }); }); })(t, DOT_COLOR[dn] || '#ff8a3d');
       } else if (txt.indexOf('💥 A bomba') === 0) {
-        (function (t0) { at(t0, function () { FX.attack('impact', bc.x, bc.y, '#ff8a3d', 1, true); FX.shake(2); }); })(t);
+        (function (t0) { at(t0, function () { sfx('skill', 1.1); FX.attack('impact', bc.x, bc.y, '#ff8a3d', 1, true); FX.shake(2); }); })(t);
       } else if (txt.indexOf('FASE') >= 0) {
         (function (t0, full) { at(t0, function () { FX.flash('#ff2040', .35); FX.shake(3); FX.vibrate([100, 50, 200]); FX.banner(full ? 'FASE FINAL' : 'FASE 2', 'O chefe libertou o seu poder', 'rgba(255,40,70,.55)', '#ff5a6e'); }); })(t, txt.indexOf('FINAL') >= 0);
         t += 500;
@@ -1701,7 +1706,8 @@
         (function (t0, v, dodged) {
           at(t0, function () {
             if (bossEl && bossEl.isConnected) { bossEl.classList.remove('hit'); }
-            if (dodged && !v) { FX.number('ESQUIVA', pc.x, pc.y - 10, 'miss'); return; }
+            if (dodged && !v) { sfx('back'); FX.number('ESQUIVA', pc.x, pc.y - 10, 'miss'); return; }
+            sfx('hurt');
             var pct = bt.p.maxHp ? v / bt.p.maxHp : 0;
             panel('hit'); FX.number('-' + fmt(v), pc.x, pc.y - 10, 'hurt');
             FX.burst(pc.x, pc.y, '#ff5a6e', 16, { speed: 5 });
@@ -2225,7 +2231,7 @@
   };
 
   /* sons: estes botões tocam o seu próprio som quando a ação resulta */
-  var SFX_SELF = { buy: 1, use: 1, 'b-item': 1, unequip: 1 };
+  var SFX_SELF = { buy: 1, use: 1, 'b-item': 1, unequip: 1, 'b-attack': 1, 'b-skill': 1 };
   var SFX_BACK = { back: 1, close: 1, 'info-back': 1, 'tr-back': 1, 'pop-ok': 1, overlay: 1 };
   function sfx(n, g) { if (S.sfx) S.sfx.play(n, g); }
   /* poções e elixires que se bebem (bombas e fumo não) */
@@ -2299,7 +2305,7 @@
   var lastPhase = null;
   /* ---------- Lembretes do Sistema (notificações locais, só na app Android) ---------- */
   var Notify = S.notify = (function () {
-    var IDS = 'sistema.notif.ids', CHANNEL = 'sistema', lastSig = null, ready = null;
+    var IDS = 'sistema.notif.ids', CHANNEL = 'sistema_v2', lastSig = null, ready = null; // v2: canal com o som do Sistema (res/raw/sistema_aviso.mp3)
     function plugin() {
       try { var C = globalThis.Capacitor; if (C && C.isNativePlatform && C.isNativePlatform() && C.Plugins && C.Plugins.LocalNotifications) return C.Plugins.LocalNotifications; } catch (e) { /* web */ }
       return null;
@@ -2308,7 +2314,7 @@
     function stored() { try { return JSON.parse(localStorage.getItem(IDS) || '[]'); } catch (e) { return []; } }
     function enabled(st) { return st && st.settings && st.settings.reminders !== false; }
     function note(id, n, at) {
-      return { id: id, title: n.title, body: n.body, largeBody: n.body, schedule: { at: new Date(at), allowWhileIdle: true }, channelId: CHANNEL,
+      return { id: id, title: n.title, body: n.body, largeBody: n.body, schedule: { at: new Date(at), allowWhileIdle: true }, channelId: CHANNEL, sound: 'sistema_aviso.mp3',
         smallIcon: 'ic_stat_sistema', iconColor: '#6FD6FF', autoCancel: true, extra: { tab: n.tab || 'status' } };
     }
     /* canal próprio (Android 8+) e toque na notificação → abre o separador certo */
@@ -2323,7 +2329,8 @@
           ui.tab = tab; ui.page = null; ui.modal = null; render(); window.scrollTo(0, 0);
         });
       } catch (e) { /* ignora */ }
-      ready = (P.createChannel ? P.createChannel({ id: CHANNEL, name: 'Avisos do Sistema', description: 'Prazos das missões, Missão Diária, emergências e Zona de Penalidade', importance: 4, visibility: 1, vibration: true, lights: true, lightColor: '#6FD6FF' }) : Promise.resolve()).catch(function () {});
+      if (P.deleteChannel) P.deleteChannel({ id: 'sistema' }).catch(function () {}); // canal antigo, sem som próprio
+      ready = (P.createChannel ? P.createChannel({ id: CHANNEL, sound: 'sistema_aviso.mp3', name: 'Avisos do Sistema', description: 'Prazos das missões, Missão Diária, emergências e Zona de Penalidade', importance: 4, visibility: 1, vibration: true, lights: true, lightColor: '#6FD6FF' }) : Promise.resolve()).catch(function () {});
       return ready;
     }
     return {

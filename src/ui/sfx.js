@@ -7,12 +7,15 @@
    crystal · gastar Cristais (e receber Cristais por código)
    potion  · beber poção ou elixir (também em combate)
    unequip · desequipar
+   attack  · o teu ataque normal          skill · golpes das habilidades
+   hurt    · golpe do chefe em ti         system · uma janela do Sistema surge
+   notify  · aviso do Sistema no topo do ecrã
    Web Audio: baixa latência, vários sons ao mesmo tempo, volume por som.
    O áudio só arranca depois do primeiro toque (regra dos telemóveis).
    ========================================================== */
 (function (S) {
   'use strict';
-  var GAIN = { click: 0.35, back: 0.6, buy: 0.85, crystal: 0.8, potion: 0.55, unequip: 0.95 };
+  var GAIN = { click: 0.5, back: 0.4, buy: 0.85, crystal: 0.8, potion: 0.55, unequip: 0.95, attack: 0.8, skill: 0.75, hurt: 0.75, system: 0.7, notify: 0.7 };
   var ctx = null, bufs = {}, last = {}, failed = false;
 
   function settings() { var st = S.engine && S.engine.state; return (st && st.settings) || {}; }
