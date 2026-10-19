@@ -76,18 +76,36 @@
   prem({ id: 'pr_selo', name: 'Selo do Monarca', icon: '🔱', cat: 'premium', crystals: 60, rarity: 'lendario', lvl: 1, field: true,
     desc: '+50% de XP e +50% de moedas durante 24 horas (missões e chefes).', use: { type: 'timed', effect: 'monarca', hours: 24 } });
 
+  /* atualização: novos itens soberanos (mecânicas novas) */
+  prem({ id: 'pr_ampulheta', name: 'Ampulheta do Monarca', icon: '⌛', cat: 'premium', crystals: 200, rarity: 'lendario', lvl: 1,
+    desc: 'O primeiro golpe de cada batalha faz +50% de dano e cada ataque que acerta devolve 4% da mana. +3% em todos os atributos.', equip: { slot: 'acc', firstStrike: 50, manaOnHit: 4, allStatsPct: 3 } });
+  prem({ id: 'pr_espinho', name: 'Coroa de Espinhos Negros', icon: '🥀', cat: 'premium', crystals: 220, rarity: 'mitico', lvl: 1,
+    desc: 'Devolve 18% de cada golpe que recebes, com roubo de vida 5% e defesa extra.', equip: { slot: 'acc', thorns: 18, lifesteal: 5, def: 15 } });
+  prem({ id: 'pr_executor', name: 'Insígnia do Executor', icon: '⚖️', cat: 'premium', crystals: 200, rarity: 'lendario', lvl: 1,
+    desc: '+35% de dano quando o chefe tem menos de 30% de vida e +20% de dano crítico. Feita para acabar o que começas.', equip: { slot: 'acc', execute: 35, critDmg: 20 } });
+  prem({ id: 'pr_egide', name: 'Égide do Primeiro Dia', icon: '🔰', cat: 'premium', crystals: 240, rarity: 'mitico', lvl: 1,
+    desc: 'Começas cada batalha com um escudo de 20% da vida, resistes a 50% dos atordoamentos e tens +8% de vida.', equip: { slot: 'acc', openShield: 20, stunRes: 50, hpPct: 8 } });
+  prem({ id: 'pr_ruptura', name: 'Ruptura do Sistema', icon: '💢', cat: 'premium', crystals: 40, rarity: 'mitico', lvl: 1, battle: true,
+    desc: 'Rasga o código do chefe: -50% de defesa e -30% de ataque durante 3 turnos.', use: { type: 'ops', ops: [{ op: 'debuff', key: 'def', val: 50, turns: 3 }, { op: 'debuff', key: 'atk', val: 30, turns: 3 }] } });
+  prem({ id: 'pr_eco', name: 'Eco do Monarca', icon: '🔔', cat: 'premium', crystals: 35, rarity: 'lendario', lvl: 1, battle: true,
+    desc: 'Reinicia todas as recargas, enche a mana e dá +40% de crítico durante 3 turnos.', use: { type: 'ops', ops: [{ op: 'resetCd' }, { op: 'mp', pct: 100 }, { op: 'buff', key: 'crit', val: 40, turns: 3 }] } });
+  prem({ id: 'pr_foco', name: 'Pergaminho do Foco Absoluto', icon: '📜', cat: 'premium', crystals: 45, rarity: 'lendario', lvl: 1, field: true,
+    desc: 'XP a dobrar durante 12 horas (missões e chefes).', use: { type: 'timed', effect: 'xp2', hours: 12 } });
+  prem({ id: 'pr_trevo', name: 'Trevo de Cristal', icon: '🍀', cat: 'premium', crystals: 40, rarity: 'lendario', lvl: 1, field: true,
+    desc: 'Durante 12 horas, cada baú que abrires dá um item extra.', use: { type: 'timed', effect: 'sorte', hours: 12 } });
+
   S.TIMED_EFFECTS.monarca = { name: 'Selo do Monarca (+50% XP e moedas)', icon: '🔱', good: true };
   S.PREMIUM_SHOP = [
-    { title: 'Equipamento soberano', ids: ['pr_lamina', 'pr_armadura', 'pr_coroa', 'pr_olho', 'pr_coracao'] },
-    { title: 'Relíquias de combate', note: 'Só podes usar 1 relíquia premium por batalha.', ids: ['pr_juizo', 'pr_tempo', 'pr_legiao', 'pr_elixir', 'pr_fenix'] },
-    { title: 'Tesouros', ids: ['pr_bau', 'pr_selo'] }
+    { title: 'Equipamento soberano', ids: ['pr_lamina', 'pr_armadura', 'pr_coroa', 'pr_olho', 'pr_coracao', 'pr_ampulheta', 'pr_espinho', 'pr_executor', 'pr_egide'] },
+    { title: 'Relíquias de combate', note: 'Só podes usar 1 relíquia premium por batalha.', ids: ['pr_juizo', 'pr_tempo', 'pr_legiao', 'pr_elixir', 'pr_fenix', 'pr_ruptura', 'pr_eco'] },
+    { title: 'Tesouros', ids: ['pr_bau', 'pr_selo', 'pr_foco', 'pr_trevo'] }
   ];
-  S.PREMIUM_CONSUMABLES = ['pr_juizo', 'pr_tempo', 'pr_elixir', 'pr_legiao', 'pr_fenix'];
+  S.PREMIUM_CONSUMABLES = ['pr_juizo', 'pr_tempo', 'pr_elixir', 'pr_legiao', 'pr_fenix', 'pr_ruptura', 'pr_eco'];
 
   /* ---------------- proteções e atalhos: itens da loja normal, pagos em Cristais ---------------- */
-  S.PREMIUM_PRICES = { po_escudo: 25, po_descanso: 15, po_fenix: 45, po_xp2: 30, po_coin2: 25, po_sorte: 30 };
+  S.PREMIUM_PRICES = { po_escudo: 25, po_descanso: 15, po_fenix: 45, po_xp2: 30, po_coin2: 25, po_sorte: 30, sys_licenca: 20, sys_dobro: 35, sys_bilhete: 40, sys_bussola: 50 };
   S.PREMIUM_SHOP.push({ title: 'Proteções e atalhos', note: 'Itens da loja normal, sem esperar pelas moedas. O Sistema não vende Integridade nem sequências: essas só se ganham.',
-    ids: ['po_escudo', 'po_descanso', 'po_fenix', 'po_xp2', 'po_coin2', 'po_sorte'] });
+    ids: ['po_escudo', 'po_descanso', 'po_fenix', 'po_xp2', 'po_coin2', 'po_sorte', 'sys_licenca', 'sys_dobro', 'sys_bilhete', 'sys_bussola'] });
 
   /* ---------------- câmbio: Cristais → moedas ---------------- */
   S.PREMIUM_EXCHANGE = [
@@ -108,6 +126,12 @@
     { id: 'fr_sombra', kind: 'moldura', name: 'Moldura da Legião Sombria', color: '#b56cff', crystals: 280, tier: 'lendario', desc: 'Fumo violeta e silhuetas de soldados que se mexem quando ninguém está a ver.' },
     { id: 'fr_fenix', kind: 'moldura', name: 'Moldura da Fénix Imperial', color: '#ff8a3d', crystals: 350, tier: 'lendario', desc: 'Penas de ouro em brasa. A moldura de quem renasce sempre e, ao contrário de Ignivar, acaba o que começa.' },
     { id: 'fr_monarca', kind: 'moldura', name: 'Moldura do Monarca', color: '#ffc85a', crystals: 500, tier: 'mitico', desc: 'Ouro negro, uma coroa no topo e um brilho que pulsa. A moldura dos que reinam sobre os portões.' },
+    { id: 'fr_mare', kind: 'moldura', name: 'Moldura das Marés Abissais', color: '#2fd0c9', crystals: 200, tier: 'epico', desc: 'Coral, pérolas negras e água que nunca para de correr pelos lados. Leviarch quereria guardá-la.' },
+    { id: 'fr_jardim', kind: 'moldura', name: 'Moldura do Jardim Necrótico', color: '#7ee05b', crystals: 220, tier: 'epico', desc: 'Rosas negras e espinhos sob uma lua verde. Algumas flores ainda sussurram.' },
+    { id: 'fr_relogio', kind: 'moldura', name: 'Moldura do Relógio Partido', color: '#ffd24a', crystals: 260, tier: 'lendario', desc: 'Engrenagens de latão e ponteiros partidos. O tempo à tua volta anda um pouco mais devagar.' },
+    { id: 'fr_espelho', kind: 'moldura', name: 'Moldura do Espelho Quebrado', color: '#b98cff', crystals: 300, tier: 'lendario', desc: 'Cacos de espelho violeta. Em cada um, um reflexo teu que não faz bem o que tu fazes.' },
+    { id: 'fr_runas', kind: 'moldura', name: 'Moldura das Runas do Colosso', color: '#4ab8ff', crystals: 300, tier: 'lendario', desc: 'Pedra do Colosso com runas azuis que pulsam como um coração.' },
+    { id: 'fr_aurora', kind: 'moldura', name: 'Moldura da Aurora Prismática', color: '#ff9de2', crystals: 600, tier: 'mitico', desc: 'Cristal prismático com todas as cores dos portões. A moldura mais rara que o Sistema vende.' },
     { id: 'fr_primeiro', kind: 'moldura', name: 'Moldura do Primeiro Jogador', color: '#e0e6ff', crystals: 0, tier: 'secreto', reward: 'ar10', desc: 'Não se compra. Só existe uma forma de a ter: vencer O Primeiro Jogador.' },
     { id: 'nm_ciano', kind: 'nome', name: 'Assinatura Ciano', color: '#6fd6ff', crystals: 60, desc: 'O teu nome escrito na luz do Sistema.' },
     { id: 'nm_carmesim', kind: 'nome', name: 'Assinatura Carmesim', color: '#ff4d66', crystals: 90, desc: 'O teu nome em vermelho de aviso.' },
@@ -254,6 +278,14 @@
     pr_legiao: 'Um estandarte negro rasgado por mil batalhas. Quando o levantas, a sombra de um exército inteiro ergue-se atrás de ti e ataca a cada ronda durante cinco turnos. Não falam, não sangram, não recuam. Lutam por ti até o estandarte se calar.',
     pr_fenix: 'Uma única lágrima de uma fénix que ardeu negra. Não se usa: guarda-se. No momento em que a tua vida chega a zero, ela arde por ti e devolve-te inteiro ao combate. É mais forte do que a Pena da Fénix, e por isso arde primeiro.',
     pr_bau: 'Um baú forrado a veludo negro com o selo do Monarca na tampa. Dentro há sempre um Baú Lendário, uma relíquia de combate escolhida pelo acaso e uma soma de moedas que cresce com o teu nível. O Sistema não abre baús destes para qualquer um.',
+    pr_ampulheta: 'Uma ampulheta do tamanho de um polegar, presa a uma corrente de ouro negro. A areia cai para cima no primeiro instante de cada batalha, e é nesse instante que o golpe do Monarca pesa mais. Depois, cada ferida que causas devolve-te um fio de mana.',
+    pr_espinho: 'Uma coroa feita de espinhos de rosa negra que nunca secam. Não se põe na cabeça: segura-se ao peito. Quem te fere sente a mesma ferida, e uma parte dela volta para ti como vida.',
+    pr_executor: 'A insígnia que o Sistema dava aos Jogadores encarregados de acabar os combates longos. Quando o inimigo vacila, a balança gravada nela inclina-se, e o teu golpe cai com o peso de uma sentença.',
+    pr_egide: 'Um escudo pequeno com a data do teu primeiro dia gravada. Antes de cada batalha, ergue uma muralha de luz à tua frente e mantém a tua mente presa ao chão, mesmo quando o mundo gira.',
+    pr_ruptura: 'Um fragmento de código vermelho que o Sistema guardou para emergências. Ao parti-lo, a defesa e a força do chefe desfazem-se em linhas de erro durante três turnos.',
+    pr_eco: 'Um sino minúsculo que toca uma nota que só tu ouves. As tuas habilidades acordam como se nunca tivessem sido usadas, a mana volta toda e os teus olhos encontram cada ponto fraco.',
+    pr_foco: 'Um pergaminho escrito com tinta de cristal. Durante doze horas, tudo o que aprendes fica duas vezes. O Sistema chama-lhe foco. Os caçadores chamam-lhe o melhor dia do mês.',
+    pr_trevo: 'Um trevo de quatro folhas talhado em cristal azul. Durante doze horas, os baús parecem mais generosos contigo, como se quisessem agradecer.',
     pr_selo: 'Um selo com o tridente do Monarca. Durante vinte e quatro horas, cada missão cumprida e cada chefe derrotado rende metade outra vez, em XP e em moedas. O Sistema chama-lhe investimento. Tu vais chamar-lhe um dia muito bom.'
   };
   Object.keys(LORE).forEach(function (k) { S.ITEM_LORE[k] = LORE[k]; });

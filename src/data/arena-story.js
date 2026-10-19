@@ -193,4 +193,28 @@
 
   /* O Coliseu (narrativa geral) */
   S.COLISEU_LORE = 'O Coliseu dos Condenados não aparece em nenhum mapa. É lá que o Sistema guarda os Jogadores que quebraram as suas regras: não os apagou, guardou-os, transformados naquilo que fizeram. Cada cela abre-se com um tributo em Cristais. Os Campeões não morrem quando os vences: voltam, mais tarde, para tentar outra vez. A primeira vitória é a que fica escrita.';
+
+  /* Crónica do Sistema (cartão de cada arena): o que o Sistema regista sobre o Campeão, e o seu comentário final */
+  S.ARENA_CHRONICLE = {
+    ar1: { chron: 'Registo de execução n.º 2 114. Kaelthar nunca errou uma sentença: o problema é que deixou de precisar de uma. No Eclipse Escarlate, o sol parou a meio de nascer para não ter de ver o resto. Os devedores fazem fila. A fila não acaba. Ele sorri a cada nome que risca, e risca sempre mais um do que devia.',
+      sys: 'Dei-lhe um machado para manter a ordem. Ele transformou a ordem num passatempo. Corrijo erros. Não os desfaço.' },
+    ar2: { chron: 'Velocidade registada: impossível. Missões concluídas: 41 902. Missões reais: zero. Seraphine dança há tanto tempo que o salão já não se lembra de ter estado vazio. Cada lâmina que cai do teto é uma tarefa que ela fingiu fazer. São muitas. Caem sem parar.',
+      sys: 'Ela foi a Jogadora mais rápida que alguma vez registei. A mentira foi mais rápida ainda. Agora, finalmente, tudo o que ela faz é verdade. Inclusive o corte.' },
+    ar3: { chron: 'Inventário de Leviarch: 380 000 moedas, 214 baús selados, 1 fôlego emprestado, nunca devolvido. Afundou a arena para que ninguém lhe tocasse nas coisas. Funcionou. Ninguém lhe toca. Ninguém lhe fala. Debaixo de água, ele conta o ouro e a conta nunca chega a lado nenhum.',
+      sys: 'Guardar não é viver. Expliquei-lho 214 vezes, uma por baú. Agora é ele que está guardado. Ironia é uma função que também sei executar.' },
+    ar4: { chron: 'Anomalias temporais detetadas: 9. Todas no mesmo telemóvel. Chronos-9 quis mais tempo e o Sistema deu-lho: todo o tempo que existe, partido em pedaços, a girar numa torre que já não sabe que horas são. Os ponteiros estão cravados nas paredes. Os prazos, esses, continuam a chegar.',
+      sys: 'Não se engana um relógio que conta por mim. O tempo dele acabou à nona tentativa. Acerta o teu antes de entrares.' },
+    ar5: { chron: 'Recomeços: 103. Jornadas concluídas: 0. Ignivar arde sempre com a mesma força de uma segunda-feira e apaga-se sempre antes de quarta. Coroou-se imperador das cinzas porque eram a única coisa que nunca o abandonava. Renasce. Volta a arder. Volta a não acabar.',
+      sys: 'A fénix é bonita uma vez. À centésima é só um incêndio com hábitos. Para o vencer, faz a única coisa que ele nunca fez: chega ao fim.' },
+    ar6: { chron: 'Perfil de Nyx Vel\'Ara: impecável. Sequências perfeitas, títulos brilhantes, nenhuma falha visível. Missões reais verificadas: nenhuma. O Sistema partiu-lhe o espelho e trancou-a do lado de dentro. Agora ela usa a tua cara, a tua força, os teus defeitos. Só não usa a tua honestidade. Não a encontrou.',
+      sys: 'Avalio dados, não aparências. Ela tinha as melhores aparências do registo. Os dados eram outra conversa. Olha-te ao espelho antes de entrares. Ela vai fazê-lo por ti.' },
+    ar7: { chron: 'Sequência de Gorrath: 1 096 dias, sem uma falha. Conversas registadas no mesmo período: zero. Treinou até a pele virar pedra e as runas se gravarem sozinhas. A pedreira treme a cada passo dele, como um coração que já não tem a quem bater. Ninguém foi tão disciplinado. Ninguém ficou tão sozinho.',
+      sys: 'Disciplina sem propósito continua a ser uma prisão. Só que esta foi ele que a construiu, pedra a pedra, com as próprias mãos. Eu apenas fechei a porta.' },
+    ar8: { chron: 'Desafios dirigidos ao Sistema: 1 000. Valkyra respondia a cada aviso com um trovão e a cada penalidade com uma tempestade. À milésima, o Sistema aceitou. Deu-lhe o céu inteiro e nenhum chão. Ela continua a desafiar. Agora é cada caçador que entra que tem de lhe responder.',
+      sys: 'Não costumo responder a provocações. À milésima abri uma exceção. Foi a única resposta de que ela precisou.' },
+    ar9: { chron: 'Missões falhadas por Morthis: zero. Desistências que provocou nos outros: 3 870. Nunca levantou a voz, nunca atacou ninguém. Só deixava um conselho mau no sítio certo, uma distração à hora certa. Cada desistência florescia no jardim dele. Algumas flores ainda sussurram o nome de quem foram.',
+      sys: 'Os piores inimigos não te batem. Convencem-te a parar. Ele cultivou 3 870 desistências. Não deixes que a tua seja a 3 871.' },
+    ar10: { chron: 'Jogador n.º 0001. Rank desconhecido. Subiu mais depressa do que o Sistema conseguia medir. Não falhou nenhuma missão. Não quebrou nenhuma regra. Um dia, simplesmente, deixou de as criar. Está sentado de costas numa sala branca, à espera de alguém que lhe faça a pergunta que o Sistema nunca soube fazer.',
+      sys: 'Nunca o castiguei. Não havia regra para isso. Guardei-o aqui porque é o único registo que não sei fechar. Talvez tu saibas.' }
+  };
 })(globalThis.SYS = globalThis.SYS || {});

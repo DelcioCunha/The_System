@@ -137,10 +137,12 @@
       empowered: emp || null, healsUsed: 0,
       summons: [], log: [], result: null
     };
+    if (ps.openShield) { st.battle.p.shield = Math.round(ps.maxHp * ps.openShield / 100); }
     if (b.level >= st.level + 20) E.bump(st, 'braveFights');
     E.bump(st, 'battlesStarted');
     log(st.battle, '⚔️ ' + b.name + ' (Nv. ' + b.level + ') aparece!', 'sys');
     if (b.lore) log(st.battle, b.lore, 'lore');
+    if (st.battle.p.shield) log(st.battle, '🛡️ Entras em combate com um escudo de ' + st.battle.p.shield + '.', 'good');
     if (emp) log(st.battle, (emp === 'noite' ? '🌙 A noite fortalece ' : '☀️ O sol fortalece ') + b.name + ': +15% vida e ataque, mas +20% recompensas.', 'warn');
     var lines = (S.BOSS_LINES || {})[b.id];
     var rematch = b.premium && st.arena && st.arena.wins[b.id];
@@ -215,6 +217,8 @@
           var isCrit = op.alwaysCrit || chance(critChance);
           if (isCrit) { raw *= ps.critDmg / 100; crits++; }
           if (op.execute && b.hp < b.maxHp * op.execute.below) raw *= op.execute.mult;
+          if (ps.execute && b.hp < b.maxHp * 0.3) raw *= 1 + ps.execute / 100; // Execução (equipamento)
+          if (ps.firstStrike && !bt.struck) raw *= 1 + ps.firstStrike / 100; // Primeiro Golpe
           var effDef = Math.max(0, b.def * (1 - sum(b.st, 'debuff', 'def') / 100) * (1 - (op.pierce || 0)));
           var dmg = damageBoss(bt, raw * 100 / (100 + effDef));
           total += dmg;
@@ -222,12 +226,15 @@
           if (ls > 0) healPlayer(bt, dmg * ls);
         }
         log(bt, '➤ ' + srcName + ': ' + total + ' de dano' + (hits > 1 ? ' (' + hits + ' golpes)' : '') + (crits ? ' — CRÍTICO' + (crits > 1 ? ' ×' + crits : '') + '!' : '.'), crits ? 'crit' : 'dmg');
+        if (ps.firstStrike && !bt.struck && total > 0) log(bt, '⚡ Primeiro Golpe: +' + ps.firstStrike + '% no primeiro ataque.', 'good');
+        if (total > 0) bt.struck = true;
+        if (ps.manaOnHit && total > 0 && p.mp < p.maxMp) { var gm = Math.min(p.maxMp - p.mp, Math.round(p.maxMp * ps.manaOnHit / 100)); p.mp += gm; }
         if (dodged) log(bt, '🌸 Mil Passos: ' + (dodged === hits ? 'cortaste só pétalas. Ela já não estava lá.' : dodged + ' golpe(s) cortaram só pétalas.'), 'muted');
         if (bsig === 'mirror' && total > 0 && p.hp > 0) { var rf = damagePlayer(bt, total * 0.15); log(bt, '🪞 Reflexo Partido: o espelho devolve-te ' + rf + ' de dano.', 'hurt'); }
         break;
       }
       case 'dot': {
-        var per = Math.round(Math.max(playerBase(bt, 'phys'), playerBase(bt, 'mag')) * op.mult * 0.6);
+        var per = Math.round(Math.max(playerBase(bt, 'phys'), playerBase(bt, 'mag')) * op.mult * 0.6 * (1 + (ps.dotPct || 0) / 100));
         addStatus(b.st, { kind: 'dot', type: op.type, val: per, turns: op.turns });
         log(bt, '☠️ O chefe sofre ' + C.DOT_NAMES[op.type] + ' (' + per + '/turno).', 'muted');
         break;
@@ -316,7 +323,7 @@
           var def = Math.max(0, ps.def * (1 + (sum(p.st, 'buff', 'def') - sum(p.st, 'debuff', 'def')) / 100));
           var dmg = damagePlayer(bt, raw * 100 / (100 + def));
           total += dmg;
-          var refl = sum(p.st, 'buff', 'reflect');
+          var refl = sum(p.st, 'buff', 'reflect') + (ps.thorns || 0);
           if (refl > 0 && dmg > 0) damageBoss(bt, dmg * refl / 100);
           if (op.lifesteal) b.hp = Math.min(b.maxHp, b.hp + Math.round(dmg * op.lifesteal));
         }
@@ -334,6 +341,7 @@
       }
       case 'stun':
         if (p.stunImmune > 0) { log(bt, '🧠 Resististe ao atordoamento.', 'good'); break; }
+        if (ps.stunRes && chance(op.chance) && chance(ps.stunRes / 100)) { log(bt, '🧠 A tua mente aguenta: resististe ao atordoamento.', 'good'); break; }
         if (chance(op.chance)) { p.stunned = Math.max(p.stunned, op.turns); p.stunImmune = op.turns + 2; log(bt, '💫 Ficaste atordoado!', 'hurt'); }
         break;
       case 'heal': {
@@ -500,6 +508,8 @@
     var trophy = S.TROPHIES[def.id];
     if (trophy && !st.trophies[def.id]) st.trophies[def.id] = now();
     var levelBefore = st.level;
+    var sy = E.sysState(st), dblB = sy.dblBoss > 0;
+    if (dblB) { sy.dblBoss--; r = Object.assign({}, r, { xp: r.xp * 2, coins: r.coins * 2 }); log(bt, '🎫 Bilhete da Vitória Dupla: recompensas a dobrar!', 'good'); }
     var xp = E.gainXp(st, r.xp);
     var coins = E.gainCoins(st, r.coins);
     var items = ['bau_' + r.chest];
@@ -616,7 +626,8 @@
         E.bump(st, 'consumablesUsed');
         var u = it.use;
         log(bt, '🎒 Usaste ' + it.name + '.', 'skill');
-        if (u.type === 'heal') doPlayerOp(bt, { op: 'heal', pct: u.pct });
+        var potK = 1 + (p.stats.potionPct || 0) / 100;
+        if (u.type === 'heal') doPlayerOp(bt, { op: 'heal', pct: u.pct * potK });
         else if (u.type === 'mana') doPlayerOp(bt, { op: 'mp', pct: u.pct });
         else if (u.type === 'buffs') u.list.forEach(function (bf) { doPlayerOp(bt, { op: 'buff', key: bf.key, val: bf.val, turns: bf.turns }); });
         else if (u.type === 'cleanse') { p.st = p.st.filter(function (s) { return s.kind === 'buff'; }); log(bt, '🌿 Efeitos negativos removidos.', 'good'); }
@@ -626,7 +637,7 @@
           if (u.stun && bt.b.hp > 0) doPlayerOp(bt, { op: 'stun', chance: u.stun, turns: 1 });
         }
         else if (u.type === 'restore') {
-          doPlayerOp(bt, { op: 'heal', pct: u.hp }); doPlayerOp(bt, { op: 'mp', pct: u.mp });
+          doPlayerOp(bt, { op: 'heal', pct: u.hp * potK }); doPlayerOp(bt, { op: 'mp', pct: u.mp });
           if (u.cleanse) { p.st = p.st.filter(function (s) { return s.kind === 'buff'; }); log(bt, '🌿 Efeitos negativos removidos.', 'good'); }
         }
         else if (u.type === 'judgment') {

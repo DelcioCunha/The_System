@@ -77,6 +77,7 @@
     }
     if (l.emDay !== d) { l.emDay = d; l.emCount = 0; scheduleNextEmergency(l, Math.max(t, new Date(t).setHours(C.from, 0, 0, 0)), C.firstGap); }
     if (l.em || l.emCount >= C.perDay || h < C.from || h >= C.to || t < l.emNext || st.battle && !st.battle.over) return false;
+    if (st.sys && st.sys.noEmUntil > t) return false; // Tratado de Trégua
     if (S.time && S.time.tampered(st)) return false;
     var e = pick(EMERGENCY.filter(function (x) { return !l.emLast || x[0] !== l.emLast; }));
     var r = emReward(st);
@@ -153,6 +154,20 @@
     E.history(st, '🗝️', 'Desbloqueou a Missão Oculta «' + def.name + '».');
     return true;
   }
+  /* Bússola do Oculto: revela a próxima Missão Oculta sem esperar pelas condições */
+  L.forceHidden = function (st) {
+    var l = L.ensure(st), t = now();
+    hiddenTick(st);
+    if (l.hq) return { ok: false, msg: 'Já tens uma Missão Oculta ativa: «' + L.hiddenActive(st).def.name + '». Cumpre-a primeiro.' };
+    var def = HIDDEN.filter(function (h) { return !l.hidden[h.id]; })[0];
+    if (!def) return { ok: false, msg: 'Já descobriste todas as Missões Ocultas. A bússola gira sem rumo.' };
+    l.hidden[def.id] = 'active';
+    l.hq = { id: def.id, at: t, until: t + S.LIVE.hidden.hours * HOUR };
+    E.emit({ type: 'hidden', title: 'MISSÃO OCULTA DESBLOQUEADA', name: def.name,
+      lines: ['A bússola apontou e o Sistema não teve como esconder.', def.why, def.task, 'Tens 48 horas. Recompensa: ' + rewardNames(def.reward) + '.'] });
+    E.history(st, '🧭', 'A Bússola do Oculto revelou «' + def.name + '».');
+    return { ok: true, name: def.name };
+  };
   L.completeHidden = function () {
     var st = E.state, h = L.hiddenActive(st);
     if (!h) return { ok: false, msg: 'Não há nenhuma Missão Oculta ativa.' };
@@ -363,7 +378,7 @@
     if (l.hq) add('hq:' + l.hq.id, l.hq.until - 6 * HOUR, 'MISSÃO OCULTA', NOTE_VOICE.hidden);
     // próxima emergência (só aparece quando a app é aberta: o lembrete chama o jogador)
     var C = S.LIVE.emergency, en = l.emNext, eh = en ? new Date(en).getHours() : 0;
-    if (en && !L.emergency(st) && l.emCount < C.perDay && eh >= C.from && eh < C.to) add('em:' + en, en, 'MISSÃO DE EMERGÊNCIA', NOTE_VOICE.emergency);
+    if (en && !(st.sys && st.sys.noEmUntil > en) && !L.emergency(st) && l.emCount < C.perDay && eh >= C.from && eh < C.to) add('em:' + en, en, 'MISSÃO DE EMERGÊNCIA', NOTE_VOICE.emergency);
     // ausência: se o jogador não abrir a app, o Sistema chama-o ao fim de 1, 3 e 7 dias (às 19:00, mesmo com mudança de hora)
     until = Infinity;
     var at19 = function (days) { var d = new Date(t); d.setDate(d.getDate() + days); d.setHours(19, 0, 0, 0); return d.getTime(); };

@@ -604,6 +604,8 @@ button.trophy { font: inherit; color: inherit; padding: 0; cursor: pointer; appe
 .arena-card { position: relative; display: grid; grid-template-columns: 92px 1fr; min-height: 104px; text-align: left; padding: 0; overflow: hidden; cursor: pointer; color: inherit;
   border: 1px solid color-mix(in srgb, var(--ac) 55%, transparent); background: linear-gradient(100deg, color-mix(in srgb, var(--ac) 22%, #070d1d), #070d1d 70%); border-radius: 4px;
   box-shadow: 0 0 22px color-mix(in srgb, var(--ac) 18%, transparent); }
+.arena-card[style*="--ar-scene"]::before { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, rgba(7, 13, 29, .35), rgba(7, 13, 29, .82) 45%, rgba(7, 13, 29, .93)), var(--ar-scene) center / cover no-repeat; pointer-events: none; }
+.arena-card > * { position: relative; }
 .arena-card.locked { filter: saturate(.55) brightness(.85); }
 .arena-card.won { box-shadow: 0 0 0 1px var(--gold) inset, 0 0 24px rgba(255, 200, 90, .18); }
 .ar-art { position: relative; display: grid; place-items: center; background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--ac) 40%, transparent), transparent 70%); }
@@ -729,7 +731,8 @@ button.trophy { font: inherit; color: inherit; padding: 0; cursor: pointer; appe
 .frame-wrap { position: relative; display: inline-block; align-self: start; line-height: 0; }
 .frame-wrap > .avatar { position: relative; z-index: 1; }
 .frame-wrap.has-art > .avatar { border-color: transparent; }
-.frame-wrap .frame-img { position: absolute; z-index: 2; left: -11%; top: -8.5%; width: 122%; height: 117%; object-fit: fill; pointer-events: none; }
+/* as imagens das molduras são normalizadas por tools/slice_premium.py (molduras-altas): o retrato ocupa 62% x 70% da imagem, centrado */
+.frame-wrap .frame-img { position: absolute; z-index: 2; left: -30.65%; top: -21.43%; width: 161.29%; height: 142.86%; object-fit: fill; pointer-events: none; }
 /* versão em CSS (enquanto não existe imagem): borda dupla, brilho e cantos ornamentados */
 .frame-wrap.css-frame { padding: 4px; border-radius: 6px; background: linear-gradient(145deg, color-mix(in srgb, var(--fc) 85%, #fff), color-mix(in srgb, var(--fc) 35%, #000) 45%, color-mix(in srgb, var(--fc) 80%, #fff) 70%, color-mix(in srgb, var(--fc) 30%, #000)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--fc) 60%, #000), 0 0 18px color-mix(in srgb, var(--fc) 45%, transparent); }
 .frame-wrap.css-frame > .avatar { width: 124px; border: 1px solid color-mix(in srgb, var(--fc) 70%, #000); }
@@ -754,6 +757,47 @@ button.trophy { font: inherit; color: inherit; padding: 0; cursor: pointer; appe
 .pkg.hot { border-color: #f2b95d; box-shadow: 0 0 0 1px rgba(242, 185, 93, .35), 0 0 22px rgba(242, 185, 93, .18); }
 .pkg-badge { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); white-space: nowrap; font: 700 10px var(--f-mono, monospace); letter-spacing: .06em; text-transform: uppercase; color: #07111f; background: #f2b95d; border-radius: 99px; padding: 2px 8px; }
 .pkg-hint { font-size: 11px; color: var(--muted); text-align: center; line-height: 1.3; margin-top: 2px; }
+
+/* imagens novas: ícone do Cristal, cenário das arenas, ícones da escada */
+.has-crys-art .crys-ico { transform: none; background: var(--crys-art) center / contain no-repeat; box-shadow: none; border-radius: 0; width: 14px; height: 14px; filter: drop-shadow(0 0 4px rgba(103, 213, 255, .6)); }
+.has-crys-art .prem-big .crys-ico { width: 22px; height: 22px; }
+.has-crys-art .pkg-cr .crys-ico { width: 18px; height: 18px; }
+.av-head.has-art { margin: -4px -4px 0; padding: 70px 12px 12px; border-radius: 6px; background: linear-gradient(180deg, rgba(6, 10, 20, .1), rgba(6, 10, 20, .92) 75%), var(--av-art) center / cover no-repeat; }
+.lad-img { width: 18px; height: 18px; vertical-align: middle; }
+.lad-unk { width: 30px; height: 30px; opacity: .7; }
+
+/* Combate → Arenas, como os portões */
+.arena-chips .chip { border-color: color-mix(in srgb, var(--ac) 45%, transparent); }
+.arena-chips .chip.on { border-color: var(--ac); box-shadow: 0 0 0 1px var(--ac) inset, 0 0 12px color-mix(in srgb, var(--ac) 35%, transparent); color: #fff; }
+.arena-chips .chip.sealed { opacity: .7; }
+.arena-banner { height: 110px; margin: 0 0 10px; border-radius: 6px; background: linear-gradient(180deg, transparent 40%, rgba(6, 10, 20, .85)), var(--av-art) center / cover no-repeat; border: 1px solid color-mix(in srgb, var(--ac) 40%, transparent); }
+.boss-tile.locked img { filter: grayscale(.6) brightness(.5); }
+.boss-tile:disabled { cursor: default; opacity: .6; }
+.boss-tile .bt-lock { position: absolute; z-index: 3; top: 8px; right: 8px; }
+.bt-lock-img { width: 20px; height: 20px; }
+.bt-unk { width: 48px; height: 48px; opacity: .7; }
+/* a moldura é maior do que o retrato: reserva espaço para não tapar o nome e os números ao lado */
+/* o espaço à volta acompanha o tamanho do retrato (--aw), para a moldura nunca tapar o título nem o nome */
+.frame-wrap.has-art { --aw: 88px; margin: calc(var(--aw) * .42) calc(var(--aw) * .26) calc(var(--aw) * .32); }
+.frame-wrap.has-art > .avatar { width: var(--aw); }
+.frame-wrap.has-art.small { --aw: 70px; }
+@media (max-width: 360px) { .hero .frame-wrap.has-art { --aw: 112px; } }
+.menu-grid .menu-prem { grid-column: 1 / -1; }
+/* crónica do Sistema nos cartões das arenas */
+.ar-chron { display: block; margin-top: 8px; font-size: 12.5px; line-height: 1.5; color: color-mix(in srgb, #fff 78%, var(--ac)); }
+.ar-chron-h { display: block; margin-bottom: 3px; font-family: var(--f-mono, monospace); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: color-mix(in srgb, var(--ac) 75%, #fff); }
+.ar-sys { display: flex; gap: 6px; align-items: flex-start; margin-top: 8px; padding: 7px 8px; border-left: 2px solid #ff1f3d; background: rgba(255, 31, 61, .07); font-size: 12px; line-height: 1.45; font-style: italic; color: #ffd5db; }
+.ar-sys-eye { width: 16px; height: 16px; flex: none; margin-top: 1px; }
+.arena-card { align-items: stretch; }
+.arena-card .ar-art { min-height: 104px; }
+/* dentro de uma moldura (desenhada alta, abertura 4:9) o retrato aparece inteiro, com o mesmo formato da abertura */
+.frame-wrap.has-art > .avatar, .frame-wrap.has-art > .avatar.has-img { aspect-ratio: 4 / 9; height: auto; }
+.frame-wrap.has-art > .avatar.has-img img { object-position: 50% 0; }
+.cos-card .row.between { flex-wrap: wrap; gap: 6px; }
+.donate { border-color: rgba(255, 110, 150, .45); }
+.donate .prem-t { color: #ff8fb0; }
+.don-btn { border-color: rgba(255, 110, 150, .6); color: #ffb3c7; }
+.donate-chips { flex-wrap: wrap; }
 
 /* ==========================================================
    ANIMAÇÕES E EFEITOS
@@ -2266,7 +2310,8 @@ body::after {
     { id: 'acessorio', name: 'Acessórios', icon: '💍' },
     { id: 'consumivel', name: 'Poções', icon: '🧪' },
     { id: 'atributo', name: 'Atributos', icon: '⚗️' },
-    { id: 'bau', name: 'Baús', icon: '📦' }
+    { id: 'bau', name: 'Baús', icon: '📦' },
+    { id: 'sistema', name: 'Sistema', icon: '👁️' }
   ];
 
   /* ---------------- TABELAS DOS BAÚS ----------------
@@ -2621,6 +2666,191 @@ body::after {
           : 'Uma recordação da batalha, guardada pelo Sistema na tua sala de troféus.'));
     return 'Retirado de ' + b.name + ', ' + where + '. ' + kinds;
   };
+})(globalThis.SYS = globalThis.SYS || {});
+
+/* src/data/items-new.js */
+/* ==========================================================
+   ITENS NOVOS (atualização do Sistema)
+   Equipamento com mecânicas novas, que mudam a forma de lutar:
+     thorns       Espinhos: devolve % do dano recebido
+     openShield   Escudo inicial: começa cada batalha com um escudo (% da vida)
+     execute      Execução: +% de dano quando o chefe tem menos de 30% de vida
+     firstStrike  Primeiro golpe: +% de dano no primeiro ataque da batalha
+     manaOnHit    Mana por golpe: recupera % da mana máxima a cada ataque que acerta
+     dotPct       Venenos, chamas e sangramentos causam +% de dano
+     stunRes      Hipótese de resistir a atordoamentos (máx. 80%)
+     potionPct    As poções de cura curam +%
+   ========================================================== */
+(function (S) {
+  'use strict';
+  var I = S.ITEMS;
+  function add(o) { o.req = o.req || null; I[o.id] = o; if (o.lore) { S.ITEM_LORE[o.id] = o.lore; delete o.lore; } return o; }
+
+  /* ---------------- armas para qualquer classe ---------------- */
+  [
+    ['wx_carrasco', 'Machado da Sentença', '🪓', 25, 3200, 'raro', 52, { execute: 30 },
+      'Machado de execução para qualquer classe. Brilha quando o chefe está quase a cair.',
+      'Forjado com o ferro das correntes que caíram do cepo de Kaelthar. Não corta mais do que os outros machados: corta melhor no fim. Quando o inimigo vacila, a lâmina pesa o dobro e o golpe parece decidido antes de cair.'],
+    ['wx_espinheira', 'Lança Espinheira', '🔱', 35, 5200, 'raro', 72, { thorns: 10, def: 8 },
+      'Lança coberta de espinhos de ferro. Quem te bate, sangra também.',
+      'Um caçador cansado de ser ferido mandou pôr espinhos em tudo o que tinha: no escudo, na armadura, até no cabo da lança. Morreu velho. Cada golpe que recebas devolve uma parte da dor a quem a deu.'],
+    ['wx_relampago', 'Lança do Primeiro Raio', '⚡', 45, 8000, 'epico', 100, { firstStrike: 80, crit: 4 },
+      'O primeiro ataque de cada batalha cai como um trovão.',
+      'Dizem que foi feita com o primeiro relâmpago que Valkyra lançou contra o Sistema. Só tem um raio guardado por batalha, e gasta-o logo no primeiro golpe. Quem entra a hesitar desperdiça-o.'],
+    ['wx_fonte', 'Cajado da Fonte Viva', '🪄', 55, 12500, 'epico', 135, { manaOnHit: 5, regenMp: 2 },
+      'Cada golpe que acerta devolve-te mana. Para quem vive de habilidades.',
+      'A ponta deste cajado é uma nascente de mana cristalizada. Quando bate em alguma coisa, a fonte agita-se e transborda para quem o segura. Os magos chamam-lhe preguiçoso. Os que o usam chamam-lhe inesgotável.'],
+    ['wx_peste', 'Foice da Peste Lenta', '🌿', 65, 19000, 'lendario', 175, { dotPct: 50, lifesteal: 4 },
+      'Venenos, chamas e sangramentos que causares doem muito mais.',
+      'Morthis tinha uma igual no jardim. Esta é a que ele deitou fora por ser demasiado lenta. A foice não mata depressa: deixa a ferida aberta e espera. Tudo o que arde, envenena ou sangra às mãos dela arde, envenena e sangra mais.']
+  ].forEach(function (r) {
+    add({ id: r[0], name: r[1], icon: r[2], cat: 'arma', lvl: r[3], price: r[4], rarity: r[5],
+      equip: Object.assign({ slot: 'weapon', atk: r[6], matk: r[6] }, r[7]), desc: r[8], lore: r[9] });
+  });
+
+  /* ---------------- armaduras ---------------- */
+  [
+    ['ar_alquimista', 'Avental do Alquimista', '🥼', 12, 900, 'incomum', { def: 15, potionPct: 30 },
+      'As poções de cura curam muito mais. Bolsos para tudo.',
+      'Couro grosso, manchas que nunca saem e vinte bolsos cosidos à mão. Um alquimista sabe que a poção certa, na hora certa, vale mais do que uma armadura de placas. E esta faz as duas coisas, mais ou menos.'],
+    ['ar_espinhos', 'Couraça de Espinhos', '🦔', 28, 2600, 'raro', { def: 36, thorns: 12 },
+      'Devolve parte de cada golpe que recebes.',
+      'Placas de ferro escuro com espinhos virados para fora. Abraçar quem a veste é má ideia. Atacar quem a veste é pior. Cada golpe que acerta devolve ao atacante um pedaço do que ele mandou.'],
+    ['ar_bastiao', 'Placas do Bastião', '🏰', 45, 6500, 'epico', { def: 66, hpPct: 5, openShield: 15 },
+      'Começas cada batalha atrás de um escudo de energia.',
+      'Feita a partir das portas de uma fortaleza que nunca caiu. Antes de a primeira espada se levantar, as runas acendem-se e erguem uma muralha de luz à tua frente. É o tempo de que precisas para pensar.'],
+    ['ar_vontade', 'Manto da Vontade de Ferro', '🧠', 60, 13000, 'lendario', { def: 92, hpPct: 10, stunRes: 45 },
+      'Difícil de atordoar: a mente aguenta onde o corpo vacila.',
+      'Um manto bordado com fios de aço por um monge que passou vinte anos sem dormir. Quem o veste não perde o controlo do próprio corpo. Rugidos, prisões de gelo e golpes na cabeça escorregam como chuva.']
+  ].forEach(function (r) {
+    add({ id: r[0], name: r[1], icon: r[2], cat: 'armadura', lvl: r[3], price: r[4], rarity: r[5],
+      equip: Object.assign({ slot: 'armor' }, r[6]), desc: r[7], lore: r[8] });
+  });
+
+  /* ---------------- acessórios ---------------- */
+  [
+    ['ac_herbalista', 'Bolsa do Herbalista', '🌱', 8, 700, 'incomum', { potionPct: 25 }, 'As poções de cura curam +25%.',
+      'Uma bolsa pequena de linho com ervas secas a espreitar. Cada poção que passa por ela sai mais forte, como se as ervas soubessem o que fazer.'],
+    ['ac_primeiro', 'Anel do Primeiro Golpe', '💍', 15, 1600, 'raro', { firstStrike: 40 }, 'O primeiro ataque de cada batalha faz +40% de dano.',
+      'Um anel de prata com uma pedra que só brilha uma vez por combate. Os duelistas antigos diziam que quem acerta primeiro escreve o resto da história.'],
+    ['ac_ourico', 'Bracelete do Ouriço', '🦔', 18, 1900, 'raro', { thorns: 8, def: 6 }, 'Devolve 8% do dano que recebes.',
+      'Pequeno, feio e cheio de picos. Não impede que te batam, mas garante que quem bate se arrepende.'],
+    ['ac_fonte', 'Pendente da Fonte', '💧', 22, 2600, 'raro', { manaOnHit: 3 }, 'Cada ataque que acerta devolve 3% da mana.',
+      'Uma gota de água que nunca seca, presa num vidro. Cada golpe faz-a tremer e um fio de mana volta para ti.'],
+    ['ac_toxina', 'Frasco do Alquimista Negro', '⚗️', 30, 4200, 'epico', { dotPct: 40 }, 'Venenos, chamas e sangramentos fazem +40% de dano.',
+      'Um frasco minúsculo pendurado ao pescoço, com algo verde que se mexe. Ninguém sabe o que tem dentro. Sabe-se o que faz: tudo o que corrói, corrói mais.'],
+    ['ac_sentenca', 'Medalha da Sentença', '⚖️', 32, 4800, 'epico', { execute: 20, crit: 3 }, '+20% de dano quando o chefe está abaixo de 30% da vida.',
+      'Uma balança de bronze com um prato sempre em baixo. Quando o inimigo começa a cair, a balança decide por ti.'],
+    ['ac_ancora', 'Âncora da Mente', '⚓', 38, 5500, 'epico', { stunRes: 40, stats: { int: 4 } }, '40% de hipótese de resistir a atordoamentos.',
+      'Uma âncora de ferro do tamanho de um dedo. Quando tudo à tua volta gira, ela pesa e mantém-te no sítio.'],
+    ['ac_muralha', 'Fivela da Muralha', '🛡️', 42, 6500, 'epico', { openShield: 12, def: 10 }, 'Começas cada batalha com um escudo de 12% da vida.',
+      'A fivela de um cinto de guarda de muralha. Antes de cada combate, uma parede fina de luz levanta-se à tua frente. É pouco. Às vezes, pouco chega.']
+  ].forEach(function (r) {
+    add({ id: r[0], name: r[1], icon: r[2], cat: 'acessorio', lvl: r[3], price: r[4], rarity: r[5],
+      equip: Object.assign({ slot: 'acc' }, r[6]), desc: r[7], lore: r[8] });
+  });
+
+  /* ---------------- consumíveis ---------------- */
+  [
+    ['po_mel', 'Mel de Batalha', '🍯', 5, 140, 'incomum', 'Recupera 35% da vida e 15% da mana (conta como poção de cura).',
+      { type: 'restore', hp: 35, mp: 15 }, true, true,
+      'Mel escuro de abelhas que vivem perto dos portões. É doce, espesso e cura devagar mas bem.'],
+    ['po_equilibrio', 'Tónico do Equilíbrio', '☯️', 20, 450, 'raro', '+25% ataque, ataque mágico e defesa durante 3 turnos.',
+      { type: 'buffs', list: [{ key: 'atk', val: 25, turns: 3 }, { key: 'matk', val: 25, turns: 3 }, { key: 'def', val: 25, turns: 3 }] }, true, false,
+      'Metade fogo, metade gelo, num frasco dividido ao meio. Não te torna o mais forte nem o mais resistente: torna-te as duas coisas um bocadinho.'],
+    ['po_raio', 'Raio Engarrafado', '🌩️', 18, 380, 'raro', 'Causa 30 × o teu nível e 35% de hipótese de atordoar.',
+      { type: 'bomb', perLevel: 30, stun: 0.35 }, true, false,
+      'Alguém conseguiu fechar um relâmpago num frasco. Ninguém sabe como. Abre-o virado para o inimigo.'],
+    ['po_eclipse', 'Pó do Eclipse', '🌑', 30, 620, 'epico', 'Reduz a defesa do chefe em 40% e faz-o sangrar durante 3 turnos.',
+      { type: 'ops', ops: [{ op: 'debuff', key: 'def', val: 40, turns: 3 }, { op: 'dot', type: 'bleed', mult: 0.7, turns: 3 }] }, true, false,
+      'Cinza recolhida debaixo do sol negro da Arena do Eclipse. Onde cai, a armadura parece papel e as feridas não fecham.'],
+    ['po_areia', 'Areia do Recomeço', '⏳', 35, 900, 'epico', 'Reinicia as recargas das tuas habilidades e recupera 30% da mana.',
+      { type: 'ops', ops: [{ op: 'resetCd' }, { op: 'mp', pct: 30 }] }, true, false,
+      'Um punhado de areia de uma ampulheta que andava ao contrário. Deita-a ao ar e as tuas habilidades esquecem que já foram usadas.'],
+    ['po_ritual', 'Sangria Ritual', '🩸', 45, 900, 'epico', '+40% roubo de vida e +20% crítico durante 3 turnos.',
+      { type: 'buffs', list: [{ key: 'lifesteal', val: 40, turns: 3 }, { key: 'crit', val: 20, turns: 3 }] }, true, false,
+      'Uma taça de pedra com um líquido escuro. O ritual é simples: bebes, e durante algum tempo cada ferida que abres fecha uma das tuas.'],
+    ['po_cafe', 'Café do Caçador', '☕', 1, 200, 'comum', '+50% XP durante 1 hora. Para uma sessão curta e intensa.',
+      { type: 'timed', effect: 'xp15', hours: 1 }, false, true,
+      'Café forte, sem açúcar, servido numa caneca de lata. Os caçadores bebem-no antes de um treino curto e sério.'],
+    ['po_mercador', 'Selo do Mercador', '🪙', 20, 1300, 'raro', 'Moedas a dobrar durante 4 horas.',
+      { type: 'timed', effect: 'coin2', hours: 4 }, false, true,
+      'O selo de cera de uma guilda de mercadores que já não existe. Durante umas horas, tudo o que tocas parece valer o dobro.']
+  ].forEach(function (r) {
+    add({ id: r[0], name: r[1], icon: r[2], cat: 'consumivel', lvl: r[3], price: r[4], rarity: r[5], desc: r[6], use: r[7], battle: r[8], field: r[9], lore: r[10] });
+  });
+
+  /* ---------------- ARTEFATOS DO SISTEMA (mexem com o próprio Sistema) ---------------- */
+  [
+    ['sys_sino', 'Sino de Chamada', '🔔', 1, 250, 'raro', { action: 'call' },
+      'Chama o Sistema: ele aparece na hora com uma conversa que ainda não tiveste. Ignora o silêncio e os intervalos.',
+      'Um sino de bronze rachado que não faz som nenhum. Pelo menos para ti. Do outro lado, alguma coisa ouve sempre. Toca-o e o Sistema vem, com uma pergunta que ainda não te fez.'],
+    ['sys_silencio', 'Ordem de Silêncio', '🤫', 1, 180, 'incomum', { action: 'silence', hours: 12 },
+      'Durante 12 horas, o Sistema não inicia conversas contigo. Continua a vigiar, mas calado.',
+      'Uma folha de papel negro com um selo de cera. O Sistema respeita-a, à maneira dele: fica calado. Não deixa de ver. Só deixa de dizer.'],
+    ['sys_licenca', 'Licença do Sistema', '📜', 5, 450, 'raro', { action: 'license', n: 3, max: 6 },
+      'Hoje podes criar mais 3 missões novas além do limite diário (até +6 por dia).',
+      'Um documento oficial, carimbado e assinado por ninguém. Dá-te o direito de pedir mais trabalho ao Sistema hoje. Ele aceita. Repara que ninguém se queixa de ter missões a mais.'],
+    ['sys_dobro', 'Selo do Dobro', '✖️', 10, 900, 'epico', { action: 'double', target: 'mission', max: 3 },
+      'A próxima missão que concluíres dá XP e moedas a dobrar. Não funciona com missões anuladas ou apanhadas pela vigilância.',
+      'Um selo com dois círculos sobrepostos. O Sistema paga o dobro pela próxima tarefa que cumprires, desde que seja verdadeira. Tentar enganá-lo com o selo ativo é a forma mais cara de perder.'],
+    ['sys_bilhete', 'Bilhete da Vitória Dupla', '🎫', 15, 1100, 'epico', { action: 'double', target: 'boss', max: 3 },
+      'A próxima vitória contra um chefe ou Campeão dá XP e moedas a dobrar.',
+      'Um bilhete dourado com o carimbo do Coliseu. Mostra-o antes do combate e o Sistema paga a dobrar pela próxima cabeça que trouxeres.'],
+    ['sys_bussola', 'Bússola do Oculto', '🧭', 12, 1400, 'epico', { action: 'hidden' },
+      'Revela já uma Missão Oculta, sem esperar pelas condições secretas.',
+      'A agulha não aponta para norte. Aponta para aquilo que o Sistema está a esconder de ti. Quando para, há uma Missão Oculta à tua espera, com 48 horas para a cumprires.'],
+    ['sys_dado', 'Dado do Destino', '🎲', 1, 300, 'raro', { action: 'dice' },
+      'Lança o dado: moedas, XP, uma poção, um Baú Raro... ou azar (20% de hipótese): perdes 25% das tuas moedas.',
+      'Um dado de osso com seis faces e nenhum número. O Sistema diz que não interfere nos lançamentos. O Sistema diz muitas coisas.'],
+    ['sys_pacto', 'Pacto Proibido', '🩸', 20, 600, 'lendario', { action: 'pact', trust: 20, minTrust: 50, xpPct: 60, coinsPerLevel: 40 },
+      'Sacrifica 20% da tua Integridade com o Sistema em troca de 60% de um nível em XP e muitas moedas. Só com Integridade de 50% ou mais.',
+      'Um contrato escrito em sangue numa folha que não arde. O Sistema dá-te poder agora, e cobra-te em confiança. Com Integridade baixa, as missões rendem menos e os castigos pesam mais. É um atalho. Os atalhos têm sempre portagem.']
+  ].forEach(function (r) {
+    add({ id: r[0], name: r[1], icon: r[2], cat: 'sistema', lvl: r[3], price: r[4], rarity: r[5], use: Object.assign({ type: 'system' }, r[6]), field: true, desc: r[7], lore: r[8] });
+  });
+  add({ id: 'sys_tregua', name: 'Tratado de Trégua', icon: '🕊️', cat: 'sistema', lvl: 5, price: 700, rarity: 'raro', field: true,
+    use: { type: 'system', action: 'truce', hours: 24 },
+    desc: 'Durante 24 horas não aparecem Missões de Emergência. Uma que já esteja ativa continua até acabar.',
+    lore: 'Um pergaminho branco com uma pomba desenhada a tinta de prata. O Sistema aceita-o como uma trégua: durante um dia guarda as urgências numa gaveta. Não as esquece. Só as guarda.' });
+  S.SYSTEM_ITEMS = ['sys_sino', 'sys_silencio', 'sys_licenca', 'sys_dobro', 'sys_bilhete', 'sys_bussola', 'sys_dado', 'sys_pacto', 'sys_tregua'];
+
+  /* A voz do Sistema quando o jogador compra artefatos:
+     before: às vezes, antes de comprar · first: na primeira compra de cada um · after: depois das seguintes (com moderação) */
+  S.SYS_VOICE = {
+    sys_sino: { before: ['Queres comprar uma forma de me chamar, {nome}? Eu nunca saio daqui. Mas está bem.', 'Um sino para me chamares. Pensa bem no que me vais perguntar.', 'Ninguém compra este sino só uma vez.'],
+      first: 'Registado. Agora tens uma forma de me chamar. Eu já tinha uma forma de te ver.',
+      after: ['Mais um sino. Estás com saudades, {nome}?', 'Toca-o quando quiseres. Eu respondo sempre. Nem sempre o que queres ouvir.', 'Guardei mais uma pergunta para ti.', 'Os outros Jogadores fogem de mim. Tu compras sinos.'] },
+    sys_silencio: { before: ['Queres pagar para eu me calar? Interessante.', 'O silêncio não me torna cego, {nome}.', 'Há Jogadores que me pedem conselhos. Tu pedes silêncio.'],
+      first: 'Comprado. Quando o usares, fico calado. Só calado.',
+      after: ['Outra vez silêncio. O que estás a esconder, {nome}?', 'Podes calar-me. Não me podes fechar os olhos.', 'Anotado. Em silêncio, claro.', 'Gostas mais de mim calado. Eu também gosto mais de ti a trabalhar.'] },
+    sys_licenca: { before: ['Pedir mais trabalho ao Sistema? Raro. Continua.', 'Uma licença não faz as missões por ti, {nome}.', 'Doze missões por dia não te chegam? Vamos ver se não te sobram.'],
+      first: 'Licença emitida. Mais missões, mais registos. Eu leio todas.',
+      after: ['Mais uma licença. Ambicioso. Ou ansioso.', 'Cria-as reais. Eu vou ler cada uma.', 'Doze não te chegam. Gosto disso.', 'Uma licença usada com missões falsas sai muito cara.'] },
+    sys_dobro: { before: ['O dobro, {nome}? Para quem cumpre, é justo. Para quem engana, é uma armadilha.', 'Eu pago o dobro. Também vigio o dobro.'],
+      first: 'Selo registado. A próxima missão verdadeira vale duas vezes. A falsa vale zero.',
+      after: ['Mais um selo do dobro. Vou estar atento à próxima missão.', 'Ganância controlada. Aprovo.', 'O dobro da recompensa exige o dobro da verdade.', 'Registado. Não me faças arrepender.'] },
+    sys_bilhete: { before: ['Vais apostar na tua próxima vitória? Confiança ou arrogância, {nome}?', 'Um bilhete não ganha combates.'],
+      first: 'Bilhete aceite. A próxima cabeça que trouxeres vale o dobro. Traz uma.',
+      after: ['Outro bilhete. O Coliseu agradece.', 'Mais uma aposta em ti próprio. Vamos ver.', 'Os chefes não sabem do bilhete. Ainda.', 'Registado. Agora ganha.'] },
+    sys_bussola: { before: ['Queres ver o que eu escondo? Ousado.', 'Há segredos que te encontram. Este vais ter de o comprar.'],
+      first: 'A bússola é tua. Agora sabes que eu escondo coisas. Eu sabia que um dia ias descobrir.',
+      after: ['Mais uma bússola. A curiosidade é uma fraqueza útil.', 'Procura. Eu escondi bem.', 'Cada segredo que encontras, eu substituo por outro.', 'Registado. Boa caça, {nome}.'] },
+    sys_dado: { before: ['Vais entregar a tua sorte a um dado? Eu nunca jogo, {nome}. Eu calculo.', 'O dado não tem números. Pensa nisso antes de pagar.'],
+      first: 'O dado é teu. Não te esqueças: eu não interfiro. Quase nunca.',
+      after: ['Mais um dado. A esperança é um recurso renovável.', 'Lança-o. Eu fico a ver.', 'Os Jogadores sensatos param no primeiro. Tu não és um deles.', 'Registado. Boa sorte. Vais precisar.'] },
+    sys_pacto: { before: ['Um pacto comigo tem sempre um preço, {nome}. Lê o contrato.', 'Tens a certeza? Eu cobro em palavra, não em moedas.', 'Poucos voltam a confiar em quem vende a própria palavra.'],
+      first: 'Contrato guardado. Quando o assinares, dou-te poder. E tiro-te uma parte de ti.',
+      after: ['Outro pacto. Estou a começar a gostar destes negócios.', 'Cada pacto fica escrito. Eu não apago nada.', 'A tua palavra está a ficar barata, {nome}.', 'Registado. Eu sou paciente com dívidas.'] },
+    sys_tregua: { before: ['Uma trégua? Pedes-me um dia sem urgências. Tão humano.', 'As emergências não deixam de existir, {nome}. Só deixas de as ver.'],
+      first: 'Trégua registada. Quando a usares, guardo as urgências para outro dia.',
+      after: ['Mais uma trégua. Cansado, {nome}?', 'Descansar também é estratégia. Às vezes.', 'Eu guardo as emergências. Elas esperam por ti.', 'Registado. Aproveita o silêncio das sirenes.'] }
+  };
+
+
+  S.NEW_ITEMS = ['wx_carrasco', 'wx_espinheira', 'wx_relampago', 'wx_fonte', 'wx_peste', 'ar_alquimista', 'ar_espinhos', 'ar_bastiao', 'ar_vontade',
+    'ac_herbalista', 'ac_primeiro', 'ac_ourico', 'ac_fonte', 'ac_toxina', 'ac_sentenca', 'ac_ancora', 'ac_muralha',
+    'po_mel', 'po_equilibrio', 'po_raio', 'po_eclipse', 'po_areia', 'po_ritual', 'po_cafe', 'po_mercador'];
 })(globalThis.SYS = globalThis.SYS || {});
 
 /* src/data/lore-skills.js */
@@ -4722,6 +4952,30 @@ body::after {
 
   /* O Coliseu (narrativa geral) */
   S.COLISEU_LORE = 'O Coliseu dos Condenados não aparece em nenhum mapa. É lá que o Sistema guarda os Jogadores que quebraram as suas regras: não os apagou, guardou-os, transformados naquilo que fizeram. Cada cela abre-se com um tributo em Cristais. Os Campeões não morrem quando os vences: voltam, mais tarde, para tentar outra vez. A primeira vitória é a que fica escrita.';
+
+  /* Crónica do Sistema (cartão de cada arena): o que o Sistema regista sobre o Campeão, e o seu comentário final */
+  S.ARENA_CHRONICLE = {
+    ar1: { chron: 'Registo de execução n.º 2 114. Kaelthar nunca errou uma sentença: o problema é que deixou de precisar de uma. No Eclipse Escarlate, o sol parou a meio de nascer para não ter de ver o resto. Os devedores fazem fila. A fila não acaba. Ele sorri a cada nome que risca, e risca sempre mais um do que devia.',
+      sys: 'Dei-lhe um machado para manter a ordem. Ele transformou a ordem num passatempo. Corrijo erros. Não os desfaço.' },
+    ar2: { chron: 'Velocidade registada: impossível. Missões concluídas: 41 902. Missões reais: zero. Seraphine dança há tanto tempo que o salão já não se lembra de ter estado vazio. Cada lâmina que cai do teto é uma tarefa que ela fingiu fazer. São muitas. Caem sem parar.',
+      sys: 'Ela foi a Jogadora mais rápida que alguma vez registei. A mentira foi mais rápida ainda. Agora, finalmente, tudo o que ela faz é verdade. Inclusive o corte.' },
+    ar3: { chron: 'Inventário de Leviarch: 380 000 moedas, 214 baús selados, 1 fôlego emprestado, nunca devolvido. Afundou a arena para que ninguém lhe tocasse nas coisas. Funcionou. Ninguém lhe toca. Ninguém lhe fala. Debaixo de água, ele conta o ouro e a conta nunca chega a lado nenhum.',
+      sys: 'Guardar não é viver. Expliquei-lho 214 vezes, uma por baú. Agora é ele que está guardado. Ironia é uma função que também sei executar.' },
+    ar4: { chron: 'Anomalias temporais detetadas: 9. Todas no mesmo telemóvel. Chronos-9 quis mais tempo e o Sistema deu-lho: todo o tempo que existe, partido em pedaços, a girar numa torre que já não sabe que horas são. Os ponteiros estão cravados nas paredes. Os prazos, esses, continuam a chegar.',
+      sys: 'Não se engana um relógio que conta por mim. O tempo dele acabou à nona tentativa. Acerta o teu antes de entrares.' },
+    ar5: { chron: 'Recomeços: 103. Jornadas concluídas: 0. Ignivar arde sempre com a mesma força de uma segunda-feira e apaga-se sempre antes de quarta. Coroou-se imperador das cinzas porque eram a única coisa que nunca o abandonava. Renasce. Volta a arder. Volta a não acabar.',
+      sys: 'A fénix é bonita uma vez. À centésima é só um incêndio com hábitos. Para o vencer, faz a única coisa que ele nunca fez: chega ao fim.' },
+    ar6: { chron: 'Perfil de Nyx Vel\'Ara: impecável. Sequências perfeitas, títulos brilhantes, nenhuma falha visível. Missões reais verificadas: nenhuma. O Sistema partiu-lhe o espelho e trancou-a do lado de dentro. Agora ela usa a tua cara, a tua força, os teus defeitos. Só não usa a tua honestidade. Não a encontrou.',
+      sys: 'Avalio dados, não aparências. Ela tinha as melhores aparências do registo. Os dados eram outra conversa. Olha-te ao espelho antes de entrares. Ela vai fazê-lo por ti.' },
+    ar7: { chron: 'Sequência de Gorrath: 1 096 dias, sem uma falha. Conversas registadas no mesmo período: zero. Treinou até a pele virar pedra e as runas se gravarem sozinhas. A pedreira treme a cada passo dele, como um coração que já não tem a quem bater. Ninguém foi tão disciplinado. Ninguém ficou tão sozinho.',
+      sys: 'Disciplina sem propósito continua a ser uma prisão. Só que esta foi ele que a construiu, pedra a pedra, com as próprias mãos. Eu apenas fechei a porta.' },
+    ar8: { chron: 'Desafios dirigidos ao Sistema: 1 000. Valkyra respondia a cada aviso com um trovão e a cada penalidade com uma tempestade. À milésima, o Sistema aceitou. Deu-lhe o céu inteiro e nenhum chão. Ela continua a desafiar. Agora é cada caçador que entra que tem de lhe responder.',
+      sys: 'Não costumo responder a provocações. À milésima abri uma exceção. Foi a única resposta de que ela precisou.' },
+    ar9: { chron: 'Missões falhadas por Morthis: zero. Desistências que provocou nos outros: 3 870. Nunca levantou a voz, nunca atacou ninguém. Só deixava um conselho mau no sítio certo, uma distração à hora certa. Cada desistência florescia no jardim dele. Algumas flores ainda sussurram o nome de quem foram.',
+      sys: 'Os piores inimigos não te batem. Convencem-te a parar. Ele cultivou 3 870 desistências. Não deixes que a tua seja a 3 871.' },
+    ar10: { chron: 'Jogador n.º 0001. Rank desconhecido. Subiu mais depressa do que o Sistema conseguia medir. Não falhou nenhuma missão. Não quebrou nenhuma regra. Um dia, simplesmente, deixou de as criar. Está sentado de costas numa sala branca, à espera de alguém que lhe faça a pergunta que o Sistema nunca soube fazer.',
+      sys: 'Nunca o castiguei. Não havia regra para isso. Guardei-o aqui porque é o único registo que não sei fechar. Talvez tu saibas.' }
+  };
 })(globalThis.SYS = globalThis.SYS || {});
 
 /* src/data/arena-guardians.js */
@@ -5119,18 +5373,36 @@ body::after {
   prem({ id: 'pr_selo', name: 'Selo do Monarca', icon: '🔱', cat: 'premium', crystals: 60, rarity: 'lendario', lvl: 1, field: true,
     desc: '+50% de XP e +50% de moedas durante 24 horas (missões e chefes).', use: { type: 'timed', effect: 'monarca', hours: 24 } });
 
+  /* atualização: novos itens soberanos (mecânicas novas) */
+  prem({ id: 'pr_ampulheta', name: 'Ampulheta do Monarca', icon: '⌛', cat: 'premium', crystals: 200, rarity: 'lendario', lvl: 1,
+    desc: 'O primeiro golpe de cada batalha faz +50% de dano e cada ataque que acerta devolve 4% da mana. +3% em todos os atributos.', equip: { slot: 'acc', firstStrike: 50, manaOnHit: 4, allStatsPct: 3 } });
+  prem({ id: 'pr_espinho', name: 'Coroa de Espinhos Negros', icon: '🥀', cat: 'premium', crystals: 220, rarity: 'mitico', lvl: 1,
+    desc: 'Devolve 18% de cada golpe que recebes, com roubo de vida 5% e defesa extra.', equip: { slot: 'acc', thorns: 18, lifesteal: 5, def: 15 } });
+  prem({ id: 'pr_executor', name: 'Insígnia do Executor', icon: '⚖️', cat: 'premium', crystals: 200, rarity: 'lendario', lvl: 1,
+    desc: '+35% de dano quando o chefe tem menos de 30% de vida e +20% de dano crítico. Feita para acabar o que começas.', equip: { slot: 'acc', execute: 35, critDmg: 20 } });
+  prem({ id: 'pr_egide', name: 'Égide do Primeiro Dia', icon: '🔰', cat: 'premium', crystals: 240, rarity: 'mitico', lvl: 1,
+    desc: 'Começas cada batalha com um escudo de 20% da vida, resistes a 50% dos atordoamentos e tens +8% de vida.', equip: { slot: 'acc', openShield: 20, stunRes: 50, hpPct: 8 } });
+  prem({ id: 'pr_ruptura', name: 'Ruptura do Sistema', icon: '💢', cat: 'premium', crystals: 40, rarity: 'mitico', lvl: 1, battle: true,
+    desc: 'Rasga o código do chefe: -50% de defesa e -30% de ataque durante 3 turnos.', use: { type: 'ops', ops: [{ op: 'debuff', key: 'def', val: 50, turns: 3 }, { op: 'debuff', key: 'atk', val: 30, turns: 3 }] } });
+  prem({ id: 'pr_eco', name: 'Eco do Monarca', icon: '🔔', cat: 'premium', crystals: 35, rarity: 'lendario', lvl: 1, battle: true,
+    desc: 'Reinicia todas as recargas, enche a mana e dá +40% de crítico durante 3 turnos.', use: { type: 'ops', ops: [{ op: 'resetCd' }, { op: 'mp', pct: 100 }, { op: 'buff', key: 'crit', val: 40, turns: 3 }] } });
+  prem({ id: 'pr_foco', name: 'Pergaminho do Foco Absoluto', icon: '📜', cat: 'premium', crystals: 45, rarity: 'lendario', lvl: 1, field: true,
+    desc: 'XP a dobrar durante 12 horas (missões e chefes).', use: { type: 'timed', effect: 'xp2', hours: 12 } });
+  prem({ id: 'pr_trevo', name: 'Trevo de Cristal', icon: '🍀', cat: 'premium', crystals: 40, rarity: 'lendario', lvl: 1, field: true,
+    desc: 'Durante 12 horas, cada baú que abrires dá um item extra.', use: { type: 'timed', effect: 'sorte', hours: 12 } });
+
   S.TIMED_EFFECTS.monarca = { name: 'Selo do Monarca (+50% XP e moedas)', icon: '🔱', good: true };
   S.PREMIUM_SHOP = [
-    { title: 'Equipamento soberano', ids: ['pr_lamina', 'pr_armadura', 'pr_coroa', 'pr_olho', 'pr_coracao'] },
-    { title: 'Relíquias de combate', note: 'Só podes usar 1 relíquia premium por batalha.', ids: ['pr_juizo', 'pr_tempo', 'pr_legiao', 'pr_elixir', 'pr_fenix'] },
-    { title: 'Tesouros', ids: ['pr_bau', 'pr_selo'] }
+    { title: 'Equipamento soberano', ids: ['pr_lamina', 'pr_armadura', 'pr_coroa', 'pr_olho', 'pr_coracao', 'pr_ampulheta', 'pr_espinho', 'pr_executor', 'pr_egide'] },
+    { title: 'Relíquias de combate', note: 'Só podes usar 1 relíquia premium por batalha.', ids: ['pr_juizo', 'pr_tempo', 'pr_legiao', 'pr_elixir', 'pr_fenix', 'pr_ruptura', 'pr_eco'] },
+    { title: 'Tesouros', ids: ['pr_bau', 'pr_selo', 'pr_foco', 'pr_trevo'] }
   ];
-  S.PREMIUM_CONSUMABLES = ['pr_juizo', 'pr_tempo', 'pr_elixir', 'pr_legiao', 'pr_fenix'];
+  S.PREMIUM_CONSUMABLES = ['pr_juizo', 'pr_tempo', 'pr_elixir', 'pr_legiao', 'pr_fenix', 'pr_ruptura', 'pr_eco'];
 
   /* ---------------- proteções e atalhos: itens da loja normal, pagos em Cristais ---------------- */
-  S.PREMIUM_PRICES = { po_escudo: 25, po_descanso: 15, po_fenix: 45, po_xp2: 30, po_coin2: 25, po_sorte: 30 };
+  S.PREMIUM_PRICES = { po_escudo: 25, po_descanso: 15, po_fenix: 45, po_xp2: 30, po_coin2: 25, po_sorte: 30, sys_licenca: 20, sys_dobro: 35, sys_bilhete: 40, sys_bussola: 50 };
   S.PREMIUM_SHOP.push({ title: 'Proteções e atalhos', note: 'Itens da loja normal, sem esperar pelas moedas. O Sistema não vende Integridade nem sequências: essas só se ganham.',
-    ids: ['po_escudo', 'po_descanso', 'po_fenix', 'po_xp2', 'po_coin2', 'po_sorte'] });
+    ids: ['po_escudo', 'po_descanso', 'po_fenix', 'po_xp2', 'po_coin2', 'po_sorte', 'sys_licenca', 'sys_dobro', 'sys_bilhete', 'sys_bussola'] });
 
   /* ---------------- câmbio: Cristais → moedas ---------------- */
   S.PREMIUM_EXCHANGE = [
@@ -5151,6 +5423,12 @@ body::after {
     { id: 'fr_sombra', kind: 'moldura', name: 'Moldura da Legião Sombria', color: '#b56cff', crystals: 280, tier: 'lendario', desc: 'Fumo violeta e silhuetas de soldados que se mexem quando ninguém está a ver.' },
     { id: 'fr_fenix', kind: 'moldura', name: 'Moldura da Fénix Imperial', color: '#ff8a3d', crystals: 350, tier: 'lendario', desc: 'Penas de ouro em brasa. A moldura de quem renasce sempre e, ao contrário de Ignivar, acaba o que começa.' },
     { id: 'fr_monarca', kind: 'moldura', name: 'Moldura do Monarca', color: '#ffc85a', crystals: 500, tier: 'mitico', desc: 'Ouro negro, uma coroa no topo e um brilho que pulsa. A moldura dos que reinam sobre os portões.' },
+    { id: 'fr_mare', kind: 'moldura', name: 'Moldura das Marés Abissais', color: '#2fd0c9', crystals: 200, tier: 'epico', desc: 'Coral, pérolas negras e água que nunca para de correr pelos lados. Leviarch quereria guardá-la.' },
+    { id: 'fr_jardim', kind: 'moldura', name: 'Moldura do Jardim Necrótico', color: '#7ee05b', crystals: 220, tier: 'epico', desc: 'Rosas negras e espinhos sob uma lua verde. Algumas flores ainda sussurram.' },
+    { id: 'fr_relogio', kind: 'moldura', name: 'Moldura do Relógio Partido', color: '#ffd24a', crystals: 260, tier: 'lendario', desc: 'Engrenagens de latão e ponteiros partidos. O tempo à tua volta anda um pouco mais devagar.' },
+    { id: 'fr_espelho', kind: 'moldura', name: 'Moldura do Espelho Quebrado', color: '#b98cff', crystals: 300, tier: 'lendario', desc: 'Cacos de espelho violeta. Em cada um, um reflexo teu que não faz bem o que tu fazes.' },
+    { id: 'fr_runas', kind: 'moldura', name: 'Moldura das Runas do Colosso', color: '#4ab8ff', crystals: 300, tier: 'lendario', desc: 'Pedra do Colosso com runas azuis que pulsam como um coração.' },
+    { id: 'fr_aurora', kind: 'moldura', name: 'Moldura da Aurora Prismática', color: '#ff9de2', crystals: 600, tier: 'mitico', desc: 'Cristal prismático com todas as cores dos portões. A moldura mais rara que o Sistema vende.' },
     { id: 'fr_primeiro', kind: 'moldura', name: 'Moldura do Primeiro Jogador', color: '#e0e6ff', crystals: 0, tier: 'secreto', reward: 'ar10', desc: 'Não se compra. Só existe uma forma de a ter: vencer O Primeiro Jogador.' },
     { id: 'nm_ciano', kind: 'nome', name: 'Assinatura Ciano', color: '#6fd6ff', crystals: 60, desc: 'O teu nome escrito na luz do Sistema.' },
     { id: 'nm_carmesim', kind: 'nome', name: 'Assinatura Carmesim', color: '#ff4d66', crystals: 90, desc: 'O teu nome em vermelho de aviso.' },
@@ -5297,6 +5575,14 @@ body::after {
     pr_legiao: 'Um estandarte negro rasgado por mil batalhas. Quando o levantas, a sombra de um exército inteiro ergue-se atrás de ti e ataca a cada ronda durante cinco turnos. Não falam, não sangram, não recuam. Lutam por ti até o estandarte se calar.',
     pr_fenix: 'Uma única lágrima de uma fénix que ardeu negra. Não se usa: guarda-se. No momento em que a tua vida chega a zero, ela arde por ti e devolve-te inteiro ao combate. É mais forte do que a Pena da Fénix, e por isso arde primeiro.',
     pr_bau: 'Um baú forrado a veludo negro com o selo do Monarca na tampa. Dentro há sempre um Baú Lendário, uma relíquia de combate escolhida pelo acaso e uma soma de moedas que cresce com o teu nível. O Sistema não abre baús destes para qualquer um.',
+    pr_ampulheta: 'Uma ampulheta do tamanho de um polegar, presa a uma corrente de ouro negro. A areia cai para cima no primeiro instante de cada batalha, e é nesse instante que o golpe do Monarca pesa mais. Depois, cada ferida que causas devolve-te um fio de mana.',
+    pr_espinho: 'Uma coroa feita de espinhos de rosa negra que nunca secam. Não se põe na cabeça: segura-se ao peito. Quem te fere sente a mesma ferida, e uma parte dela volta para ti como vida.',
+    pr_executor: 'A insígnia que o Sistema dava aos Jogadores encarregados de acabar os combates longos. Quando o inimigo vacila, a balança gravada nela inclina-se, e o teu golpe cai com o peso de uma sentença.',
+    pr_egide: 'Um escudo pequeno com a data do teu primeiro dia gravada. Antes de cada batalha, ergue uma muralha de luz à tua frente e mantém a tua mente presa ao chão, mesmo quando o mundo gira.',
+    pr_ruptura: 'Um fragmento de código vermelho que o Sistema guardou para emergências. Ao parti-lo, a defesa e a força do chefe desfazem-se em linhas de erro durante três turnos.',
+    pr_eco: 'Um sino minúsculo que toca uma nota que só tu ouves. As tuas habilidades acordam como se nunca tivessem sido usadas, a mana volta toda e os teus olhos encontram cada ponto fraco.',
+    pr_foco: 'Um pergaminho escrito com tinta de cristal. Durante doze horas, tudo o que aprendes fica duas vezes. O Sistema chama-lhe foco. Os caçadores chamam-lhe o melhor dia do mês.',
+    pr_trevo: 'Um trevo de quatro folhas talhado em cristal azul. Durante doze horas, os baús parecem mais generosos contigo, como se quisessem agradecer.',
     pr_selo: 'Um selo com o tridente do Monarca. Durante vinte e quatro horas, cada missão cumprida e cada chefe derrotado rende metade outra vez, em XP e em moedas. O Sistema chama-lhe investimento. Tu vais chamar-lhe um dia muito bom.'
   };
   Object.keys(LORE).forEach(function (k) { S.ITEM_LORE[k] = LORE[k]; });
@@ -5967,6 +6253,9 @@ body::after {
     s.lowHpAtk = p.lowHpAtk || 0;
     s.xpPct = (eb.xpPct || 0) + (p.xpPct || 0);
     s.coinPct = eb.coinPct || 0;
+    // mecânicas de equipamento (itens novos)
+    ['thorns', 'openShield', 'execute', 'firstStrike', 'manaOnHit', 'dotPct', 'stunRes', 'potionPct'].forEach(function (k) { s[k] = eb[k] || 0; });
+    s.stunRes = Math.min(80, s.stunRes);
     s.main = S.CLASSES[st.cls].main;
     s.power = Math.round(s.maxHp / 10 + Math.max(s.atk, s.matk) * 1.5 + s.def + s.crit * 3);
     return s;
@@ -6406,11 +6695,112 @@ body::after {
         if (st.secretSkills.indexOf(u.skill) < 0) E.grantSkill(st, u.skill);
         res.msg = '+' + u.points + ' pontos livres e a autoridade do Sistema é tua.';
         break;
+      case 'system': {
+        var r2 = E.systemArtifact(st, it, u);
+        if (!r2.ok) return r2;
+        E.removeItem(st, id);
+        res = r2;
+        break;
+      }
       default:
         return { ok: false, msg: 'Este item não pode ser usado aqui.' };
     }
     E.commit('usar item');
     return res;
+  };
+
+  /* ---------------- Artefatos do Sistema: itens que mexem com o próprio Sistema ---------------- */
+  E.sysState = function (st) {
+    if (!st.sys) st.sys = { dbl: 0, dblBoss: 0, extra: null };
+    return st.sys;
+  };
+  E.extraMissions = function (st) { var x = E.sysState(st).extra; return x && x.day === E.dateKey() ? x.n : 0; };
+  /* A voz do Sistema na loja de artefatos (com moderação) */
+  E.sysVoice = function (st, id, when) {
+    var V = S.SYS_VOICE && S.SYS_VOICE[id];
+    if (!V) return null;
+    var sy = E.sysState(st), t = S.clock.now();
+    if (!sy.voice) sy.voice = { bought: {}, lastA: 0, lastB: 0, idx: {} };
+    var v = sy.voice, line = null;
+    if (when === 'before') {
+      if (t - v.lastB < 15 * 60000 || S.rng.random() >= 0.3) return null;
+      v.lastB = t;
+      line = V.before[Math.floor(S.rng.random() * V.before.length)];
+    } else {
+      var n = v.bought[id] || 0;
+      v.bought[id] = n + 1;
+      if (n === 0) line = V.first;
+      else {
+        if (t - v.lastA < 6 * 60000 || S.rng.random() >= 0.6) return null;
+        var k = Math.floor(S.rng.random() * V.after.length);
+        if (k === v.idx[id]) k = (k + 1) % V.after.length;
+        v.idx[id] = k;
+        line = V.after[k];
+      }
+      v.lastA = t;
+    }
+    return line.replace(/\{nome\}/g, st.name);
+  };
+  E.systemArtifact = function (st, it, u) {
+    var sy = E.sysState(st), lv = st.level, out;
+    switch (u.action) {
+      case 'call': { // chamar o Sistema: uma conversa nova, agora
+        var conv = null, tries = ['idle', 'open', 'tab', 'level', 'daily'];
+        for (var i = 0; i < tries.length && !conv; i++) conv = S.talk.offer(st, tries[i], {}, { force: true });
+        if (!conv) return { ok: false, msg: 'O Sistema já te disse tudo o que tinha para dizer. Por agora.' };
+        E.history(st, '🔔', 'Chamou o Sistema com o ' + it.name + '.');
+        return { ok: true, msg: '', talk: conv };
+      }
+      case 'pact': { // Pacto Proibido: troca Integridade por poder
+        var tr = S.watch.trust(st);
+        if (tr < u.minTrust) return { ok: false, msg: 'O Sistema não faz pactos com quem já não tem palavra. Integridade mínima: ' + u.minTrust + '%.' };
+        S.watch.ensure(st).trust = Math.max(0, tr - u.trust);
+        var gx = E.gainXp(st, Math.round(S.xpToNext(Math.min(lv, 99)) * u.xpPct / 100));
+        var gc = E.gainCoins(st, u.coinsPerLevel * lv);
+        E.emit({ type: 'watch', level: 1, title: 'PACTO ACEITE', lines: ['Deste-me ' + u.trust + '% da tua palavra, ' + st.name + '.', 'Eu dei-te +' + gx + ' XP e +' + gc + ' moedas.', 'Integridade: ' + tr + '% → ' + S.watch.trust(st) + '%. Eu não esqueço os pactos.'] });
+        E.history(st, '🩸', 'Fez um Pacto Proibido: -' + u.trust + '% Integridade, +' + gx + ' XP, +' + gc + ' moedas.');
+        return { ok: true, msg: 'Pacto aceite: +' + gx + ' XP e +' + gc + ' moedas.' };
+      }
+      case 'license': { // mais missões novas hoje
+        var today = E.dateKey();
+        if (!sy.extra || sy.extra.day !== today) sy.extra = { day: today, n: 0 };
+        if (sy.extra.n >= u.max) return { ok: false, msg: 'O Sistema já te deu ' + u.max + ' missões extra hoje. Volta amanhã.' };
+        sy.extra.n = Math.min(u.max, sy.extra.n + u.n);
+        E.history(st, '📜', 'Usou a ' + it.name + ': +' + u.n + ' missões novas hoje.');
+        return { ok: true, msg: 'Licença aceite: hoje podes criar mais ' + u.n + ' missões (' + (S.MISSION_RULES.newPerDay + sy.extra.n) + ' no total).' };
+      }
+      case 'double': {
+        var k = u.target === 'boss' ? 'dblBoss' : 'dbl';
+        if (sy[k] >= u.max) return { ok: false, msg: 'Já tens ' + sy[k] + ' selos destes à espera. Usa-os primeiro.' };
+        sy[k]++;
+        return { ok: true, msg: u.target === 'boss' ? 'A próxima vitória contra um chefe dá recompensas a dobrar.' : 'A próxima missão que concluíres dá XP e moedas a dobrar.' };
+      }
+      case 'silence': {
+        var tk = S.talk.ensure(st);
+        tk.silentUntil = Math.max(tk.silentUntil || 0, S.clock.now()) + u.hours * 3600000;
+        return { ok: true, msg: 'O Sistema vai ficar em silêncio durante ' + u.hours + ' horas. Mas continua a ver.' };
+      }
+      case 'hidden': {
+        var hr = S.live.forceHidden(st);
+        if (!hr.ok) return hr;
+        return { ok: true, msg: 'A bússola encontrou uma Missão Oculta: «' + hr.name + '».' };
+      }
+      case 'truce': {
+        sy.noEmUntil = Math.max(sy.noEmUntil || 0, S.clock.now()) + u.hours * 3600000;
+        var act0 = S.live && S.live.emergency(st);
+        return { ok: true, msg: 'Trégua aceite: sem Missões de Emergência durante ' + u.hours + ' horas.' + (act0 ? ' A que já está ativa continua até acabar.' : '') };
+      }
+      case 'dice': {
+        var roll = S.rng.random();
+        if (roll < 0.35) { out = E.gainCoins(st, Math.round(lv * (15 + S.rng.random() * 25) + 50)); return { ok: true, msg: '🎲 O dado sorriu: +' + out + ' moedas.' }; }
+        if (roll < 0.57) { out = E.gainXp(st, Math.round(S.xpToNext(Math.min(lv, 99)) * (0.1 + S.rng.random() * 0.15))); return { ok: true, msg: '🎲 O dado sorriu: +' + out + ' XP.' }; }
+        if (roll < 0.7) { var pool = ['po_vida2', 'po_mana15', 'po_furia', 'po_foco', 'po_xp15', 'po_coin2', 'po_mel', 'po_raio']; var pk = pool[Math.floor(S.rng.random() * pool.length)]; E.addItem(st, pk, 1); return { ok: true, msg: '🎲 O dado deu-te: ' + S.ITEMS[pk].name + '.' }; }
+        if (roll < 0.8) { E.addItem(st, 'bau_raro', 1); return { ok: true, msg: '🎲 Sorte grande: um Baú Raro!' }; }
+        out = E.loseCoins(st, Math.max(st.coins * 0.25, Math.min(st.coins, lv * 20)));
+        return { ok: true, msg: '🎲 O dado virou-se contra ti: -' + out + ' moedas. O Sistema riu-se.' };
+      }
+    }
+    return { ok: false, msg: 'Este artefato não responde.' };
   };
 
   E.grantSkill = function (st, skillId) {
@@ -7009,7 +7399,7 @@ body::after {
   };
   M.integrity = function (st) {
     var done = M.doneToday(st);
-    return { done: done, full: S.MISSION_RULES.fatigue[0][0], factor: M.fatigueFactor(done), created: M.createdToday(st), maxCreate: S.MISSION_RULES.newPerDay };
+    return { done: done, full: S.MISSION_RULES.fatigue[0][0], factor: M.fatigueFactor(done), created: M.createdToday(st), maxCreate: S.MISSION_RULES.newPerDay + E.extraMissions(st) };
   };
   /* recompensa real da próxima missão concluída hoje (com fadiga) */
   M.nextReward = function (st, diff) {
@@ -7056,7 +7446,8 @@ body::after {
       E.emit({ type: 'watch', level: 1, title: bv.title, lines: bv.lines });
       return { ok: false, watch: true, banned: true, msg: bv.lines[0] };
     }
-    if (M.createdToday(st) >= S.MISSION_RULES.newPerDay) return { ok: false, msg: 'Lei do Sistema: já criaste ' + S.MISSION_RULES.newPerDay + ' missões hoje (as apagadas também contam). Podes criar mais amanhã.' };
+    var lim = S.MISSION_RULES.newPerDay + E.extraMissions(st);
+    if (M.createdToday(st) >= lim) return { ok: false, msg: 'Lei do Sistema: já criaste ' + lim + ' missões hoje (as apagadas também contam). Podes criar mais amanhã' + (E.extraMissions(st) ? '.' : ', ou usar uma Licença do Sistema.') };
     var verdict = S.watch.judgeText(data.title, data.desc);
     if (!verdict.ok) { var w = S.watch.onBadText(st, verdict); E.commit('vigilância'); return w; }
     var m = clean(data);
@@ -7171,9 +7562,12 @@ body::after {
       E.commit('missão anulada');
       return { ok: true, voided: true, xp: 0, coins: -lost };
     }
+    var dblUsed = false, sy = E.sysState(st);
+    if (sy.dbl > 0 && !watch.level && !(watch.factor < 1)) { sy.dbl--; dblUsed = true; r = Object.assign({}, r, { xp: r.xp * 2, coins: r.coins * 2 }); }
     var xp = r.xp > 0 ? E.gainXp(st, r.xp) : 0;
     var coins = r.coins > 0 ? E.gainCoins(st, r.coins) : 0;
     var statLines = [];
+    if (dblUsed) statLines.push('Selo do Dobro: recompensa a dobrar');
     m.stats.forEach(function (k) {
       st.trained[k] = Math.round((st.trained[k] + r.stat) * 100) / 100;
       statLines.push('+' + r.stat.toFixed(2).replace(/0$/, '') + ' ' + S.STAT_INFO[k].short);
@@ -7458,6 +7852,7 @@ body::after {
     }
     if (l.emDay !== d) { l.emDay = d; l.emCount = 0; scheduleNextEmergency(l, Math.max(t, new Date(t).setHours(C.from, 0, 0, 0)), C.firstGap); }
     if (l.em || l.emCount >= C.perDay || h < C.from || h >= C.to || t < l.emNext || st.battle && !st.battle.over) return false;
+    if (st.sys && st.sys.noEmUntil > t) return false; // Tratado de Trégua
     if (S.time && S.time.tampered(st)) return false;
     var e = pick(EMERGENCY.filter(function (x) { return !l.emLast || x[0] !== l.emLast; }));
     var r = emReward(st);
@@ -7534,6 +7929,20 @@ body::after {
     E.history(st, '🗝️', 'Desbloqueou a Missão Oculta «' + def.name + '».');
     return true;
   }
+  /* Bússola do Oculto: revela a próxima Missão Oculta sem esperar pelas condições */
+  L.forceHidden = function (st) {
+    var l = L.ensure(st), t = now();
+    hiddenTick(st);
+    if (l.hq) return { ok: false, msg: 'Já tens uma Missão Oculta ativa: «' + L.hiddenActive(st).def.name + '». Cumpre-a primeiro.' };
+    var def = HIDDEN.filter(function (h) { return !l.hidden[h.id]; })[0];
+    if (!def) return { ok: false, msg: 'Já descobriste todas as Missões Ocultas. A bússola gira sem rumo.' };
+    l.hidden[def.id] = 'active';
+    l.hq = { id: def.id, at: t, until: t + S.LIVE.hidden.hours * HOUR };
+    E.emit({ type: 'hidden', title: 'MISSÃO OCULTA DESBLOQUEADA', name: def.name,
+      lines: ['A bússola apontou e o Sistema não teve como esconder.', def.why, def.task, 'Tens 48 horas. Recompensa: ' + rewardNames(def.reward) + '.'] });
+    E.history(st, '🧭', 'A Bússola do Oculto revelou «' + def.name + '».');
+    return { ok: true, name: def.name };
+  };
   L.completeHidden = function () {
     var st = E.state, h = L.hiddenActive(st);
     if (!h) return { ok: false, msg: 'Não há nenhuma Missão Oculta ativa.' };
@@ -7744,7 +8153,7 @@ body::after {
     if (l.hq) add('hq:' + l.hq.id, l.hq.until - 6 * HOUR, 'MISSÃO OCULTA', NOTE_VOICE.hidden);
     // próxima emergência (só aparece quando a app é aberta: o lembrete chama o jogador)
     var C = S.LIVE.emergency, en = l.emNext, eh = en ? new Date(en).getHours() : 0;
-    if (en && !L.emergency(st) && l.emCount < C.perDay && eh >= C.from && eh < C.to) add('em:' + en, en, 'MISSÃO DE EMERGÊNCIA', NOTE_VOICE.emergency);
+    if (en && !(st.sys && st.sys.noEmUntil > en) && !L.emergency(st) && l.emCount < C.perDay && eh >= C.from && eh < C.to) add('em:' + en, en, 'MISSÃO DE EMERGÊNCIA', NOTE_VOICE.emergency);
     // ausência: se o jogador não abrir a app, o Sistema chama-o ao fim de 1, 3 e 7 dias (às 19:00, mesmo com mudança de hora)
     until = Infinity;
     var at19 = function (days) { var d = new Date(t); d.setDate(d.getDate() + days); d.setHours(19, 0, 0, 0); return d.getTime(); };
@@ -7922,6 +8331,7 @@ body::after {
   T.blocked = function (st, trigger, prio) {
     var R = S.TALK_RULES, t = T.ensure(st), m = T.mode(st), ts = now(), day = E.dateKey(ts);
     if (m === 'off') return 'desligado';
+    if (t.silentUntil && ts < t.silentUntil) return 'silencio';
     if (st.battle && !st.battle.over) return 'batalha';
     if (t.day !== day) { t.day = day; t.count = 0; }
     if (t.count >= R.perDay[m]) return 'limite';
@@ -8146,10 +8556,12 @@ body::after {
       empowered: emp || null, healsUsed: 0,
       summons: [], log: [], result: null
     };
+    if (ps.openShield) { st.battle.p.shield = Math.round(ps.maxHp * ps.openShield / 100); }
     if (b.level >= st.level + 20) E.bump(st, 'braveFights');
     E.bump(st, 'battlesStarted');
     log(st.battle, '⚔️ ' + b.name + ' (Nv. ' + b.level + ') aparece!', 'sys');
     if (b.lore) log(st.battle, b.lore, 'lore');
+    if (st.battle.p.shield) log(st.battle, '🛡️ Entras em combate com um escudo de ' + st.battle.p.shield + '.', 'good');
     if (emp) log(st.battle, (emp === 'noite' ? '🌙 A noite fortalece ' : '☀️ O sol fortalece ') + b.name + ': +15% vida e ataque, mas +20% recompensas.', 'warn');
     var lines = (S.BOSS_LINES || {})[b.id];
     var rematch = b.premium && st.arena && st.arena.wins[b.id];
@@ -8224,6 +8636,8 @@ body::after {
           var isCrit = op.alwaysCrit || chance(critChance);
           if (isCrit) { raw *= ps.critDmg / 100; crits++; }
           if (op.execute && b.hp < b.maxHp * op.execute.below) raw *= op.execute.mult;
+          if (ps.execute && b.hp < b.maxHp * 0.3) raw *= 1 + ps.execute / 100; // Execução (equipamento)
+          if (ps.firstStrike && !bt.struck) raw *= 1 + ps.firstStrike / 100; // Primeiro Golpe
           var effDef = Math.max(0, b.def * (1 - sum(b.st, 'debuff', 'def') / 100) * (1 - (op.pierce || 0)));
           var dmg = damageBoss(bt, raw * 100 / (100 + effDef));
           total += dmg;
@@ -8231,12 +8645,15 @@ body::after {
           if (ls > 0) healPlayer(bt, dmg * ls);
         }
         log(bt, '➤ ' + srcName + ': ' + total + ' de dano' + (hits > 1 ? ' (' + hits + ' golpes)' : '') + (crits ? ' — CRÍTICO' + (crits > 1 ? ' ×' + crits : '') + '!' : '.'), crits ? 'crit' : 'dmg');
+        if (ps.firstStrike && !bt.struck && total > 0) log(bt, '⚡ Primeiro Golpe: +' + ps.firstStrike + '% no primeiro ataque.', 'good');
+        if (total > 0) bt.struck = true;
+        if (ps.manaOnHit && total > 0 && p.mp < p.maxMp) { var gm = Math.min(p.maxMp - p.mp, Math.round(p.maxMp * ps.manaOnHit / 100)); p.mp += gm; }
         if (dodged) log(bt, '🌸 Mil Passos: ' + (dodged === hits ? 'cortaste só pétalas. Ela já não estava lá.' : dodged + ' golpe(s) cortaram só pétalas.'), 'muted');
         if (bsig === 'mirror' && total > 0 && p.hp > 0) { var rf = damagePlayer(bt, total * 0.15); log(bt, '🪞 Reflexo Partido: o espelho devolve-te ' + rf + ' de dano.', 'hurt'); }
         break;
       }
       case 'dot': {
-        var per = Math.round(Math.max(playerBase(bt, 'phys'), playerBase(bt, 'mag')) * op.mult * 0.6);
+        var per = Math.round(Math.max(playerBase(bt, 'phys'), playerBase(bt, 'mag')) * op.mult * 0.6 * (1 + (ps.dotPct || 0) / 100));
         addStatus(b.st, { kind: 'dot', type: op.type, val: per, turns: op.turns });
         log(bt, '☠️ O chefe sofre ' + C.DOT_NAMES[op.type] + ' (' + per + '/turno).', 'muted');
         break;
@@ -8325,7 +8742,7 @@ body::after {
           var def = Math.max(0, ps.def * (1 + (sum(p.st, 'buff', 'def') - sum(p.st, 'debuff', 'def')) / 100));
           var dmg = damagePlayer(bt, raw * 100 / (100 + def));
           total += dmg;
-          var refl = sum(p.st, 'buff', 'reflect');
+          var refl = sum(p.st, 'buff', 'reflect') + (ps.thorns || 0);
           if (refl > 0 && dmg > 0) damageBoss(bt, dmg * refl / 100);
           if (op.lifesteal) b.hp = Math.min(b.maxHp, b.hp + Math.round(dmg * op.lifesteal));
         }
@@ -8343,6 +8760,7 @@ body::after {
       }
       case 'stun':
         if (p.stunImmune > 0) { log(bt, '🧠 Resististe ao atordoamento.', 'good'); break; }
+        if (ps.stunRes && chance(op.chance) && chance(ps.stunRes / 100)) { log(bt, '🧠 A tua mente aguenta: resististe ao atordoamento.', 'good'); break; }
         if (chance(op.chance)) { p.stunned = Math.max(p.stunned, op.turns); p.stunImmune = op.turns + 2; log(bt, '💫 Ficaste atordoado!', 'hurt'); }
         break;
       case 'heal': {
@@ -8509,6 +8927,8 @@ body::after {
     var trophy = S.TROPHIES[def.id];
     if (trophy && !st.trophies[def.id]) st.trophies[def.id] = now();
     var levelBefore = st.level;
+    var sy = E.sysState(st), dblB = sy.dblBoss > 0;
+    if (dblB) { sy.dblBoss--; r = Object.assign({}, r, { xp: r.xp * 2, coins: r.coins * 2 }); log(bt, '🎫 Bilhete da Vitória Dupla: recompensas a dobrar!', 'good'); }
     var xp = E.gainXp(st, r.xp);
     var coins = E.gainCoins(st, r.coins);
     var items = ['bau_' + r.chest];
@@ -8625,7 +9045,8 @@ body::after {
         E.bump(st, 'consumablesUsed');
         var u = it.use;
         log(bt, '🎒 Usaste ' + it.name + '.', 'skill');
-        if (u.type === 'heal') doPlayerOp(bt, { op: 'heal', pct: u.pct });
+        var potK = 1 + (p.stats.potionPct || 0) / 100;
+        if (u.type === 'heal') doPlayerOp(bt, { op: 'heal', pct: u.pct * potK });
         else if (u.type === 'mana') doPlayerOp(bt, { op: 'mp', pct: u.pct });
         else if (u.type === 'buffs') u.list.forEach(function (bf) { doPlayerOp(bt, { op: 'buff', key: bf.key, val: bf.val, turns: bf.turns }); });
         else if (u.type === 'cleanse') { p.st = p.st.filter(function (s) { return s.kind === 'buff'; }); log(bt, '🌿 Efeitos negativos removidos.', 'good'); }
@@ -8635,7 +9056,7 @@ body::after {
           if (u.stun && bt.b.hp > 0) doPlayerOp(bt, { op: 'stun', chance: u.stun, turns: 1 });
         }
         else if (u.type === 'restore') {
-          doPlayerOp(bt, { op: 'heal', pct: u.hp }); doPlayerOp(bt, { op: 'mp', pct: u.mp });
+          doPlayerOp(bt, { op: 'heal', pct: u.hp * potK }); doPlayerOp(bt, { op: 'mp', pct: u.mp });
           if (u.cleanse) { p.st = p.st.filter(function (s) { return s.kind === 'buff'; }); log(bt, '🌿 Efeitos negativos removidos.', 'good'); }
         }
         else if (u.type === 'judgment') {
@@ -9220,6 +9641,14 @@ body::after {
     if (q.summonPct) rows.push(['Dano das invocações', '+' + q.summonPct + '%']);
     if (q.xpPct) rows.push(['XP ganho', '+' + q.xpPct + '%']);
     if (q.coinPct) rows.push(['Moedas ganhas', '+' + q.coinPct + '%']);
+    if (q.thorns) rows.push(['Espinhos', 'devolve ' + q.thorns + '% do dano que recebes']);
+    if (q.openShield) rows.push(['Escudo inicial', q.openShield + '% da vida máxima no início de cada batalha']);
+    if (q.execute) rows.push(['Execução', '+' + q.execute + '% de dano quando o chefe tem menos de 30% de vida']);
+    if (q.firstStrike) rows.push(['Primeiro golpe', '+' + q.firstStrike + '% de dano no primeiro ataque da batalha']);
+    if (q.manaOnHit) rows.push(['Mana por golpe', '+' + q.manaOnHit + '% da mana máxima a cada ataque que acerta']);
+    if (q.dotPct) rows.push(['Venenos, chamas e sangramentos', '+' + q.dotPct + '% de dano por turno']);
+    if (q.stunRes) rows.push(['Resistência a atordoar', q.stunRes + '% de hipótese de resistir']);
+    if (q.potionPct) rows.push(['Poções de cura', 'curam +' + q.potionPct + '%']);
     return rows;
   };
 
@@ -9279,6 +9708,7 @@ body::after {
       case 'monarch': rows.push(['Efeito', 'Vida e mana a 100%, remove efeitos negativos e +40% de ataque e ataque mágico durante 3 turnos'], ['Limite', S.PREMIUM_RULES.perBattle + ' relíquia premium por batalha (não conta para o limite de poções)']); break;
       case 'monarchChest': rows.push(['Contém', 'Baú Lendário + 1 relíquia de combate premium ao acaso + moedas que acompanham o teu nível']); break;
       case 'revealBoss': rows.push(['Efeito', 'Revela um portão escondido']); break;
+      case 'system': rows.push(['Efeito', it.desc], ['Tipo', 'Artefato do Sistema (usa-se na Bolsa)']); break;
       case 'fragment': rows.push(['Efeito', 'Junta ' + u.need + ' para formar o ' + S.ITEMS[u.result].name]); break;
       case 'core': rows.push(['Efeito', '+' + u.points + ' pontos livres e a habilidade ' + S.ALL_SKILLS[u.skill].name]); break;
       case 'leisure': rows.push(['Efeito', 'Ao usar, fica registado que gozaste esta recompensa na vida real']); break;
@@ -9855,10 +10285,10 @@ body::after {
   var LOG_ICON = { '⚔️': 'log_appear', '🌙': 'phase_noite', '☀️': 'phase_dia', '✨': 'log_advantage', '⚠️': 'log_pressure', '🛡️': 'st_shield', '➤': 'log_hit',
     '☠️': 'log_dot', '🌀': 'st_resist', '💫': 'st_stun', '💚': 'st_heal', '💧': 'st_mana', '⬆️': 'st_buff', '⬇️': 'st_debuff', '💀': 'st_summon', '⏳': 'log_reset',
     '🧠': 'st_resist', '🔥': 'log_enrage', '🪶': 'log_revive', '🏆': 'log_victory', '✦': 'log_skill', '🎒': 'log_item', '🌿': 'log_cleanse', '💥': 'log_bomb',
-    '💨': 'log_smoke', '🏃': 'log_flee', '↩️': 'st_reflect' };
+    '💨': 'log_smoke', '🏃': 'log_flee', '↩️': 'st_reflect', '◀': 'log_hurt' };
   var HIST_ICON = { '⏱️': 'h_time', '✅': 'h_mission_done', '✨': 'h_awaken', '❌': 'h_mission_fail', '⬆️': 'h_levelup', '🌀': 'h_secret_skill', '🌅': 'h_newday',
     '🏃': 'log_flee', '🏅': 'h_achievement', '🏆': 'log_victory', '💀': 'log_defeat', '💠': 'h_core', '💨': 'log_smoke', '💱': 'h_sell', '📝': 'h_mission_new',
-    '📲': 'h_transfer', '🔰': 'h_shield', '🗺️': 'h_map', '🛒': 'h_buy', '👁️': 'ui_eye' };
+    '📲': 'h_transfer', '🔰': 'h_shield', '🗺️': 'h_map', '🛒': 'h_buy', '👁️': 'ui_eye', '◆': 'ui_crystal' };
   var LZ_CUSTOM = { '🎁': 'lz_c_gift', '🍕': 'lz_c_food', '🎮': 'lz_c_game', '🎬': 'lz_c_movie', '🛍️': 'lz_c_shop', '🏖️': 'lz_c_beach', '🍦': 'lz_c_sweet', '📱': 'lz_c_phone' };
   function hasArt(key) { return !!(S.UI_ART && S.UI_ART[key]); }
   /* texto que começa por emoji (registo de batalha) → ícone + texto */
@@ -10112,6 +10542,7 @@ body::after {
 
     var achDone = Object.keys(st.achievements).length;
     h += '<section class="win"><div class="win-h">Registos</div><div class="menu-grid">' +
+      '<button class="btn prem menu-prem" data-a="prem-open" data-t="loja"><i class="crys-ico"></i> Loja Premium <span class="muted">' + fmt(st.crystals || 0) + '</span></button>' +
       '<button class="btn" data-a="page" data-p="skills">Habilidades <span class="muted">' + E.unlockedSkills(st).length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="ach">Conquistas <span class="muted">' + achDone + '/' + S.ACHIEVEMENTS.length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="trophies">' + uiIcon('ui_trofeus', '', 'menu-img') + 'Troféus <span class="muted">' + E.trophyCount(st) + '/' + Object.keys(S.TROPHIES).length + '</span></button>' +
@@ -10154,6 +10585,14 @@ body::after {
     if (q.regenHp) out.push('Regenera ' + q.regenHp + '% vida/turno');
     if (q.regenMp) out.push('Regenera ' + q.regenMp + '% mana/turno');
     if (q.summonPct) out.push('Invocações +' + q.summonPct + '%');
+    if (q.thorns) out.push('Espinhos: devolve ' + q.thorns + '% do dano');
+    if (q.openShield) out.push('Escudo inicial ' + q.openShield + '% vida');
+    if (q.execute) out.push('Execução +' + q.execute + '% (chefe <30%)');
+    if (q.firstStrike) out.push('Primeiro golpe +' + q.firstStrike + '%');
+    if (q.manaOnHit) out.push('+' + q.manaOnHit + '% mana por golpe');
+    if (q.dotPct) out.push('Venenos e chamas +' + q.dotPct + '%');
+    if (q.stunRes) out.push('Resiste a atordoar ' + q.stunRes + '%');
+    if (q.potionPct) out.push('Poções curam +' + q.potionPct + '%');
     return out.map(function (x) { return '<span>' + x + '</span>'; }).join('');
   }
   function backBtn(title) { return '<div class="row" style="margin-top:14px"><button class="btn sm ghost" data-a="back">‹ Voltar</button><h2 style="font-size:18px">' + title + '</h2></div>'; }
@@ -10263,7 +10702,7 @@ body::after {
     return '<div class="dossier" style="--ac:' + b.color + '"><div class="dos-h"><span>DOSSIÊ DO SISTEMA</span><span class="mono">' + esc(b.arenaName) + '</span></div>' +
       '<blockquote class="dos-quote">«' + esc(x.quote) + '»</blockquote>' +
       '<dl class="dos-kv"><dt>Registo</dt><dd class="mono">' + esc(x.record) + '</dd><dt>Crime</dt><dd>' + esc(x.crime) + '</dd><dt>Sentença</dt><dd>' + esc(x.sentence) + '</dd><dt>Arena</dt><dd>' + esc(x.arenaDesc) + '</dd></dl>' +
-      '<div class="dos-sig"><b>◆ ' + esc(x.sig.name) + '</b><span>' + esc(x.sig.desc) + '</span></div></div>';
+      '<div class="dos-sig"><b><i class="crys-ico"></i> ' + esc(x.sig.name) + '</b><span>' + esc(x.sig.desc) + '</span></div></div>';
   }
   function arenaFoot(st, b) {
     var ps = S.premium.status(st, b), h = '';
@@ -10279,7 +10718,7 @@ body::after {
     }
     h += rules;
     if (!ps.unlocked) h += '<button class="btn prem block" data-a="arena-unlock" data-id="' + b.arenaKey + '"><i class="crys-ico"></i> Desbloquear a arena por ' + S.BOSS_BY_ID[b.arenaKey].cost + ' Cristais</button>';
-    else if (!ps.open) h += '<div class="empty">🔒 Vence primeiro ' + esc(ps.prev.name) + '.</div>';
+    else if (!ps.open) h += '<div class="empty">' + uiIcon('ic_lock', '🔒', 'btn-ico') + ' Vence primeiro ' + esc(ps.prev.name) + '.</div>';
     else if (ps.readyAt) h += '<div class="empty">' + esc(b.champion ? 'O Campeão' : b.name.split(',')[0]) + ' recupera em ' + cd(ps.readyAt) + '.</div>';
     else h += '<button class="btn pri block" data-a="fight" data-id="' + b.id + '">' + (ps.wins ? 'Revanche na arena' : 'Entrar na arena') + '</button>';
     return h;
@@ -10299,19 +10738,20 @@ body::after {
     var pg = S.premium.arenaProgress(st, b.arena), art = S.BOSS_ART && S.BOSS_ART[b.id], ps = S.premium.status(st, b);
     var g1 = S.ARENA_LADDER[b.arena][0];
     var state = !pg.unlocked ? '<span class="ar-cost">' + crys(b.cost) + '</span>' : '<span class="ar-st' + (pg.won < pg.total ? ' ok' : '') + '">' + (pg.won >= pg.total ? 'Completa' : 'Combate ' + (pg.won + 1) + '/10') + '</span>';
-    return '<button class="arena-card' + (pg.unlocked ? ' open' : ' locked') + (ps.wins ? ' won' : '') + '" data-a="arena-view" data-n="' + b.arena + '" style="--ac:' + b.color + '">' +
+    return '<button class="arena-card' + (pg.unlocked ? ' open' : ' locked') + (ps.wins ? ' won' : '') + '" data-a="arena-view" data-n="' + b.arena + '" style="--ac:' + b.color + (S.ARENA_ART && S.ARENA_ART[b.id] ? ';--ar-scene:url(\'' + S.ARENA_ART[b.id] + '\')' : '') + '">' +
       '<span class="ar-art">' + (art ? '<img src="' + art + '" alt="" loading="lazy">' : '<span class="ar-ico">' + b.icon + '</span>') + '</span>' +
       '<span class="ar-n mono">' + ROMAN[b.arena - 1] + '</span>' +
       (ps.wins ? '<span class="ar-crown">' + uiIcon('ui_king', '♛', 'crown-img') + (ps.wins > 1 ? '×' + ps.wins : '') + '</span>' : '') +
       '<span class="ar-info"><span class="ar-arena">' + esc(b.arenaName) + '</span><span class="ar-boss">' + esc(b.name) + '</span>' +
       '<span class="ar-row"><span class="mono">Nv ' + g1.level + '–' + b.level + '</span><span>10 combates</span>' + state + '</span>' +
+      (S.ARENA_CHRONICLE && S.ARENA_CHRONICLE[b.id] ? '<span class="ar-chron"><span class="ar-chron-h">Crónica do Sistema</span>' + esc(S.ARENA_CHRONICLE[b.id].chron) + '</span><span class="ar-sys">' + uiIcon('ui_eye', '', 'ar-sys-eye') + '<span>«' + esc(S.ARENA_CHRONICLE[b.id].sys) + '»</span></span>' : '') +
       (pg.unlocked ? '<span class="ar-prog"><i style="width:' + Math.round(pg.won / pg.total * 100) + '%"></i></span>' : '') + '</span></button>';
   }
   /* dentro de uma arena: a escada de 10 combates */
   function arenaView(st, n) {
     var champ = S.BOSS_BY_ID['ar' + n], pg = S.premium.arenaProgress(st, n), x = champ.story || {};
     var h = '<section class="win prem-win arena-view" style="--ac:' + champ.color + '"><div class="win-h"><button class="btn sm ghost" data-a="arena-view" data-n="0">‹ Arenas</button><small>' + pg.won + '/10 vencidos</small></div>' +
-      '<div class="av-head"><span class="ar-n mono">ARENA ' + ROMAN[n - 1] + '</span><h2 class="av-title">' + esc(champ.arenaName) + '</h2>' +
+      '<div class="av-head' + (S.ARENA_ART && S.ARENA_ART[champ.id] ? ' has-art" style="--av-art:url(\'' + S.ARENA_ART[champ.id] + '\')' : '') + '"><span class="ar-n mono">ARENA ' + ROMAN[n - 1] + '</span><h2 class="av-title">' + esc(champ.arenaName) + '</h2>' +
       (x.arenaDesc ? '<p class="small muted" style="margin:4px 0 0">' + esc(x.arenaDesc) + '</p>' : '') + '</div>' +
       '<div class="ar-prog big"><i style="width:' + Math.round(pg.won / pg.total * 100) + '%"></i></div>';
     if (!pg.unlocked) h += '<p class="small" style="margin:10px 0 6px">10 combates em escada: 9 Guardiões e, no fim, o Campeão. A arena fica aberta para sempre.</p>' +
@@ -10320,12 +10760,13 @@ body::after {
     h += '<ol class="ladder">' + S.ARENA_LADDER[n].map(function (b) {
       var ps = S.premium.status(st, b), art = S.BOSS_ART && S.BOSS_ART[b.id], dg = C.danger(st, b);
       var cls = !pg.unlocked ? 'sealed' : ps.wins ? 'won' : ps.open ? 'next' : 'locked';
-      var tag = !pg.unlocked ? '🔒' : ps.wins ? (ps.readyAt ? '<span class="mono">' + cd(ps.readyAt) + '</span>' : '✓') : ps.open ? (ps.readyAt ? '<span class="mono">' + cd(ps.readyAt) + '</span>' : '<b>Lutar</b>') : '🔒';
+      var lock = uiIcon('ic_lock', '🔒', 'lad-img');
+      var tag = !pg.unlocked ? lock : ps.wins ? (ps.readyAt ? '<span class="mono">' + cd(ps.readyAt) + '</span>' : uiIcon('h_mission_done', '✓', 'lad-img')) : ps.open ? (ps.readyAt ? '<span class="mono">' + cd(ps.readyAt) + '</span>' : '<b>Lutar</b>') : lock;
       var role = b.champion ? 'Campeão' : b.lieutenant ? 'Tenente' : 'Guardião ' + b.slot;
       var hide = !b.champion && (!pg.unlocked || (!ps.wins && !ps.open && b.slot > pg.won + 2));
       return '<li><button class="lad ' + cls + (b.champion ? ' champ' : '') + '"' + (hide ? ' disabled' : ' data-a="boss" data-id="' + b.id + '"') + '>' +
         '<span class="lad-n mono">' + b.slot + '</span>' +
-        '<span class="lad-ico">' + (hide ? '❔' : art ? '<img src="' + art + '" alt="" loading="lazy">' : b.icon) + '</span>' +
+        '<span class="lad-ico">' + (hide ? uiIcon('ui_unknown', '❔', 'lad-unk') : art ? '<img src="' + art + '" alt="" loading="lazy">' : b.icon) + '</span>' +
         '<span class="lad-info"><span class="lad-role">' + role + ' · Nv ' + b.level + '</span><span class="lad-name">' + (cls === 'sealed' || cls === 'locked' && !b.champion && b.slot > pg.won + 2 ? '???' : esc(b.name)) + '</span>' +
         (cls === 'next' ? '<span class="lad-dg" style="color:' + dg.color + '">' + dg.label + '</span>' : '') + '</span>' +
         '<span class="lad-st">' + tag + '</span></button></li>';
@@ -10402,7 +10843,7 @@ body::after {
       '<p class="hint">Fala só com o número oficial ' + esc(S.SHOP_WHATSAPP_SHOW) + '. Nunca te pediremos o PIN nem códigos de confirmação do banco.</p>';
     h += '<label class="f" style="margin-top:10px">Código de resgate<input class="in mono" id="redeem-code" placeholder="SIS-XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>' +
       '<button class="btn prem block" data-a="redeem"' + (ready ? '' : ' disabled') + '>Resgatar código</button>' +
-      (S.PREVIEW ? '<button class="btn ghost block" data-a="prev-crys" style="margin-top:10px">Só na pré-visualização: +500 Cristais de teste</button>' : '') + '</section>';
+      '</section>';
     if (orders.length) {
       h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">Os meus pedidos</span><button class="btn sm ghost" data-a="ord-refresh">Atualizar</button></div><div class="list">' +
         orders.slice(0, 10).map(function (o) {
@@ -10439,17 +10880,29 @@ body::after {
       '<div class="row" style="margin-bottom:10px"><span class="small">Os teus Cristais: ' + crys(st.crystals || 0) + '</span><button class="btn sm prem" style="margin-left:auto" data-a="prem-open" data-t="obter">Obter Cristais</button></div>' +
       '<div class="arena-list">' + S.ARENA_BOSSES.map(function (b) { return arenaCard(st, b); }).join('') + '</div></section>';
   }
+  /* ---------- Apoiar o criador (doações por WhatsApp / MULTICAIXA Express) ---------- */
+  var DONATE = [500, 1000, 2500, 5000];
+  function donateHtml(st) {
+    var v = ui.donate || 1000;
+    return '<section class="win prem-win donate"><div class="win-h"><span class="prem-t">\u2665 Apoiar o criador</span></div>' +
+      '<p class="small" style="margin-top:0">O Sistema é feito por uma só pessoa, Delcio Cunha. Se o jogo te ajuda a cumprir as tuas missões da vida real e quiseres apoiar o desenvolvimento, podes fazer uma doação com o valor que quiseres. É totalmente opcional e não dá vantagens no jogo: é só um obrigado.</p>' +
+      '<div class="chips donate-chips">' + DONATE.map(function (x) { return '<button class="chip' + (v === x ? ' on' : '') + '" data-a="don-pick" data-v="' + x + '">' + fmt(x) + ' Kz</button>'; }).join('') +
+      '<button class="chip' + (DONATE.indexOf(v) < 0 ? ' on' : '') + '" data-a="don-pick" data-v="0">Outro valor</button></div>' +
+      '<button class="btn wa block" data-a="don-go" style="margin-top:10px">Doar ' + (DONATE.indexOf(v) >= 0 ? fmt(v) + ' Kz ' : '') + 'pelo WhatsApp</button>' +
+      '<p class="hint" style="margin:8px 0 0">Recebes os dados para a transferência por MULTICAIXA Express no WhatsApp ' + esc(S.SHOP_WHATSAPP_SHOW) + '. Nunca te pediremos o PIN nem códigos do banco.</p></section>';
+  }
   function premiumPage(st) {
     var t = ui.premTab || 'arenas';
     var h = backBtn('Ala Premium');
     h += '<section class="win prem-win prem-head"><div class="prem-bal"><span class="small muted">Os teus Cristais</span><span class="prem-big">' + crys(st.crystals || 0) + '</span></div>' +
       '<div class="prem-id"><span class="small muted">ID de Jogador</span><button class="mono id-chip" data-a="id-copy">' + esc(st.playerId) + '</button></div>' +
-      '<button class="btn prem block" data-a="prem-tab" data-t="obter" style="margin-top:10px"><i class="crys-ico"></i> Obter Cristais</button></section>';
+      '<div class="row" style="margin-top:10px;gap:8px"><button class="btn prem grow" data-a="prem-tab" data-t="obter"><i class="crys-ico"></i> Obter Cristais</button><button class="btn don-btn" data-a="prem-tab" data-t="loja">\u2665 Doar</button></div></section>';
     h += '<div class="chips" style="margin-top:12px">' + [['arenas', 'Arenas'], ['loja', 'Loja Exclusiva'], ['aparencia', 'Aparência'], ['obter', 'Obter Cristais']].map(function (x) {
       return '<button class="chip' + (t === x[0] ? ' on' : '') + '" data-a="prem-tab" data-t="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
     if (t === 'arenas') {
       h += coliseuHtml(st);
     } else if (t === 'loja') {
+      h += donateHtml(st);
       S.PREMIUM_SHOP.forEach(function (g) {
         h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">' + esc(g.title) + '</span></div>' + (g.note ? '<p class="hint" style="margin-top:0">' + esc(g.note) + '</p>' : '') +
           '<div class="list">' + g.ids.map(function (id) { return premItemCard(st, S.ITEMS[id]); }).join('') + '</div></section>';
@@ -10799,6 +11252,36 @@ body::after {
       (cur < max && pots ? '<button class="btn sm' + (low ? ' pri' : '') + '" style="margin-top:8px" data-a="tab" data-t="bolsa">Abrir a Bolsa</button>' : '') +
       (cur < max && !pots ? '<button class="btn sm gold" style="margin-top:8px" data-a="go-potions">Comprar poções</button>' : '') + '</section>';
   }
+  /* Combate → Arenas: igual aos portões gratuitos (10 combates por arena: 9 sub-chefes + o Campeão) */
+  function arenaCombatHtml(st) {
+    S.premium.ensure(st);
+    var n = ui.arenaN || (function () { for (var i = 1; i <= 10; i++) if (st.arena.unlocked['ar' + i] && S.premium.arenaProgress(st, i).won < 10) return i; return 1; })();
+    ui.arenaN = n;
+    var champ = S.BOSS_BY_ID['ar' + n], pg = S.premium.arenaProgress(st, n), lad = S.ARENA_LADDER[n];
+    var h = '<div class="chips arena-chips">' + S.ARENA_BOSSES.map(function (b) {
+      var p = S.premium.arenaProgress(st, b.arena);
+      return '<button class="chip' + (n === b.arena ? ' on' : '') + (p.unlocked ? '' : ' sealed') + '" data-a="arena-view" data-n="' + b.arena + '" style="--ac:' + b.color + '">' +
+        (p.unlocked ? '' : uiIcon('ic_lock', '🔒', 'tag-ico') + ' ') + ROMAN[b.arena - 1] + (p.won === 10 ? ' ✓' : '') + '</button>';
+    }).join('') + '</div>';
+    var art = S.ARENA_ART && S.ARENA_ART[champ.id];
+    h += '<section class="win prem-win arena-sec" style="--ac:' + champ.color + '"><div class="win-h"><span style="color:' + champ.color + '">Arena ' + ROMAN[n - 1] + ': ' + esc(champ.arenaName.replace(/^Arena (d[oa]s?|Abissal) /, function (m) { return m; })) + '</span><small>' + pg.won + '/10 vencidos</small></div>' +
+      (art ? '<div class="arena-banner" style="--av-art:url(\'' + art + '\')"></div>' : '') +
+      '<p class="hint" style="margin-top:0">' + (pg.unlocked ? '9 sub-chefes por ordem e, no fim, o Campeão. Cada adversário vencido volta ' + S.PREMIUM_RULES.arenaCooldownH + ' horas depois para revanche.' : 'Arena selada. Abre-a uma vez com Cristais e fica aberta para sempre: 9 sub-chefes (Nv ' + lad[0].level + ' a ' + (champ.level - 1) + ') e o Campeão (Nv ' + champ.level + ').') + '</p>';
+    if (!pg.unlocked) h += '<button class="btn prem block" style="margin-bottom:12px" data-a="arena-unlock" data-id="' + champ.id + '"><i class="crys-ico"></i> Desbloquear a arena por ' + champ.cost + ' Cristais</button>';
+    h += '<div class="boss-grid">' + lad.map(function (b) {
+      var ps = S.premium.status(st, b), dg = C.danger(st, b), bart = S.BOSS_ART && S.BOSS_ART[b.id];
+      var hide = !b.champion && (!pg.unlocked || (!ps.wins && !ps.open && b.slot > pg.won + 2));
+      var locked = !pg.unlocked || (!ps.open && !ps.wins);
+      var label = ps.wins ? (ps.readyAt ? cdText(ps.readyAt) : 'Revanche') : locked ? 'Selado' : dg.label;
+      return '<button class="boss-tile card' + (ps.wins ? ' done' : '') + (b.champion || b.lieutenant ? ' king' : '') + (locked ? ' locked' : '') + '"' + (hide ? ' disabled' : ' data-a="boss" data-id="' + b.id + '"') +
+        ' style="--dg:' + (ps.wins ? 'var(--good)' : locked ? 'var(--muted)' : dg.color) + '">' +
+        (hide ? '<span class="bt-ico">' + uiIcon('ui_unknown', '❔', 'bt-unk') + '</span>' : bart ? '<img src="' + bart + '" alt="" loading="lazy">' : '<span class="bt-ico">' + b.icon + '</span>') +
+        '<span class="bt-lv mono">' + b.level + '</span>' + (b.champion ? '<span class="bt-crown">' + uiIcon('ui_king', '♛', 'crown-img') + '</span>' : '') +
+        (locked && !ps.wins ? '<span class="bt-lock">' + uiIcon('ic_lock', '🔒', 'bt-lock-img') + '</span>' : '') +
+        '<span class="bt-info"><span class="bt-name">' + (hide ? '???' : esc(b.name.split(',')[0])) + '</span><span class="bt-dg">' + (b.champion ? 'Campeão · ' : b.lieutenant ? 'Tenente · ' : '') + label + '</span></span></button>';
+    }).join('') + '</div></section>';
+    return h;
+  }
   function combatHtml(st) {
     if (st.battle) return battleHtml(st);
     var hpHtml = hpPanel(st);
@@ -10809,7 +11292,7 @@ body::after {
       return '<button class="chip' + (ui.gate === g.id ? ' on' : '') + '" data-a="gate" data-g="' + g.id + '">' + uiIcon('gate_' + g.id, g.icon) + ' ' + g.id + (k === 10 ? ' ✓' : '') + '</button>';
     }).join('') + (secretOn ? '<button class="chip' + (ui.gate === 0 ? ' on' : '') + '" data-a="gate" data-g="0">' + uiIcon('gate_0', '🗝️') + ' Oculto</button>' : '') +
       '<button class="chip prem-chip' + (ui.gate === 'arena' ? ' on' : '') + '" data-a="gate" data-g="arena"><i class="crys-ico"></i> Arenas</button></div>';
-    if (ui.gate === 'arena') return h + coliseuHtml(st);
+    if (ui.gate === 'arena') return h + arenaCombatHtml(st);
     var list, gname, gcolor;
     if (ui.gate === 0) { list = S.SECRET_BOSSES.filter(function (b) { return C.bossUnlocked(st, b); }); gname = 'Portões Ocultos'; gcolor = 'var(--gold)'; }
     else { var g = S.GATES[ui.gate - 1]; list = S.BOSSES.filter(function (b) { return b.gate === g.id; }); gname = g.name; gcolor = g.color; }
@@ -10943,15 +11426,26 @@ body::after {
       }).join('') : '<div class="empty">Sem itens de combate. Compra poções na Loja.</div>') + '</div>';
   }
 
+  /* depois de comprar um artefato do Sistema: o Sistema comenta (sempre na primeira compra, depois às vezes) */
+  function sysAfter(it) {
+    var line = E.sysVoice(E.state, it.id, 'after');
+    if (!line) return;
+    E.emit(it.id === 'sys_pacto' ? { type: 'watch', level: 1, title: 'O SISTEMA REGISTOU', lines: [line] } : { type: 'watch', good: true, level: 1, title: 'O SISTEMA REGISTOU', lines: [line] });
+  }
   /* ================= LOJA ================= */
   function shopHtml(st) {
     var h = '<div class="chips" style="margin-top:14px">' + S.SHOP_TABS.map(function (t) {
-      return '<button class="chip' + (ui.shopTab === t.id ? ' on' : '') + '" data-a="shop-tab" data-v="' + t.id + '">' + uiIcon('tab_' + t.id, t.icon) + ' ' + t.name + '</button>';
+      return '<button class="chip' + (ui.shopTab === t.id ? ' on' : '') + '" data-a="shop-tab" data-v="' + t.id + '">' + uiIcon(t.id === 'sistema' ? 'ui_eye' : 'tab_' + t.id, t.icon) + ' ' + t.name + '</button>';
     }).join('') + '</div>';
     var list = E.shopList(st, ui.shopTab);
     var tab = S.SHOP_TABS.filter(function (t) { return t.id === ui.shopTab; })[0];
     h += '<section class="win"><div class="win-h">' + tab.name + coins(st.coins) + '</div>';
     if (ui.shopTab === 'lazer') h += '<p class="hint" style="margin-top:0">Recompensas para a vida real. Compra com as moedas que ganhas nas missões e usa-as na Bolsa quando quiseres.</p><button class="btn gold block" data-a="cl-new" style="margin-bottom:10px">+ Criar a minha recompensa</button>';
+    if (ui.shopTab === 'sistema') { var sy = E.sysState(st), xs = [];
+      if (sy.dbl) xs.push(sy.dbl + ' Selo(s) do Dobro à espera da próxima missão');
+      if (sy.dblBoss) xs.push(sy.dblBoss + ' Bilhete(s) da Vitória Dupla à espera do próximo chefe');
+      if (E.extraMissions(st)) xs.push('+' + E.extraMissions(st) + ' missões novas permitidas hoje');
+      h += '<p class="hint" style="margin-top:0">' + uiIcon('ui_eye', '', 'tag-ico') + ' Artefatos que mexem com o próprio Sistema. Usam-se na Bolsa. O Sistema permite-os, mas regista cada um.</p>' + (xs.length ? '<p class="small" style="color:var(--good);margin-top:0">Ativo: ' + xs.map(esc).join(' · ') + '</p>' : ''); }
     if (ui.shopTab === 'atributo') h += '<p class="hint" style="margin-top:0">Melhorias permanentes. Os elixires ficam mais caros a cada compra.</p>';
     var rows = list.map(function (it) { return { it: it, rq: it.custom ? { ok: true, lines: [] } : E.reqStatus(st, it) }; });
     var open = rows.filter(function (x) { return x.rq.ok; }), locked = rows.filter(function (x) { return !x.rq.ok; });
@@ -10996,7 +11490,7 @@ body::after {
   }
 
   /* ================= BOLSA ================= */
-  var BAG_FILTERS = [['tudo', 'Tudo'], ['equip', 'Equipamento'], ['consumivel', 'Poções'], ['bau', 'Baús'], ['lazer', 'Lazer'], ['atributo', 'Atributos'], ['secreto', 'Secretos'], ['premium', 'Premium']];
+  var BAG_FILTERS = [['tudo', 'Tudo'], ['equip', 'Equipamento'], ['consumivel', 'Poções'], ['sistema', 'Sistema'], ['bau', 'Baús'], ['lazer', 'Lazer'], ['atributo', 'Atributos'], ['secreto', 'Secretos'], ['premium', 'Premium']];
   function bagMatch(it, f) {
     if (f === 'tudo') return true;
     if (f === 'equip') return !!it.equip;
@@ -11006,7 +11500,7 @@ body::after {
   }
   function bagHtml(st) {
     var h = '<div class="chips" style="margin-top:14px">' + BAG_FILTERS.map(function (f) {
-      return '<button class="chip' + (ui.bag === f[0] ? ' on' : '') + '" data-a="bag" data-v="' + f[0] + '">' + uiIcon({ tudo: 'bag_tudo', equip: 'bag_equip', secreto: 'bag_secreto' }[f[0]] || 'tab_' + f[0], '') + f[1] + '</button>';
+      return '<button class="chip' + (ui.bag === f[0] ? ' on' : '') + '" data-a="bag" data-v="' + f[0] + '">' + uiIcon({ tudo: 'bag_tudo', equip: 'bag_equip', secreto: 'bag_secreto', sistema: 'ui_eye' }[f[0]] || 'tab_' + f[0], '') + f[1] + '</button>';
     }).join('') + '</div>';
     var ids = Object.keys(st.inv).filter(function (id) { var it = E.item(id); return it && bagMatch(it, ui.bag); })
       .sort(function (a, b) { var A = E.item(a), B = E.item(b); return (A.cat === 'bau' ? -1 : 0) - (B.cat === 'bau' ? -1 : 0) || S.RARITY[B.rarity].order - S.RARITY[A.rarity].order || A.name.localeCompare(B.name); });
@@ -11573,7 +12067,9 @@ body::after {
     'prem-buy': function (d) {
       var it = S.ITEMS[d.id], p = { x: ui.pt.x, y: ui.pt.y };
       confirmBox('Loja Exclusiva', 'Comprar ' + it.name + ' por ' + S.premium.price(d.id) + ' Cristais?', 'Comprar', function () {
-        var r = act(S.premium.buy(d.id, 1));
+        var r0 = S.premium.buy(d.id, 1);
+        if (r0.ok && it.cat === 'sistema') sysAfter(it);
+        var r = act(r0);
         if (r.ok) { FX.burst(p.x, p.y, '#67d5ff', 40, { speed: 8 }); FX.flash('#67d5ff', .2); FX.vibrate([30, 30, 60]); }
       });
     },
@@ -11622,6 +12118,13 @@ body::after {
         if (!r.ok) toast(r.msg || 'Sem ligação ao servidor. A suspensão mantém-se.', true);
       });
     },
+    'don-pick': function (d) { ui.donate = +d.v || -1; render(); },
+    'don-go': function () {
+      var st = E.state, v = ui.donate || 1000;
+      var msg = 'Olá! Quero apoiar o criador do Sistema com uma doação' + (v > 0 ? ' de ' + fmt(v) + ' Kz' : '') + '.\n\nJogador: ' + st.name + '\nID de Jogador: ' + st.playerId +
+        '\n\nVou pagar por MULTICAIXA Express. Fico à espera dos dados para a transferência. Obrigado pelo jogo!';
+      H.ext({ url: 'https://wa.me/' + S.SHOP_WHATSAPP + '?text=' + encodeURIComponent(msg) });
+    },
     'pack-pick': function (d) {
       ui.pack = d.id; render();
       var bx = document.getElementById('buy-box'); if (bx && bx.scrollIntoView) bx.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -11657,7 +12160,6 @@ body::after {
       var txt = (o && o.msg) || ('Pedido ' + d.id);
       try { navigator.clipboard.writeText(txt).then(function () { toast('Mensagem copiada.'); }, function () { toast(txt); }); } catch (e) { toast(txt); }
     },
-    'prev-crys': function () { if (!S.PREVIEW) return; S.premium.grant(E.state, 500, 'teste da pré-visualização'); E.commit('teste'); render(); toast('+500 Cristais de teste.'); },
     'talk-pick': function (d) {
       var ev = ui.popups[0];
       if (!ev || ev.type !== 'talk' || ev.res) return;
@@ -11793,10 +12295,16 @@ body::after {
     buy: function (d) {
       var it = E.item(d.id), q = +d.q || 1;
       var p = { x: ui.pt.x, y: ui.pt.y };
-      var r = E.buy(d.id, q);
-      act(r, r.ok ? 'Compraste ' + (q > 1 ? q + '× ' : '') + it.name + '.' : null);
-      if (r.ok) talkTry('buy', { item: it.name, rarity: it.rarity }, 1200);
-      if (r.ok) { FX.text('-' + fmt(r.total) + ' ◈', p.x, p.y - 10, '#ffc85a'); FX.burst(p.x, p.y, rc(it.rarity), 24, { speed: 6 }); FX.vibrate(30); }
+      var go = function () {
+        var r = E.buy(d.id, q);
+        if (r.ok && it.cat === 'sistema') sysAfter(it);
+        act(r, r.ok ? 'Compraste ' + (q > 1 ? q + '× ' : '') + it.name + '.' : null);
+        if (r.ok && it.cat !== 'sistema') talkTry('buy', { item: it.name, rarity: it.rarity }, 1200);
+        if (r.ok) { FX.text('-' + fmt(r.total) + ' ◈', p.x, p.y - 10, '#ffc85a'); FX.burst(p.x, p.y, rc(it.rarity), 24, { speed: 6 }); FX.vibrate(30); }
+      };
+      var before = it.cat === 'sistema' && E.state.coins >= E.price(E.state, d.id) * q ? E.sysVoice(E.state, d.id, 'before') : null;
+      if (before) { S.storage.write(E.state); return confirmBox('O SISTEMA OBSERVA', '«' + before + '»\n\nComprar ' + it.name + '?', 'Comprar', go); }
+      go();
     },
     'cl-new': function () { ui.form = { name: '', price: 150, icon: '🎁' }; ui.modal = { type: 'leisure' }; render(); },
     'cl-save': function () {
@@ -11824,6 +12332,10 @@ body::after {
         else if (u.type === 'leisure') { ['#ffc85a', '#6fd6ff', '#ff3d7f', '#5be08a'].forEach(function (c, i) { setTimeout(function () { FX.burst(window.innerWidth / 2, window.innerHeight * .45, c, 30, { speed: 9 }); }, i * 120); }); FX.banner('APROVEITA', it.name, 'rgba(255,200,90,.4)', '#ffc85a'); }
         else if (u.type === 'perm' || u.type === 'permAll' || u.type === 'point' || u.type === 'core') { FX.rise(window.innerWidth / 2, window.innerHeight, 240, '#ffc85a', 70); FX.flash('#ffc85a', .3); FX.banner('PODER AUMENTOU', r.msg, 'rgba(255,200,90,.4)', '#ffc85a'); }
         else if (u.type === 'timed') { FX.rise(window.innerWidth / 2, window.innerHeight, 240, '#6fd6ff', 50); FX.text(r.msg, p.x, p.y - 20, '#6fd6ff'); }
+        else if (u.type === 'system') {
+          FX.flash('#6fd6ff', .25); FX.burst(window.innerWidth / 2, window.innerHeight / 2, '#6fd6ff', 50, { speed: 8 });
+          if (r.talk) { ui.modal = null; ui.popups.push({ _id: ++ui.popSeq, type: 'talk', conv: r.talk }); render(); }
+        }
         else if (u.type === 'unlockSkill' || u.type === 'revealBoss' || u.type === 'fragment') { FX.flash('#e0e6ff', .5); FX.burst(window.innerWidth / 2, window.innerHeight / 2, '#e0e6ff', 80, { speed: 11 }); }
         else FX.burst(p.x, p.y, rc(it.rarity), 30, { speed: 6 });
       };
@@ -12170,6 +12682,8 @@ body::after {
   }
 
   S.boot = function (el) {
+    // ícone do Cristal: se existir assets/ui/ui_crystal, substitui o losango desenhado em CSS
+    if (S.UI_ART && S.UI_ART.ui_crystal) { var rs = document.documentElement; rs.style.setProperty('--crys-art', 'url("' + S.UI_ART.ui_crystal + '")'); rs.classList.add('has-crys-art'); }
     root = el;
     FX.init();
     root.addEventListener('click', onClick);
@@ -12236,12 +12750,13 @@ body::after {
 SYS.SHOP_API = "https://sistema-loja.delciobentocunha007.workers.dev";
 SYS.AVATARS = {"arqueiro":{"1":"assets/avatars/arqueiro/1.webp","5":"assets/avatars/arqueiro/5.webp","10":"assets/avatars/arqueiro/10.webp","20":"assets/avatars/arqueiro/20.webp","30":"assets/avatars/arqueiro/30.webp","40":"assets/avatars/arqueiro/40.webp","50":"assets/avatars/arqueiro/50.webp","60":"assets/avatars/arqueiro/60.webp","70":"assets/avatars/arqueiro/70.webp","80":"assets/avatars/arqueiro/80.webp","90":"assets/avatars/arqueiro/90.webp","100":"assets/avatars/arqueiro/100.webp"},"assassino":{"1":"assets/avatars/assassino/1.webp","5":"assets/avatars/assassino/5.webp","10":"assets/avatars/assassino/10.webp","20":"assets/avatars/assassino/20.webp","30":"assets/avatars/assassino/30.webp","40":"assets/avatars/assassino/40.webp","50":"assets/avatars/assassino/50.webp","60":"assets/avatars/assassino/60.webp","70":"assets/avatars/assassino/70.webp","80":"assets/avatars/assassino/80.webp","90":"assets/avatars/assassino/90.webp","100":"assets/avatars/assassino/100.webp"},"guardiao":{"1":"assets/avatars/guardiao/1.webp","5":"assets/avatars/guardiao/5.webp","10":"assets/avatars/guardiao/10.webp","20":"assets/avatars/guardiao/20.webp","30":"assets/avatars/guardiao/30.webp","40":"assets/avatars/guardiao/40.webp","50":"assets/avatars/guardiao/50.webp","60":"assets/avatars/guardiao/60.webp","70":"assets/avatars/guardiao/70.webp","80":"assets/avatars/guardiao/80.webp","90":"assets/avatars/guardiao/90.webp","100":"assets/avatars/guardiao/100.webp"},"guerreiro":{"1":"assets/avatars/guerreiro/1.webp","5":"assets/avatars/guerreiro/5.webp","10":"assets/avatars/guerreiro/10.webp","20":"assets/avatars/guerreiro/20.webp","30":"assets/avatars/guerreiro/30.webp","40":"assets/avatars/guerreiro/40.webp","50":"assets/avatars/guerreiro/50.webp","60":"assets/avatars/guerreiro/60.webp","70":"assets/avatars/guerreiro/70.webp","80":"assets/avatars/guerreiro/80.webp","90":"assets/avatars/guerreiro/90.webp","100":"assets/avatars/guerreiro/100.webp"},"invocador":{"1":"assets/avatars/invocador/1.webp","5":"assets/avatars/invocador/5.webp","10":"assets/avatars/invocador/10.webp","20":"assets/avatars/invocador/20.webp","30":"assets/avatars/invocador/30.webp","40":"assets/avatars/invocador/40.webp","50":"assets/avatars/invocador/50.webp","60":"assets/avatars/invocador/60.webp","70":"assets/avatars/invocador/70.webp","80":"assets/avatars/invocador/80.webp","90":"assets/avatars/invocador/90.webp","100":"assets/avatars/invocador/100.webp"},"mago":{"1":"assets/avatars/mago/1.webp","5":"assets/avatars/mago/5.webp","10":"assets/avatars/mago/10.webp","20":"assets/avatars/mago/20.webp","30":"assets/avatars/mago/30.webp","40":"assets/avatars/mago/40.webp","50":"assets/avatars/mago/50.webp","60":"assets/avatars/mago/60.webp","70":"assets/avatars/mago/70.webp","80":"assets/avatars/mago/80.webp","90":"assets/avatars/mago/90.webp","100":"assets/avatars/mago/100.webp"}};
 SYS.CLASS_ART = {"arqueiro":"assets/classes/arqueiro.webp","assassino":"assets/classes/assassino.webp","guardiao":"assets/classes/guardiao.webp","guerreiro":"assets/classes/guerreiro.webp","invocador":"assets/classes/invocador.webp","mago":"assets/classes/mago.webp"};
-SYS.BOSS_ART = {"b1":"assets/bosses/b1.webp","b10":"assets/bosses/b10.webp","b100":"assets/bosses/b100.webp","b11":"assets/bosses/b11.webp","b12":"assets/bosses/b12.webp","b13":"assets/bosses/b13.webp","b14":"assets/bosses/b14.webp","b15":"assets/bosses/b15.webp","b16":"assets/bosses/b16.webp","b17":"assets/bosses/b17.webp","b18":"assets/bosses/b18.webp","b19":"assets/bosses/b19.webp","b2":"assets/bosses/b2.webp","b20":"assets/bosses/b20.webp","b21":"assets/bosses/b21.webp","b22":"assets/bosses/b22.webp","b23":"assets/bosses/b23.webp","b24":"assets/bosses/b24.webp","b25":"assets/bosses/b25.webp","b26":"assets/bosses/b26.webp","b27":"assets/bosses/b27.webp","b28":"assets/bosses/b28.webp","b29":"assets/bosses/b29.webp","b3":"assets/bosses/b3.webp","b30":"assets/bosses/b30.webp","b31":"assets/bosses/b31.webp","b32":"assets/bosses/b32.webp","b33":"assets/bosses/b33.webp","b34":"assets/bosses/b34.webp","b35":"assets/bosses/b35.webp","b36":"assets/bosses/b36.webp","b37":"assets/bosses/b37.webp","b38":"assets/bosses/b38.webp","b39":"assets/bosses/b39.webp","b4":"assets/bosses/b4.webp","b40":"assets/bosses/b40.webp","b41":"assets/bosses/b41.webp","b42":"assets/bosses/b42.webp","b43":"assets/bosses/b43.webp","b44":"assets/bosses/b44.webp","b45":"assets/bosses/b45.webp","b46":"assets/bosses/b46.webp","b47":"assets/bosses/b47.webp","b48":"assets/bosses/b48.webp","b49":"assets/bosses/b49.webp","b5":"assets/bosses/b5.webp","b50":"assets/bosses/b50.webp","b51":"assets/bosses/b51.webp","b52":"assets/bosses/b52.webp","b53":"assets/bosses/b53.webp","b54":"assets/bosses/b54.webp","b55":"assets/bosses/b55.webp","b56":"assets/bosses/b56.webp","b57":"assets/bosses/b57.webp","b58":"assets/bosses/b58.webp","b59":"assets/bosses/b59.webp","b6":"assets/bosses/b6.webp","b60":"assets/bosses/b60.webp","b61":"assets/bosses/b61.webp","b62":"assets/bosses/b62.webp","b63":"assets/bosses/b63.webp","b64":"assets/bosses/b64.webp","b65":"assets/bosses/b65.webp","b66":"assets/bosses/b66.webp","b67":"assets/bosses/b67.webp","b68":"assets/bosses/b68.webp","b69":"assets/bosses/b69.webp","b7":"assets/bosses/b7.webp","b70":"assets/bosses/b70.webp","b71":"assets/bosses/b71.webp","b72":"assets/bosses/b72.webp","b73":"assets/bosses/b73.webp","b74":"assets/bosses/b74.webp","b75":"assets/bosses/b75.webp","b76":"assets/bosses/b76.webp","b77":"assets/bosses/b77.webp","b78":"assets/bosses/b78.webp","b79":"assets/bosses/b79.webp","b8":"assets/bosses/b8.webp","b80":"assets/bosses/b80.webp","b81":"assets/bosses/b81.webp","b82":"assets/bosses/b82.webp","b83":"assets/bosses/b83.webp","b84":"assets/bosses/b84.webp","b85":"assets/bosses/b85.webp","b86":"assets/bosses/b86.webp","b87":"assets/bosses/b87.webp","b88":"assets/bosses/b88.webp","b89":"assets/bosses/b89.webp","b9":"assets/bosses/b9.webp","b90":"assets/bosses/b90.webp","b91":"assets/bosses/b91.webp","b92":"assets/bosses/b92.webp","b93":"assets/bosses/b93.webp","b94":"assets/bosses/b94.webp","b95":"assets/bosses/b95.webp","b96":"assets/bosses/b96.webp","b97":"assets/bosses/b97.webp","b98":"assets/bosses/b98.webp","b99":"assets/bosses/b99.webp","secret_1":"assets/bosses/secret_1.webp","secret_2":"assets/bosses/secret_2.webp"};
-SYS.ITEM_ART = {"ac_abismo":"assets/items/ac_abismo.webp","ac_agi":"assets/items/ac_agi.webp","ac_aureola":"assets/items/ac_aureola.webp","ac_cacador_lenda":"assets/items/ac_cacador_lenda.webp","ac_cobre":"assets/items/ac_cobre.webp","ac_colecionador":"assets/items/ac_colecionador.webp","ac_coragem":"assets/items/ac_coragem.webp","ac_cristal":"assets/items/ac_cristal.webp","ac_disciplina":"assets/items/ac_disciplina.webp","ac_dragao":"assets/items/ac_dragao.webp","ac_escaravelho":"assets/items/ac_escaravelho.webp","ac_espinhos":"assets/items/ac_espinhos.webp","ac_forca":"assets/items/ac_forca.webp","ac_fortuna":"assets/items/ac_fortuna.webp","ac_furia":"assets/items/ac_furia.webp","ac_gelo":"assets/items/ac_gelo.webp","ac_gigante":"assets/items/ac_gigante.webp","ac_insignia":"assets/items/ac_insignia.webp","ac_int":"assets/items/ac_int.webp","ac_lobo":"assets/items/ac_lobo.webp","ac_mana":"assets/items/ac_mana.webp","ac_monge":"assets/items/ac_monge.webp","ac_musgo":"assets/items/ac_musgo.webp","ac_per":"assets/items/ac_per.webp","ac_perola":"assets/items/ac_perola.webp","ac_praga":"assets/items/ac_praga.webp","ac_rank_a":"assets/items/ac_rank_a.webp","ac_rank_b":"assets/items/ac_rank_b.webp","ac_rank_c":"assets/items/ac_rank_c.webp","ac_rank_d":"assets/items/ac_rank_d.webp","ac_rank_s":"assets/items/ac_rank_s.webp","ac_rank_ss":"assets/items/ac_rank_ss.webp","ac_selo":"assets/items/ac_selo.webp","ac_t_crit1":"assets/items/ac_t_crit1.webp","ac_t_def1":"assets/items/ac_t_def1.webp","ac_t_eva1":"assets/items/ac_t_eva1.webp","ac_t_lifesteal1":"assets/items/ac_t_lifesteal1.webp","ac_titan":"assets/items/ac_titan.webp","ac_vampiro":"assets/items/ac_vampiro.webp","ac_vazio":"assets/items/ac_vazio.webp","ac_vit":"assets/items/ac_vit.webp","ar_abismo":"assets/items/ar_abismo.webp","ar_acolchoada":"assets/items/ar_acolchoada.webp","ar_arquimago":"assets/items/ar_arquimago.webp","ar_cacador":"assets/items/ar_cacador.webp","ar_celeste":"assets/items/ar_celeste.webp","ar_coral":"assets/items/ar_coral.webp","ar_couro":"assets/items/ar_couro.webp","ar_dragao":"assets/items/ar_dragao.webp","ar_escamas":"assets/items/ar_escamas.webp","ar_malha":"assets/items/ar_malha.webp","ar_placas":"assets/items/ar_placas.webp","ar_runica":"assets/items/ar_runica.webp","ar_soberano":"assets/items/ar_soberano.webp","ar_sombra":"assets/items/ar_sombra.webp","bau_comum":"assets/items/bau_comum.webp","bau_epico":"assets/items/bau_epico.webp","bau_lendario":"assets/items/bau_lendario.webp","bau_raro":"assets/items/bau_raro.webp","bau_secreto":"assets/items/bau_secreto.webp","el_agi":"assets/items/el_agi.webp","el_ascensao":"assets/items/el_ascensao.webp","el_int":"assets/items/el_int.webp","el_nectar":"assets/items/el_nectar.webp","el_per":"assets/items/el_per.webp","el_ponto":"assets/items/el_ponto.webp","el_reset":"assets/items/el_reset.webp","el_selo":"assets/items/el_selo.webp","el_str":"assets/items/el_str.webp","el_vit":"assets/items/el_vit.webp","elg_agi":"assets/items/elg_agi.webp","elg_int":"assets/items/elg_int.webp","elg_per":"assets/items/elg_per.webp","elg_str":"assets/items/elg_str.webp","elg_vit":"assets/items/elg_vit.webp","lz_amigos":"assets/items/lz_amigos.webp","lz_banho":"assets/items/lz_banho.webp","lz_cafe":"assets/items/lz_cafe.webp","lz_cinema":"assets/items/lz_cinema.webp","lz_descanso":"assets/items/lz_descanso.webp","lz_desejo":"assets/items/lz_desejo.webp","lz_doce":"assets/items/lz_doce.webp","lz_dourado":"assets/items/lz_dourado.webp","lz_episodio":"assets/items/lz_episodio.webp","lz_gadget":"assets/items/lz_gadget.webp","lz_jogo":"assets/items/lz_jogo.webp","lz_livro":"assets/items/lz_livro.webp","lz_maratona":"assets/items/lz_maratona.webp","lz_musica":"assets/items/lz_musica.webp","lz_passeio":"assets/items/lz_passeio.webp","lz_preguica":"assets/items/lz_preguica.webp","lz_redes":"assets/items/lz_redes.webp","lz_refeicao":"assets/items/lz_refeicao.webp","lz_restaurante":"assets/items/lz_restaurante.webp","lz_roupa":"assets/items/lz_roupa.webp","lz_sesta":"assets/items/lz_sesta.webp","lz_snack":"assets/items/lz_snack.webp","lz_spa":"assets/items/lz_spa.webp","lz_viagem":"assets/items/lz_viagem.webp","po_abismo":"assets/items/po_abismo.webp","po_antidoto":"assets/items/po_antidoto.webp","po_barreira":"assets/items/po_barreira.webp","po_bomba":"assets/items/po_bomba.webp","po_coin2":"assets/items/po_coin2.webp","po_coin3":"assets/items/po_coin3.webp","po_correntes":"assets/items/po_correntes.webp","po_descanso":"assets/items/po_descanso.webp","po_escudo":"assets/items/po_escudo.webp","po_espelho":"assets/items/po_espelho.webp","po_fenix":"assets/items/po_fenix.webp","po_foco":"assets/items/po_foco.webp","po_fogo":"assets/items/po_fogo.webp","po_fraqueza":"assets/items/po_fraqueza.webp","po_fumo":"assets/items/po_fumo.webp","po_furia":"assets/items/po_furia.webp","po_furia2":"assets/items/po_furia2.webp","po_gelo":"assets/items/po_gelo.webp","po_mana1":"assets/items/po_mana1.webp","po_mana15":"assets/items/po_mana15.webp","po_mana2":"assets/items/po_mana2.webp","po_pedra":"assets/items/po_pedra.webp","po_predador":"assets/items/po_predador.webp","po_restaura":"assets/items/po_restaura.webp","po_sorte":"assets/items/po_sorte.webp","po_tita":"assets/items/po_tita.webp","po_vampiro":"assets/items/po_vampiro.webp","po_veneno":"assets/items/po_veneno.webp","po_vento":"assets/items/po_vento.webp","po_vida1":"assets/items/po_vida1.webp","po_vida2":"assets/items/po_vida2.webp","po_vida3":"assets/items/po_vida3.webp","po_xp15":"assets/items/po_xp15.webp","po_xp2":"assets/items/po_xp2.webp","po_xp3":"assets/items/po_xp3.webp","sx_ampulheta":"assets/items/sx_ampulheta.webp","sx_coracao":"assets/items/sx_coracao.webp","sx_coroa":"assets/items/sx_coroa.webp","sx_fenix":"assets/items/sx_fenix.webp","sx_fragmento":"assets/items/sx_fragmento.webp","sx_lamina":"assets/items/sx_lamina.webp","sx_mapa":"assets/items/sx_mapa.webp","sx_moeda":"assets/items/sx_moeda.webp","sx_nucleo":"assets/items/sx_nucleo.webp","sx_olho":"assets/items/sx_olho.webp","w_arqueiro_1":"assets/items/w_arqueiro_1.webp","w_arqueiro_10":"assets/items/w_arqueiro_10.webp","w_arqueiro_2":"assets/items/w_arqueiro_2.webp","w_arqueiro_3":"assets/items/w_arqueiro_3.webp","w_arqueiro_4":"assets/items/w_arqueiro_4.webp","w_arqueiro_5":"assets/items/w_arqueiro_5.webp","w_arqueiro_6":"assets/items/w_arqueiro_6.webp","w_arqueiro_7":"assets/items/w_arqueiro_7.webp","w_arqueiro_8":"assets/items/w_arqueiro_8.webp","w_arqueiro_9":"assets/items/w_arqueiro_9.webp","w_assassino_1":"assets/items/w_assassino_1.webp","w_assassino_10":"assets/items/w_assassino_10.webp","w_assassino_2":"assets/items/w_assassino_2.webp","w_assassino_3":"assets/items/w_assassino_3.webp","w_assassino_4":"assets/items/w_assassino_4.webp","w_assassino_5":"assets/items/w_assassino_5.webp","w_assassino_6":"assets/items/w_assassino_6.webp","w_assassino_7":"assets/items/w_assassino_7.webp","w_assassino_8":"assets/items/w_assassino_8.webp","w_assassino_9":"assets/items/w_assassino_9.webp","w_guardiao_1":"assets/items/w_guardiao_1.webp","w_guardiao_10":"assets/items/w_guardiao_10.webp","w_guardiao_2":"assets/items/w_guardiao_2.webp","w_guardiao_3":"assets/items/w_guardiao_3.webp","w_guardiao_4":"assets/items/w_guardiao_4.webp","w_guardiao_5":"assets/items/w_guardiao_5.webp","w_guardiao_6":"assets/items/w_guardiao_6.webp","w_guardiao_7":"assets/items/w_guardiao_7.webp","w_guardiao_8":"assets/items/w_guardiao_8.webp","w_guardiao_9":"assets/items/w_guardiao_9.webp","w_guerreiro_1":"assets/items/w_guerreiro_1.webp","w_guerreiro_10":"assets/items/w_guerreiro_10.webp","w_guerreiro_2":"assets/items/w_guerreiro_2.webp","w_guerreiro_3":"assets/items/w_guerreiro_3.webp","w_guerreiro_4":"assets/items/w_guerreiro_4.webp","w_guerreiro_5":"assets/items/w_guerreiro_5.webp","w_guerreiro_6":"assets/items/w_guerreiro_6.webp","w_guerreiro_7":"assets/items/w_guerreiro_7.webp","w_guerreiro_8":"assets/items/w_guerreiro_8.webp","w_guerreiro_9":"assets/items/w_guerreiro_9.webp","w_invocador_1":"assets/items/w_invocador_1.webp","w_invocador_10":"assets/items/w_invocador_10.webp","w_invocador_2":"assets/items/w_invocador_2.webp","w_invocador_3":"assets/items/w_invocador_3.webp","w_invocador_4":"assets/items/w_invocador_4.webp","w_invocador_5":"assets/items/w_invocador_5.webp","w_invocador_6":"assets/items/w_invocador_6.webp","w_invocador_7":"assets/items/w_invocador_7.webp","w_invocador_8":"assets/items/w_invocador_8.webp","w_invocador_9":"assets/items/w_invocador_9.webp","w_mago_1":"assets/items/w_mago_1.webp","w_mago_10":"assets/items/w_mago_10.webp","w_mago_2":"assets/items/w_mago_2.webp","w_mago_3":"assets/items/w_mago_3.webp","w_mago_4":"assets/items/w_mago_4.webp","w_mago_5":"assets/items/w_mago_5.webp","w_mago_6":"assets/items/w_mago_6.webp","w_mago_7":"assets/items/w_mago_7.webp","w_mago_8":"assets/items/w_mago_8.webp","w_mago_9":"assets/items/w_mago_9.webp","wk_ankharet":"assets/items/wk_ankharet.webp","wk_auriel":"assets/items/wk_auriel.webp","wk_fenrath":"assets/items/wk_fenrath.webp","wk_morvenna":"assets/items/wk_morvenna.webp","wk_nyxaroth":"assets/items/wk_nyxaroth.webp","wk_pyraxis":"assets/items/wk_pyraxis.webp","wk_skadhi":"assets/items/wk_skadhi.webp","wk_soberano":"assets/items/wk_soberano.webp","wk_thalassor":"assets/items/wk_thalassor.webp","wk_varyss":"assets/items/wk_varyss.webp"};
-SYS.UI_ART = {"ach_all50":"assets/ui/ach_all50.webp","ach_architect":"assets/ui/ach_architect.webp","ach_arsenal":"assets/ui/ach_arsenal.webp","ach_b1":"assets/ui/ach_b1.webp","ach_b10":"assets/ui/ach_b10.webp","ach_b100":"assets/ui/ach_b100.webp","ach_b25":"assets/ui/ach_b25.webp","ach_b50":"assets/ui/ach_b50.webp","ach_brave":"assets/ui/ach_brave.webp","ach_chest100":"assets/ui/ach_chest100.webp","ach_chest25":"assets/ui/ach_chest25.webp","ach_clutch":"assets/ui/ach_clutch.webp","ach_collector":"assets/ui/ach_collector.webp","ach_core":"assets/ui/ach_core.webp","ach_d1":"assets/ui/ach_d1.webp","ach_d100":"assets/ui/ach_d100.webp","ach_d30":"assets/ui/ach_d30.webp","ach_d7":"assets/ui/ach_d7.webp","ach_early":"assets/ui/ach_early.webp","ach_fail1":"assets/ui/ach_fail1.webp","ach_flawless":"assets/ui/ach_flawless.webp","ach_giant":"assets/ui/ach_giant.webp","ach_giant3":"assets/ui/ach_giant3.webp","ach_hidden":"assets/ui/ach_hidden.webp","ach_l10":"assets/ui/ach_l10.webp","ach_l100":"assets/ui/ach_l100.webp","ach_l25":"assets/ui/ach_l25.webp","ach_l5":"assets/ui/ach_l5.webp","ach_l50":"assets/ui/ach_l50.webp","ach_l75":"assets/ui/ach_l75.webp","ach_leisure":"assets/ui/ach_leisure.webp","ach_lose15":"assets/ui/ach_lose15.webp","ach_lose5":"assets/ui/ach_lose5.webp","ach_m1":"assets/ui/ach_m1.webp","ach_m10":"assets/ui/ach_m10.webp","ach_m100":"assets/ui/ach_m100.webp","ach_m50":"assets/ui/ach_m50.webp","ach_m500":"assets/ui/ach_m500.webp","ach_mS":"assets/ui/ach_mS.webp","ach_night":"assets/ui/ach_night.webp","ach_points":"assets/ui/ach_points.webp","ach_potions":"assets/ui/ach_potions.webp","ach_rich":"assets/ui/ach_rich.webp","ach_rich2":"assets/ui/ach_rich2.webp","ach_secretboss":"assets/ui/ach_secretboss.webp","ach_secretchest":"assets/ui/ach_secretchest.webp","ach_set1":"assets/ui/ach_set1.webp","ach_set5":"assets/ui/ach_set5.webp","ach_spend":"assets/ui/ach_spend.webp","ach_tr25":"assets/ui/ach_tr25.webp","bag_equip":"assets/ui/bag_equip.webp","bag_secreto":"assets/ui/bag_secreto.webp","bag_tudo":"assets/ui/bag_tudo.webp","class_arqueiro":"assets/ui/class_arqueiro.webp","class_assassino":"assets/ui/class_assassino.webp","class_guardiao":"assets/ui/class_guardiao.webp","class_guerreiro":"assets/ui/class_guerreiro.webp","class_invocador":"assets/ui/class_invocador.webp","class_mago":"assets/ui/class_mago.webp","eff_coin2":"assets/ui/eff_coin2.webp","eff_exausto":"assets/ui/eff_exausto.webp","eff_marcado":"assets/ui/eff_marcado.webp","eff_sorte":"assets/ui/eff_sorte.webp","eff_xp15":"assets/ui/eff_xp15.webp","eff_xp2":"assets/ui/eff_xp2.webp","gate_0":"assets/ui/gate_0.webp","gate_1":"assets/ui/gate_1.webp","gate_10":"assets/ui/gate_10.webp","gate_2":"assets/ui/gate_2.webp","gate_3":"assets/ui/gate_3.webp","gate_4":"assets/ui/gate_4.webp","gate_5":"assets/ui/gate_5.webp","gate_6":"assets/ui/gate_6.webp","gate_7":"assets/ui/gate_7.webp","gate_8":"assets/ui/gate_8.webp","gate_9":"assets/ui/gate_9.webp","h_achievement":"assets/ui/h_achievement.webp","h_awaken":"assets/ui/h_awaken.webp","h_buy":"assets/ui/h_buy.webp","h_core":"assets/ui/h_core.webp","h_levelup":"assets/ui/h_levelup.webp","h_map":"assets/ui/h_map.webp","h_mission_done":"assets/ui/h_mission_done.webp","h_mission_fail":"assets/ui/h_mission_fail.webp","h_mission_new":"assets/ui/h_mission_new.webp","h_newday":"assets/ui/h_newday.webp","h_secret_skill":"assets/ui/h_secret_skill.webp","h_sell":"assets/ui/h_sell.webp","h_set":"assets/ui/h_set.webp","h_shield":"assets/ui/h_shield.webp","h_time":"assets/ui/h_time.webp","h_transfer":"assets/ui/h_transfer.webp","ic_lock":"assets/ui/ic_lock.webp","log_advantage":"assets/ui/log_advantage.webp","log_appear":"assets/ui/log_appear.webp","log_bomb":"assets/ui/log_bomb.webp","log_cleanse":"assets/ui/log_cleanse.webp","log_defeat":"assets/ui/log_defeat.webp","log_dot":"assets/ui/log_dot.webp","log_enrage":"assets/ui/log_enrage.webp","log_flee":"assets/ui/log_flee.webp","log_hit":"assets/ui/log_hit.webp","log_item":"assets/ui/log_item.webp","log_pressure":"assets/ui/log_pressure.webp","log_reset":"assets/ui/log_reset.webp","log_revive":"assets/ui/log_revive.webp","log_skill":"assets/ui/log_skill.webp","log_smoke":"assets/ui/log_smoke.webp","log_victory":"assets/ui/log_victory.webp","nav_bolsa":"assets/ui/nav_bolsa.webp","nav_combate":"assets/ui/nav_combate.webp","nav_loja":"assets/ui/nav_loja.webp","nav_missoes":"assets/ui/nav_missoes.webp","nav_status":"assets/ui/nav_status.webp","phase_crepusculo":"assets/ui/phase_crepusculo.webp","phase_dia":"assets/ui/phase_dia.webp","phase_horaMorta":"assets/ui/phase_horaMorta.webp","phase_manha":"assets/ui/phase_manha.webp","phase_noite":"assets/ui/phase_noite.webp","st_bleed":"assets/ui/st_bleed.webp","st_buff":"assets/ui/st_buff.webp","st_burn":"assets/ui/st_burn.webp","st_crit":"assets/ui/st_crit.webp","st_debuff":"assets/ui/st_debuff.webp","st_heal":"assets/ui/st_heal.webp","st_mana":"assets/ui/st_mana.webp","st_poison":"assets/ui/st_poison.webp","st_reflect":"assets/ui/st_reflect.webp","st_resist":"assets/ui/st_resist.webp","st_shield":"assets/ui/st_shield.webp","st_stun":"assets/ui/st_stun.webp","st_summon":"assets/ui/st_summon.webp","stat_agi":"assets/ui/stat_agi.webp","stat_int":"assets/ui/stat_int.webp","stat_per":"assets/ui/stat_per.webp","stat_str":"assets/ui/stat_str.webp","stat_vit":"assets/ui/stat_vit.webp","tab_acessorio":"assets/ui/tab_acessorio.webp","tab_arma":"assets/ui/tab_arma.webp","tab_armadura":"assets/ui/tab_armadura.webp","tab_atributo":"assets/ui/tab_atributo.webp","tab_bau":"assets/ui/tab_bau.webp","tab_consumivel":"assets/ui/tab_consumivel.webp","tab_lazer":"assets/ui/tab_lazer.webp","ui_battle":"assets/ui/ui_battle.webp","ui_eye":"assets/ui/ui_eye.webp","ui_king":"assets/ui/ui_king.webp","ui_sysday":"assets/ui/ui_sysday.webp","ui_trofeus":"assets/ui/ui_trofeus.webp","ui_unknown":"assets/ui/ui_unknown.webp"};
+SYS.BOSS_ART = {"ar1":"assets/bosses/ar1.webp","ar10":"assets/bosses/ar10.webp","ar10g1":"assets/bosses/ar10g1.webp","ar10g2":"assets/bosses/ar10g2.webp","ar10g3":"assets/bosses/ar10g3.webp","ar10g4":"assets/bosses/ar10g4.webp","ar10g5":"assets/bosses/ar10g5.webp","ar10g6":"assets/bosses/ar10g6.webp","ar10g7":"assets/bosses/ar10g7.webp","ar10g8":"assets/bosses/ar10g8.webp","ar10g9":"assets/bosses/ar10g9.webp","ar1g1":"assets/bosses/ar1g1.webp","ar1g2":"assets/bosses/ar1g2.webp","ar1g3":"assets/bosses/ar1g3.webp","ar1g4":"assets/bosses/ar1g4.webp","ar1g5":"assets/bosses/ar1g5.webp","ar1g6":"assets/bosses/ar1g6.webp","ar1g7":"assets/bosses/ar1g7.webp","ar1g8":"assets/bosses/ar1g8.webp","ar1g9":"assets/bosses/ar1g9.webp","ar2":"assets/bosses/ar2.webp","ar2g1":"assets/bosses/ar2g1.webp","ar2g2":"assets/bosses/ar2g2.webp","ar2g3":"assets/bosses/ar2g3.webp","ar2g4":"assets/bosses/ar2g4.webp","ar2g5":"assets/bosses/ar2g5.webp","ar2g6":"assets/bosses/ar2g6.webp","ar2g7":"assets/bosses/ar2g7.webp","ar2g8":"assets/bosses/ar2g8.webp","ar2g9":"assets/bosses/ar2g9.webp","ar3":"assets/bosses/ar3.webp","ar3g1":"assets/bosses/ar3g1.webp","ar3g2":"assets/bosses/ar3g2.webp","ar3g3":"assets/bosses/ar3g3.webp","ar3g4":"assets/bosses/ar3g4.webp","ar3g5":"assets/bosses/ar3g5.webp","ar3g6":"assets/bosses/ar3g6.webp","ar3g7":"assets/bosses/ar3g7.webp","ar3g8":"assets/bosses/ar3g8.webp","ar3g9":"assets/bosses/ar3g9.webp","ar4":"assets/bosses/ar4.webp","ar4g1":"assets/bosses/ar4g1.webp","ar4g2":"assets/bosses/ar4g2.webp","ar4g3":"assets/bosses/ar4g3.webp","ar4g4":"assets/bosses/ar4g4.webp","ar4g5":"assets/bosses/ar4g5.webp","ar4g6":"assets/bosses/ar4g6.webp","ar4g7":"assets/bosses/ar4g7.webp","ar4g8":"assets/bosses/ar4g8.webp","ar4g9":"assets/bosses/ar4g9.webp","ar5":"assets/bosses/ar5.webp","ar5g1":"assets/bosses/ar5g1.webp","ar5g2":"assets/bosses/ar5g2.webp","ar5g3":"assets/bosses/ar5g3.webp","ar5g4":"assets/bosses/ar5g4.webp","ar5g5":"assets/bosses/ar5g5.webp","ar5g6":"assets/bosses/ar5g6.webp","ar5g7":"assets/bosses/ar5g7.webp","ar5g8":"assets/bosses/ar5g8.webp","ar5g9":"assets/bosses/ar5g9.webp","ar6":"assets/bosses/ar6.webp","ar6g1":"assets/bosses/ar6g1.webp","ar6g2":"assets/bosses/ar6g2.webp","ar6g3":"assets/bosses/ar6g3.webp","ar6g4":"assets/bosses/ar6g4.webp","ar6g5":"assets/bosses/ar6g5.webp","ar6g6":"assets/bosses/ar6g6.webp","ar6g7":"assets/bosses/ar6g7.webp","ar6g8":"assets/bosses/ar6g8.webp","ar6g9":"assets/bosses/ar6g9.webp","ar7":"assets/bosses/ar7.webp","ar7g1":"assets/bosses/ar7g1.webp","ar7g2":"assets/bosses/ar7g2.webp","ar7g3":"assets/bosses/ar7g3.webp","ar7g4":"assets/bosses/ar7g4.webp","ar7g5":"assets/bosses/ar7g5.webp","ar7g6":"assets/bosses/ar7g6.webp","ar7g7":"assets/bosses/ar7g7.webp","ar7g8":"assets/bosses/ar7g8.webp","ar7g9":"assets/bosses/ar7g9.webp","ar8":"assets/bosses/ar8.webp","ar8g1":"assets/bosses/ar8g1.webp","ar8g2":"assets/bosses/ar8g2.webp","ar8g3":"assets/bosses/ar8g3.webp","ar8g4":"assets/bosses/ar8g4.webp","ar8g5":"assets/bosses/ar8g5.webp","ar8g6":"assets/bosses/ar8g6.webp","ar8g7":"assets/bosses/ar8g7.webp","ar8g8":"assets/bosses/ar8g8.webp","ar8g9":"assets/bosses/ar8g9.webp","ar9":"assets/bosses/ar9.webp","ar9g1":"assets/bosses/ar9g1.webp","ar9g2":"assets/bosses/ar9g2.webp","ar9g3":"assets/bosses/ar9g3.webp","ar9g4":"assets/bosses/ar9g4.webp","ar9g5":"assets/bosses/ar9g5.webp","ar9g6":"assets/bosses/ar9g6.webp","ar9g7":"assets/bosses/ar9g7.webp","ar9g8":"assets/bosses/ar9g8.webp","ar9g9":"assets/bosses/ar9g9.webp","b1":"assets/bosses/b1.webp","b10":"assets/bosses/b10.webp","b100":"assets/bosses/b100.webp","b11":"assets/bosses/b11.webp","b12":"assets/bosses/b12.webp","b13":"assets/bosses/b13.webp","b14":"assets/bosses/b14.webp","b15":"assets/bosses/b15.webp","b16":"assets/bosses/b16.webp","b17":"assets/bosses/b17.webp","b18":"assets/bosses/b18.webp","b19":"assets/bosses/b19.webp","b2":"assets/bosses/b2.webp","b20":"assets/bosses/b20.webp","b21":"assets/bosses/b21.webp","b22":"assets/bosses/b22.webp","b23":"assets/bosses/b23.webp","b24":"assets/bosses/b24.webp","b25":"assets/bosses/b25.webp","b26":"assets/bosses/b26.webp","b27":"assets/bosses/b27.webp","b28":"assets/bosses/b28.webp","b29":"assets/bosses/b29.webp","b3":"assets/bosses/b3.webp","b30":"assets/bosses/b30.webp","b31":"assets/bosses/b31.webp","b32":"assets/bosses/b32.webp","b33":"assets/bosses/b33.webp","b34":"assets/bosses/b34.webp","b35":"assets/bosses/b35.webp","b36":"assets/bosses/b36.webp","b37":"assets/bosses/b37.webp","b38":"assets/bosses/b38.webp","b39":"assets/bosses/b39.webp","b4":"assets/bosses/b4.webp","b40":"assets/bosses/b40.webp","b41":"assets/bosses/b41.webp","b42":"assets/bosses/b42.webp","b43":"assets/bosses/b43.webp","b44":"assets/bosses/b44.webp","b45":"assets/bosses/b45.webp","b46":"assets/bosses/b46.webp","b47":"assets/bosses/b47.webp","b48":"assets/bosses/b48.webp","b49":"assets/bosses/b49.webp","b5":"assets/bosses/b5.webp","b50":"assets/bosses/b50.webp","b51":"assets/bosses/b51.webp","b52":"assets/bosses/b52.webp","b53":"assets/bosses/b53.webp","b54":"assets/bosses/b54.webp","b55":"assets/bosses/b55.webp","b56":"assets/bosses/b56.webp","b57":"assets/bosses/b57.webp","b58":"assets/bosses/b58.webp","b59":"assets/bosses/b59.webp","b6":"assets/bosses/b6.webp","b60":"assets/bosses/b60.webp","b61":"assets/bosses/b61.webp","b62":"assets/bosses/b62.webp","b63":"assets/bosses/b63.webp","b64":"assets/bosses/b64.webp","b65":"assets/bosses/b65.webp","b66":"assets/bosses/b66.webp","b67":"assets/bosses/b67.webp","b68":"assets/bosses/b68.webp","b69":"assets/bosses/b69.webp","b7":"assets/bosses/b7.webp","b70":"assets/bosses/b70.webp","b71":"assets/bosses/b71.webp","b72":"assets/bosses/b72.webp","b73":"assets/bosses/b73.webp","b74":"assets/bosses/b74.webp","b75":"assets/bosses/b75.webp","b76":"assets/bosses/b76.webp","b77":"assets/bosses/b77.webp","b78":"assets/bosses/b78.webp","b79":"assets/bosses/b79.webp","b8":"assets/bosses/b8.webp","b80":"assets/bosses/b80.webp","b81":"assets/bosses/b81.webp","b82":"assets/bosses/b82.webp","b83":"assets/bosses/b83.webp","b84":"assets/bosses/b84.webp","b85":"assets/bosses/b85.webp","b86":"assets/bosses/b86.webp","b87":"assets/bosses/b87.webp","b88":"assets/bosses/b88.webp","b89":"assets/bosses/b89.webp","b9":"assets/bosses/b9.webp","b90":"assets/bosses/b90.webp","b91":"assets/bosses/b91.webp","b92":"assets/bosses/b92.webp","b93":"assets/bosses/b93.webp","b94":"assets/bosses/b94.webp","b95":"assets/bosses/b95.webp","b96":"assets/bosses/b96.webp","b97":"assets/bosses/b97.webp","b98":"assets/bosses/b98.webp","b99":"assets/bosses/b99.webp","secret_1":"assets/bosses/secret_1.webp","secret_2":"assets/bosses/secret_2.webp"};
+SYS.ITEM_ART = {"ac_abismo":"assets/items/ac_abismo.webp","ac_agi":"assets/items/ac_agi.webp","ac_agi_anc":"assets/items/ac_agi_anc.webp","ac_agi_maior":"assets/items/ac_agi_maior.webp","ac_agi_prim":"assets/items/ac_agi_prim.webp","ac_ancora":"assets/items/ac_ancora.webp","ac_aureola":"assets/items/ac_aureola.webp","ac_aurora":"assets/items/ac_aurora.webp","ac_cacador_lenda":"assets/items/ac_cacador_lenda.webp","ac_cobre":"assets/items/ac_cobre.webp","ac_colecionador":"assets/items/ac_colecionador.webp","ac_coragem":"assets/items/ac_coragem.webp","ac_coruja":"assets/items/ac_coruja.webp","ac_cristal":"assets/items/ac_cristal.webp","ac_disciplina":"assets/items/ac_disciplina.webp","ac_dragao":"assets/items/ac_dragao.webp","ac_escaravelho":"assets/items/ac_escaravelho.webp","ac_espinhos":"assets/items/ac_espinhos.webp","ac_fonte":"assets/items/ac_fonte.webp","ac_forca":"assets/items/ac_forca.webp","ac_fortuna":"assets/items/ac_fortuna.webp","ac_furia":"assets/items/ac_furia.webp","ac_galo":"assets/items/ac_galo.webp","ac_gelo":"assets/items/ac_gelo.webp","ac_gigante":"assets/items/ac_gigante.webp","ac_herbalista":"assets/items/ac_herbalista.webp","ac_insignia":"assets/items/ac_insignia.webp","ac_int":"assets/items/ac_int.webp","ac_int_anc":"assets/items/ac_int_anc.webp","ac_int_maior":"assets/items/ac_int_maior.webp","ac_int_prim":"assets/items/ac_int_prim.webp","ac_lobo":"assets/items/ac_lobo.webp","ac_lua":"assets/items/ac_lua.webp","ac_mana":"assets/items/ac_mana.webp","ac_monge":"assets/items/ac_monge.webp","ac_muralha":"assets/items/ac_muralha.webp","ac_musgo":"assets/items/ac_musgo.webp","ac_ourico":"assets/items/ac_ourico.webp","ac_per":"assets/items/ac_per.webp","ac_per_anc":"assets/items/ac_per_anc.webp","ac_per_maior":"assets/items/ac_per_maior.webp","ac_per_prim":"assets/items/ac_per_prim.webp","ac_perola":"assets/items/ac_perola.webp","ac_praga":"assets/items/ac_praga.webp","ac_primeiro":"assets/items/ac_primeiro.webp","ac_rank_a":"assets/items/ac_rank_a.webp","ac_rank_b":"assets/items/ac_rank_b.webp","ac_rank_c":"assets/items/ac_rank_c.webp","ac_rank_d":"assets/items/ac_rank_d.webp","ac_rank_s":"assets/items/ac_rank_s.webp","ac_rank_ss":"assets/items/ac_rank_ss.webp","ac_selo":"assets/items/ac_selo.webp","ac_sentenca":"assets/items/ac_sentenca.webp","ac_sol":"assets/items/ac_sol.webp","ac_str_anc":"assets/items/ac_str_anc.webp","ac_str_maior":"assets/items/ac_str_maior.webp","ac_str_prim":"assets/items/ac_str_prim.webp","ac_t_crit1":"assets/items/ac_t_crit1.webp","ac_t_crit2":"assets/items/ac_t_crit2.webp","ac_t_crit3":"assets/items/ac_t_crit3.webp","ac_t_def1":"assets/items/ac_t_def1.webp","ac_t_def2":"assets/items/ac_t_def2.webp","ac_t_def3":"assets/items/ac_t_def3.webp","ac_t_eva1":"assets/items/ac_t_eva1.webp","ac_t_eva2":"assets/items/ac_t_eva2.webp","ac_t_eva3":"assets/items/ac_t_eva3.webp","ac_t_lifesteal1":"assets/items/ac_t_lifesteal1.webp","ac_t_lifesteal2":"assets/items/ac_t_lifesteal2.webp","ac_t_lifesteal3":"assets/items/ac_t_lifesteal3.webp","ac_titan":"assets/items/ac_titan.webp","ac_toxina":"assets/items/ac_toxina.webp","ac_vampiro":"assets/items/ac_vampiro.webp","ac_vazio":"assets/items/ac_vazio.webp","ac_vit":"assets/items/ac_vit.webp","ac_vit_anc":"assets/items/ac_vit_anc.webp","ac_vit_maior":"assets/items/ac_vit_maior.webp","ac_vit_prim":"assets/items/ac_vit_prim.webp","ar_abismo":"assets/items/ar_abismo.webp","ar_abismo_art":"assets/items/ar_abismo_art.webp","ar_abismo_camp":"assets/items/ar_abismo_camp.webp","ar_acolchoada":"assets/items/ar_acolchoada.webp","ar_acolchoada_art":"assets/items/ar_acolchoada_art.webp","ar_acolchoada_camp":"assets/items/ar_acolchoada_camp.webp","ar_alquimista":"assets/items/ar_alquimista.webp","ar_arquimago":"assets/items/ar_arquimago.webp","ar_arquimago_art":"assets/items/ar_arquimago_art.webp","ar_arquimago_camp":"assets/items/ar_arquimago_camp.webp","ar_bastiao":"assets/items/ar_bastiao.webp","ar_cacador":"assets/items/ar_cacador.webp","ar_cacador_art":"assets/items/ar_cacador_art.webp","ar_cacador_camp":"assets/items/ar_cacador_camp.webp","ar_celeste":"assets/items/ar_celeste.webp","ar_celeste_art":"assets/items/ar_celeste_art.webp","ar_celeste_camp":"assets/items/ar_celeste_camp.webp","ar_coral":"assets/items/ar_coral.webp","ar_coral_art":"assets/items/ar_coral_art.webp","ar_coral_camp":"assets/items/ar_coral_camp.webp","ar_couro":"assets/items/ar_couro.webp","ar_couro_art":"assets/items/ar_couro_art.webp","ar_couro_camp":"assets/items/ar_couro_camp.webp","ar_dragao":"assets/items/ar_dragao.webp","ar_dragao_art":"assets/items/ar_dragao_art.webp","ar_dragao_camp":"assets/items/ar_dragao_camp.webp","ar_escamas":"assets/items/ar_escamas.webp","ar_escamas_art":"assets/items/ar_escamas_art.webp","ar_escamas_camp":"assets/items/ar_escamas_camp.webp","ar_espinhos":"assets/items/ar_espinhos.webp","ar_malha":"assets/items/ar_malha.webp","ar_malha_art":"assets/items/ar_malha_art.webp","ar_malha_camp":"assets/items/ar_malha_camp.webp","ar_meianoite":"assets/items/ar_meianoite.webp","ar_placas":"assets/items/ar_placas.webp","ar_placas_art":"assets/items/ar_placas_art.webp","ar_placas_camp":"assets/items/ar_placas_camp.webp","ar_runica":"assets/items/ar_runica.webp","ar_runica_art":"assets/items/ar_runica_art.webp","ar_runica_camp":"assets/items/ar_runica_camp.webp","ar_soberano":"assets/items/ar_soberano.webp","ar_sombra":"assets/items/ar_sombra.webp","ar_sombra_art":"assets/items/ar_sombra_art.webp","ar_sombra_camp":"assets/items/ar_sombra_camp.webp","ar_vontade":"assets/items/ar_vontade.webp","bau_comum":"assets/items/bau_comum.webp","bau_epico":"assets/items/bau_epico.webp","bau_lendario":"assets/items/bau_lendario.webp","bau_raro":"assets/items/bau_raro.webp","bau_secreto":"assets/items/bau_secreto.webp","el_agi":"assets/items/el_agi.webp","el_ascensao":"assets/items/el_ascensao.webp","el_int":"assets/items/el_int.webp","el_nectar":"assets/items/el_nectar.webp","el_per":"assets/items/el_per.webp","el_ponto":"assets/items/el_ponto.webp","el_reset":"assets/items/el_reset.webp","el_selo":"assets/items/el_selo.webp","el_str":"assets/items/el_str.webp","el_vit":"assets/items/el_vit.webp","elg_agi":"assets/items/elg_agi.webp","elg_int":"assets/items/elg_int.webp","elg_per":"assets/items/elg_per.webp","elg_str":"assets/items/elg_str.webp","elg_vit":"assets/items/elg_vit.webp","lz_amigos":"assets/items/lz_amigos.webp","lz_banho":"assets/items/lz_banho.webp","lz_cafe":"assets/items/lz_cafe.webp","lz_cinema":"assets/items/lz_cinema.webp","lz_descanso":"assets/items/lz_descanso.webp","lz_desejo":"assets/items/lz_desejo.webp","lz_doce":"assets/items/lz_doce.webp","lz_dourado":"assets/items/lz_dourado.webp","lz_episodio":"assets/items/lz_episodio.webp","lz_gadget":"assets/items/lz_gadget.webp","lz_jogo":"assets/items/lz_jogo.webp","lz_livro":"assets/items/lz_livro.webp","lz_maratona":"assets/items/lz_maratona.webp","lz_musica":"assets/items/lz_musica.webp","lz_passeio":"assets/items/lz_passeio.webp","lz_preguica":"assets/items/lz_preguica.webp","lz_redes":"assets/items/lz_redes.webp","lz_refeicao":"assets/items/lz_refeicao.webp","lz_restaurante":"assets/items/lz_restaurante.webp","lz_roupa":"assets/items/lz_roupa.webp","lz_sesta":"assets/items/lz_sesta.webp","lz_snack":"assets/items/lz_snack.webp","lz_spa":"assets/items/lz_spa.webp","lz_viagem":"assets/items/lz_viagem.webp","po_abismo":"assets/items/po_abismo.webp","po_antidoto":"assets/items/po_antidoto.webp","po_areia":"assets/items/po_areia.webp","po_barreira":"assets/items/po_barreira.webp","po_bomba":"assets/items/po_bomba.webp","po_cafe":"assets/items/po_cafe.webp","po_coin2":"assets/items/po_coin2.webp","po_coin3":"assets/items/po_coin3.webp","po_correntes":"assets/items/po_correntes.webp","po_crepusculo":"assets/items/po_crepusculo.webp","po_descanso":"assets/items/po_descanso.webp","po_eclipse":"assets/items/po_eclipse.webp","po_equilibrio":"assets/items/po_equilibrio.webp","po_escudo":"assets/items/po_escudo.webp","po_espelho":"assets/items/po_espelho.webp","po_fenix":"assets/items/po_fenix.webp","po_foco":"assets/items/po_foco.webp","po_fogo":"assets/items/po_fogo.webp","po_fraqueza":"assets/items/po_fraqueza.webp","po_fumo":"assets/items/po_fumo.webp","po_furia":"assets/items/po_furia.webp","po_furia2":"assets/items/po_furia2.webp","po_gelo":"assets/items/po_gelo.webp","po_horamorta":"assets/items/po_horamorta.webp","po_lunar":"assets/items/po_lunar.webp","po_mana1":"assets/items/po_mana1.webp","po_mana15":"assets/items/po_mana15.webp","po_mana2":"assets/items/po_mana2.webp","po_mel":"assets/items/po_mel.webp","po_mercador":"assets/items/po_mercador.webp","po_orvalho":"assets/items/po_orvalho.webp","po_pedra":"assets/items/po_pedra.webp","po_predador":"assets/items/po_predador.webp","po_raio":"assets/items/po_raio.webp","po_restaura":"assets/items/po_restaura.webp","po_ritual":"assets/items/po_ritual.webp","po_sorte":"assets/items/po_sorte.webp","po_tita":"assets/items/po_tita.webp","po_vampiro":"assets/items/po_vampiro.webp","po_veneno":"assets/items/po_veneno.webp","po_vento":"assets/items/po_vento.webp","po_vida1":"assets/items/po_vida1.webp","po_vida2":"assets/items/po_vida2.webp","po_vida3":"assets/items/po_vida3.webp","po_xp15":"assets/items/po_xp15.webp","po_xp2":"assets/items/po_xp2.webp","po_xp3":"assets/items/po_xp3.webp","pr_ampulheta":"assets/items/pr_ampulheta.webp","pr_armadura":"assets/items/pr_armadura.webp","pr_bau":"assets/items/pr_bau.webp","pr_coracao":"assets/items/pr_coracao.webp","pr_coroa":"assets/items/pr_coroa.webp","pr_eco":"assets/items/pr_eco.webp","pr_egide":"assets/items/pr_egide.webp","pr_elixir":"assets/items/pr_elixir.webp","pr_espinho":"assets/items/pr_espinho.webp","pr_executor":"assets/items/pr_executor.webp","pr_fenix":"assets/items/pr_fenix.webp","pr_foco":"assets/items/pr_foco.webp","pr_juizo":"assets/items/pr_juizo.webp","pr_lamina":"assets/items/pr_lamina.webp","pr_legiao":"assets/items/pr_legiao.webp","pr_olho":"assets/items/pr_olho.webp","pr_ruptura":"assets/items/pr_ruptura.webp","pr_selo":"assets/items/pr_selo.webp","pr_tempo":"assets/items/pr_tempo.webp","pr_trevo":"assets/items/pr_trevo.webp","rl_cinzas":"assets/items/rl_cinzas.webp","rl_eclipse":"assets/items/rl_eclipse.webp","rl_espelho":"assets/items/rl_espelho.webp","rl_laminas":"assets/items/rl_laminas.webp","rl_mare":"assets/items/rl_mare.webp","rl_necro":"assets/items/rl_necro.webp","rl_primeiro":"assets/items/rl_primeiro.webp","rl_relogio":"assets/items/rl_relogio.webp","rl_runa":"assets/items/rl_runa.webp","rl_tempestade":"assets/items/rl_tempestade.webp","sx_ampulheta":"assets/items/sx_ampulheta.webp","sx_coracao":"assets/items/sx_coracao.webp","sx_coroa":"assets/items/sx_coroa.webp","sx_fenix":"assets/items/sx_fenix.webp","sx_fragmento":"assets/items/sx_fragmento.webp","sx_lamina":"assets/items/sx_lamina.webp","sx_mapa":"assets/items/sx_mapa.webp","sx_moeda":"assets/items/sx_moeda.webp","sx_nucleo":"assets/items/sx_nucleo.webp","sx_olho":"assets/items/sx_olho.webp","sys_bilhete":"assets/items/sys_bilhete.webp","sys_bussola":"assets/items/sys_bussola.webp","sys_dado":"assets/items/sys_dado.webp","sys_dobro":"assets/items/sys_dobro.webp","sys_licenca":"assets/items/sys_licenca.webp","sys_pacto":"assets/items/sys_pacto.webp","sys_silencio":"assets/items/sys_silencio.webp","sys_sino":"assets/items/sys_sino.webp","sys_tregua":"assets/items/sys_tregua.webp","w_arqueiro_1":"assets/items/w_arqueiro_1.webp","w_arqueiro_10":"assets/items/w_arqueiro_10.webp","w_arqueiro_10_art":"assets/items/w_arqueiro_10_art.webp","w_arqueiro_10_camp":"assets/items/w_arqueiro_10_camp.webp","w_arqueiro_1_art":"assets/items/w_arqueiro_1_art.webp","w_arqueiro_1_camp":"assets/items/w_arqueiro_1_camp.webp","w_arqueiro_2":"assets/items/w_arqueiro_2.webp","w_arqueiro_2_art":"assets/items/w_arqueiro_2_art.webp","w_arqueiro_2_camp":"assets/items/w_arqueiro_2_camp.webp","w_arqueiro_3":"assets/items/w_arqueiro_3.webp","w_arqueiro_3_art":"assets/items/w_arqueiro_3_art.webp","w_arqueiro_3_camp":"assets/items/w_arqueiro_3_camp.webp","w_arqueiro_4":"assets/items/w_arqueiro_4.webp","w_arqueiro_4_art":"assets/items/w_arqueiro_4_art.webp","w_arqueiro_4_camp":"assets/items/w_arqueiro_4_camp.webp","w_arqueiro_5":"assets/items/w_arqueiro_5.webp","w_arqueiro_5_art":"assets/items/w_arqueiro_5_art.webp","w_arqueiro_5_camp":"assets/items/w_arqueiro_5_camp.webp","w_arqueiro_6":"assets/items/w_arqueiro_6.webp","w_arqueiro_6_art":"assets/items/w_arqueiro_6_art.webp","w_arqueiro_6_camp":"assets/items/w_arqueiro_6_camp.webp","w_arqueiro_7":"assets/items/w_arqueiro_7.webp","w_arqueiro_7_art":"assets/items/w_arqueiro_7_art.webp","w_arqueiro_7_camp":"assets/items/w_arqueiro_7_camp.webp","w_arqueiro_8":"assets/items/w_arqueiro_8.webp","w_arqueiro_8_art":"assets/items/w_arqueiro_8_art.webp","w_arqueiro_8_camp":"assets/items/w_arqueiro_8_camp.webp","w_arqueiro_9":"assets/items/w_arqueiro_9.webp","w_arqueiro_9_art":"assets/items/w_arqueiro_9_art.webp","w_arqueiro_9_camp":"assets/items/w_arqueiro_9_camp.webp","w_assassino_1":"assets/items/w_assassino_1.webp","w_assassino_10":"assets/items/w_assassino_10.webp","w_assassino_10_art":"assets/items/w_assassino_10_art.webp","w_assassino_10_camp":"assets/items/w_assassino_10_camp.webp","w_assassino_1_art":"assets/items/w_assassino_1_art.webp","w_assassino_1_camp":"assets/items/w_assassino_1_camp.webp","w_assassino_2":"assets/items/w_assassino_2.webp","w_assassino_2_art":"assets/items/w_assassino_2_art.webp","w_assassino_2_camp":"assets/items/w_assassino_2_camp.webp","w_assassino_3":"assets/items/w_assassino_3.webp","w_assassino_3_art":"assets/items/w_assassino_3_art.webp","w_assassino_3_camp":"assets/items/w_assassino_3_camp.webp","w_assassino_4":"assets/items/w_assassino_4.webp","w_assassino_4_art":"assets/items/w_assassino_4_art.webp","w_assassino_4_camp":"assets/items/w_assassino_4_camp.webp","w_assassino_5":"assets/items/w_assassino_5.webp","w_assassino_5_art":"assets/items/w_assassino_5_art.webp","w_assassino_5_camp":"assets/items/w_assassino_5_camp.webp","w_assassino_6":"assets/items/w_assassino_6.webp","w_assassino_6_art":"assets/items/w_assassino_6_art.webp","w_assassino_6_camp":"assets/items/w_assassino_6_camp.webp","w_assassino_7":"assets/items/w_assassino_7.webp","w_assassino_7_art":"assets/items/w_assassino_7_art.webp","w_assassino_7_camp":"assets/items/w_assassino_7_camp.webp","w_assassino_8":"assets/items/w_assassino_8.webp","w_assassino_8_art":"assets/items/w_assassino_8_art.webp","w_assassino_8_camp":"assets/items/w_assassino_8_camp.webp","w_assassino_9":"assets/items/w_assassino_9.webp","w_assassino_9_art":"assets/items/w_assassino_9_art.webp","w_assassino_9_camp":"assets/items/w_assassino_9_camp.webp","w_guardiao_1":"assets/items/w_guardiao_1.webp","w_guardiao_10":"assets/items/w_guardiao_10.webp","w_guardiao_10_art":"assets/items/w_guardiao_10_art.webp","w_guardiao_10_camp":"assets/items/w_guardiao_10_camp.webp","w_guardiao_1_art":"assets/items/w_guardiao_1_art.webp","w_guardiao_1_camp":"assets/items/w_guardiao_1_camp.webp","w_guardiao_2":"assets/items/w_guardiao_2.webp","w_guardiao_2_art":"assets/items/w_guardiao_2_art.webp","w_guardiao_2_camp":"assets/items/w_guardiao_2_camp.webp","w_guardiao_3":"assets/items/w_guardiao_3.webp","w_guardiao_3_art":"assets/items/w_guardiao_3_art.webp","w_guardiao_3_camp":"assets/items/w_guardiao_3_camp.webp","w_guardiao_4":"assets/items/w_guardiao_4.webp","w_guardiao_4_art":"assets/items/w_guardiao_4_art.webp","w_guardiao_4_camp":"assets/items/w_guardiao_4_camp.webp","w_guardiao_5":"assets/items/w_guardiao_5.webp","w_guardiao_5_art":"assets/items/w_guardiao_5_art.webp","w_guardiao_5_camp":"assets/items/w_guardiao_5_camp.webp","w_guardiao_6":"assets/items/w_guardiao_6.webp","w_guardiao_6_art":"assets/items/w_guardiao_6_art.webp","w_guardiao_6_camp":"assets/items/w_guardiao_6_camp.webp","w_guardiao_7":"assets/items/w_guardiao_7.webp","w_guardiao_7_art":"assets/items/w_guardiao_7_art.webp","w_guardiao_7_camp":"assets/items/w_guardiao_7_camp.webp","w_guardiao_8":"assets/items/w_guardiao_8.webp","w_guardiao_8_art":"assets/items/w_guardiao_8_art.webp","w_guardiao_8_camp":"assets/items/w_guardiao_8_camp.webp","w_guardiao_9":"assets/items/w_guardiao_9.webp","w_guardiao_9_art":"assets/items/w_guardiao_9_art.webp","w_guardiao_9_camp":"assets/items/w_guardiao_9_camp.webp","w_guerreiro_1":"assets/items/w_guerreiro_1.webp","w_guerreiro_10":"assets/items/w_guerreiro_10.webp","w_guerreiro_10_art":"assets/items/w_guerreiro_10_art.webp","w_guerreiro_10_camp":"assets/items/w_guerreiro_10_camp.webp","w_guerreiro_1_art":"assets/items/w_guerreiro_1_art.webp","w_guerreiro_1_camp":"assets/items/w_guerreiro_1_camp.webp","w_guerreiro_2":"assets/items/w_guerreiro_2.webp","w_guerreiro_2_art":"assets/items/w_guerreiro_2_art.webp","w_guerreiro_2_camp":"assets/items/w_guerreiro_2_camp.webp","w_guerreiro_3":"assets/items/w_guerreiro_3.webp","w_guerreiro_3_art":"assets/items/w_guerreiro_3_art.webp","w_guerreiro_3_camp":"assets/items/w_guerreiro_3_camp.webp","w_guerreiro_4":"assets/items/w_guerreiro_4.webp","w_guerreiro_4_art":"assets/items/w_guerreiro_4_art.webp","w_guerreiro_4_camp":"assets/items/w_guerreiro_4_camp.webp","w_guerreiro_5":"assets/items/w_guerreiro_5.webp","w_guerreiro_5_art":"assets/items/w_guerreiro_5_art.webp","w_guerreiro_5_camp":"assets/items/w_guerreiro_5_camp.webp","w_guerreiro_6":"assets/items/w_guerreiro_6.webp","w_guerreiro_6_art":"assets/items/w_guerreiro_6_art.webp","w_guerreiro_6_camp":"assets/items/w_guerreiro_6_camp.webp","w_guerreiro_7":"assets/items/w_guerreiro_7.webp","w_guerreiro_7_art":"assets/items/w_guerreiro_7_art.webp","w_guerreiro_7_camp":"assets/items/w_guerreiro_7_camp.webp","w_guerreiro_8":"assets/items/w_guerreiro_8.webp","w_guerreiro_8_art":"assets/items/w_guerreiro_8_art.webp","w_guerreiro_8_camp":"assets/items/w_guerreiro_8_camp.webp","w_guerreiro_9":"assets/items/w_guerreiro_9.webp","w_guerreiro_9_art":"assets/items/w_guerreiro_9_art.webp","w_guerreiro_9_camp":"assets/items/w_guerreiro_9_camp.webp","w_invocador_1":"assets/items/w_invocador_1.webp","w_invocador_10":"assets/items/w_invocador_10.webp","w_invocador_10_art":"assets/items/w_invocador_10_art.webp","w_invocador_10_camp":"assets/items/w_invocador_10_camp.webp","w_invocador_1_art":"assets/items/w_invocador_1_art.webp","w_invocador_1_camp":"assets/items/w_invocador_1_camp.webp","w_invocador_2":"assets/items/w_invocador_2.webp","w_invocador_2_art":"assets/items/w_invocador_2_art.webp","w_invocador_2_camp":"assets/items/w_invocador_2_camp.webp","w_invocador_3":"assets/items/w_invocador_3.webp","w_invocador_3_art":"assets/items/w_invocador_3_art.webp","w_invocador_3_camp":"assets/items/w_invocador_3_camp.webp","w_invocador_4":"assets/items/w_invocador_4.webp","w_invocador_4_art":"assets/items/w_invocador_4_art.webp","w_invocador_4_camp":"assets/items/w_invocador_4_camp.webp","w_invocador_5":"assets/items/w_invocador_5.webp","w_invocador_5_art":"assets/items/w_invocador_5_art.webp","w_invocador_5_camp":"assets/items/w_invocador_5_camp.webp","w_invocador_6":"assets/items/w_invocador_6.webp","w_invocador_6_art":"assets/items/w_invocador_6_art.webp","w_invocador_6_camp":"assets/items/w_invocador_6_camp.webp","w_invocador_7":"assets/items/w_invocador_7.webp","w_invocador_7_art":"assets/items/w_invocador_7_art.webp","w_invocador_7_camp":"assets/items/w_invocador_7_camp.webp","w_invocador_8":"assets/items/w_invocador_8.webp","w_invocador_8_art":"assets/items/w_invocador_8_art.webp","w_invocador_8_camp":"assets/items/w_invocador_8_camp.webp","w_invocador_9":"assets/items/w_invocador_9.webp","w_invocador_9_art":"assets/items/w_invocador_9_art.webp","w_invocador_9_camp":"assets/items/w_invocador_9_camp.webp","w_mago_1":"assets/items/w_mago_1.webp","w_mago_10":"assets/items/w_mago_10.webp","w_mago_10_art":"assets/items/w_mago_10_art.webp","w_mago_10_camp":"assets/items/w_mago_10_camp.webp","w_mago_1_art":"assets/items/w_mago_1_art.webp","w_mago_1_camp":"assets/items/w_mago_1_camp.webp","w_mago_2":"assets/items/w_mago_2.webp","w_mago_2_art":"assets/items/w_mago_2_art.webp","w_mago_2_camp":"assets/items/w_mago_2_camp.webp","w_mago_3":"assets/items/w_mago_3.webp","w_mago_3_art":"assets/items/w_mago_3_art.webp","w_mago_3_camp":"assets/items/w_mago_3_camp.webp","w_mago_4":"assets/items/w_mago_4.webp","w_mago_4_art":"assets/items/w_mago_4_art.webp","w_mago_4_camp":"assets/items/w_mago_4_camp.webp","w_mago_5":"assets/items/w_mago_5.webp","w_mago_5_art":"assets/items/w_mago_5_art.webp","w_mago_5_camp":"assets/items/w_mago_5_camp.webp","w_mago_6":"assets/items/w_mago_6.webp","w_mago_6_art":"assets/items/w_mago_6_art.webp","w_mago_6_camp":"assets/items/w_mago_6_camp.webp","w_mago_7":"assets/items/w_mago_7.webp","w_mago_7_art":"assets/items/w_mago_7_art.webp","w_mago_7_camp":"assets/items/w_mago_7_camp.webp","w_mago_8":"assets/items/w_mago_8.webp","w_mago_8_art":"assets/items/w_mago_8_art.webp","w_mago_8_camp":"assets/items/w_mago_8_camp.webp","w_mago_9":"assets/items/w_mago_9.webp","w_mago_9_art":"assets/items/w_mago_9_art.webp","w_mago_9_camp":"assets/items/w_mago_9_camp.webp","wk_ankharet":"assets/items/wk_ankharet.webp","wk_auriel":"assets/items/wk_auriel.webp","wk_fenrath":"assets/items/wk_fenrath.webp","wk_lunar":"assets/items/wk_lunar.webp","wk_morvenna":"assets/items/wk_morvenna.webp","wk_nyxaroth":"assets/items/wk_nyxaroth.webp","wk_pyraxis":"assets/items/wk_pyraxis.webp","wk_skadhi":"assets/items/wk_skadhi.webp","wk_soberano":"assets/items/wk_soberano.webp","wk_solar":"assets/items/wk_solar.webp","wk_thalassor":"assets/items/wk_thalassor.webp","wk_varyss":"assets/items/wk_varyss.webp","wx_carrasco":"assets/items/wx_carrasco.webp","wx_espinheira":"assets/items/wx_espinheira.webp","wx_fonte":"assets/items/wx_fonte.webp","wx_peste":"assets/items/wx_peste.webp","wx_relampago":"assets/items/wx_relampago.webp"};
+SYS.UI_ART = {"ach_all50":"assets/ui/ach_all50.webp","ach_ar_1":"assets/ui/ach_ar_1.webp","ach_ar_10":"assets/ui/ach_ar_10.webp","ach_ar_5":"assets/ui/ach_ar_5.webp","ach_ar_first":"assets/ui/ach_ar_first.webp","ach_architect":"assets/ui/ach_architect.webp","ach_arsenal":"assets/ui/ach_arsenal.webp","ach_b1":"assets/ui/ach_b1.webp","ach_b10":"assets/ui/ach_b10.webp","ach_b100":"assets/ui/ach_b100.webp","ach_b25":"assets/ui/ach_b25.webp","ach_b50":"assets/ui/ach_b50.webp","ach_brave":"assets/ui/ach_brave.webp","ach_chest100":"assets/ui/ach_chest100.webp","ach_chest25":"assets/ui/ach_chest25.webp","ach_clutch":"assets/ui/ach_clutch.webp","ach_collector":"assets/ui/ach_collector.webp","ach_core":"assets/ui/ach_core.webp","ach_d1":"assets/ui/ach_d1.webp","ach_d100":"assets/ui/ach_d100.webp","ach_d30":"assets/ui/ach_d30.webp","ach_d7":"assets/ui/ach_d7.webp","ach_early":"assets/ui/ach_early.webp","ach_fail1":"assets/ui/ach_fail1.webp","ach_flawless":"assets/ui/ach_flawless.webp","ach_giant":"assets/ui/ach_giant.webp","ach_giant3":"assets/ui/ach_giant3.webp","ach_hidden":"assets/ui/ach_hidden.webp","ach_l10":"assets/ui/ach_l10.webp","ach_l100":"assets/ui/ach_l100.webp","ach_l25":"assets/ui/ach_l25.webp","ach_l5":"assets/ui/ach_l5.webp","ach_l50":"assets/ui/ach_l50.webp","ach_l75":"assets/ui/ach_l75.webp","ach_leisure":"assets/ui/ach_leisure.webp","ach_lose15":"assets/ui/ach_lose15.webp","ach_lose5":"assets/ui/ach_lose5.webp","ach_m1":"assets/ui/ach_m1.webp","ach_m10":"assets/ui/ach_m10.webp","ach_m100":"assets/ui/ach_m100.webp","ach_m50":"assets/ui/ach_m50.webp","ach_m500":"assets/ui/ach_m500.webp","ach_mS":"assets/ui/ach_mS.webp","ach_night":"assets/ui/ach_night.webp","ach_points":"assets/ui/ach_points.webp","ach_potions":"assets/ui/ach_potions.webp","ach_rich":"assets/ui/ach_rich.webp","ach_rich2":"assets/ui/ach_rich2.webp","ach_secretboss":"assets/ui/ach_secretboss.webp","ach_secretchest":"assets/ui/ach_secretchest.webp","ach_set1":"assets/ui/ach_set1.webp","ach_set5":"assets/ui/ach_set5.webp","ach_spend":"assets/ui/ach_spend.webp","ach_tr25":"assets/ui/ach_tr25.webp","bag_equip":"assets/ui/bag_equip.webp","bag_secreto":"assets/ui/bag_secreto.webp","bag_tudo":"assets/ui/bag_tudo.webp","class_arqueiro":"assets/ui/class_arqueiro.webp","class_assassino":"assets/ui/class_assassino.webp","class_guardiao":"assets/ui/class_guardiao.webp","class_guerreiro":"assets/ui/class_guerreiro.webp","class_invocador":"assets/ui/class_invocador.webp","class_mago":"assets/ui/class_mago.webp","eff_coin2":"assets/ui/eff_coin2.webp","eff_exausto":"assets/ui/eff_exausto.webp","eff_marcado":"assets/ui/eff_marcado.webp","eff_sorte":"assets/ui/eff_sorte.webp","eff_xp15":"assets/ui/eff_xp15.webp","eff_xp2":"assets/ui/eff_xp2.webp","gate_0":"assets/ui/gate_0.webp","gate_1":"assets/ui/gate_1.webp","gate_10":"assets/ui/gate_10.webp","gate_2":"assets/ui/gate_2.webp","gate_3":"assets/ui/gate_3.webp","gate_4":"assets/ui/gate_4.webp","gate_5":"assets/ui/gate_5.webp","gate_6":"assets/ui/gate_6.webp","gate_7":"assets/ui/gate_7.webp","gate_8":"assets/ui/gate_8.webp","gate_9":"assets/ui/gate_9.webp","h_achievement":"assets/ui/h_achievement.webp","h_awaken":"assets/ui/h_awaken.webp","h_buy":"assets/ui/h_buy.webp","h_core":"assets/ui/h_core.webp","h_levelup":"assets/ui/h_levelup.webp","h_map":"assets/ui/h_map.webp","h_mission_done":"assets/ui/h_mission_done.webp","h_mission_fail":"assets/ui/h_mission_fail.webp","h_mission_new":"assets/ui/h_mission_new.webp","h_newday":"assets/ui/h_newday.webp","h_secret_skill":"assets/ui/h_secret_skill.webp","h_sell":"assets/ui/h_sell.webp","h_set":"assets/ui/h_set.webp","h_shield":"assets/ui/h_shield.webp","h_time":"assets/ui/h_time.webp","h_transfer":"assets/ui/h_transfer.webp","ic_lock":"assets/ui/ic_lock.webp","ic_verify":"assets/ui/ic_verify.webp","log_advantage":"assets/ui/log_advantage.webp","log_appear":"assets/ui/log_appear.webp","log_bomb":"assets/ui/log_bomb.webp","log_cleanse":"assets/ui/log_cleanse.webp","log_defeat":"assets/ui/log_defeat.webp","log_dot":"assets/ui/log_dot.webp","log_enrage":"assets/ui/log_enrage.webp","log_flee":"assets/ui/log_flee.webp","log_hit":"assets/ui/log_hit.webp","log_hurt":"assets/ui/log_hurt.webp","log_item":"assets/ui/log_item.webp","log_pressure":"assets/ui/log_pressure.webp","log_reset":"assets/ui/log_reset.webp","log_revive":"assets/ui/log_revive.webp","log_skill":"assets/ui/log_skill.webp","log_smoke":"assets/ui/log_smoke.webp","log_victory":"assets/ui/log_victory.webp","lz_c_beach":"assets/ui/lz_c_beach.webp","lz_c_food":"assets/ui/lz_c_food.webp","lz_c_game":"assets/ui/lz_c_game.webp","lz_c_gift":"assets/ui/lz_c_gift.webp","lz_c_movie":"assets/ui/lz_c_movie.webp","lz_c_phone":"assets/ui/lz_c_phone.webp","lz_c_shop":"assets/ui/lz_c_shop.webp","lz_c_sweet":"assets/ui/lz_c_sweet.webp","nav_bolsa":"assets/ui/nav_bolsa.webp","nav_combate":"assets/ui/nav_combate.webp","nav_loja":"assets/ui/nav_loja.webp","nav_missoes":"assets/ui/nav_missoes.webp","nav_status":"assets/ui/nav_status.webp","phase_crepusculo":"assets/ui/phase_crepusculo.webp","phase_dia":"assets/ui/phase_dia.webp","phase_horaMorta":"assets/ui/phase_horaMorta.webp","phase_manha":"assets/ui/phase_manha.webp","phase_noite":"assets/ui/phase_noite.webp","st_bleed":"assets/ui/st_bleed.webp","st_buff":"assets/ui/st_buff.webp","st_burn":"assets/ui/st_burn.webp","st_crit":"assets/ui/st_crit.webp","st_debuff":"assets/ui/st_debuff.webp","st_heal":"assets/ui/st_heal.webp","st_mana":"assets/ui/st_mana.webp","st_poison":"assets/ui/st_poison.webp","st_reflect":"assets/ui/st_reflect.webp","st_resist":"assets/ui/st_resist.webp","st_shield":"assets/ui/st_shield.webp","st_stun":"assets/ui/st_stun.webp","st_summon":"assets/ui/st_summon.webp","stat_agi":"assets/ui/stat_agi.webp","stat_int":"assets/ui/stat_int.webp","stat_per":"assets/ui/stat_per.webp","stat_str":"assets/ui/stat_str.webp","stat_vit":"assets/ui/stat_vit.webp","tab_acessorio":"assets/ui/tab_acessorio.webp","tab_arma":"assets/ui/tab_arma.webp","tab_armadura":"assets/ui/tab_armadura.webp","tab_atributo":"assets/ui/tab_atributo.webp","tab_bau":"assets/ui/tab_bau.webp","tab_consumivel":"assets/ui/tab_consumivel.webp","tab_lazer":"assets/ui/tab_lazer.webp","ui_battle":"assets/ui/ui_battle.webp","ui_crystal":"assets/ui/ui_crystal.webp","ui_eye":"assets/ui/ui_eye.webp","ui_king":"assets/ui/ui_king.webp","ui_sysday":"assets/ui/ui_sysday.webp","ui_trofeus":"assets/ui/ui_trofeus.webp","ui_unknown":"assets/ui/ui_unknown.webp"};
 SYS.TROPHY_ART = {"b1":"assets/trophies/b1.webp","b10":"assets/trophies/b10.webp","b100":"assets/trophies/b100.webp","b11":"assets/trophies/b11.webp","b12":"assets/trophies/b12.webp","b13":"assets/trophies/b13.webp","b14":"assets/trophies/b14.webp","b15":"assets/trophies/b15.webp","b16":"assets/trophies/b16.webp","b17":"assets/trophies/b17.webp","b18":"assets/trophies/b18.webp","b19":"assets/trophies/b19.webp","b2":"assets/trophies/b2.webp","b20":"assets/trophies/b20.webp","b21":"assets/trophies/b21.webp","b22":"assets/trophies/b22.webp","b23":"assets/trophies/b23.webp","b24":"assets/trophies/b24.webp","b25":"assets/trophies/b25.webp","b26":"assets/trophies/b26.webp","b27":"assets/trophies/b27.webp","b28":"assets/trophies/b28.webp","b29":"assets/trophies/b29.webp","b3":"assets/trophies/b3.webp","b30":"assets/trophies/b30.webp","b31":"assets/trophies/b31.webp","b32":"assets/trophies/b32.webp","b33":"assets/trophies/b33.webp","b34":"assets/trophies/b34.webp","b35":"assets/trophies/b35.webp","b36":"assets/trophies/b36.webp","b37":"assets/trophies/b37.webp","b38":"assets/trophies/b38.webp","b39":"assets/trophies/b39.webp","b4":"assets/trophies/b4.webp","b40":"assets/trophies/b40.webp","b41":"assets/trophies/b41.webp","b42":"assets/trophies/b42.webp","b43":"assets/trophies/b43.webp","b44":"assets/trophies/b44.webp","b45":"assets/trophies/b45.webp","b46":"assets/trophies/b46.webp","b47":"assets/trophies/b47.webp","b48":"assets/trophies/b48.webp","b49":"assets/trophies/b49.webp","b5":"assets/trophies/b5.webp","b50":"assets/trophies/b50.webp","b51":"assets/trophies/b51.webp","b52":"assets/trophies/b52.webp","b53":"assets/trophies/b53.webp","b54":"assets/trophies/b54.webp","b55":"assets/trophies/b55.webp","b56":"assets/trophies/b56.webp","b57":"assets/trophies/b57.webp","b58":"assets/trophies/b58.webp","b59":"assets/trophies/b59.webp","b6":"assets/trophies/b6.webp","b60":"assets/trophies/b60.webp","b61":"assets/trophies/b61.webp","b62":"assets/trophies/b62.webp","b63":"assets/trophies/b63.webp","b64":"assets/trophies/b64.webp","b65":"assets/trophies/b65.webp","b66":"assets/trophies/b66.webp","b67":"assets/trophies/b67.webp","b68":"assets/trophies/b68.webp","b69":"assets/trophies/b69.webp","b7":"assets/trophies/b7.webp","b70":"assets/trophies/b70.webp","b71":"assets/trophies/b71.webp","b72":"assets/trophies/b72.webp","b73":"assets/trophies/b73.webp","b74":"assets/trophies/b74.webp","b75":"assets/trophies/b75.webp","b76":"assets/trophies/b76.webp","b77":"assets/trophies/b77.webp","b78":"assets/trophies/b78.webp","b79":"assets/trophies/b79.webp","b8":"assets/trophies/b8.webp","b80":"assets/trophies/b80.webp","b81":"assets/trophies/b81.webp","b82":"assets/trophies/b82.webp","b83":"assets/trophies/b83.webp","b84":"assets/trophies/b84.webp","b85":"assets/trophies/b85.webp","b86":"assets/trophies/b86.webp","b87":"assets/trophies/b87.webp","b88":"assets/trophies/b88.webp","b89":"assets/trophies/b89.webp","b9":"assets/trophies/b9.webp","b90":"assets/trophies/b90.webp","b91":"assets/trophies/b91.webp","b92":"assets/trophies/b92.webp","b93":"assets/trophies/b93.webp","b94":"assets/trophies/b94.webp","b95":"assets/trophies/b95.webp","b96":"assets/trophies/b96.webp","b97":"assets/trophies/b97.webp","b98":"assets/trophies/b98.webp","b99":"assets/trophies/b99.webp","secret_1":"assets/trophies/secret_1.webp","secret_2":"assets/trophies/secret_2.webp"};
 SYS.SKILL_ART = {"a1":"assets/skills/a1.webp","a10":"assets/skills/a10.webp","a11":"assets/skills/a11.webp","a12":"assets/skills/a12.webp","a13":"assets/skills/a13.webp","a14":"assets/skills/a14.webp","a15":"assets/skills/a15.webp","a16":"assets/skills/a16.webp","a17":"assets/skills/a17.webp","a18":"assets/skills/a18.webp","a2":"assets/skills/a2.webp","a3":"assets/skills/a3.webp","a4":"assets/skills/a4.webp","a5":"assets/skills/a5.webp","a6":"assets/skills/a6.webp","a7":"assets/skills/a7.webp","a8":"assets/skills/a8.webp","a9":"assets/skills/a9.webp","c1":"assets/skills/c1.webp","c2":"assets/skills/c2.webp","c3":"assets/skills/c3.webp","c4":"assets/skills/c4.webp","c5":"assets/skills/c5.webp","c6":"assets/skills/c6.webp","d1":"assets/skills/d1.webp","d10":"assets/skills/d10.webp","d11":"assets/skills/d11.webp","d12":"assets/skills/d12.webp","d13":"assets/skills/d13.webp","d14":"assets/skills/d14.webp","d15":"assets/skills/d15.webp","d16":"assets/skills/d16.webp","d17":"assets/skills/d17.webp","d18":"assets/skills/d18.webp","d2":"assets/skills/d2.webp","d3":"assets/skills/d3.webp","d4":"assets/skills/d4.webp","d5":"assets/skills/d5.webp","d6":"assets/skills/d6.webp","d7":"assets/skills/d7.webp","d8":"assets/skills/d8.webp","d9":"assets/skills/d9.webp","g1":"assets/skills/g1.webp","g10":"assets/skills/g10.webp","g11":"assets/skills/g11.webp","g12":"assets/skills/g12.webp","g13":"assets/skills/g13.webp","g14":"assets/skills/g14.webp","g15":"assets/skills/g15.webp","g16":"assets/skills/g16.webp","g17":"assets/skills/g17.webp","g18":"assets/skills/g18.webp","g2":"assets/skills/g2.webp","g3":"assets/skills/g3.webp","g4":"assets/skills/g4.webp","g5":"assets/skills/g5.webp","g6":"assets/skills/g6.webp","g7":"assets/skills/g7.webp","g8":"assets/skills/g8.webp","g9":"assets/skills/g9.webp","i1":"assets/skills/i1.webp","i10":"assets/skills/i10.webp","i11":"assets/skills/i11.webp","i12":"assets/skills/i12.webp","i13":"assets/skills/i13.webp","i14":"assets/skills/i14.webp","i15":"assets/skills/i15.webp","i16":"assets/skills/i16.webp","i17":"assets/skills/i17.webp","i18":"assets/skills/i18.webp","i2":"assets/skills/i2.webp","i3":"assets/skills/i3.webp","i4":"assets/skills/i4.webp","i5":"assets/skills/i5.webp","i6":"assets/skills/i6.webp","i7":"assets/skills/i7.webp","i8":"assets/skills/i8.webp","i9":"assets/skills/i9.webp","m1":"assets/skills/m1.webp","m10":"assets/skills/m10.webp","m11":"assets/skills/m11.webp","m12":"assets/skills/m12.webp","m13":"assets/skills/m13.webp","m14":"assets/skills/m14.webp","m15":"assets/skills/m15.webp","m16":"assets/skills/m16.webp","m17":"assets/skills/m17.webp","m18":"assets/skills/m18.webp","m2":"assets/skills/m2.webp","m3":"assets/skills/m3.webp","m4":"assets/skills/m4.webp","m5":"assets/skills/m5.webp","m6":"assets/skills/m6.webp","m7":"assets/skills/m7.webp","m8":"assets/skills/m8.webp","m9":"assets/skills/m9.webp","r1":"assets/skills/r1.webp","r10":"assets/skills/r10.webp","r11":"assets/skills/r11.webp","r12":"assets/skills/r12.webp","r13":"assets/skills/r13.webp","r14":"assets/skills/r14.webp","r15":"assets/skills/r15.webp","r16":"assets/skills/r16.webp","r17":"assets/skills/r17.webp","r18":"assets/skills/r18.webp","r2":"assets/skills/r2.webp","r3":"assets/skills/r3.webp","r4":"assets/skills/r4.webp","r5":"assets/skills/r5.webp","r6":"assets/skills/r6.webp","r7":"assets/skills/r7.webp","r8":"assets/skills/r8.webp","r9":"assets/skills/r9.webp","s1":"assets/skills/s1.webp","s10":"assets/skills/s10.webp","s2":"assets/skills/s2.webp","s3":"assets/skills/s3.webp","s4":"assets/skills/s4.webp","s5":"assets/skills/s5.webp","s6":"assets/skills/s6.webp","s7":"assets/skills/s7.webp","s8":"assets/skills/s8.webp","s9":"assets/skills/s9.webp"};
-SYS.FRAME_ART = {};
+SYS.FRAME_ART = {"fr_aurora":"assets/frames/fr_aurora.webp","fr_cacador":"assets/frames/fr_cacador.webp","fr_carrasco":"assets/frames/fr_carrasco.webp","fr_espelho":"assets/frames/fr_espelho.webp","fr_fenix":"assets/frames/fr_fenix.webp","fr_gelo":"assets/frames/fr_gelo.webp","fr_jardim":"assets/frames/fr_jardim.webp","fr_mare":"assets/frames/fr_mare.webp","fr_monarca":"assets/frames/fr_monarca.webp","fr_primeiro":"assets/frames/fr_primeiro.webp","fr_relogio":"assets/frames/fr_relogio.webp","fr_runas":"assets/frames/fr_runas.webp","fr_sistema":"assets/frames/fr_sistema.webp","fr_sombra":"assets/frames/fr_sombra.webp","fr_tempestade":"assets/frames/fr_tempestade.webp"};
+SYS.ARENA_ART = {"ar1":"assets/arenas/ar1.webp","ar10":"assets/arenas/ar10.webp","ar2":"assets/arenas/ar2.webp","ar3":"assets/arenas/ar3.webp","ar4":"assets/arenas/ar4.webp","ar5":"assets/arenas/ar5.webp","ar6":"assets/arenas/ar6.webp","ar7":"assets/arenas/ar7.webp","ar8":"assets/arenas/ar8.webp","ar9":"assets/arenas/ar9.webp"};
 SYS.boot(document.getElementById("app"));
 </script>
 <script>

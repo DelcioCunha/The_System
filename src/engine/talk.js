@@ -151,6 +151,7 @@
   T.blocked = function (st, trigger, prio) {
     var R = S.TALK_RULES, t = T.ensure(st), m = T.mode(st), ts = now(), day = E.dateKey(ts);
     if (m === 'off') return 'desligado';
+    if (t.silentUntil && ts < t.silentUntil) return 'silencio';
     if (st.battle && !st.battle.over) return 'batalha';
     if (t.day !== day) { t.day = day; t.count = 0; }
     if (t.count >= R.perDay[m]) return 'limite';

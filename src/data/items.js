@@ -358,7 +358,8 @@
     { id: 'acessorio', name: 'Acessórios', icon: '💍' },
     { id: 'consumivel', name: 'Poções', icon: '🧪' },
     { id: 'atributo', name: 'Atributos', icon: '⚗️' },
-    { id: 'bau', name: 'Baús', icon: '📦' }
+    { id: 'bau', name: 'Baús', icon: '📦' },
+    { id: 'sistema', name: 'Sistema', icon: '👁️' }
   ];
 
   /* ---------------- TABELAS DOS BAÚS ----------------

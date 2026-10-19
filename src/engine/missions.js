@@ -43,7 +43,7 @@
   };
   M.integrity = function (st) {
     var done = M.doneToday(st);
-    return { done: done, full: S.MISSION_RULES.fatigue[0][0], factor: M.fatigueFactor(done), created: M.createdToday(st), maxCreate: S.MISSION_RULES.newPerDay };
+    return { done: done, full: S.MISSION_RULES.fatigue[0][0], factor: M.fatigueFactor(done), created: M.createdToday(st), maxCreate: S.MISSION_RULES.newPerDay + E.extraMissions(st) };
   };
   /* recompensa real da próxima missão concluída hoje (com fadiga) */
   M.nextReward = function (st, diff) {
@@ -90,7 +90,8 @@
       E.emit({ type: 'watch', level: 1, title: bv.title, lines: bv.lines });
       return { ok: false, watch: true, banned: true, msg: bv.lines[0] };
     }
-    if (M.createdToday(st) >= S.MISSION_RULES.newPerDay) return { ok: false, msg: 'Lei do Sistema: já criaste ' + S.MISSION_RULES.newPerDay + ' missões hoje (as apagadas também contam). Podes criar mais amanhã.' };
+    var lim = S.MISSION_RULES.newPerDay + E.extraMissions(st);
+    if (M.createdToday(st) >= lim) return { ok: false, msg: 'Lei do Sistema: já criaste ' + lim + ' missões hoje (as apagadas também contam). Podes criar mais amanhã' + (E.extraMissions(st) ? '.' : ', ou usar uma Licença do Sistema.') };
     var verdict = S.watch.judgeText(data.title, data.desc);
     if (!verdict.ok) { var w = S.watch.onBadText(st, verdict); E.commit('vigilância'); return w; }
     var m = clean(data);
@@ -205,9 +206,12 @@
       E.commit('missão anulada');
       return { ok: true, voided: true, xp: 0, coins: -lost };
     }
+    var dblUsed = false, sy = E.sysState(st);
+    if (sy.dbl > 0 && !watch.level && !(watch.factor < 1)) { sy.dbl--; dblUsed = true; r = Object.assign({}, r, { xp: r.xp * 2, coins: r.coins * 2 }); }
     var xp = r.xp > 0 ? E.gainXp(st, r.xp) : 0;
     var coins = r.coins > 0 ? E.gainCoins(st, r.coins) : 0;
     var statLines = [];
+    if (dblUsed) statLines.push('Selo do Dobro: recompensa a dobrar');
     m.stats.forEach(function (k) {
       st.trained[k] = Math.round((st.trained[k] + r.stat) * 100) / 100;
       statLines.push('+' + r.stat.toFixed(2).replace(/0$/, '') + ' ' + S.STAT_INFO[k].short);

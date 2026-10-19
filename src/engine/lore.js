@@ -57,6 +57,14 @@
     if (q.summonPct) rows.push(['Dano das invocações', '+' + q.summonPct + '%']);
     if (q.xpPct) rows.push(['XP ganho', '+' + q.xpPct + '%']);
     if (q.coinPct) rows.push(['Moedas ganhas', '+' + q.coinPct + '%']);
+    if (q.thorns) rows.push(['Espinhos', 'devolve ' + q.thorns + '% do dano que recebes']);
+    if (q.openShield) rows.push(['Escudo inicial', q.openShield + '% da vida máxima no início de cada batalha']);
+    if (q.execute) rows.push(['Execução', '+' + q.execute + '% de dano quando o chefe tem menos de 30% de vida']);
+    if (q.firstStrike) rows.push(['Primeiro golpe', '+' + q.firstStrike + '% de dano no primeiro ataque da batalha']);
+    if (q.manaOnHit) rows.push(['Mana por golpe', '+' + q.manaOnHit + '% da mana máxima a cada ataque que acerta']);
+    if (q.dotPct) rows.push(['Venenos, chamas e sangramentos', '+' + q.dotPct + '% de dano por turno']);
+    if (q.stunRes) rows.push(['Resistência a atordoar', q.stunRes + '% de hipótese de resistir']);
+    if (q.potionPct) rows.push(['Poções de cura', 'curam +' + q.potionPct + '%']);
     return rows;
   };
 
@@ -116,6 +124,7 @@
       case 'monarch': rows.push(['Efeito', 'Vida e mana a 100%, remove efeitos negativos e +40% de ataque e ataque mágico durante 3 turnos'], ['Limite', S.PREMIUM_RULES.perBattle + ' relíquia premium por batalha (não conta para o limite de poções)']); break;
       case 'monarchChest': rows.push(['Contém', 'Baú Lendário + 1 relíquia de combate premium ao acaso + moedas que acompanham o teu nível']); break;
       case 'revealBoss': rows.push(['Efeito', 'Revela um portão escondido']); break;
+      case 'system': rows.push(['Efeito', it.desc], ['Tipo', 'Artefato do Sistema (usa-se na Bolsa)']); break;
       case 'fragment': rows.push(['Efeito', 'Junta ' + u.need + ' para formar o ' + S.ITEMS[u.result].name]); break;
       case 'core': rows.push(['Efeito', '+' + u.points + ' pontos livres e a habilidade ' + S.ALL_SKILLS[u.skill].name]); break;
       case 'leisure': rows.push(['Efeito', 'Ao usar, fica registado que gozaste esta recompensa na vida real']); break;

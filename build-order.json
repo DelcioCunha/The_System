@@ -5,6 +5,7 @@
   "src/data/dialogue.js",
   "src/data/items.js",
   "src/data/lore-items.js",
+  "src/data/items-new.js",
   "src/data/lore-skills.js",
   "src/data/lore-bosses.js",
   "src/data/credits.js",

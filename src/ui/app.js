@@ -52,10 +52,10 @@
   var LOG_ICON = { '⚔️': 'log_appear', '🌙': 'phase_noite', '☀️': 'phase_dia', '✨': 'log_advantage', '⚠️': 'log_pressure', '🛡️': 'st_shield', '➤': 'log_hit',
     '☠️': 'log_dot', '🌀': 'st_resist', '💫': 'st_stun', '💚': 'st_heal', '💧': 'st_mana', '⬆️': 'st_buff', '⬇️': 'st_debuff', '💀': 'st_summon', '⏳': 'log_reset',
     '🧠': 'st_resist', '🔥': 'log_enrage', '🪶': 'log_revive', '🏆': 'log_victory', '✦': 'log_skill', '🎒': 'log_item', '🌿': 'log_cleanse', '💥': 'log_bomb',
-    '💨': 'log_smoke', '🏃': 'log_flee', '↩️': 'st_reflect' };
+    '💨': 'log_smoke', '🏃': 'log_flee', '↩️': 'st_reflect', '◀': 'log_hurt' };
   var HIST_ICON = { '⏱️': 'h_time', '✅': 'h_mission_done', '✨': 'h_awaken', '❌': 'h_mission_fail', '⬆️': 'h_levelup', '🌀': 'h_secret_skill', '🌅': 'h_newday',
     '🏃': 'log_flee', '🏅': 'h_achievement', '🏆': 'log_victory', '💀': 'log_defeat', '💠': 'h_core', '💨': 'log_smoke', '💱': 'h_sell', '📝': 'h_mission_new',
-    '📲': 'h_transfer', '🔰': 'h_shield', '🗺️': 'h_map', '🛒': 'h_buy', '👁️': 'ui_eye' };
+    '📲': 'h_transfer', '🔰': 'h_shield', '🗺️': 'h_map', '🛒': 'h_buy', '👁️': 'ui_eye', '◆': 'ui_crystal' };
   var LZ_CUSTOM = { '🎁': 'lz_c_gift', '🍕': 'lz_c_food', '🎮': 'lz_c_game', '🎬': 'lz_c_movie', '🛍️': 'lz_c_shop', '🏖️': 'lz_c_beach', '🍦': 'lz_c_sweet', '📱': 'lz_c_phone' };
   function hasArt(key) { return !!(S.UI_ART && S.UI_ART[key]); }
   /* texto que começa por emoji (registo de batalha) → ícone + texto */
@@ -309,6 +309,7 @@
 
     var achDone = Object.keys(st.achievements).length;
     h += '<section class="win"><div class="win-h">Registos</div><div class="menu-grid">' +
+      '<button class="btn prem menu-prem" data-a="prem-open" data-t="loja"><i class="crys-ico"></i> Loja Premium <span class="muted">' + fmt(st.crystals || 0) + '</span></button>' +
       '<button class="btn" data-a="page" data-p="skills">Habilidades <span class="muted">' + E.unlockedSkills(st).length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="ach">Conquistas <span class="muted">' + achDone + '/' + S.ACHIEVEMENTS.length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="trophies">' + uiIcon('ui_trofeus', '', 'menu-img') + 'Troféus <span class="muted">' + E.trophyCount(st) + '/' + Object.keys(S.TROPHIES).length + '</span></button>' +
@@ -351,6 +352,14 @@
     if (q.regenHp) out.push('Regenera ' + q.regenHp + '% vida/turno');
     if (q.regenMp) out.push('Regenera ' + q.regenMp + '% mana/turno');
     if (q.summonPct) out.push('Invocações +' + q.summonPct + '%');
+    if (q.thorns) out.push('Espinhos: devolve ' + q.thorns + '% do dano');
+    if (q.openShield) out.push('Escudo inicial ' + q.openShield + '% vida');
+    if (q.execute) out.push('Execução +' + q.execute + '% (chefe <30%)');
+    if (q.firstStrike) out.push('Primeiro golpe +' + q.firstStrike + '%');
+    if (q.manaOnHit) out.push('+' + q.manaOnHit + '% mana por golpe');
+    if (q.dotPct) out.push('Venenos e chamas +' + q.dotPct + '%');
+    if (q.stunRes) out.push('Resiste a atordoar ' + q.stunRes + '%');
+    if (q.potionPct) out.push('Poções curam +' + q.potionPct + '%');
     return out.map(function (x) { return '<span>' + x + '</span>'; }).join('');
   }
   function backBtn(title) { return '<div class="row" style="margin-top:14px"><button class="btn sm ghost" data-a="back">‹ Voltar</button><h2 style="font-size:18px">' + title + '</h2></div>'; }
@@ -460,7 +469,7 @@
     return '<div class="dossier" style="--ac:' + b.color + '"><div class="dos-h"><span>DOSSIÊ DO SISTEMA</span><span class="mono">' + esc(b.arenaName) + '</span></div>' +
       '<blockquote class="dos-quote">«' + esc(x.quote) + '»</blockquote>' +
       '<dl class="dos-kv"><dt>Registo</dt><dd class="mono">' + esc(x.record) + '</dd><dt>Crime</dt><dd>' + esc(x.crime) + '</dd><dt>Sentença</dt><dd>' + esc(x.sentence) + '</dd><dt>Arena</dt><dd>' + esc(x.arenaDesc) + '</dd></dl>' +
-      '<div class="dos-sig"><b>◆ ' + esc(x.sig.name) + '</b><span>' + esc(x.sig.desc) + '</span></div></div>';
+      '<div class="dos-sig"><b><i class="crys-ico"></i> ' + esc(x.sig.name) + '</b><span>' + esc(x.sig.desc) + '</span></div></div>';
   }
   function arenaFoot(st, b) {
     var ps = S.premium.status(st, b), h = '';
@@ -476,7 +485,7 @@
     }
     h += rules;
     if (!ps.unlocked) h += '<button class="btn prem block" data-a="arena-unlock" data-id="' + b.arenaKey + '"><i class="crys-ico"></i> Desbloquear a arena por ' + S.BOSS_BY_ID[b.arenaKey].cost + ' Cristais</button>';
-    else if (!ps.open) h += '<div class="empty">🔒 Vence primeiro ' + esc(ps.prev.name) + '.</div>';
+    else if (!ps.open) h += '<div class="empty">' + uiIcon('ic_lock', '🔒', 'btn-ico') + ' Vence primeiro ' + esc(ps.prev.name) + '.</div>';
     else if (ps.readyAt) h += '<div class="empty">' + esc(b.champion ? 'O Campeão' : b.name.split(',')[0]) + ' recupera em ' + cd(ps.readyAt) + '.</div>';
     else h += '<button class="btn pri block" data-a="fight" data-id="' + b.id + '">' + (ps.wins ? 'Revanche na arena' : 'Entrar na arena') + '</button>';
     return h;
@@ -496,19 +505,20 @@
     var pg = S.premium.arenaProgress(st, b.arena), art = S.BOSS_ART && S.BOSS_ART[b.id], ps = S.premium.status(st, b);
     var g1 = S.ARENA_LADDER[b.arena][0];
     var state = !pg.unlocked ? '<span class="ar-cost">' + crys(b.cost) + '</span>' : '<span class="ar-st' + (pg.won < pg.total ? ' ok' : '') + '">' + (pg.won >= pg.total ? 'Completa' : 'Combate ' + (pg.won + 1) + '/10') + '</span>';
-    return '<button class="arena-card' + (pg.unlocked ? ' open' : ' locked') + (ps.wins ? ' won' : '') + '" data-a="arena-view" data-n="' + b.arena + '" style="--ac:' + b.color + '">' +
+    return '<button class="arena-card' + (pg.unlocked ? ' open' : ' locked') + (ps.wins ? ' won' : '') + '" data-a="arena-view" data-n="' + b.arena + '" style="--ac:' + b.color + (S.ARENA_ART && S.ARENA_ART[b.id] ? ';--ar-scene:url(\'' + S.ARENA_ART[b.id] + '\')' : '') + '">' +
       '<span class="ar-art">' + (art ? '<img src="' + art + '" alt="" loading="lazy">' : '<span class="ar-ico">' + b.icon + '</span>') + '</span>' +
       '<span class="ar-n mono">' + ROMAN[b.arena - 1] + '</span>' +
       (ps.wins ? '<span class="ar-crown">' + uiIcon('ui_king', '♛', 'crown-img') + (ps.wins > 1 ? '×' + ps.wins : '') + '</span>' : '') +
       '<span class="ar-info"><span class="ar-arena">' + esc(b.arenaName) + '</span><span class="ar-boss">' + esc(b.name) + '</span>' +
       '<span class="ar-row"><span class="mono">Nv ' + g1.level + '–' + b.level + '</span><span>10 combates</span>' + state + '</span>' +
+      (S.ARENA_CHRONICLE && S.ARENA_CHRONICLE[b.id] ? '<span class="ar-chron"><span class="ar-chron-h">Crónica do Sistema</span>' + esc(S.ARENA_CHRONICLE[b.id].chron) + '</span><span class="ar-sys">' + uiIcon('ui_eye', '', 'ar-sys-eye') + '<span>«' + esc(S.ARENA_CHRONICLE[b.id].sys) + '»</span></span>' : '') +
       (pg.unlocked ? '<span class="ar-prog"><i style="width:' + Math.round(pg.won / pg.total * 100) + '%"></i></span>' : '') + '</span></button>';
   }
   /* dentro de uma arena: a escada de 10 combates */
   function arenaView(st, n) {
     var champ = S.BOSS_BY_ID['ar' + n], pg = S.premium.arenaProgress(st, n), x = champ.story || {};
     var h = '<section class="win prem-win arena-view" style="--ac:' + champ.color + '"><div class="win-h"><button class="btn sm ghost" data-a="arena-view" data-n="0">‹ Arenas</button><small>' + pg.won + '/10 vencidos</small></div>' +
-      '<div class="av-head"><span class="ar-n mono">ARENA ' + ROMAN[n - 1] + '</span><h2 class="av-title">' + esc(champ.arenaName) + '</h2>' +
+      '<div class="av-head' + (S.ARENA_ART && S.ARENA_ART[champ.id] ? ' has-art" style="--av-art:url(\'' + S.ARENA_ART[champ.id] + '\')' : '') + '"><span class="ar-n mono">ARENA ' + ROMAN[n - 1] + '</span><h2 class="av-title">' + esc(champ.arenaName) + '</h2>' +
       (x.arenaDesc ? '<p class="small muted" style="margin:4px 0 0">' + esc(x.arenaDesc) + '</p>' : '') + '</div>' +
       '<div class="ar-prog big"><i style="width:' + Math.round(pg.won / pg.total * 100) + '%"></i></div>';
     if (!pg.unlocked) h += '<p class="small" style="margin:10px 0 6px">10 combates em escada: 9 Guardiões e, no fim, o Campeão. A arena fica aberta para sempre.</p>' +
@@ -517,12 +527,13 @@
     h += '<ol class="ladder">' + S.ARENA_LADDER[n].map(function (b) {
       var ps = S.premium.status(st, b), art = S.BOSS_ART && S.BOSS_ART[b.id], dg = C.danger(st, b);
       var cls = !pg.unlocked ? 'sealed' : ps.wins ? 'won' : ps.open ? 'next' : 'locked';
-      var tag = !pg.unlocked ? '🔒' : ps.wins ? (ps.readyAt ? '<span class="mono">' + cd(ps.readyAt) + '</span>' : '✓') : ps.open ? (ps.readyAt ? '<span class="mono">' + cd(ps.readyAt) + '</span>' : '<b>Lutar</b>') : '🔒';
+      var lock = uiIcon('ic_lock', '🔒', 'lad-img');
+      var tag = !pg.unlocked ? lock : ps.wins ? (ps.readyAt ? '<span class="mono">' + cd(ps.readyAt) + '</span>' : uiIcon('h_mission_done', '✓', 'lad-img')) : ps.open ? (ps.readyAt ? '<span class="mono">' + cd(ps.readyAt) + '</span>' : '<b>Lutar</b>') : lock;
       var role = b.champion ? 'Campeão' : b.lieutenant ? 'Tenente' : 'Guardião ' + b.slot;
       var hide = !b.champion && (!pg.unlocked || (!ps.wins && !ps.open && b.slot > pg.won + 2));
       return '<li><button class="lad ' + cls + (b.champion ? ' champ' : '') + '"' + (hide ? ' disabled' : ' data-a="boss" data-id="' + b.id + '"') + '>' +
         '<span class="lad-n mono">' + b.slot + '</span>' +
-        '<span class="lad-ico">' + (hide ? '❔' : art ? '<img src="' + art + '" alt="" loading="lazy">' : b.icon) + '</span>' +
+        '<span class="lad-ico">' + (hide ? uiIcon('ui_unknown', '❔', 'lad-unk') : art ? '<img src="' + art + '" alt="" loading="lazy">' : b.icon) + '</span>' +
         '<span class="lad-info"><span class="lad-role">' + role + ' · Nv ' + b.level + '</span><span class="lad-name">' + (cls === 'sealed' || cls === 'locked' && !b.champion && b.slot > pg.won + 2 ? '???' : esc(b.name)) + '</span>' +
         (cls === 'next' ? '<span class="lad-dg" style="color:' + dg.color + '">' + dg.label + '</span>' : '') + '</span>' +
         '<span class="lad-st">' + tag + '</span></button></li>';
@@ -599,7 +610,7 @@
       '<p class="hint">Fala só com o número oficial ' + esc(S.SHOP_WHATSAPP_SHOW) + '. Nunca te pediremos o PIN nem códigos de confirmação do banco.</p>';
     h += '<label class="f" style="margin-top:10px">Código de resgate<input class="in mono" id="redeem-code" placeholder="SIS-XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>' +
       '<button class="btn prem block" data-a="redeem"' + (ready ? '' : ' disabled') + '>Resgatar código</button>' +
-      (S.PREVIEW ? '<button class="btn ghost block" data-a="prev-crys" style="margin-top:10px">Só na pré-visualização: +500 Cristais de teste</button>' : '') + '</section>';
+      '</section>';
     if (orders.length) {
       h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">Os meus pedidos</span><button class="btn sm ghost" data-a="ord-refresh">Atualizar</button></div><div class="list">' +
         orders.slice(0, 10).map(function (o) {
@@ -636,17 +647,29 @@
       '<div class="row" style="margin-bottom:10px"><span class="small">Os teus Cristais: ' + crys(st.crystals || 0) + '</span><button class="btn sm prem" style="margin-left:auto" data-a="prem-open" data-t="obter">Obter Cristais</button></div>' +
       '<div class="arena-list">' + S.ARENA_BOSSES.map(function (b) { return arenaCard(st, b); }).join('') + '</div></section>';
   }
+  /* ---------- Apoiar o criador (doações por WhatsApp / MULTICAIXA Express) ---------- */
+  var DONATE = [500, 1000, 2500, 5000];
+  function donateHtml(st) {
+    var v = ui.donate || 1000;
+    return '<section class="win prem-win donate"><div class="win-h"><span class="prem-t">\u2665 Apoiar o criador</span></div>' +
+      '<p class="small" style="margin-top:0">O Sistema é feito por uma só pessoa, Delcio Cunha. Se o jogo te ajuda a cumprir as tuas missões da vida real e quiseres apoiar o desenvolvimento, podes fazer uma doação com o valor que quiseres. É totalmente opcional e não dá vantagens no jogo: é só um obrigado.</p>' +
+      '<div class="chips donate-chips">' + DONATE.map(function (x) { return '<button class="chip' + (v === x ? ' on' : '') + '" data-a="don-pick" data-v="' + x + '">' + fmt(x) + ' Kz</button>'; }).join('') +
+      '<button class="chip' + (DONATE.indexOf(v) < 0 ? ' on' : '') + '" data-a="don-pick" data-v="0">Outro valor</button></div>' +
+      '<button class="btn wa block" data-a="don-go" style="margin-top:10px">Doar ' + (DONATE.indexOf(v) >= 0 ? fmt(v) + ' Kz ' : '') + 'pelo WhatsApp</button>' +
+      '<p class="hint" style="margin:8px 0 0">Recebes os dados para a transferência por MULTICAIXA Express no WhatsApp ' + esc(S.SHOP_WHATSAPP_SHOW) + '. Nunca te pediremos o PIN nem códigos do banco.</p></section>';
+  }
   function premiumPage(st) {
     var t = ui.premTab || 'arenas';
     var h = backBtn('Ala Premium');
     h += '<section class="win prem-win prem-head"><div class="prem-bal"><span class="small muted">Os teus Cristais</span><span class="prem-big">' + crys(st.crystals || 0) + '</span></div>' +
       '<div class="prem-id"><span class="small muted">ID de Jogador</span><button class="mono id-chip" data-a="id-copy">' + esc(st.playerId) + '</button></div>' +
-      '<button class="btn prem block" data-a="prem-tab" data-t="obter" style="margin-top:10px"><i class="crys-ico"></i> Obter Cristais</button></section>';
+      '<div class="row" style="margin-top:10px;gap:8px"><button class="btn prem grow" data-a="prem-tab" data-t="obter"><i class="crys-ico"></i> Obter Cristais</button><button class="btn don-btn" data-a="prem-tab" data-t="loja">\u2665 Doar</button></div></section>';
     h += '<div class="chips" style="margin-top:12px">' + [['arenas', 'Arenas'], ['loja', 'Loja Exclusiva'], ['aparencia', 'Aparência'], ['obter', 'Obter Cristais']].map(function (x) {
       return '<button class="chip' + (t === x[0] ? ' on' : '') + '" data-a="prem-tab" data-t="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
     if (t === 'arenas') {
       h += coliseuHtml(st);
     } else if (t === 'loja') {
+      h += donateHtml(st);
       S.PREMIUM_SHOP.forEach(function (g) {
         h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">' + esc(g.title) + '</span></div>' + (g.note ? '<p class="hint" style="margin-top:0">' + esc(g.note) + '</p>' : '') +
           '<div class="list">' + g.ids.map(function (id) { return premItemCard(st, S.ITEMS[id]); }).join('') + '</div></section>';
@@ -996,6 +1019,36 @@
       (cur < max && pots ? '<button class="btn sm' + (low ? ' pri' : '') + '" style="margin-top:8px" data-a="tab" data-t="bolsa">Abrir a Bolsa</button>' : '') +
       (cur < max && !pots ? '<button class="btn sm gold" style="margin-top:8px" data-a="go-potions">Comprar poções</button>' : '') + '</section>';
   }
+  /* Combate → Arenas: igual aos portões gratuitos (10 combates por arena: 9 sub-chefes + o Campeão) */
+  function arenaCombatHtml(st) {
+    S.premium.ensure(st);
+    var n = ui.arenaN || (function () { for (var i = 1; i <= 10; i++) if (st.arena.unlocked['ar' + i] && S.premium.arenaProgress(st, i).won < 10) return i; return 1; })();
+    ui.arenaN = n;
+    var champ = S.BOSS_BY_ID['ar' + n], pg = S.premium.arenaProgress(st, n), lad = S.ARENA_LADDER[n];
+    var h = '<div class="chips arena-chips">' + S.ARENA_BOSSES.map(function (b) {
+      var p = S.premium.arenaProgress(st, b.arena);
+      return '<button class="chip' + (n === b.arena ? ' on' : '') + (p.unlocked ? '' : ' sealed') + '" data-a="arena-view" data-n="' + b.arena + '" style="--ac:' + b.color + '">' +
+        (p.unlocked ? '' : uiIcon('ic_lock', '🔒', 'tag-ico') + ' ') + ROMAN[b.arena - 1] + (p.won === 10 ? ' ✓' : '') + '</button>';
+    }).join('') + '</div>';
+    var art = S.ARENA_ART && S.ARENA_ART[champ.id];
+    h += '<section class="win prem-win arena-sec" style="--ac:' + champ.color + '"><div class="win-h"><span style="color:' + champ.color + '">Arena ' + ROMAN[n - 1] + ': ' + esc(champ.arenaName.replace(/^Arena (d[oa]s?|Abissal) /, function (m) { return m; })) + '</span><small>' + pg.won + '/10 vencidos</small></div>' +
+      (art ? '<div class="arena-banner" style="--av-art:url(\'' + art + '\')"></div>' : '') +
+      '<p class="hint" style="margin-top:0">' + (pg.unlocked ? '9 sub-chefes por ordem e, no fim, o Campeão. Cada adversário vencido volta ' + S.PREMIUM_RULES.arenaCooldownH + ' horas depois para revanche.' : 'Arena selada. Abre-a uma vez com Cristais e fica aberta para sempre: 9 sub-chefes (Nv ' + lad[0].level + ' a ' + (champ.level - 1) + ') e o Campeão (Nv ' + champ.level + ').') + '</p>';
+    if (!pg.unlocked) h += '<button class="btn prem block" style="margin-bottom:12px" data-a="arena-unlock" data-id="' + champ.id + '"><i class="crys-ico"></i> Desbloquear a arena por ' + champ.cost + ' Cristais</button>';
+    h += '<div class="boss-grid">' + lad.map(function (b) {
+      var ps = S.premium.status(st, b), dg = C.danger(st, b), bart = S.BOSS_ART && S.BOSS_ART[b.id];
+      var hide = !b.champion && (!pg.unlocked || (!ps.wins && !ps.open && b.slot > pg.won + 2));
+      var locked = !pg.unlocked || (!ps.open && !ps.wins);
+      var label = ps.wins ? (ps.readyAt ? cdText(ps.readyAt) : 'Revanche') : locked ? 'Selado' : dg.label;
+      return '<button class="boss-tile card' + (ps.wins ? ' done' : '') + (b.champion || b.lieutenant ? ' king' : '') + (locked ? ' locked' : '') + '"' + (hide ? ' disabled' : ' data-a="boss" data-id="' + b.id + '"') +
+        ' style="--dg:' + (ps.wins ? 'var(--good)' : locked ? 'var(--muted)' : dg.color) + '">' +
+        (hide ? '<span class="bt-ico">' + uiIcon('ui_unknown', '❔', 'bt-unk') + '</span>' : bart ? '<img src="' + bart + '" alt="" loading="lazy">' : '<span class="bt-ico">' + b.icon + '</span>') +
+        '<span class="bt-lv mono">' + b.level + '</span>' + (b.champion ? '<span class="bt-crown">' + uiIcon('ui_king', '♛', 'crown-img') + '</span>' : '') +
+        (locked && !ps.wins ? '<span class="bt-lock">' + uiIcon('ic_lock', '🔒', 'bt-lock-img') + '</span>' : '') +
+        '<span class="bt-info"><span class="bt-name">' + (hide ? '???' : esc(b.name.split(',')[0])) + '</span><span class="bt-dg">' + (b.champion ? 'Campeão · ' : b.lieutenant ? 'Tenente · ' : '') + label + '</span></span></button>';
+    }).join('') + '</div></section>';
+    return h;
+  }
   function combatHtml(st) {
     if (st.battle) return battleHtml(st);
     var hpHtml = hpPanel(st);
@@ -1006,7 +1059,7 @@
       return '<button class="chip' + (ui.gate === g.id ? ' on' : '') + '" data-a="gate" data-g="' + g.id + '">' + uiIcon('gate_' + g.id, g.icon) + ' ' + g.id + (k === 10 ? ' ✓' : '') + '</button>';
     }).join('') + (secretOn ? '<button class="chip' + (ui.gate === 0 ? ' on' : '') + '" data-a="gate" data-g="0">' + uiIcon('gate_0', '🗝️') + ' Oculto</button>' : '') +
       '<button class="chip prem-chip' + (ui.gate === 'arena' ? ' on' : '') + '" data-a="gate" data-g="arena"><i class="crys-ico"></i> Arenas</button></div>';
-    if (ui.gate === 'arena') return h + coliseuHtml(st);
+    if (ui.gate === 'arena') return h + arenaCombatHtml(st);
     var list, gname, gcolor;
     if (ui.gate === 0) { list = S.SECRET_BOSSES.filter(function (b) { return C.bossUnlocked(st, b); }); gname = 'Portões Ocultos'; gcolor = 'var(--gold)'; }
     else { var g = S.GATES[ui.gate - 1]; list = S.BOSSES.filter(function (b) { return b.gate === g.id; }); gname = g.name; gcolor = g.color; }
@@ -1140,15 +1193,26 @@
       }).join('') : '<div class="empty">Sem itens de combate. Compra poções na Loja.</div>') + '</div>';
   }
 
+  /* depois de comprar um artefato do Sistema: o Sistema comenta (sempre na primeira compra, depois às vezes) */
+  function sysAfter(it) {
+    var line = E.sysVoice(E.state, it.id, 'after');
+    if (!line) return;
+    E.emit(it.id === 'sys_pacto' ? { type: 'watch', level: 1, title: 'O SISTEMA REGISTOU', lines: [line] } : { type: 'watch', good: true, level: 1, title: 'O SISTEMA REGISTOU', lines: [line] });
+  }
   /* ================= LOJA ================= */
   function shopHtml(st) {
     var h = '<div class="chips" style="margin-top:14px">' + S.SHOP_TABS.map(function (t) {
-      return '<button class="chip' + (ui.shopTab === t.id ? ' on' : '') + '" data-a="shop-tab" data-v="' + t.id + '">' + uiIcon('tab_' + t.id, t.icon) + ' ' + t.name + '</button>';
+      return '<button class="chip' + (ui.shopTab === t.id ? ' on' : '') + '" data-a="shop-tab" data-v="' + t.id + '">' + uiIcon(t.id === 'sistema' ? 'ui_eye' : 'tab_' + t.id, t.icon) + ' ' + t.name + '</button>';
     }).join('') + '</div>';
     var list = E.shopList(st, ui.shopTab);
     var tab = S.SHOP_TABS.filter(function (t) { return t.id === ui.shopTab; })[0];
     h += '<section class="win"><div class="win-h">' + tab.name + coins(st.coins) + '</div>';
     if (ui.shopTab === 'lazer') h += '<p class="hint" style="margin-top:0">Recompensas para a vida real. Compra com as moedas que ganhas nas missões e usa-as na Bolsa quando quiseres.</p><button class="btn gold block" data-a="cl-new" style="margin-bottom:10px">+ Criar a minha recompensa</button>';
+    if (ui.shopTab === 'sistema') { var sy = E.sysState(st), xs = [];
+      if (sy.dbl) xs.push(sy.dbl + ' Selo(s) do Dobro à espera da próxima missão');
+      if (sy.dblBoss) xs.push(sy.dblBoss + ' Bilhete(s) da Vitória Dupla à espera do próximo chefe');
+      if (E.extraMissions(st)) xs.push('+' + E.extraMissions(st) + ' missões novas permitidas hoje');
+      h += '<p class="hint" style="margin-top:0">' + uiIcon('ui_eye', '', 'tag-ico') + ' Artefatos que mexem com o próprio Sistema. Usam-se na Bolsa. O Sistema permite-os, mas regista cada um.</p>' + (xs.length ? '<p class="small" style="color:var(--good);margin-top:0">Ativo: ' + xs.map(esc).join(' · ') + '</p>' : ''); }
     if (ui.shopTab === 'atributo') h += '<p class="hint" style="margin-top:0">Melhorias permanentes. Os elixires ficam mais caros a cada compra.</p>';
     var rows = list.map(function (it) { return { it: it, rq: it.custom ? { ok: true, lines: [] } : E.reqStatus(st, it) }; });
     var open = rows.filter(function (x) { return x.rq.ok; }), locked = rows.filter(function (x) { return !x.rq.ok; });
@@ -1193,7 +1257,7 @@
   }
 
   /* ================= BOLSA ================= */
-  var BAG_FILTERS = [['tudo', 'Tudo'], ['equip', 'Equipamento'], ['consumivel', 'Poções'], ['bau', 'Baús'], ['lazer', 'Lazer'], ['atributo', 'Atributos'], ['secreto', 'Secretos'], ['premium', 'Premium']];
+  var BAG_FILTERS = [['tudo', 'Tudo'], ['equip', 'Equipamento'], ['consumivel', 'Poções'], ['sistema', 'Sistema'], ['bau', 'Baús'], ['lazer', 'Lazer'], ['atributo', 'Atributos'], ['secreto', 'Secretos'], ['premium', 'Premium']];
   function bagMatch(it, f) {
     if (f === 'tudo') return true;
     if (f === 'equip') return !!it.equip;
@@ -1203,7 +1267,7 @@
   }
   function bagHtml(st) {
     var h = '<div class="chips" style="margin-top:14px">' + BAG_FILTERS.map(function (f) {
-      return '<button class="chip' + (ui.bag === f[0] ? ' on' : '') + '" data-a="bag" data-v="' + f[0] + '">' + uiIcon({ tudo: 'bag_tudo', equip: 'bag_equip', secreto: 'bag_secreto' }[f[0]] || 'tab_' + f[0], '') + f[1] + '</button>';
+      return '<button class="chip' + (ui.bag === f[0] ? ' on' : '') + '" data-a="bag" data-v="' + f[0] + '">' + uiIcon({ tudo: 'bag_tudo', equip: 'bag_equip', secreto: 'bag_secreto', sistema: 'ui_eye' }[f[0]] || 'tab_' + f[0], '') + f[1] + '</button>';
     }).join('') + '</div>';
     var ids = Object.keys(st.inv).filter(function (id) { var it = E.item(id); return it && bagMatch(it, ui.bag); })
       .sort(function (a, b) { var A = E.item(a), B = E.item(b); return (A.cat === 'bau' ? -1 : 0) - (B.cat === 'bau' ? -1 : 0) || S.RARITY[B.rarity].order - S.RARITY[A.rarity].order || A.name.localeCompare(B.name); });
@@ -1770,7 +1834,9 @@
     'prem-buy': function (d) {
       var it = S.ITEMS[d.id], p = { x: ui.pt.x, y: ui.pt.y };
       confirmBox('Loja Exclusiva', 'Comprar ' + it.name + ' por ' + S.premium.price(d.id) + ' Cristais?', 'Comprar', function () {
-        var r = act(S.premium.buy(d.id, 1));
+        var r0 = S.premium.buy(d.id, 1);
+        if (r0.ok && it.cat === 'sistema') sysAfter(it);
+        var r = act(r0);
         if (r.ok) { FX.burst(p.x, p.y, '#67d5ff', 40, { speed: 8 }); FX.flash('#67d5ff', .2); FX.vibrate([30, 30, 60]); }
       });
     },
@@ -1819,6 +1885,13 @@
         if (!r.ok) toast(r.msg || 'Sem ligação ao servidor. A suspensão mantém-se.', true);
       });
     },
+    'don-pick': function (d) { ui.donate = +d.v || -1; render(); },
+    'don-go': function () {
+      var st = E.state, v = ui.donate || 1000;
+      var msg = 'Olá! Quero apoiar o criador do Sistema com uma doação' + (v > 0 ? ' de ' + fmt(v) + ' Kz' : '') + '.\n\nJogador: ' + st.name + '\nID de Jogador: ' + st.playerId +
+        '\n\nVou pagar por MULTICAIXA Express. Fico à espera dos dados para a transferência. Obrigado pelo jogo!';
+      H.ext({ url: 'https://wa.me/' + S.SHOP_WHATSAPP + '?text=' + encodeURIComponent(msg) });
+    },
     'pack-pick': function (d) {
       ui.pack = d.id; render();
       var bx = document.getElementById('buy-box'); if (bx && bx.scrollIntoView) bx.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -1854,7 +1927,6 @@
       var txt = (o && o.msg) || ('Pedido ' + d.id);
       try { navigator.clipboard.writeText(txt).then(function () { toast('Mensagem copiada.'); }, function () { toast(txt); }); } catch (e) { toast(txt); }
     },
-    'prev-crys': function () { if (!S.PREVIEW) return; S.premium.grant(E.state, 500, 'teste da pré-visualização'); E.commit('teste'); render(); toast('+500 Cristais de teste.'); },
     'talk-pick': function (d) {
       var ev = ui.popups[0];
       if (!ev || ev.type !== 'talk' || ev.res) return;
@@ -1990,10 +2062,16 @@
     buy: function (d) {
       var it = E.item(d.id), q = +d.q || 1;
       var p = { x: ui.pt.x, y: ui.pt.y };
-      var r = E.buy(d.id, q);
-      act(r, r.ok ? 'Compraste ' + (q > 1 ? q + '× ' : '') + it.name + '.' : null);
-      if (r.ok) talkTry('buy', { item: it.name, rarity: it.rarity }, 1200);
-      if (r.ok) { FX.text('-' + fmt(r.total) + ' ◈', p.x, p.y - 10, '#ffc85a'); FX.burst(p.x, p.y, rc(it.rarity), 24, { speed: 6 }); FX.vibrate(30); }
+      var go = function () {
+        var r = E.buy(d.id, q);
+        if (r.ok && it.cat === 'sistema') sysAfter(it);
+        act(r, r.ok ? 'Compraste ' + (q > 1 ? q + '× ' : '') + it.name + '.' : null);
+        if (r.ok && it.cat !== 'sistema') talkTry('buy', { item: it.name, rarity: it.rarity }, 1200);
+        if (r.ok) { FX.text('-' + fmt(r.total) + ' ◈', p.x, p.y - 10, '#ffc85a'); FX.burst(p.x, p.y, rc(it.rarity), 24, { speed: 6 }); FX.vibrate(30); }
+      };
+      var before = it.cat === 'sistema' && E.state.coins >= E.price(E.state, d.id) * q ? E.sysVoice(E.state, d.id, 'before') : null;
+      if (before) { S.storage.write(E.state); return confirmBox('O SISTEMA OBSERVA', '«' + before + '»\n\nComprar ' + it.name + '?', 'Comprar', go); }
+      go();
     },
     'cl-new': function () { ui.form = { name: '', price: 150, icon: '🎁' }; ui.modal = { type: 'leisure' }; render(); },
     'cl-save': function () {
@@ -2021,6 +2099,10 @@
         else if (u.type === 'leisure') { ['#ffc85a', '#6fd6ff', '#ff3d7f', '#5be08a'].forEach(function (c, i) { setTimeout(function () { FX.burst(window.innerWidth / 2, window.innerHeight * .45, c, 30, { speed: 9 }); }, i * 120); }); FX.banner('APROVEITA', it.name, 'rgba(255,200,90,.4)', '#ffc85a'); }
         else if (u.type === 'perm' || u.type === 'permAll' || u.type === 'point' || u.type === 'core') { FX.rise(window.innerWidth / 2, window.innerHeight, 240, '#ffc85a', 70); FX.flash('#ffc85a', .3); FX.banner('PODER AUMENTOU', r.msg, 'rgba(255,200,90,.4)', '#ffc85a'); }
         else if (u.type === 'timed') { FX.rise(window.innerWidth / 2, window.innerHeight, 240, '#6fd6ff', 50); FX.text(r.msg, p.x, p.y - 20, '#6fd6ff'); }
+        else if (u.type === 'system') {
+          FX.flash('#6fd6ff', .25); FX.burst(window.innerWidth / 2, window.innerHeight / 2, '#6fd6ff', 50, { speed: 8 });
+          if (r.talk) { ui.modal = null; ui.popups.push({ _id: ++ui.popSeq, type: 'talk', conv: r.talk }); render(); }
+        }
         else if (u.type === 'unlockSkill' || u.type === 'revealBoss' || u.type === 'fragment') { FX.flash('#e0e6ff', .5); FX.burst(window.innerWidth / 2, window.innerHeight / 2, '#e0e6ff', 80, { speed: 11 }); }
         else FX.burst(p.x, p.y, rc(it.rarity), 30, { speed: 6 });
       };
@@ -2367,6 +2449,8 @@
   }
 
   S.boot = function (el) {
+    // ícone do Cristal: se existir assets/ui/ui_crystal, substitui o losango desenhado em CSS
+    if (S.UI_ART && S.UI_ART.ui_crystal) { var rs = document.documentElement; rs.style.setProperty('--crys-art', 'url("' + S.UI_ART.ui_crystal + '")'); rs.classList.add('has-crys-art'); }
     root = el;
     FX.init();
     root.addEventListener('click', onClick);

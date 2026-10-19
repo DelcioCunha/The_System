@@ -1401,4 +1401,119 @@ test('Arenas premium: cada arena tem 10 combates em escada (9 Guardiões + Campe
   assert.ok(st.battle.phase === 2 || st.battle.over, 'Tenente entra na fase 2');
 });
 
+test('Itens novos: cada mecânica nova funciona em combate', () => {
+  const { S } = boot();
+  at(S, 2026, 10, 19, 10);
+  const E = S.engine, C = S.combat, P = S.premium;
+  S.NEW_ITEMS.forEach((id) => { const it = S.ITEMS[id]; assert.ok(it && it.price > 0 && S.ITEM_LORE[id] && S.ITEM_LORE[id].length > 40, id); });
+  function fight(equip, setup) {
+    E.start('Delcio', 'guerreiro');
+    const st = E.state; st.level = 70; st.alloc.str = 200; st.alloc.vit = 200; S.rng.random = () => 0.5;
+    Object.keys(equip).forEach((slot) => { E.addItem(st, equip[slot], 1); E.equip(equip[slot], slot); });
+    assert.ok(C.start('b60').ok);
+    if (setup) setup(st.battle);
+    return st.battle;
+  }
+  const base = fight({}); C.act('attack'); const d0 = +base.log.filter((l) => /➤ Ataque/.test(l.t))[0].t.match(/(\d+) de dano/)[1];
+  // primeiro golpe
+  let bt = fight({ weapon: 'wx_relampago' }); C.act('attack');
+  assert.ok(bt.log.some((l) => /Primeiro Golpe/.test(l.t)), 'primeiro golpe');
+  // escudo inicial
+  bt = fight({ armor: 'ar_bastiao' }); assert.ok(bt.p.shield > 0 && bt.log.some((l) => /escudo de/.test(l.t)), 'escudo inicial');
+  // execução: mais dano com o chefe abaixo de 30%
+  bt = fight({ weapon: 'wx_carrasco' }, (b) => { b.b.hp = Math.round(b.b.maxHp * 0.25); }); const h0 = bt.b.hp; C.act('attack'); const ex = h0 - bt.b.hp;
+  let bt2 = fight({ weapon: 'wx_carrasco' }); const h1 = bt2.b.hp; C.act('attack'); assert.ok(ex > (h1 - bt2.b.hp) * 1.2, 'execução ' + ex + ' vs ' + (h1 - bt2.b.hp));
+  // espinhos
+  bt = fight({ armor: 'ar_espinhos' }); const hb = bt.b.hp; C.act('defend'); assert.ok(bt.b.hp < hb || bt.log.some((l) => /Devolveste/.test(l.t)), 'espinhos');
+  // mana por golpe
+  bt = fight({ weapon: 'wx_fonte' }, (b) => { b.p.mp = 0; }); C.act('attack'); assert.ok(bt.p.mp > 0, 'mana por golpe');
+  // poções curam mais
+  bt = fight({ armor: 'ar_alquimista' }, (b) => { b.p.hp = 1; }); E.addItem(E.state, 'po_vida1', 1); C.act('item', 'po_vida1');
+  assert.ok(bt.log.some((l) => /Recuperaste (\d+) de vida/.test(l.t) && +RegExp.$1 >= Math.round(bt.p.maxHp * 0.3 * 1.3) - 2), 'poções +30%');
+  // venenos mais fortes
+  bt = fight({ weapon: 'wx_peste' }); E.addItem(E.state, 'po_veneno', 1); C.act('item', 'po_veneno');
+  const pv = +bt.log.filter((l) => /\/turno/.test(l.t))[0].t.match(/\((\d+)\/turno/)[1];
+  bt2 = fight({ weapon: 'wx_carrasco' }); E.addItem(E.state, 'po_veneno', 1); C.act('item', 'po_veneno');
+  assert.ok(pv > +bt2.log.filter((l) => /\/turno/.test(l.t))[0].t.match(/\((\d+)\/turno/)[1], 'dotPct');
+  // resistência a atordoar: com 0.5 e stunRes 45 (+ ancora 40 = 80 máx) resiste
+  E.start('Delcio', 'guardiao'); const st = E.state; st.level = 70; ['ar_vontade', 'ac_ancora'].forEach((id) => E.addItem(st, id, 1)); E.equip('ar_vontade', 'armor'); E.equip('ac_ancora', 'acc1');
+  assert.strictEqual(E.combatStats(st).stunRes, 80);
+  // premium novos à venda e na loja
+  ['pr_ampulheta', 'pr_espinho', 'pr_executor', 'pr_egide', 'pr_ruptura', 'pr_eco', 'pr_foco', 'pr_trevo'].forEach((id) => assert.ok(P.price(id) > 0 && S.ITEM_LORE[id], id));
+  assert.strictEqual(S.COSMETICS.filter((c) => c.kind === 'moldura').length, 15);
+});
+
+test('Artefatos do Sistema: chamar, silenciar, licença, dobro, bilhete, bússola, dado e pacto', () => {
+  const { S } = boot();
+  at(S, 2026, 10, 19, 9);
+  const E = S.engine, M = S.missions, W = S.watch, C = S.combat;
+  E.start('Delcio', 'guerreiro');
+  const st = E.state; st.level = 30;
+  S.SYSTEM_ITEMS.forEach((id) => { assert.ok(S.ITEMS[id].cat === 'sistema' && S.ITEM_LORE[id], id); E.addItem(st, id, 3); });
+  // Sino: conversa nova na hora, mesmo com o Sistema silenciado
+  let r = E.useItem('sys_silencio'); assert.ok(r.ok);
+  assert.strictEqual(S.talk.blocked(st, 'idle', false), 'silencio');
+  r = E.useItem('sys_sino'); assert.ok(r.ok && r.talk && r.talk.line && r.talk.choices.length === 3, 'chamou uma conversa');
+  // Licença: +3 missões hoje
+  st.created = Date.now() - 864e5;
+  for (let i = 0; i < 12; i++) M.create({ title: 'Ler capítulo ' + ['um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez', 'onze', 'doze'][i] + ' do livro de história', difficulty: 'E', stats: [], deadline: '22:00', recur: 'once', date: '2026-10-19', days: [] });
+  const over = M.create({ title: 'Lavar a loiça toda da cozinha', difficulty: 'E', stats: [], deadline: '22:00', recur: 'once', date: '2026-10-19', days: [] });
+  assert.ok(!over.ok && /Licença/.test(over.msg), over.msg);
+  assert.ok(E.useItem('sys_licenca').ok);
+  assert.ok(M.create({ title: 'Lavar a loiça toda da cozinha', difficulty: 'E', stats: [], deadline: '22:00', recur: 'once', date: '2026-10-19', days: [] }).ok, 'com licença cria mais');
+  // Selo do Dobro: a próxima missão dá o dobro
+  const m1 = st.missions.filter((m) => !m.archived)[0], m2 = st.missions.filter((m) => !m.archived)[1];
+  at(S, 2026, 10, 19, 12);
+  const a = M.complete(m1.id);
+  assert.ok(E.useItem('sys_dobro').ok);
+  const b = M.complete(m2.id);
+  assert.ok(b.coins >= a.coins * 1.8, 'dobro: ' + a.coins + ' → ' + b.coins);
+  assert.strictEqual(st.sys.dbl, 0);
+  // Bilhete: próxima vitória contra chefe a dobrar
+  assert.ok(E.useItem('sys_bilhete').ok); S.rng.random = () => 0.5;
+  st.level = 60; assert.ok(C.start('b10').ok); st.battle.b.hp = 1; C.act('attack');
+  assert.ok(st.battle.log.some((l) => /Vitória Dupla/.test(l.t)) && st.sys.dblBoss === 0); C.close();
+  // Bússola: revela uma Missão Oculta
+  r = E.useItem('sys_bussola'); assert.ok(r.ok && S.live.hiddenActive(st), r.msg);
+  assert.ok(!E.useItem('sys_bussola').ok, 'só uma de cada vez');
+  // Dado: sai sempre alguma coisa
+  r = E.useItem('sys_dado'); assert.ok(r.ok && /🎲/.test(r.msg));
+  // Pacto: -20% Integridade por poder; recusado com Integridade baixa
+  const t0 = W.trust(st), x0 = st.xp + st.level * 1e6;
+  assert.ok(E.useItem('sys_pacto').ok);
+  assert.strictEqual(W.trust(st), t0 - 20);
+  assert.ok(st.xp + st.level * 1e6 > x0, 'ganhou XP');
+  W.ensure(st).trust = 40;
+  assert.ok(!E.useItem('sys_pacto').ok, 'sem Integridade, sem pacto');
+  assert.strictEqual(E.count(st, 'sys_pacto'), 2, 'não gasta quando recusa');
+});
+
+test('Artefatos: o Sistema comenta as compras (com moderação) e a Trégua bloqueia emergências', () => {
+  const { S } = boot();
+  at(S, 2026, 10, 19, 9);
+  const E = S.engine, L = S.live;
+  E.start('Delcio', 'guerreiro');
+  const st = E.state;
+  // primeira compra: comenta sempre; a seguir só às vezes e nunca duas vezes em 6 minutos
+  S.rng.random = () => 0.1;
+  assert.strictEqual(E.sysVoice(st, 'sys_dado', 'after'), S.SYS_VOICE.sys_dado.first);
+  assert.strictEqual(E.sysVoice(st, 'sys_dado', 'after'), null, 'intervalo mínimo');
+  at(S, 2026, 10, 19, 9, 10);
+  const l2 = E.sysVoice(st, 'sys_dado', 'after'); assert.ok(l2 && S.SYS_VOICE.sys_dado.after.indexOf(l2) >= 0);
+  at(S, 2026, 10, 19, 9, 20); S.rng.random = () => 0.9;
+  assert.strictEqual(E.sysVoice(st, 'sys_dado', 'after'), null, 'às vezes fica calado');
+  assert.strictEqual(E.sysVoice(st, 'sys_pacto', 'after'), S.SYS_VOICE.sys_pacto.first, 'cada artefato tem a sua primeira vez');
+  // antes: só às vezes (30%) e com 15 minutos de intervalo
+  S.rng.random = () => 0.1; const b1 = E.sysVoice(st, 'sys_pacto', 'before'); assert.ok(b1 && !/\{nome\}/.test(b1));
+  assert.strictEqual(E.sysVoice(st, 'sys_pacto', 'before'), null);
+  Object.keys(S.SYS_VOICE).forEach((k) => assert.ok(S.SYSTEM_ITEMS.indexOf(k) >= 0 && S.SYS_VOICE[k].after.length >= 3, k));
+  // Trégua: o dia todo sem emergências
+  at(S, 2026, 10, 19, 8);
+  E.addItem(st, 'sys_tregua', 1); assert.ok(E.useItem('sys_tregua').ok);
+  for (let h = 8; h < 22; h++) { at(S, 2026, 10, 19, h, 30); L.tick(st); assert.ok(!L.emergency(st), 'sem emergência às ' + h + 'h'); }
+  at(S, 2026, 10, 20, 9); st.sys.noEmUntil = 0;
+  let seen = false; for (let h = 9; h < 22 && !seen; h++) { at(S, 2026, 10, 20, h, 30); L.tick(st); seen = !!L.emergency(st); }
+  assert.ok(seen, 'sem trégua voltam as emergências');
+});
+
 console.log('\n' + passed + ' testes passaram' + (process.exitCode ? ' (com falhas)' : ''));

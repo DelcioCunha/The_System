@@ -266,6 +266,9 @@
     s.lowHpAtk = p.lowHpAtk || 0;
     s.xpPct = (eb.xpPct || 0) + (p.xpPct || 0);
     s.coinPct = eb.coinPct || 0;
+    // mecânicas de equipamento (itens novos)
+    ['thorns', 'openShield', 'execute', 'firstStrike', 'manaOnHit', 'dotPct', 'stunRes', 'potionPct'].forEach(function (k) { s[k] = eb[k] || 0; });
+    s.stunRes = Math.min(80, s.stunRes);
     s.main = S.CLASSES[st.cls].main;
     s.power = Math.round(s.maxHp / 10 + Math.max(s.atk, s.matk) * 1.5 + s.def + s.crit * 3);
     return s;
@@ -705,11 +708,112 @@
         if (st.secretSkills.indexOf(u.skill) < 0) E.grantSkill(st, u.skill);
         res.msg = '+' + u.points + ' pontos livres e a autoridade do Sistema é tua.';
         break;
+      case 'system': {
+        var r2 = E.systemArtifact(st, it, u);
+        if (!r2.ok) return r2;
+        E.removeItem(st, id);
+        res = r2;
+        break;
+      }
       default:
         return { ok: false, msg: 'Este item não pode ser usado aqui.' };
     }
     E.commit('usar item');
     return res;
+  };
+
+  /* ---------------- Artefatos do Sistema: itens que mexem com o próprio Sistema ---------------- */
+  E.sysState = function (st) {
+    if (!st.sys) st.sys = { dbl: 0, dblBoss: 0, extra: null };
+    return st.sys;
+  };
+  E.extraMissions = function (st) { var x = E.sysState(st).extra; return x && x.day === E.dateKey() ? x.n : 0; };
+  /* A voz do Sistema na loja de artefatos (com moderação) */
+  E.sysVoice = function (st, id, when) {
+    var V = S.SYS_VOICE && S.SYS_VOICE[id];
+    if (!V) return null;
+    var sy = E.sysState(st), t = S.clock.now();
+    if (!sy.voice) sy.voice = { bought: {}, lastA: 0, lastB: 0, idx: {} };
+    var v = sy.voice, line = null;
+    if (when === 'before') {
+      if (t - v.lastB < 15 * 60000 || S.rng.random() >= 0.3) return null;
+      v.lastB = t;
+      line = V.before[Math.floor(S.rng.random() * V.before.length)];
+    } else {
+      var n = v.bought[id] || 0;
+      v.bought[id] = n + 1;
+      if (n === 0) line = V.first;
+      else {
+        if (t - v.lastA < 6 * 60000 || S.rng.random() >= 0.6) return null;
+        var k = Math.floor(S.rng.random() * V.after.length);
+        if (k === v.idx[id]) k = (k + 1) % V.after.length;
+        v.idx[id] = k;
+        line = V.after[k];
+      }
+      v.lastA = t;
+    }
+    return line.replace(/\{nome\}/g, st.name);
+  };
+  E.systemArtifact = function (st, it, u) {
+    var sy = E.sysState(st), lv = st.level, out;
+    switch (u.action) {
+      case 'call': { // chamar o Sistema: uma conversa nova, agora
+        var conv = null, tries = ['idle', 'open', 'tab', 'level', 'daily'];
+        for (var i = 0; i < tries.length && !conv; i++) conv = S.talk.offer(st, tries[i], {}, { force: true });
+        if (!conv) return { ok: false, msg: 'O Sistema já te disse tudo o que tinha para dizer. Por agora.' };
+        E.history(st, '🔔', 'Chamou o Sistema com o ' + it.name + '.');
+        return { ok: true, msg: '', talk: conv };
+      }
+      case 'pact': { // Pacto Proibido: troca Integridade por poder
+        var tr = S.watch.trust(st);
+        if (tr < u.minTrust) return { ok: false, msg: 'O Sistema não faz pactos com quem já não tem palavra. Integridade mínima: ' + u.minTrust + '%.' };
+        S.watch.ensure(st).trust = Math.max(0, tr - u.trust);
+        var gx = E.gainXp(st, Math.round(S.xpToNext(Math.min(lv, 99)) * u.xpPct / 100));
+        var gc = E.gainCoins(st, u.coinsPerLevel * lv);
+        E.emit({ type: 'watch', level: 1, title: 'PACTO ACEITE', lines: ['Deste-me ' + u.trust + '% da tua palavra, ' + st.name + '.', 'Eu dei-te +' + gx + ' XP e +' + gc + ' moedas.', 'Integridade: ' + tr + '% → ' + S.watch.trust(st) + '%. Eu não esqueço os pactos.'] });
+        E.history(st, '🩸', 'Fez um Pacto Proibido: -' + u.trust + '% Integridade, +' + gx + ' XP, +' + gc + ' moedas.');
+        return { ok: true, msg: 'Pacto aceite: +' + gx + ' XP e +' + gc + ' moedas.' };
+      }
+      case 'license': { // mais missões novas hoje
+        var today = E.dateKey();
+        if (!sy.extra || sy.extra.day !== today) sy.extra = { day: today, n: 0 };
+        if (sy.extra.n >= u.max) return { ok: false, msg: 'O Sistema já te deu ' + u.max + ' missões extra hoje. Volta amanhã.' };
+        sy.extra.n = Math.min(u.max, sy.extra.n + u.n);
+        E.history(st, '📜', 'Usou a ' + it.name + ': +' + u.n + ' missões novas hoje.');
+        return { ok: true, msg: 'Licença aceite: hoje podes criar mais ' + u.n + ' missões (' + (S.MISSION_RULES.newPerDay + sy.extra.n) + ' no total).' };
+      }
+      case 'double': {
+        var k = u.target === 'boss' ? 'dblBoss' : 'dbl';
+        if (sy[k] >= u.max) return { ok: false, msg: 'Já tens ' + sy[k] + ' selos destes à espera. Usa-os primeiro.' };
+        sy[k]++;
+        return { ok: true, msg: u.target === 'boss' ? 'A próxima vitória contra um chefe dá recompensas a dobrar.' : 'A próxima missão que concluíres dá XP e moedas a dobrar.' };
+      }
+      case 'silence': {
+        var tk = S.talk.ensure(st);
+        tk.silentUntil = Math.max(tk.silentUntil || 0, S.clock.now()) + u.hours * 3600000;
+        return { ok: true, msg: 'O Sistema vai ficar em silêncio durante ' + u.hours + ' horas. Mas continua a ver.' };
+      }
+      case 'hidden': {
+        var hr = S.live.forceHidden(st);
+        if (!hr.ok) return hr;
+        return { ok: true, msg: 'A bússola encontrou uma Missão Oculta: «' + hr.name + '».' };
+      }
+      case 'truce': {
+        sy.noEmUntil = Math.max(sy.noEmUntil || 0, S.clock.now()) + u.hours * 3600000;
+        var act0 = S.live && S.live.emergency(st);
+        return { ok: true, msg: 'Trégua aceite: sem Missões de Emergência durante ' + u.hours + ' horas.' + (act0 ? ' A que já está ativa continua até acabar.' : '') };
+      }
+      case 'dice': {
+        var roll = S.rng.random();
+        if (roll < 0.35) { out = E.gainCoins(st, Math.round(lv * (15 + S.rng.random() * 25) + 50)); return { ok: true, msg: '🎲 O dado sorriu: +' + out + ' moedas.' }; }
+        if (roll < 0.57) { out = E.gainXp(st, Math.round(S.xpToNext(Math.min(lv, 99)) * (0.1 + S.rng.random() * 0.15))); return { ok: true, msg: '🎲 O dado sorriu: +' + out + ' XP.' }; }
+        if (roll < 0.7) { var pool = ['po_vida2', 'po_mana15', 'po_furia', 'po_foco', 'po_xp15', 'po_coin2', 'po_mel', 'po_raio']; var pk = pool[Math.floor(S.rng.random() * pool.length)]; E.addItem(st, pk, 1); return { ok: true, msg: '🎲 O dado deu-te: ' + S.ITEMS[pk].name + '.' }; }
+        if (roll < 0.8) { E.addItem(st, 'bau_raro', 1); return { ok: true, msg: '🎲 Sorte grande: um Baú Raro!' }; }
+        out = E.loseCoins(st, Math.max(st.coins * 0.25, Math.min(st.coins, lv * 20)));
+        return { ok: true, msg: '🎲 O dado virou-se contra ti: -' + out + ' moedas. O Sistema riu-se.' };
+      }
+    }
+    return { ok: false, msg: 'Este artefato não responde.' };
   };
 
   E.grantSkill = function (st, skillId) {

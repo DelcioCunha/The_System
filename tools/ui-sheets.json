@@ -234,5 +234,17 @@
    "ui_eye",
    "eff_marcado"
   ]
+ },
+ {
+  "title": "Conquistas do Coliseu e registo",
+  "cols": 5,
+  "rows": 1,
+  "ids": [
+   "ach_ar_1",
+   "ach_ar_5",
+   "ach_ar_10",
+   "ach_ar_first",
+   "log_hurt"
+  ]
  }
 ]
