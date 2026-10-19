@@ -843,10 +843,12 @@ button.trophy { font: inherit; color: inherit; padding: 0; cursor: pointer; appe
 .sh-stats li { padding: 3px 0; border-bottom: 1px dashed var(--line); }
 .sh-stats b { color: #d9ceff; }
 /* sombras com imagem própria (vertical): figura inteira */
-.sh-art.own img { object-position: 50% 30%; }
-.sh-card .sh-art.own { aspect-ratio: 3 / 4; }
-.sh-art.own.big { aspect-ratio: 3 / 5; max-width: 180px; }
-.sh-detail .sh-art.own.big { max-width: 120px; }
+.sh-art.own img { object-fit: cover; object-position: 50% 45%; image-rendering: auto; }
+/* as sombras são imagens verticais (≈3:5): o quadro tem a mesma proporção, sem zoom nem corte */
+.sh-card .sh-art.own { aspect-ratio: 3 / 5; }
+.sh-art.own.big { aspect-ratio: 3 / 5; max-width: 190px; }
+.sh-detail .sh-art.own.big { max-width: 130px; }
+.sh-art.own.sm { aspect-ratio: 3 / 5; height: auto; width: 48px; }
 /* fala do servo */
 .sh-say { display: block; width: 100%; text-align: left; margin: 0 0 12px; padding: 10px 12px; border: 1px solid rgba(139, 107, 255, .45); border-left: 3px solid #8b6bff; border-radius: 4px; background: linear-gradient(90deg, rgba(90, 50, 220, .18), rgba(10, 6, 25, .4)); color: #e4dcff; cursor: pointer; }
 .sh-say-t { display: block; font-style: italic; font-size: 14px; line-height: 1.45; }

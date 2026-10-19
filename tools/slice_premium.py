@@ -9,6 +9,8 @@ Uso:
   python3 tools/slice_premium.py arena <1-10> <imagem.png>   -> assets/arenas/ar<n>.webp
   python3 tools/slice_premium.py guardioes <1-10> <folha.png> -> assets/bosses/ar<n>g1..9.webp
   python3 tools/slice_premium.py sombras <1-10> <folha.png>   -> assets/shadows/b<n>.webp (sombras dos 10 chefes do portão, 5x2)
+  python3 tools/slice_premium.py sombras-campeoes <1|2> <folha.png> -> assets/shadows/ar1..5 ou ar6..10 (5x1)
+  python3 tools/slice_premium.py sombras-arena <1-10> <folha.png>   -> assets/shadows/ar<n>g1..9 (3x3)
 
 As molduras e o cristal são gerados sobre verde puro (#00FF00): o verde passa a transparente.
 """
@@ -201,6 +203,18 @@ def main(a):
                 t = trim(im.crop((xs[c], ys[r], xs[c + 1], ys[r + 1]))); w, h = t.size; d = max(3, int(min(w, h) * 0.02))
                 t = t.crop((d, d, w - d, h - d))  # painel inteiro (vertical), sem a borda
                 save(t, os.path.join(ROOT, 'assets', 'shadows', 'b%d.webp' % ((g - 1) * 10 + k)), 360)
+    elif mode in ('sombras-campeoes', 'sombras-arena'):
+        n = int(a[1])
+        im = Image.open(a[2]).convert('RGB')
+        cols, rows = (5, 1) if mode == 'sombras-campeoes' else (3, 3)
+        xs, ys = cuts(profile(im, 'x'), cols), cuts(profile(im, 'y'), rows)
+        k = 0
+        for r in range(rows):
+            for c in range(cols):
+                k += 1
+                t = trim(im.crop((xs[c], ys[r], xs[c + 1], ys[r + 1]))); w, h = t.size; d = max(3, int(min(w, h) * 0.02))
+                name = ('ar%d' % ((n - 1) * 5 + k)) if mode == 'sombras-campeoes' else ('ar%dg%d' % (n, k))
+                save(t.crop((d, d, w - d, h - d)), os.path.join(ROOT, 'assets', 'shadows', name + '.webp'), 360)
     else:
         print(__doc__)
         sys.exit(1)

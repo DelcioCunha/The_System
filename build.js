@@ -147,7 +147,11 @@ const rootPage = webPage(rootJs, 'assets/web/');
 const INLINE = { TROPHY_ART: trophyArt, UI_ART: uiArt, SKILL_ART: skillArt, FRAME_ART: frameArt, ARENA_ART: arenaArt, SHADOW_ART: shadowArt };
 const inlineMap = (m) => { const o = {}; Object.keys(m).forEach((k) => { const pv = path.join(ROOT, 'dist', 'pv', m[k]); const f = fs.existsSync(pv) ? pv : path.join(ROOT, 'assets', m[k]); const ext = path.extname(f).slice(1).replace('jpg', 'jpeg'); o[k] = 'data:image/' + ext + ';base64,' + fs.readFileSync(f).toString('base64'); }); return o; };
 let previewJs = 'globalThis.SYS = { PREVIEW: true };\n' + safeJs;
+// sombras das arenas premium ainda não aparecem no jogo: fora da pré-visualização (poupa espaço)
+const shadowPv = {}; Object.keys(shadowArt).forEach((k) => { if (!/^ar/.test(k)) shadowPv[k] = shadowArt[k]; });
+delete INLINE.SHADOW_ART;
 Object.keys(INLINE).forEach((name) => { previewJs = previewJs.replace('SYS.' + name + ' = ' + JSON.stringify(INLINE[name]) + ';', 'SYS.' + name + ' = ' + JSON.stringify(inlineMap(INLINE[name])) + ';'); });
+previewJs = previewJs.replace('SYS.SHADOW_ART = ' + JSON.stringify(shadowArt) + ';', 'SYS.SHADOW_ART = ' + JSON.stringify(inlineMap(shadowPv)) + ';');
 // as imagens das classes são iguais ao retrato de nível 1: a pré-visualização usa essas (limite de 512 ficheiros)
 previewJs = previewJs.replace(/"classes\/([a-z]+)\.webp"/g, '"avatars/$1/1.webp"');
 // itens que ainda não estão publicados como ficheiros na pré-visualização (limite de ficheiros): vão embutidos
