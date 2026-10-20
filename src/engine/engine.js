@@ -126,6 +126,7 @@
     if (S.premium) S.premium.ensure(st);
     if (S.shop) S.shop.ensure(st);
     if (S.shadows) S.shadows.ensure(st);
+    if (S.body) S.body.ensure(st);
     if (st.hp === undefined) st.hp = null;
     // troféus de chefes derrotados antes desta versão
     Object.keys(st.defeated || {}).forEach(function (id) { if (S.TROPHIES[id] && !st.trophies[id]) st.trophies[id] = st.defeated[id]; });
@@ -152,6 +153,9 @@
   E.count = function (st, id) { return st.inv[id] || 0; };
   E.addItem = function (st, id, qty) {
     qty = qty || 1;
+    // relíquias permanentes: só se tem uma; receber outra = recarga imediata
+    var rel = S.ITEMS[id];
+    if (rel && rel.perma) { if (st.inv[id] > 0) { if (st.relics) st.relics[id] = 0; return; } qty = 1; }
     st.inv[id] = (st.inv[id] || 0) + qty;
     st.seen[id] = true;
   };
@@ -194,7 +198,13 @@
       if (it && it.equip && S.time.itemActive(it)) addAll(it.equip);
     });
     E.completedSets(st).forEach(function (g) { addAll(S.TROPHY_SETS[g].bonus); });
+    // Conjunto do Monarca (peças soberanas equipadas)
+    var nPrem = E.monarchPieces(st);
+    (S.MONARCH_SET || []).forEach(function (t) { if (nPrem >= t.n) addAll(t.bonus); });
     return b;
+  };
+  E.monarchPieces = function (st) {
+    return Object.keys(st.equip).filter(function (slot) { var it = st.equip[slot] && E.item(st.equip[slot], st); return it && it.premium && it.equip; }).length;
   };
   /* ---------------- troféus ---------------- */
   E.trophyCount = function (st) { return Object.keys(st.trophies || {}).length; };
@@ -273,6 +283,16 @@
     s.main = S.CLASSES[st.cls].main;
     s.power = Math.round(s.maxHp / 10 + Math.max(s.atk, s.matk) * 1.5 + s.def + s.crit * 3);
     return s;
+  };
+
+  /* quanto o equipamento vestido acrescenta (compara com o jogador sem nada equipado) */
+  E.equipDelta = function (st) {
+    var bare = Object.assign({}, st, { equip: { weapon: null, armor: null, acc1: null, acc2: null } });
+    var t1 = E.totalStats(st), t0 = E.totalStats(bare), c1 = E.combatStats(st), c0 = E.combatStats(bare);
+    var stats = {}, combat = {};
+    S.STATS.forEach(function (k) { stats[k] = Math.floor(t1[k]) - Math.floor(t0[k]); });
+    Object.keys(c1).forEach(function (k) { if (typeof c1[k] === 'number' && typeof c0[k] === 'number') combat[k] = Math.round((c1[k] - c0[k]) * 10) / 10; });
+    return { stats: stats, combat: combat };
   };
 
   /* ---------------- vida atual (persiste entre batalhas) ---------------- */
@@ -367,6 +387,7 @@
     if (E.hasEffect(st, 'xp15')) m *= 1.5;
     if (E.hasEffect(st, 'exausto')) m *= 0.8;
     if (E.hasEffect(st, 'monarca')) m *= 1.5;
+    if (st.perks && st.perks.monarca) m *= 1.15;
     m *= 1 + E.combatStats(st).xpPct / 100;
     return m;
   };
@@ -374,6 +395,7 @@
     var m = 1;
     if (E.hasEffect(st, 'coin2')) m *= 2;
     if (E.hasEffect(st, 'monarca')) m *= 1.5;
+    if (st.perks && st.perks.monarca) m *= 1.15;
     m *= 1 + E.combatStats(st).coinPct / 100;
     return m;
   };
@@ -434,6 +456,7 @@
     if (!it || it.custom) return 1;
     var lm = S.levelMult(st.level);
     if (it.cat === 'consumivel') return lm * (1 + st.level / 40);
+    if (it.fixedPrice) return 1;
     if (it.cat === 'bau' || it.cat === 'lazer') return lm;
     return 1;
   };
@@ -484,6 +507,7 @@
     if (!v) return { ok: false, msg: 'Este item não pode ser vendido.' };
     if (!E.removeItem(st, id, qty)) return { ok: false, msg: 'Não tens esse item.' };
     var got = E.gainCoins(st, v * qty, false);
+    E.bump(st, 'itemsSold', qty);
     E.history(st, '💱', 'Vendeu ' + (qty > 1 ? qty + '× ' : '') + E.item(id, st).name + ' por ' + got + ' moedas.');
     E.commit('venda');
     return { ok: true, coins: got };
@@ -557,9 +581,68 @@
     }
     return key;
   }
+  /* baús especializados: só um tipo de item, nível e qualidade pelo grau */
+  var VAR_RE = /_(art|camp)$/;
+  function hasVariants(id) { return !!(S.ITEMS[id + '_art'] || S.ITEMS[id + '_camp']); }
+  function specPool(st, cat, g) {
+    var top = Math.max(g.lo + 10, st.level + 10);
+    var list = Object.keys(S.ITEMS).filter(function (k) {
+      var it = S.ITEMS[k];
+      if (it.cat !== cat || it.secret || it.premium || it.relic || it.custom || it.chestFam) return false;
+      if (cat === 'arma' && !E.canEquipClass(st, it)) return false;
+      if (cat === 'consumivel' || cat === 'atributo') return !it.priceScale && it.use && it.use.type !== 'reset' && it.use.type !== 'levelUp';
+      return it.lvl >= g.lo && it.lvl <= Math.min(g.hi, top);
+    });
+    if (!list.length && cat !== 'consumivel' && cat !== 'atributo') list = Object.keys(S.ITEMS).filter(function (k) { var it = S.ITEMS[k]; return it.cat === cat && !it.secret && !it.premium && !it.relic && !it.chestFam && it.lvl >= g.lo && it.lvl <= g.hi && (cat !== 'arma' || E.canEquipClass(st, it)); });
+    return list;
+  }
+  var ALCH_RAR = [['comum', 'incomum'], ['incomum', 'raro'], ['raro', 'epico'], ['epico', 'lendario'], ['lendario', 'mitico']];
+  function rollSpec(st, cat, gk) {
+    var g = S.CHEST_GRADES[gk - 1], pool = specPool(st, cat, g);
+    if (cat === 'consumivel' || cat === 'atributo') {
+      var rr = ALCH_RAR[gk - 1];
+      var ok = pool.filter(function (k) { return rr.indexOf(S.ITEMS[k].rarity) >= 0 && (S.ITEMS[k].lvl || 1) <= Math.max(st.level + 15, g.lo + 20); });
+      if (!ok.length) ok = pool.filter(function (k) { return rr.indexOf(S.ITEMS[k].rarity) >= 0; });
+      return ok.length ? ok[Math.floor(S.rng.random() * ok.length)] : null;
+    }
+    var buckets = [[], [], [], []];
+    pool.forEach(function (k) { var m = k.match(VAR_RE); buckets[m ? (m[1] === 'art' ? 1 : 2) : (hasVariants(k) ? 0 : 3)].push(k); });
+    var w = g.w.map(function (x, i) { return buckets[i].length ? x : 0; });
+    var tot = w.reduce(function (a, b) { return a + b; }, 0);
+    if (!tot) return pool.length ? pool[Math.floor(S.rng.random() * pool.length)] : null;
+    var x = S.rng.random() * tot, bi = 0;
+    for (; bi < 4; bi++) { x -= w[bi]; if (x < 0) break; }
+    var b = buckets[Math.min(bi, 3)];
+    // dentro do grupo, os itens de nível mais alto saem um pouco mais vezes
+    var ws = b.map(function (k) { return 1 + (S.ITEMS[k].lvl - g.lo) / 20; }), t2 = ws.reduce(function (a, c) { return a + c; }, 0), y = S.rng.random() * t2;
+    for (var i = 0; i < b.length; i++) { y -= ws[i]; if (y < 0) return b[i]; }
+    return b[b.length - 1];
+  }
+  function openSpecial(st, tier, def) {
+    var fam = S.CHEST_FAMS.filter(function (f) { return f.id === def.fam; })[0];
+    var per = E.totalStats(st).per;
+    var rolls = def.rolls + (S.rng.random() < Math.min(0.5, per / 400) ? 1 : 0) + (E.hasEffect(st, 'sorte') ? 1 : 0);
+    var items = [];
+    for (var i = 0; i < rolls; i++) {
+      var cat = fam.id === 'guerra' ? fam.pool[i % 2] : fam.id === 'alquimia' ? (def.grade >= 2 && S.rng.random() < [0, 0.15, 0.25, 0.35, 0.45][def.grade - 1] ? 'atributo' : 'consumivel') : fam.pool[0];
+      var id = rollSpec(st, cat, def.grade);
+      if (!id || !S.ITEMS[id]) continue;
+      E.addItem(st, id, 1); items.push(id);
+    }
+    // grau Monarca: pequena hipótese de um item secreto do mesmo tipo
+    if (def.grade === 5) {
+      var sx = { arsenal: ['sx_lamina'], armaria: ['ar_soberano'], guerra: ['sx_lamina', 'ar_soberano'], joias: ['sx_coroa', 'sx_olho'], alquimia: ['sx_coracao', 'el_nectar'] }[fam.id];
+      if (sx && S.rng.random() < 0.05) { var sid = sx[Math.floor(S.rng.random() * sx.length)]; E.addItem(st, sid, 1); items.push(sid); }
+    }
+    E.bump(st, 'chestsOpened');
+    E.bump(st, 'specialChests');
+    if (def.grade === 5) E.bump(st, 'monarchChests');
+    return { coins: 0, items: items };
+  }
   E.openChest = function (st, tier) {
     var def = S.CHESTS[tier];
     if (!def) return null;
+    if (def.fam) return openSpecial(st, tier, def);
     var lm = S.levelMult(st.level);
     var coins = E.gainCoins(st, rint(def.coins[0], def.coins[1]) * lm, false);
     var items = [];
@@ -617,6 +700,14 @@
         res.msg = 'Aproveita! "' + it.name + '" foi usado. Bom descanso, caçador.';
         E.history(st, it.icon, 'Usou a recompensa: ' + it.name + '.');
         break;
+      case 'perk':
+        st.perks = st.perks || {};
+        if (st.perks[u.perk]) return { ok: false, msg: 'Este bónus já é teu para sempre.' };
+        E.removeItem(st, id);
+        st.perks[u.perk] = Date.now();
+        res.msg = it.name + ': o bónus é teu para sempre.';
+        E.history(st, it.icon, 'Ativou para sempre ' + it.name + '.');
+        break;
       case 'timed':
         E.removeItem(st, id);
         E.addEffect(st, u.effect, u.hours);
@@ -667,11 +758,12 @@
         break;
       case 'monarchChest': {
         E.removeItem(st, id);
-        var got = ['bau_lendario', S.PREMIUM_CONSUMABLES[Math.floor(S.rng.random() * S.PREMIUM_CONSUMABLES.length)]];
+        var got = ['bau_lendario', 'bau_secreto'];
         got.forEach(function (x) { E.addItem(st, x, 1); });
-        var mc = E.gainCoins(st, Math.round(1500 * S.levelMult(st.level)), false);
+        var mc = E.gainCoins(st, Math.round(3000 * S.levelMult(st.level)), false);
+        var rec = S.premium ? S.premium.rechargeAll(st) : 0;
         E.bump(st, 'chestsOpened');
-        res.msg = 'Baú do Monarca aberto!';
+        res.msg = 'Baú do Monarca aberto!' + (rec ? ' ' + rec + (rec > 1 ? ' relíquias recarregadas.' : ' relíquia recarregada.') : '');
         E.emit({ type: 'loot', title: it.name, icon: it.icon, tier: 'monarca', coins: mc, items: got });
         E.history(st, it.icon, 'Abriu ' + it.name + ': ' + mc + ' moedas, ' + got.map(function (x) { return E.item(x).name; }).join(', ') + '.');
         break;
@@ -872,6 +964,8 @@
     S.storage.clearMoved();
     E.state = E.newState(name, cls);
     if (S.shadows) S.shadows.ensure(E.state);
+    if (S.premium) S.premium.ensure(E.state);
+    if (S.body) S.body.ensure(E.state);
     E.commit('novo jogo');
     return { ok: true };
   };

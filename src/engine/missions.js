@@ -103,6 +103,7 @@
     m.startDate = (m.recur !== 'once' && E.deadlineTs(t, m.deadline) < now()) ? E.addDays(t, 1) : t;
     m.archived = false;
     st.missions.push(m);
+    E.bump(st, 'missionsCreated');
     E.history(st, '📝', 'Nova missão: ' + m.title + '.');
     E.commit('missão criada');
     return { ok: true, mission: m };

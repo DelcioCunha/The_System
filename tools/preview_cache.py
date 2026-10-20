@@ -27,4 +27,8 @@ for f in (os.listdir(sd) if os.path.isdir(sd) else []):
     im = Image.open(os.path.join(ROOT, 'assets', rel)).convert('RGB')
     im = im.resize((min(240, im.width), round(im.height * min(240, im.width) / im.width)), Image.LANCZOS)
     im.save(out(rel), 'WEBP', quality=64, method=6); n += 1
+for f in os.listdir(os.path.join(ROOT, 'assets', 'trophies')):
+    rel = 'trophies/' + f
+    im = Image.open(os.path.join(ROOT, 'assets', rel)).convert('RGB').resize((128, 128), Image.LANCZOS)
+    im.save(out(rel), 'WEBP', quality=70, method=6); n += 1
 print(n, 'imagens leves em dist/pv')

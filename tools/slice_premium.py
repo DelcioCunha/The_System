@@ -11,6 +11,7 @@ Uso:
   python3 tools/slice_premium.py sombras <1-10> <folha.png>   -> assets/shadows/b<n>.webp (sombras dos 10 chefes do portão, 5x2)
   python3 tools/slice_premium.py sombras-campeoes <1|2> <folha.png> -> assets/shadows/ar1..5 ou ar6..10 (5x1)
   python3 tools/slice_premium.py sombras-arena <1-10> <folha.png>   -> assets/shadows/ar<n>g1..9 (3x3)
+  python3 tools/slice_premium.py trofeus-arena <1-10> <folha.png>   -> assets/trophies/ar<n>g1..9 + ar<n> (5x2)
 
 As molduras e o cristal são gerados sobre verde puro (#00FF00): o verde passa a transparente.
 """
@@ -215,6 +216,19 @@ def main(a):
                 t = trim(im.crop((xs[c], ys[r], xs[c + 1], ys[r + 1]))); w, h = t.size; d = max(3, int(min(w, h) * 0.02))
                 name = ('ar%d' % ((n - 1) * 5 + k)) if mode == 'sombras-campeoes' else ('ar%dg%d' % (n, k))
                 save(t.crop((d, d, w - d, h - d)), os.path.join(ROOT, 'assets', 'shadows', name + '.webp'), 360)
+    elif mode == 'trofeus-arena':
+        n = int(a[1])
+        im = Image.open(a[2]).convert('RGB')
+        xs, ys = cuts(profile(im, 'x'), 5), cuts(profile(im, 'y'), 2)
+        names = ['ar%dg%d' % (n, i) for i in range(1, 10)] + ['ar%d' % n]
+        k = 0
+        for r in range(2):
+            for c in range(5):
+                t = trim(im.crop((xs[c], ys[r], xs[c + 1], ys[r + 1]))); w, h = t.size; d = int(min(w, h) * 0.075)
+                t = t.crop((d, d, w - d, h - d)); w, h = t.size
+                if h > w:  # carta vertical inteira, encaixada num quadrado com o fundo escuro da carta
+                    sq = Image.new('RGB', (h, h), (8, 13, 28)); sq.paste(t, ((h - w) // 2, 0)); t = sq
+                save(t.resize((200, 200), Image.LANCZOS), os.path.join(ROOT, 'assets', 'trophies', names[k] + '.webp')); k += 1
     else:
         print(__doc__)
         sys.exit(1)

@@ -854,3 +854,66 @@ button.trophy { font: inherit; color: inherit; padding: 0; cursor: pointer; appe
 .sh-say-t { display: block; font-style: italic; font-size: 14px; line-height: 1.45; }
 .sh-say-h { display: block; margin-top: 4px; font-size: 10px; letter-spacing: .08em; color: #8b7bc9; text-transform: uppercase; }
 .arise-say { margin: 4px 0 2px; font-style: italic; color: #d9ceff; font-size: 15px; }
+.tag.prem-perm { color: #9fe6ff; border-color: rgba(103, 213, 255, .5); background: rgba(103, 213, 255, .08); }
+/* bónus do equipamento */
+.eq-plus { margin-left: 5px; font-size: 11px; font-weight: 600; color: var(--good); font-family: var(--f-mono); }
+.eq-plus.neg { color: var(--danger); }
+.stat-v .eq-plus { display: block; margin: 0; text-align: right; }
+.eq-total { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-left: 3px solid var(--good); background: rgba(91, 224, 138, .05); }
+.eq-total-h { font-family: var(--f-display); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--good); margin-bottom: 6px; }
+.eq-total ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 14px; font-size: 13px; }
+.eq-total li { display: flex; justify-content: space-between; gap: 6px; border-bottom: 1px dashed var(--line); padding: 2px 0; }
+@media (max-width: 380px) { .eq-total ul { grid-template-columns: 1fr; } }
+/* corpo e peso */
+.body-goals { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+@media (max-width: 380px) { .body-goals { grid-template-columns: 1fr; } }
+.body-goal { padding: 10px; border: 1px solid var(--line); border-top: 3px solid var(--gold); background: rgba(255, 200, 90, .05); }
+.body-goal.down { border-top-color: var(--glow); background: rgba(111, 214, 255, .05); }
+.bg-h { font-family: var(--f-display); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.body-goal.down .bg-h { color: var(--glow); }
+.bg-v { font-family: var(--f-mono); font-size: 20px; font-weight: 700; margin: 4px 0; }
+.bg-v small { font-size: 11px; color: var(--muted); margin-left: 2px; }
+/* Conjunto do Monarca */
+.mset { margin: 0 0 10px; padding: 10px 12px; border: 1px solid rgba(103, 213, 255, .4); border-left: 3px solid #b98cff; background: linear-gradient(90deg, rgba(185, 140, 255, .1), transparent); }
+.mset-h { display: flex; justify-content: space-between; gap: 8px; font-family: var(--f-display); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #d9c4ff; }
+.mset ul { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.mset li { padding: 3px 0; color: var(--muted); }
+.mset li b { color: var(--text); margin-right: 4px; }
+.mset li.on { color: var(--good); }
+.eq-total li.eq-set { grid-column: 1 / -1; color: #d9c4ff; }
+.body-goal.sel { box-shadow: 0 0 0 1px currentColor inset; }
+.body-goal.up.sel { color: var(--gold); } .body-goal.down.sel { color: var(--glow); }
+.body-goal.sel .small { color: var(--muted); } .body-goal.sel .bg-v { color: var(--text); }
+.body-week { margin-top: 10px; padding: 10px; border: 1px solid var(--line); border-left: 3px solid var(--good); background: rgba(91, 224, 138, .05); }
+.body-week .bg-h { color: var(--good); margin-bottom: 4px; }
+.body-row { gap: 6px; align-items: center; border-bottom: 1px dashed var(--line); padding: 4px 0; }
+/* treino com as sombras */
+.sh-spar { margin-top: 12px; padding: 10px 12px; border: 1px solid rgba(139, 107, 255, .4); background: rgba(90, 50, 220, .08); }
+.spar-panel { border-color: rgba(139, 107, 255, .6) !important; }
+.spar-panel .win-h { color: #b9a4ff; }
+.sh-boss img { object-fit: contain; }
+.shade-boss img { filter: grayscale(1) brightness(.55) contrast(1.4) sepia(.4) hue-rotate(215deg) saturate(3); }
+.sh-speech { border-color: rgba(139, 107, 255, .6); }
+
+/* ---------- Conquistas em grelha ---------- */
+.ach-sum { display: flex; align-items: baseline; gap: 6px; }
+.ach-sum b { font-family: var(--f-display); font-size: 26px; color: var(--gold); }
+.ach-bar { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .06); overflow: hidden; margin-top: 8px; }
+.ach-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--glow), var(--gold)); border-radius: inherit; }
+.ach-bar.thin { height: 3px; margin: -2px 0 12px; }
+.ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px 8px; }
+.ach-tile { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 2px; background: none; border: 0; color: var(--text); cursor: pointer; font: inherit; border-radius: 10px; -webkit-tap-highlight-color: transparent; }
+.ach-tile:active { background: var(--glow-soft); }
+.ach-orb { position: relative; width: 78px; height: 78px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle, rgba(111, 214, 255, .08), rgba(0, 0, 0, .35)); border: 1px solid var(--line); }
+.ach-orb .ach-medal { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; filter: grayscale(.9) brightness(.45); }
+.ach-emo { font-size: 30px; filter: grayscale(1) opacity(.5); }
+.ach-tile.got .ach-orb { border-color: rgba(255, 200, 90, .6); box-shadow: 0 0 14px rgba(255, 200, 90, .28); }
+.ach-tile.got .ach-medal, .ach-tile.got .ach-emo { filter: none; }
+.ach-ok { position: absolute; right: -2px; bottom: -2px; width: 20px; height: 20px; border-radius: 50%; background: var(--good); color: #04140a; font-style: normal; font-size: 12px; font-weight: 700; display: grid; place-items: center; border: 2px solid var(--panel-solid); }
+.ach-name { font-size: 11.5px; line-height: 1.25; text-align: center; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.5em; }
+.ach-tile.got .ach-name { color: var(--text); }
+.ach-tile.secret:not(.got) .ach-orb { border-style: dashed; }
+.ach-big { width: 150px; height: 150px; margin: 4px auto 12px; border-radius: 50%; }
+.ach-big .ui-ico, .ach-big .medal-img { width: 100%; height: 100%; border-radius: 50%; filter: grayscale(.85) brightness(.5); }
+.ach-big.got .ui-ico { filter: none; box-shadow: 0 0 34px rgba(255, 200, 90, .4); }
+.ach-big:not(:has(img)) { display: grid; place-items: center; font-size: 72px; }

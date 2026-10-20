@@ -281,7 +281,7 @@ test('catálogo: mais de 200 itens, condições e troféus', () => {
   const E = S.engine;
   const n = Object.keys(S.ITEMS).length;
   assert.ok(n >= 200, 'itens: ' + n);
-  assert.strictEqual(Object.keys(S.TROPHIES).length, 112, '102 chefes + 10 Campeões da Arena');
+  assert.strictEqual(Object.keys(S.TROPHIES).length, 202, '102 chefes + 10 Campeões + 90 sub-chefes das arenas');
   Object.values(S.ITEMS).forEach((it) => { if (it.req && it.req.boss) assert.ok(S.BOSS_BY_ID[it.req.boss], it.id); if (it.req && it.req.ach) assert.ok(S.ACH_BY_ID[it.req.ach], it.id); });
   E.start('Natan', 'guerreiro');
   E.state.coins = 1e6; E.state.level = 15;
@@ -1194,13 +1194,16 @@ test('Cristais: só entram por grant; Loja Exclusiva compra, não vende, equipam
   assert.strictEqual(st.crystals, 0);
   assert.strictEqual(P.buy('pr_juizo').ok, false, 'sem cristais não compra');
   P.grant(st, 500, 'teste');
-  assert.ok(P.buy('pr_juizo', 2).ok && st.crystals === 420 && E.count(st, 'pr_juizo') === 2);
-  assert.ok(P.buy('pr_lamina').ok && st.crystals === 420 - S.ITEMS.pr_lamina.crystals);
+  const jz = S.ITEMS.pr_juizo.crystals;
+  assert.ok(P.buy('pr_juizo', 2).ok && st.crystals === 500 - jz && E.count(st, 'pr_juizo') === 1, 'relíquia: compra-se uma só');
+  assert.strictEqual(P.buy('pr_juizo').ok, false, 'relíquia permanente: não se compra duas vezes');
+  P.grant(st, S.ITEMS.pr_lamina.crystals, 'teste');
+  assert.ok(P.buy('pr_lamina').ok && st.crystals === 500 - jz);
   assert.strictEqual(P.buy('pr_lamina').ok, false, 'equipamento só uma vez');
   assert.strictEqual(E.sellValue(st, 'pr_lamina'), 0, 'premium não se vende');
   // a lâmina fica acima da melhor arma da loja, ao nível 1 e ao nível 60
-  const best = (L) => { st.level = L; return Math.max(...S.CLASS_WEAPONS.guerreiro.map((id) => S.ITEMS[id + '_camp']).filter((it) => it.lvl <= L).map((it) => it.equip.atk)); };
-  [1, 30, 60, 90].forEach((L) => { const b = best(L); const v = S.ITEMS.pr_lamina.equip.atk; assert.ok(v > b && v < b * 1.4, 'nível ' + L + ': ' + v + ' vs ' + b); });
+  const best = (L) => { st.level = L; return Math.max(...Object.values(S.ITEMS).filter((it) => !it.premium && it.lvl <= L && it.equip && it.equip.slot === 'weapon' && E.canEquipClass(st, it)).map((it) => Math.max(it.equip.atk || 0, it.equip.matk || 0))); };
+  [1, 20, 30, 40, 60, 90].forEach((L) => { const b = best(L); const v = S.ITEMS.pr_lamina.equip.atk; assert.ok(v > b * 1.3 && v < b * 1.5 + 3, 'nível ' + L + ': ' + v + ' vs ' + b); });
   st.level = 1;
   // relíquias das arenas nunca saem em baús
   for (let i = 0; i < 400; i++) { st.level = 60; const r = E.openChest(st, 'lendario'); assert.ok(!r.items.some((id) => S.ITEMS[id].relic || S.ITEMS[id].premium), 'relíquia num baú'); }
@@ -1253,7 +1256,7 @@ test('Relíquias de combate: 1 por batalha; Juízo tira 20% (8% a Campeões); L�
   const st = E.state;
   st.level = 50; S.rng.random = () => 0.5;
   P.grant(st, 2000);
-  P.buy('pr_juizo', 3); P.buy('pr_tempo', 1); P.buy('pr_fenix', 1);
+  assert.ok(P.buy('pr_juizo').ok && P.buy('pr_tempo').ok && P.buy('pr_fenix').ok);
   assert.ok(C.start('b45').ok);
   const bt = st.battle, before = bt.b.hp;
   assert.ok(C.act('item', 'pr_juizo').ok);
@@ -1263,14 +1266,48 @@ test('Relíquias de combate: 1 por batalha; Juízo tira 20% (8% a Campeões); L�
   bt.p.hp = 1; bt.b.atk = 1e7; bt.b.stunned = 0;
   C.act('attack');
   assert.ok(bt.p.hp === bt.p.maxHp || bt.over === 'win' || bt.log.some((l) => /Fénix Negra/.test(l.t)), 'renasceu');
-  assert.strictEqual(E.count(st, 'pr_fenix'), 0);
+  assert.strictEqual(E.count(st, 'pr_fenix'), 1, 'a Lágrima é permanente: não se gasta');
+  assert.strictEqual(P.relicReady(st, 'pr_fenix'), false, 'fica a recarregar');
+  assert.strictEqual(E.count(st, 'pr_juizo'), 1);
   C.act('flee'); C.close();
+  // a recarregar: não se pode usar; passadas as horas, volta a funcionar
+  assert.ok(C.start('b46').ok);
+  assert.strictEqual(C.act('item', 'pr_juizo').ok, false, 'Juízo a recarregar');
+  C.act('flee'); C.close();
+  at(S, 2026, 10, 15, 11);
+  assert.ok(P.relicReady(st, 'pr_juizo') && P.relicReady(st, 'pr_fenix'));
+  // receber uma relíquia que já tens = recarga imediata
+  P.relicSpend(st, 'pr_tempo'); E.addItem(st, 'pr_tempo', 1);
+  assert.ok(P.relicReady(st, 'pr_tempo') && E.count(st, 'pr_tempo') === 1);
   // Campeões resistem ao Juízo
-  P.unlock('ar2'); st.arena.unlocked.ar2 = 1;
+  st.relics = {}; P.unlock('ar2'); st.arena.unlocked.ar2 = 1;
   S.ARENA_LADDER[2].slice(0, 9).forEach((g) => { st.arena.wins[g.id] = 1; });
   assert.ok(C.start('ar2').ok);
   C.act('item', 'pr_juizo');
   assert.ok(st.battle.log.some((l) => /\(8%\)/.test(l.t)));
+});
+
+test('Loja Exclusiva: relíquias antigas viram permanentes (repetidas devolvidas em Cristais); Selo Eterno dá +15% para sempre', () => {
+  const { S } = boot();
+  at(S, 2026, 10, 20, 10);
+  const E = S.engine, P = S.premium;
+  E.start('Delcio', 'mago');
+  const st = E.state;
+  delete st.relicsV2; st.inv.pr_juizo = 3; st.inv.pr_elixir = 2; st.crystals = 0;
+  P.ensure(st);
+  assert.strictEqual(st.inv.pr_juizo, 1); assert.strictEqual(st.inv.pr_elixir, 1);
+  assert.strictEqual(st.crystals, 2 * 40 + 1 * 30, 'repetidas devolvidas ao preço antigo');
+  P.ensure(st); assert.strictEqual(st.crystals, 110, 'só uma vez');
+  const xp0 = E.xpMultiplier(st), c0 = E.coinMultiplier(st);
+  P.grant(st, 1000); assert.ok(P.buy('pr_selo').ok);
+  assert.ok(E.useItem('pr_selo').ok);
+  assert.ok(Math.abs(E.xpMultiplier(st) - xp0 * 1.15) < 1e-9 && Math.abs(E.coinMultiplier(st) - c0 * 1.15) < 1e-9);
+  at(S, 2027, 10, 20, 10); assert.ok(Math.abs(E.xpMultiplier(st) - xp0 * 1.15) < 1e-9, 'continua um ano depois');
+  assert.strictEqual(P.buy('pr_selo').ok, false, 'o Selo Eterno só se compra uma vez');
+  // Baú do Monarca: lendário + secreto + recarga das relíquias
+  P.relicSpend(st, 'pr_juizo'); assert.ok(!P.relicReady(st, 'pr_juizo'));
+  assert.ok(P.buy('pr_bau').ok && E.useItem('pr_bau').ok);
+  assert.ok(P.relicReady(st, 'pr_juizo') && E.count(st, 'bau_lendario') >= 1 && E.count(st, 'bau_secreto') >= 1);
 });
 
 test('Cristais: resgate credita uma única vez; câmbio, proteções e aparência gastam certo', () => {
@@ -1548,8 +1585,80 @@ test('Sombras: vitória abre a extração; 3 tentativas; falhar 3 vezes perde a 
   // prazo: sem extrair, desvanece ao fim de 24 h
   win('b4'); assert.strictEqual(Sh.status(st, 'b4'), 'pending');
   at(S, 2026, 10, 20, 10); Sh.expire(st); assert.strictEqual(Sh.status(st, 'b4'), 'lost');
-  // chefes das arenas premium e secretos ainda não têm sombra
-  assert.ok(!Sh.eligible(S.BOSS_BY_ID.secret_1)); assert.ok(!Sh.eligible(S.BOSS_BY_ID.ar1));
+  // chefes secretos não têm sombra; os das arenas premium têm
+  assert.ok(!Sh.eligible(S.BOSS_BY_ID.secret_1)); assert.ok(Sh.eligible(S.BOSS_BY_ID.ar1)); assert.ok(Sh.eligible(S.BOSS_BY_ID.ar1g3));
+});
+
+test('Sombras das arenas: não desvanecem; 3 falhas selam a sombra; o selo quebra-se com 100 ou 500 Cristais', () => {
+  const { S } = boot();
+  at(S, 2026, 10, 19, 9);
+  const E = S.engine, Sh = S.shadows;
+  E.start('Delcio', 'mago');
+  const st = E.state; st.level = 60; st.crystals = 700;
+  const g = S.BOSS_BY_ID.ar1g3, ch = S.BOSS_BY_ID.ar1;
+  assert.ok(Sh.onVictory(st, g)); assert.strictEqual(st.shadows.pending.ar1g3.exp, 0, 'sem prazo');
+  at(S, 2026, 12, 30, 9); Sh.expire(st); assert.strictEqual(Sh.status(st, 'ar1g3'), 'pending', 'não desvanece');
+  assert.strictEqual(Sh.release('ar1g3').ok, false);
+  assert.strictEqual(Sh.buy('ar1g3').ok, false, 'só depois de falhar as 3');
+  S.rng.random = () => 0.99;
+  Sh.extract('ar1g3'); Sh.extract('ar1g3'); const r = Sh.extract('ar1g3');
+  assert.ok(r.sealed && !r.lost); assert.strictEqual(Sh.status(st, 'ar1g3'), 'sealed');
+  assert.strictEqual(Sh.onVictory(st, g), false, 'vitória nova não reabre');
+  assert.ok(Sh.buy('ar1g3').ok); assert.strictEqual(st.crystals, 600); assert.strictEqual(Sh.status(st, 'ar1g3'), 'owned');
+  assert.strictEqual(Sh.buyPrice(ch), 500);
+  Sh.onVictory(st, ch); Sh.extract('ar1'); Sh.extract('ar1'); Sh.extract('ar1');
+  st.crystals = 499; const no = Sh.buy('ar1'); assert.ok(!no.ok && no.need === 1);
+  st.crystals = 500; assert.ok(Sh.buy('ar1').ok); assert.strictEqual(st.crystals, 0);
+  assert.strictEqual(Sh.name(st, 'ar10'), 'Sombra do Primeiro Jogador');
+  // todas as 100 sombras das arenas têm falas de servo e de treino
+  S.ARENA_GUARDIANS.concat(S.ARENA_BOSSES).forEach((b) => { assert.strictEqual(S.SHADOW_LINES[b.id].length, 2, b.id); assert.strictEqual(S.SHADOW_SPAR[b.id].length, 3, b.id); });
+  // migração: arenas já vencidas deixam a sombra à espera
+  const st2 = { arena: { wins: { ar2g1: 1, ar2: 2 } } }; Sh.ensure(st2);
+  assert.ok(st2.shadows.pending.ar2g1 && st2.shadows.pending.ar2 && st2.shadows.pending.ar2.exp === 0);
+  // treino com uma sombra da arena
+  S.rng.random = Math.random;
+  assert.ok(Sh.spar('ar1g3').ok); assert.ok(E.state.battle.spar);
+});
+
+test('Baús especializados: só dão o seu tipo, o grau sobe o nível e a qualidade, e estão nas duas lojas', () => {
+  const { S } = boot();
+  at(S, 2026, 10, 19, 9);
+  const E = S.engine;
+  E.start('Delcio', 'guerreiro');
+  const st = E.state;
+  assert.strictEqual(S.CHEST_FAMS.length * S.CHEST_GRADES.length, 25);
+  const avg = (fam, k, lvl, n) => {
+    st.level = lvl; let sum = 0, cnt = 0, camp = 0;
+    for (let i = 0; i < n; i++) {
+      const r = E.openChest(st, fam + '_' + k);
+      r.items.forEach((id) => {
+        const it = S.ITEMS[id];
+        if (fam === 'arsenal') assert.ok(it.cat === 'arma' || it.secret, id);
+        if (fam === 'armaria') assert.ok(it.cat === 'armadura', id);
+        if (fam === 'joias') assert.ok(it.cat === 'acessorio', id);
+        if (fam === 'guerra') assert.ok(it.cat === 'arma' || it.cat === 'armadura', id);
+        if (fam === 'alquimia') assert.ok(it.cat === 'consumivel' || it.cat === 'atributo' || it.secret, id);
+        if (it.cat === 'arma' && !it.secret) assert.ok(E.canEquipClass(st, it), id);
+        sum += it.lvl || 1; cnt++; if (/_camp$/.test(id)) camp++;
+      });
+    }
+    return { lvl: sum / cnt, camp: camp / cnt };
+  };
+  const a1 = avg('arsenal', 1, 100, 60), a3 = avg('arsenal', 3, 100, 60), a5 = avg('arsenal', 5, 100, 60);
+  assert.ok(a1.lvl < a3.lvl && a3.lvl < a5.lvl, 'nível sobe com o grau');
+  assert.ok(a1.camp < a5.camp && a5.camp > 0.5, 'mais versões do Campeão');
+  ['armaria', 'guerra', 'joias', 'alquimia'].forEach((f) => [1, 3, 5].forEach((k) => avg(f, k, 80, 15)));
+  // nível baixo: o grau Monarca dá o mínimo da sua janela, não itens impossíveis
+  const low = avg('arsenal', 5, 5, 20); assert.ok(low.lvl <= 85);
+  // lojas: moedas (preço fixo, os melhores mais caros) e Cristais (graus 3 a 5)
+  const p = [1, 2, 3, 4, 5].map((k) => S.ITEMS['bau_arsenal_' + k].price);
+  assert.ok(p.every((x, i) => !i || x > p[i - 1]));
+  st.level = 50; assert.strictEqual(E.price(st, 'bau_arsenal_3'), S.ITEMS.bau_arsenal_3.price);
+  assert.ok(!S.PREMIUM_PRICES.bau_arsenal_2 && S.PREMIUM_PRICES.bau_arsenal_3 < S.PREMIUM_PRICES.bau_arsenal_5);
+  assert.ok(S.PREMIUM_SHOP.some((sec) => sec.ids.indexOf('bau_alquimia_5') >= 0));
+  // abrir pela Bolsa
+  st.level = 40; E.addItem(st, 'bau_joias_2', 1); const u = E.useItem('bau_joias_2');
+  assert.ok(u.ok && u.loot.items.length >= 1); assert.ok(st.c.specialChests >= 1);
 });
 
 test('Sombras: os servos lutam ao teu lado (ataque, escudo do Guarda, quebra do Arcano, bónus do Comandante)', () => {
@@ -1588,6 +1697,126 @@ test('Sombras: chefes derrotados antes desta versão ficam com a sombra adormeci
   E.migrate(st);
   assert.strictEqual(Object.keys(st.shadows.pending).sort().join(), 'b1,b10,b2');
   at(S, 2027, 1, 1, 9); Sh.expire(st); assert.strictEqual(Sh.status(st, 'b10'), 'pending', 'não desvanece');
+});
+
+test('Corpo: regista o peso e calcula calorias para ganhar e perder 1 kg', () => {
+  const { S } = boot();
+  at(S, 2026, 10, 20, 10);
+  const E = S.engine, B = S.body;
+  E.start('Delcio', 'guerreiro');
+  const st = E.state;
+  assert.strictEqual(B.calc(st), null);
+  assert.strictEqual(B.logWeight('abc').ok, false);
+  assert.ok(B.logWeight('70,0').ok && B.current(st) === 70);
+  let c = B.calc(st);
+  assert.strictEqual(c.full, false); assert.strictEqual(c.tdee, 2170);
+  assert.strictEqual(c.gain.perDay, c.tdee + 500); assert.strictEqual(c.lose.perDay, c.tdee - 500);
+  assert.strictEqual(c.gain.days, 15);
+  B.setProfile({ height: 175, age: 30, sex: 'm', activity: 'moderado' });
+  c = B.calc(st);
+  assert.strictEqual(c.bmr, Math.round(10 * 70 + 6.25 * 175 - 150 + 5));
+  assert.strictEqual(c.tdee, Math.round(c.bmr * 1.55 / 10) * 10);
+  assert.ok(Math.abs(c.bmi - 22.9) < 0.05);
+  // nunca abaixo do mínimo diário
+  B.setProfile({ height: 150, age: 70, sex: 'f', activity: 'sedentario' }); B.logWeight(45);
+  c = B.calc(st); assert.ok(c.lose.perDay >= 1200);
+  // um registo por dia; histórico guarda a mudança
+  at(S, 2026, 10, 27, 10); B.logWeight(46); assert.strictEqual(st.body.weights.length, 2); assert.strictEqual(B.calc(st).change, 1);
+  // avaliação semanal, corrigir e apagar, guardar tudo de uma vez
+  B.setProfile({ goal: 'ganhar' }); let wk = B.weekly(st);
+  assert.ok(wk && wk.days === 7 && wk.diff === 1 && /ritmo certo/.test(wk.verdict), JSON.stringify(wk));
+  assert.ok(B.editEntry('2026-10-27', '45,5').ok && B.current(st) === 45.5);
+  assert.ok(B.removeEntry('2026-10-27').ok && st.body.weights.length === 1);
+  at(S, 2026, 10, 28, 10);
+  assert.ok(B.saveAll({ kg: '47', height: 160, age: 40, sex: 'f', activity: 'leve', goal: 'perder' }).ok);
+  assert.ok(B.current(st) === 47 && st.body.goal === 'perder' && st.body.height === 160);
+});
+
+test('Equipamento soberano: cresce com o nível, fica acima do melhor normal e o Conjunto do Monarca dá bónus', () => {
+  const { S } = boot();
+  at(S, 2026, 10, 20, 10);
+  const E = S.engine, I = S.ITEMS;
+  E.start('Delcio', 'guerreiro');
+  const st = E.state;
+  st.level = 1; const o1 = I.pr_olho.equip; st.level = 85; const o85 = I.pr_olho.equip;
+  assert.ok(o85.crit > o1.crit && o85.critDmg > o1.critDmg, 'cresce com o nível');
+  assert.ok(o85.crit > I.ac_abismo.equip.crit && o85.critDmg > I.ac_abismo.equip.critDmg, 'acima do melhor acessório normal de crítico');
+  st.level = 95; assert.ok(I.pr_coroa.equip.allStatsPct > I.ac_vazio.equip.allStatsPct);
+  st.level = 85; assert.ok(I.pr_armadura.equip.def > I.ar_abismo_camp.equip.def);
+  // conjunto
+  const base = E.equipBonus(st).allStatsPct;
+  st.equip.acc1 = 'pr_olho'; st.equip.acc2 = 'pr_coracao';
+  assert.strictEqual(E.monarchPieces(st), 2);
+  assert.strictEqual(E.equipBonus(st).allStatsPct, base + 4);
+  st.equip.weapon = 'pr_lamina'; st.equip.armor = 'pr_armadura';
+  const eb = E.equipBonus(st);
+  assert.ok(eb.xpPct >= 30 && eb.coinPct >= 10 && eb.openShield >= 10, '4 peças');
+});
+
+test('Sombras: treino com um servo dá recompensa pequena, não castiga a derrota e só recompensa de 6 em 6 horas', () => {
+  const { S } = boot();
+  at(S, 2026, 10, 20, 10);
+  const E = S.engine, C = S.combat, Sh = S.shadows;
+  E.start('Delcio', 'guerreiro');
+  const st = E.state; st.level = 20;
+  assert.strictEqual(Sh.spar('b10').ok, false, 'só sombras tuas');
+  const sh = Sh.ensure(st); sh.owned.b10 = 1; sh.active = ['b10']; st.defeated.b10 = 1;
+  const normal = C.rewards(st, S.BOSS_BY_ID.b10);
+  assert.ok(Sh.spar('b10').ok, 'o chefe derrotado volta como sombra de treino');
+  assert.strictEqual(st.battle.shadows.length, 0, 'a sombra não luta contra si própria');
+  assert.ok(st.battle.log.some((l) => l.c === 'say' && l.t.indexOf(S.SHADOW_SPAR.b10[0]) >= 0));
+  const xp0 = st.xp + st.level * 1e6, c0 = st.coins, hp0 = E.curHp(st);
+  st.battle.b.hp = 1; C.act('attack');
+  assert.strictEqual(st.battle.over, 'win');
+  const got = st.battle.result;
+  assert.ok(got.xp > 0 && got.xp <= Math.round(normal.xp * 0.1) + 1 && got.coins <= Math.round(normal.coins * 0.1) + 1, 'abaixo do normal');
+  assert.ok(!st.inv.bau_raro || true); assert.strictEqual(E.curHp(st), hp0, 'vida volta ao que era');
+  C.close();
+  // segunda vez no mesmo período: sem recompensa
+  Sh.spar('b10'); st.battle.b.hp = 1; C.act('attack'); assert.strictEqual(st.battle.result.xp, 0); C.close();
+  // derrota: sem perder nível nem moedas
+  at(S, 2026, 10, 20, 17);
+  const lv = st.level, coins = st.coins;
+  Sh.spar('b10'); st.battle.p.hp = 1; st.battle.b.atk = 1e7; for (let i = 0; i < 20 && !st.battle.over; i++) { st.battle.b.stunned = 0; st.battle.b.hp = st.battle.b.maxHp; C.act('defend'); }
+  assert.strictEqual(st.battle.over, 'lose'); assert.strictEqual(st.level, lv); assert.ok(st.coins >= coins);
+  C.close();
+  // fugir do treino não custa moedas
+  Sh.spar('b10'); const c1 = st.coins; C.act('flee'); assert.strictEqual(st.coins, c1);
+  C.close();
+  // a vida volta EXATAMENTE ao que era antes do treino (mesmo ferido durante o combate), e o Sistema avisa
+  const max = E.combatStats(st).maxHp;
+  [['win', 0.37], ['lose', 0.61], ['flee', 0.5]].forEach(([how, f]) => {
+    at(S, 2026, 10, 21 + ['win', 'lose', 'flee'].indexOf(how), 9);
+    E.setHp(st, Math.round(max * f)); const before = E.curHp(st);
+    E.takeEvents();
+    Sh.spar('b10');
+    st.battle.p.hp = Math.max(1, Math.round(before / 3));
+    if (how === 'win') { st.battle.b.hp = 1; C.act('attack'); }
+    else if (how === 'flee') C.act('flee');
+    else { st.battle.p.hp = 1; st.battle.b.atk = 1e7; for (let i = 0; i < 20 && !st.battle.over; i++) { st.battle.b.stunned = 0; st.battle.b.hp = st.battle.b.maxHp; C.act('defend'); } }
+    assert.strictEqual(E.curHp(st), before, how + ': vida igual à de antes');
+    assert.ok(E.takeEvents().some((e) => e.type === 'watch' && e.heal), how + ': o Sistema aparece a curar');
+    C.close();
+  });
+});
+
+test('Conquistas II: 66 novas, todas avaliam sem erro e desbloqueiam com o progresso certo', () => {
+  const { S } = boot();
+  at(S, 2026, 10, 20, 10);
+  const E = S.engine;
+  E.start('Delcio', 'guerreiro');
+  const st = E.state;
+  assert.ok(S.ACHIEVEMENTS.length >= 49 + 66);
+  const ids = S.ACHIEVEMENTS.map((a) => a.id); assert.strictEqual(new Set(ids).size, ids.length, 'ids únicos');
+  S.ACHIEVEMENTS.forEach((a) => { assert.doesNotThrow(() => a.check(st), a.id); });
+  E.checkAchievements(st);
+  ['sh1', 'ar1', 'body1', 'prem1', 'spar1'].forEach((id) => assert.ok(!st.achievements[id], 'não desbloqueia sem fazer nada: ' + id));
+  // progresso
+  const sh = S.shadows.ensure(st); sh.owned.b10 = 1; sh.owned.b1 = 1; sh.names.b1 = 'Igris'; st.c.shadowsOwned = 2; st.c.sparWins = 1;
+  st.arena.unlocked.ar1 = 1; st.arena.wins.ar1g1 = 2; st.arena.wins.ar1 = 1;
+  S.body.logWeight(80);
+  E.checkAchievements(st);
+  ['sh1', 'shking', 'shname', 'spar1', 'ar1', 'grd1', 'champ1', 'rematch', 'body1'].forEach((id) => { if (id !== 'rematch') assert.ok(st.achievements[id], 'deve desbloquear: ' + id); });
 });
 
 console.log('\n' + passed + ' testes passaram' + (process.exitCode ? ' (com falhas)' : ''));

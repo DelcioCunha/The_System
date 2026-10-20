@@ -147,11 +147,13 @@ const rootPage = webPage(rootJs, 'assets/web/');
 const INLINE = { TROPHY_ART: trophyArt, UI_ART: uiArt, SKILL_ART: skillArt, FRAME_ART: frameArt, ARENA_ART: arenaArt, SHADOW_ART: shadowArt };
 const inlineMap = (m) => { const o = {}; Object.keys(m).forEach((k) => { const pv = path.join(ROOT, 'dist', 'pv', m[k]); const f = fs.existsSync(pv) ? pv : path.join(ROOT, 'assets', m[k]); const ext = path.extname(f).slice(1).replace('jpg', 'jpeg'); o[k] = 'data:image/' + ext + ';base64,' + fs.readFileSync(f).toString('base64'); }); return o; };
 let previewJs = 'globalThis.SYS = { PREVIEW: true };\n' + safeJs;
-// sombras das arenas premium ainda não aparecem no jogo: fora da pré-visualização (poupa espaço)
-const shadowPv = {}; Object.keys(shadowArt).forEach((k) => { if (!/^ar/.test(k)) shadowPv[k] = shadowArt[k]; });
+// sombras: as dos portões vão embutidas; as das arenas premium são ficheiros publicados ao lado da página (poupa espaço)
+const shadowPv = {}, shadowFiles = {}; Object.keys(shadowArt).forEach((k) => { if (!/^ar/.test(k)) shadowPv[k] = shadowArt[k]; else shadowFiles[k] = shadowArt[k]; });
 delete INLINE.SHADOW_ART;
 Object.keys(INLINE).forEach((name) => { previewJs = previewJs.replace('SYS.' + name + ' = ' + JSON.stringify(INLINE[name]) + ';', 'SYS.' + name + ' = ' + JSON.stringify(inlineMap(INLINE[name])) + ';'); });
 previewJs = previewJs.replace('SYS.SHADOW_ART = ' + JSON.stringify(shadowArt) + ';', 'SYS.SHADOW_ART = ' + JSON.stringify(inlineMap(shadowPv)) + ';');
+// as sombras das arenas vão num ficheiro à parte (pv-extra.js), carregado depois da página: não pesa no limite de 16 MB da página nem no de ficheiros
+fs.writeFileSync(path.join(ROOT, 'dist', 'pv-extra.js'), 'Object.assign(SYS.SHADOW_ART, ' + JSON.stringify(inlineMap(shadowFiles)) + ');\nif (SYS.ui && SYS.ui.render) SYS.ui.render();\n');
 // as imagens das classes são iguais ao retrato de nível 1: a pré-visualização usa essas (limite de 512 ficheiros)
 previewJs = previewJs.replace(/"classes\/([a-z]+)\.webp"/g, '"avatars/$1/1.webp"');
 // itens que ainda não estão publicados como ficheiros na pré-visualização (limite de ficheiros): vão embutidos
@@ -164,7 +166,7 @@ if (fs.existsSync(PUB_LIST)) {
   // avatares das fases novas (a cada 3 níveis) que não estão publicados como ficheiros
   Object.keys(manifest).forEach((cls) => Object.keys(manifest[cls]).forEach((lv) => { const rel = manifest[cls][lv]; if (!pub.has(rel)) embed(rel); }));
 }
-const preview = '<title>Sistema do Caçador</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n' + fonts + '\n<style>\n' + css + '\n</style>\n<div id="app"></div>\n<script>\n' + previewJs + '</script>\n';
+const preview = '<title>Sistema do Caçador</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n' + fonts + '\n<style>\n' + css + '\n</style>\n<div id="app"></div>\n<script>\n' + previewJs + '</script>\n' + '<script src="pv-extra.js"></script>\n';
 
 fs.rmSync(path.join(ROOT, 'www', 'avatars'), { recursive: true, force: true });
 fs.rmSync(path.join(ROOT, 'www', 'classes'), { recursive: true, force: true });

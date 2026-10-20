@@ -24,82 +24,113 @@
   /* ---------------- equipamento que acompanha o nível ---------------- */
   function lvl() { var st = S.engine && S.engine.state; return st ? st.level : 1; }
   function cls() { var st = S.engine && S.engine.state; return st ? st.cls : 'guerreiro'; }
-  function bestClassWeapon() {
-    var L = lvl(), c = cls(), best = null;
-    (S.CLASS_WEAPONS[c] || []).forEach(function (id) {
-      var it = I[id + '_camp'] || I[id];
-      if (it && it.lvl <= L && (!best || it.lvl > best.lvl)) best = it;
-    });
-    return best || I[S.CLASS_WEAPONS[c][0]];
+  /* a melhor arma/armadura NORMAL (loja, drops de chefes, secretas, relíquias das arenas) que o jogador pode usar no nível atual */
+  function usable(it, L, c) { return !it.premium && it.lvl <= L && it.equip && (!it.cls || it.cls.indexOf(c) >= 0); }
+  function bestWeaponPower() {
+    var L = lvl(), c = cls(), best = 0;
+    Object.keys(I).forEach(function (k) { var it = I[k]; if (usable(it, L, c) && it.equip.slot === 'weapon') best = Math.max(best, it.equip.atk || 0, it.equip.matk || 0); });
+    return best || 6;
   }
+  /* melhor valor de um bónus num acessório normal que o jogador pode usar agora */
+  function bestAcc(key) {
+    var L = lvl(), c = cls(), best = 0;
+    Object.keys(I).forEach(function (k) { var it = I[k]; if (usable(it, L, c) && it.equip.slot === 'acc') best = Math.max(best, it.equip[key] || 0); });
+    return best;
+  }
+  /* nunca abaixo de 30% acima do melhor acessório normal do mesmo tipo */
+  function above(key, v) { return Math.max(v, Math.round(bestAcc(key) * 1.3) + 1); }
   function bestArmorDef() {
-    var L = lvl(), d = 4;
-    Object.keys(I).forEach(function (k) { var it = I[k]; if (it.cat === 'armadura' && it.price && it.lvl <= L && it.equip && it.equip.def > d) d = it.equip.def; });
+    var L = lvl(), c = cls(), d = 4;
+    Object.keys(I).forEach(function (k) { var it = I[k]; if (usable(it, L, c) && it.equip.slot === 'armor' && it.equip.def > d) d = it.equip.def; });
     return d;
   }
   function scaled(it, fn) { Object.defineProperty(it, 'equip', { get: fn, enumerable: true, configurable: true }); return it; }
   function prem(o) { o.premium = true; o.secret = false; I[o.id] = o; return o; }
 
   /* [id, nome, ícone, cristais, raridade, descrição] */
+  /* EQUIPAMENTO SOBERANO: cresce com o teu nível e fica sempre claramente acima do melhor equipamento
+     normal para esse nível (sem o ultrapassar de forma absurda). k = 0 no nível 1 e 1 no nível 100. */
+  function k() { return Math.min(1, Math.max(0, (lvl() - 1) / 99)); }
+  function r(v) { return Math.round(v); }
   scaled(prem({ id: 'pr_lamina', name: 'Lâmina do Monarca Sombrio', icon: '🗡️', cat: 'premium', crystals: 350, rarity: 'mitico', lvl: 1,
-    desc: 'Arma soberana para qualquer classe. Cresce contigo: fica sempre 20% acima da melhor arma da tua classe para o teu nível.' }), function () {
-    var w = bestClassWeapon(), e = w.equip, p = Math.max(e.atk || 0, e.matk || 0);
-    var v = Math.round(p * 1.2) + 1;
-    return { slot: 'weapon', atk: v, matk: v, crit: 8, critDmg: 25, lifesteal: 4 };
+    desc: 'Arma soberana para qualquer classe. Cresce contigo: fica sempre 35% acima da melhor arma que a tua classe pode usar no teu nível (loja, chefes e secretas incluídas). Crítico, dano crítico, roubo de vida e um primeiro golpe devastador.' }), function () {
+    var v = r(bestWeaponPower() * 1.35) + 2;
+    return { slot: 'weapon', atk: v, matk: v, crit: r(10 + 5 * k()), critDmg: r(35 + 15 * k()), lifesteal: 6, firstStrike: 25 };
   });
   scaled(prem({ id: 'pr_armadura', name: 'Armadura do Monarca', icon: '🛡️', cat: 'premium', crystals: 300, rarity: 'mitico', lvl: 1,
-    desc: 'Armadura soberana. Cresce contigo: fica sempre 20% acima da melhor armadura da loja para o teu nível.' }), function () {
-    return { slot: 'armor', def: Math.round(bestArmorDef() * 1.2) + 1, hpPct: 12, regenHp: 2, eva: 3 };
+    desc: 'Armadura soberana. Cresce contigo: fica sempre 35% acima da melhor armadura que podes usar no teu nível (loja, chefes e secretas incluídas), com muita vida, regeneração, esquiva e resistência a atordoamentos.' }), function () {
+    return { slot: 'armor', def: r(bestArmorDef() * 1.35) + 2, hpPct: r(18 + 8 * k()), regenHp: 3, eva: r(5 + 3 * k()), stunRes: 30 };
   });
-  prem({ id: 'pr_olho', name: 'Anel do Olho do Sistema', icon: '💍', cat: 'premium', crystals: 180, rarity: 'lendario', lvl: 1,
-    desc: 'O Sistema vê por ti. Golpes mais certeiros e mais XP em tudo.', equip: { slot: 'acc', crit: 6, critDmg: 20, xpPct: 10 } });
-  prem({ id: 'pr_coracao', name: 'Coração de Cristal', icon: '💎', cat: 'premium', crystals: 180, rarity: 'lendario', lvl: 1,
-    desc: 'Um cristal que pulsa como um coração. Mais vida, mais mana e mana a regenerar.', equip: { slot: 'acc', hpPct: 15, mpPct: 15, regenMp: 3 } });
-  prem({ id: 'pr_coroa', name: 'Coroa da Arena', icon: '👑', cat: 'premium', crystals: 250, rarity: 'mitico', lvl: 1,
-    desc: 'Usada pelos campeões do Coliseu. +6% em todos os atributos e +10% de moedas.', equip: { slot: 'acc', allStatsPct: 6, coinPct: 10 } });
-
-  /* consumíveis de combate (máx. 1 premium por batalha) */
-  prem({ id: 'pr_juizo', name: 'Lâmina do Juízo Final', icon: '⚔️', cat: 'premium', crystals: 40, rarity: 'mitico', lvl: 1, battle: true,
+  scaled(prem({ id: 'pr_olho', name: 'Anel do Olho do Sistema', icon: '💍', cat: 'premium', crystals: 180, rarity: 'lendario', lvl: 1,
+    desc: 'O Sistema vê por ti. Crítico e dano crítico que crescem com o teu nível (sempre 30% acima do melhor acessório normal que podes usar), Perceção extra e +20% de XP em tudo.' }), function () {
+    return { slot: 'acc', stats: { per: r(4 + 20 * k()) }, crit: above('crit', r(8 + 8 * k())), critDmg: above('critDmg', r(25 + 25 * k())), xpPct: above('xpPct', 20) };
+  });
+  scaled(prem({ id: 'pr_coracao', name: 'Coração de Cristal', icon: '💎', cat: 'premium', crystals: 180, rarity: 'lendario', lvl: 1,
+    desc: 'Um cristal que pulsa como um coração. Muita vida e mana (crescem com o teu nível), Vitalidade extra e regeneração das duas.' }), function () {
+    return { slot: 'acc', stats: { vit: r(4 + 20 * k()) }, hpPct: above('hpPct', r(20 + 10 * k())), mpPct: above('mpPct', r(20 + 10 * k())), regenHp: 2, regenMp: 4 };
+  });
+  scaled(prem({ id: 'pr_coroa', name: 'Coroa da Arena', icon: '👑', cat: 'premium', crystals: 250, rarity: 'mitico', lvl: 1,
+    desc: 'Usada pelos campeões do Coliseu. De +8% a +14% em todos os atributos (cresce com o teu nível), +20% de moedas e +10% de XP.' }), function () {
+    return { slot: 'acc', allStatsPct: above('allStatsPct', r(8 + 6 * k())), coinPct: above('coinPct', 20), xpPct: 10 };
+  });
+  /* RELÍQUIAS PERMANENTES: compram-se uma vez e ficam para sempre; depois de usadas, recarregam sozinhas.
+     (máx. 1 relíquia premium por batalha) */
+  prem({ id: 'pr_juizo', name: 'Lâmina do Juízo Final', icon: '⚔️', cat: 'premium', crystals: 180, rarity: 'mitico', lvl: 1, battle: true, perma: true, recharge: 24, oldPrice: 40,
     desc: 'Um corte que o Sistema não deixa falhar: tira 20% da vida máxima do chefe (8% contra Campeões da Arena, reis ocultos e o chefe final).', use: { type: 'judgment' } });
-  prem({ id: 'pr_tempo', name: 'Selo do Tempo Parado', icon: '⏳', cat: 'premium', crystals: 35, rarity: 'lendario', lvl: 1, battle: true,
+  prem({ id: 'pr_tempo', name: 'Selo do Tempo Parado', icon: '⏳', cat: 'premium', crystals: 160, rarity: 'lendario', lvl: 1, battle: true, perma: true, recharge: 20, oldPrice: 35,
     desc: 'Congela o chefe: perde garantidamente os próximos 2 turnos, mesmo sendo rei.', use: { type: 'ops', ops: [{ op: 'stun', chance: 1, turns: 2 }] } });
-  prem({ id: 'pr_elixir', name: 'Elixir do Monarca', icon: '🧪', cat: 'premium', crystals: 30, rarity: 'lendario', lvl: 1, battle: true,
+  prem({ id: 'pr_elixir', name: 'Elixir do Monarca', icon: '🧪', cat: 'premium', crystals: 140, rarity: 'lendario', lvl: 1, battle: true, perma: true, recharge: 12, oldPrice: 30,
     desc: 'Vida e mana ao máximo, limpa efeitos negativos e +40% de ataque durante 3 turnos. Não conta para o limite de poções.', use: { type: 'monarch' } });
-  prem({ id: 'pr_legiao', name: 'Estandarte da Legião Sombria', icon: '🚩', cat: 'premium', crystals: 45, rarity: 'mitico', lvl: 1, battle: true,
-    desc: 'Invoca a Legião Sombria durante 5 turnos: um exército que ataca ao teu lado em cada ronda.', use: { type: 'ops', ops: [{ op: 'summon', name: 'Legião Sombria', mult: 1.6, turns: 5 }] } });
-  prem({ id: 'pr_fenix', name: 'Lágrima da Fénix Negra', icon: '🖤', cat: 'premium', crystals: 50, rarity: 'mitico', lvl: 1,
-    desc: 'Basta tê-la na bolsa: se morreres em combate, renasces com a vida toda (gasta-se). Tem prioridade sobre a Pena da Fénix.', use: { type: 'revive', pct: 100 } });
+  prem({ id: 'pr_legiao', name: 'Estandarte da Legião Sombria', icon: '🚩', cat: 'premium', crystals: 180, rarity: 'mitico', lvl: 1, battle: true, perma: true, recharge: 20, oldPrice: 45,
+    desc: 'Invoca a Legião Sombria durante 6 turnos: um exército que ataca ao teu lado em cada ronda com mais força do que tu.', use: { type: 'ops', ops: [{ op: 'summon', name: 'Legião Sombria', mult: 2.2, turns: 6 }] } });
+  prem({ id: 'pr_fenix', name: 'Lágrima da Fénix Negra', icon: '🖤', cat: 'premium', crystals: 240, rarity: 'mitico', lvl: 1, perma: true, recharge: 24, oldPrice: 50,
+    desc: 'Funciona sozinha: se morreres em combate, renasces com a vida toda. Depois recarrega. Tem prioridade sobre a Pena da Fénix.', use: { type: 'revive', pct: 100 } });
 
   /* fora de combate */
   prem({ id: 'pr_bau', name: 'Baú do Monarca', icon: '🧰', cat: 'premium', crystals: 90, rarity: 'mitico', lvl: 1, field: true,
-    desc: 'Contém um Baú Lendário, um consumível premium ao acaso e moedas que acompanham o teu nível.', use: { type: 'monarchChest' } });
-  prem({ id: 'pr_selo', name: 'Selo do Monarca', icon: '🔱', cat: 'premium', crystals: 60, rarity: 'lendario', lvl: 1, field: true,
-    desc: '+50% de XP e +50% de moedas durante 24 horas (missões e chefes).', use: { type: 'timed', effect: 'monarca', hours: 24 } });
+    desc: 'Contém um Baú Lendário, um Baú Secreto, muitas moedas (crescem com o teu nível) e recarrega na hora todas as tuas relíquias.', use: { type: 'monarchChest' } });
+  prem({ id: 'pr_selo', name: 'Selo do Monarca Eterno', icon: '🔱', cat: 'premium', crystals: 450, rarity: 'mitico', lvl: 1, field: true, perk: 'monarca',
+    desc: 'PARA SEMPRE: +15% de XP e +15% de moedas em tudo (missões, chefes, arenas). Usa-se uma vez e o bónus fica na tua conta.', use: { type: 'perk', perk: 'monarca' } });
 
   /* atualização: novos itens soberanos (mecânicas novas) */
-  prem({ id: 'pr_ampulheta', name: 'Ampulheta do Monarca', icon: '⌛', cat: 'premium', crystals: 200, rarity: 'lendario', lvl: 1,
-    desc: 'O primeiro golpe de cada batalha faz +50% de dano e cada ataque que acerta devolve 4% da mana. +3% em todos os atributos.', equip: { slot: 'acc', firstStrike: 50, manaOnHit: 4, allStatsPct: 3 } });
-  prem({ id: 'pr_espinho', name: 'Coroa de Espinhos Negros', icon: '🥀', cat: 'premium', crystals: 220, rarity: 'mitico', lvl: 1,
-    desc: 'Devolve 18% de cada golpe que recebes, com roubo de vida 5% e defesa extra.', equip: { slot: 'acc', thorns: 18, lifesteal: 5, def: 15 } });
-  prem({ id: 'pr_executor', name: 'Insígnia do Executor', icon: '⚖️', cat: 'premium', crystals: 200, rarity: 'lendario', lvl: 1,
-    desc: '+35% de dano quando o chefe tem menos de 30% de vida e +20% de dano crítico. Feita para acabar o que começas.', equip: { slot: 'acc', execute: 35, critDmg: 20 } });
-  prem({ id: 'pr_egide', name: 'Égide do Primeiro Dia', icon: '🔰', cat: 'premium', crystals: 240, rarity: 'mitico', lvl: 1,
-    desc: 'Começas cada batalha com um escudo de 20% da vida, resistes a 50% dos atordoamentos e tens +8% de vida.', equip: { slot: 'acc', openShield: 20, stunRes: 50, hpPct: 8 } });
-  prem({ id: 'pr_ruptura', name: 'Ruptura do Sistema', icon: '💢', cat: 'premium', crystals: 40, rarity: 'mitico', lvl: 1, battle: true,
+  scaled(prem({ id: 'pr_ampulheta', name: 'Ampulheta do Monarca', icon: '⌛', cat: 'premium', crystals: 200, rarity: 'lendario', lvl: 1,
+    desc: 'O primeiro golpe de cada batalha faz +70% de dano, cada ataque que acerta devolve 6% da mana, +5% de crítico e de +5% a +9% em todos os atributos.' }), function () {
+    return { slot: 'acc', firstStrike: above('firstStrike', 70), manaOnHit: above('manaOnHit', 6), crit: 5, allStatsPct: r(5 + 4 * k()) };
+  });
+  scaled(prem({ id: 'pr_espinho', name: 'Coroa de Espinhos Negros', icon: '🥀', cat: 'premium', crystals: 220, rarity: 'mitico', lvl: 1,
+    desc: 'Devolve de 25% a 35% de cada golpe que recebes, roubo de vida 7%, +8% de vida e defesa que cresce com o teu nível.' }), function () {
+    return { slot: 'acc', thorns: above('thorns', r(25 + 10 * k())), lifesteal: above('lifesteal', 7), hpPct: 8, def: r(15 + 80 * k()) };
+  });
+  scaled(prem({ id: 'pr_executor', name: 'Insígnia do Executor', icon: '⚖️', cat: 'premium', crystals: 200, rarity: 'lendario', lvl: 1,
+    desc: '+50% de dano quando o chefe tem menos de 30% de vida, +6% de crítico e dano crítico que cresce com o teu nível. Feita para acabar o que começas.' }), function () {
+    return { slot: 'acc', execute: above('execute', 50), crit: 6, critDmg: above('critDmg', r(30 + 20 * k())) };
+  });
+  scaled(prem({ id: 'pr_egide', name: 'Égide do Primeiro Dia', icon: '🔰', cat: 'premium', crystals: 240, rarity: 'mitico', lvl: 1,
+    desc: 'Começas cada batalha com um escudo de 25% da vida, resistes a 60% dos atordoamentos, de +12% a +20% de vida e defesa que cresce com o teu nível.' }), function () {
+    return { slot: 'acc', openShield: above('openShield', 25), stunRes: above('stunRes', 60), hpPct: r(12 + 8 * k()), def: r(10 + 60 * k()) };
+  });
+  prem({ id: 'pr_ruptura', name: 'Ruptura do Sistema', icon: '💢', cat: 'premium', crystals: 160, rarity: 'mitico', lvl: 1, battle: true, perma: true, recharge: 20, oldPrice: 40,
     desc: 'Rasga o código do chefe: -50% de defesa e -30% de ataque durante 3 turnos.', use: { type: 'ops', ops: [{ op: 'debuff', key: 'def', val: 50, turns: 3 }, { op: 'debuff', key: 'atk', val: 30, turns: 3 }] } });
-  prem({ id: 'pr_eco', name: 'Eco do Monarca', icon: '🔔', cat: 'premium', crystals: 35, rarity: 'lendario', lvl: 1, battle: true,
+  prem({ id: 'pr_eco', name: 'Eco do Monarca', icon: '🔔', cat: 'premium', crystals: 150, rarity: 'lendario', lvl: 1, battle: true, perma: true, recharge: 16, oldPrice: 35,
     desc: 'Reinicia todas as recargas, enche a mana e dá +40% de crítico durante 3 turnos.', use: { type: 'ops', ops: [{ op: 'resetCd' }, { op: 'mp', pct: 100 }, { op: 'buff', key: 'crit', val: 40, turns: 3 }] } });
-  prem({ id: 'pr_foco', name: 'Pergaminho do Foco Absoluto', icon: '📜', cat: 'premium', crystals: 45, rarity: 'lendario', lvl: 1, field: true,
-    desc: 'XP a dobrar durante 12 horas (missões e chefes).', use: { type: 'timed', effect: 'xp2', hours: 12 } });
-  prem({ id: 'pr_trevo', name: 'Trevo de Cristal', icon: '🍀', cat: 'premium', crystals: 40, rarity: 'lendario', lvl: 1, field: true,
-    desc: 'Durante 12 horas, cada baú que abrires dá um item extra.', use: { type: 'timed', effect: 'sorte', hours: 12 } });
+  prem({ id: 'pr_foco', name: 'Pergaminho do Foco Absoluto', icon: '📜', cat: 'premium', crystals: 90, rarity: 'lendario', lvl: 1, field: true,
+    desc: 'XP a dobrar durante 3 dias inteiros (missões e chefes). Se já estiver ativo, soma mais 3 dias.', use: { type: 'timed', effect: 'xp2', hours: 72 } });
+  prem({ id: 'pr_trevo', name: 'Trevo de Cristal', icon: '🍀', cat: 'premium', crystals: 80, rarity: 'lendario', lvl: 1, field: true,
+    desc: 'Durante 3 dias, cada baú que abrires dá um item extra. Se já estiver ativo, soma mais 3 dias.', use: { type: 'timed', effect: 'sorte', hours: 72 } });
 
+  /* Conjunto do Monarca: bónus por peças soberanas equipadas ao mesmo tempo */
+  S.MONARCH_SET = [
+    { n: 2, desc: '+4% em todos os atributos', bonus: { allStatsPct: 4 } },
+    { n: 3, desc: '+4% de roubo de vida e +10% de dano crítico', bonus: { lifesteal: 4, critDmg: 10 } },
+    { n: 4, desc: '+10% de XP e de moedas e +10% de escudo inicial', bonus: { xpPct: 10, coinPct: 10, openShield: 10 } }
+  ];
   S.TIMED_EFFECTS.monarca = { name: 'Selo do Monarca (+50% XP e moedas)', icon: '🔱', good: true };
   S.PREMIUM_SHOP = [
     { title: 'Equipamento soberano', ids: ['pr_lamina', 'pr_armadura', 'pr_coroa', 'pr_olho', 'pr_coracao', 'pr_ampulheta', 'pr_espinho', 'pr_executor', 'pr_egide'] },
-    { title: 'Relíquias de combate', note: 'Só podes usar 1 relíquia premium por batalha.', ids: ['pr_juizo', 'pr_tempo', 'pr_legiao', 'pr_elixir', 'pr_fenix', 'pr_ruptura', 'pr_eco'] },
+    { title: 'Relíquias permanentes', note: 'Compras uma vez e ficam tuas para sempre. Depois de usada, cada relíquia recarrega sozinha. Só podes usar 1 relíquia premium por batalha.', ids: ['pr_juizo', 'pr_tempo', 'pr_legiao', 'pr_elixir', 'pr_fenix', 'pr_ruptura', 'pr_eco'] },
     { title: 'Tesouros', ids: ['pr_bau', 'pr_selo', 'pr_foco', 'pr_trevo'] }
   ];
+  S.PREMIUM_RELICS = ['pr_juizo', 'pr_tempo', 'pr_elixir', 'pr_legiao', 'pr_fenix', 'pr_ruptura', 'pr_eco'];
   S.PREMIUM_CONSUMABLES = ['pr_juizo', 'pr_tempo', 'pr_elixir', 'pr_legiao', 'pr_fenix', 'pr_ruptura', 'pr_eco'];
 
   /* ---------------- proteções e atalhos: itens da loja normal, pagos em Cristais ---------------- */
@@ -259,6 +290,8 @@
       S.BOSS_LORE[b.id] = g[4];
       S.BOSS_LINES[b.id] = g[5];
       S.ARENA_GUARDIANS.push(b);
+      // troféu do sub-chefe: a marca que deixa ao cair
+      S.TROPHIES[b.id] = { id: b.id, name: 'Marca de ' + b.name.split(',')[0], rarity: k === 9 ? 'lendario' : (k >= 6 ? 'epico' : 'raro'), arena: true, guardian: true };
       ladder.push(b);
     });
     ladder.push(S.BOSS_BY_ID['ar' + a.n]);

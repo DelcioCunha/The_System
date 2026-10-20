@@ -609,5 +609,37 @@
    "sys_pacto",
    "sys_tregua"
   ]
+ },
+ {
+  "title": "Baús especializados",
+  "cols": 5,
+  "rows": 5,
+  "ids": [
+   "bau_arsenal_1",
+   "bau_arsenal_2",
+   "bau_arsenal_3",
+   "bau_arsenal_4",
+   "bau_arsenal_5",
+   "bau_armaria_1",
+   "bau_armaria_2",
+   "bau_armaria_3",
+   "bau_armaria_4",
+   "bau_armaria_5",
+   "bau_guerra_1",
+   "bau_guerra_2",
+   "bau_guerra_3",
+   "bau_guerra_4",
+   "bau_guerra_5",
+   "bau_joias_1",
+   "bau_joias_2",
+   "bau_joias_3",
+   "bau_joias_4",
+   "bau_joias_5",
+   "bau_alquimia_1",
+   "bau_alquimia_2",
+   "bau_alquimia_3",
+   "bau_alquimia_4",
+   "bau_alquimia_5"
+  ]
  }
 ]

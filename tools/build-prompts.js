@@ -7,13 +7,13 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 const ROOT = path.join(__dirname, '..');
 const ctx = {}; ctx.globalThis = ctx; vm.createContext(ctx);
 const ORDER = require('../build-order.json');
-ORDER.slice(0, ORDER.indexOf('src/data/items-new.js') + 1).forEach((f) => vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx));
+ORDER.slice(0, ORDER.indexOf('src/data/items-new.js') + 1).concat(['src/data/chests.js']).forEach((f) => vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx));
 const S = ctx.SYS, I = S.ITEMS;
 const ART = require('./item-art.js');
 const RAR = { comum: 'grey (#9AA4B2)', incomum: 'green (#5BE08A)', raro: 'blue (#4AB8FF)', epico: 'purple (#B56CFF)', lendario: 'orange-gold (#FFB02E)', mitico: 'crimson-pink (#FF3D7F)', secreto: 'white-silver with prismatic sparkle (#E0E6FF)' };
 const isVariant = (k) => /_art$|_camp$|_maior$|_anc$|_prim$|^ac_t_.*[23]$/.test(k);
 const NEW = S.NEW_ITEMS || [];
-const base = Object.keys(I).filter((k) => !isVariant(k) && NEW.indexOf(k) < 0 && !I[k].premium && I[k].cat !== 'sistema');
+const base = Object.keys(I).filter((k) => !isVariant(k) && NEW.indexOf(k) < 0 && !I[k].premium && I[k].cat !== 'sistema' && !I[k].chestFam);
 const missing = base.filter((k) => !ART[k]);
 if (missing.length) { console.error('Sem descrição:', missing.join(', ')); process.exit(1); }
 const panel = (k) => ({ id: k, pt: I[k].name, en: ART[k] + ', rarity glow ' + RAR[I[k].rarity], file: 'assets/items/' + k + '.png' });
@@ -131,6 +131,26 @@ UPD.push({ title: 'Artefatos do Sistema', cols: 3, rows: 3, ar: '1:1',
   intro: 'Mysterious artifacts that interact with the holographic System itself: each one has a subtle cold ice-blue holographic shimmer around it, as if the System is watching.',
   note: 'Os 9 artefatos que mexem com o próprio Sistema (separador Sistema da Loja).',
   panels: sysIds.map((k) => ({ id: k, pt: I[k].name, en: SYS_ART[k] + ', rarity glow ' + RAR[I[k].rarity], file: 'assets/items/' + k + '.png' })) });
+/* baús especializados: uma linha por família, uma coluna por grau */
+const CH_FAM = {
+  arsenal: 'a weapons chest: a long armory crate with sword hilts, an axe head and a staff tip sticking out of the half-open lid',
+  armaria: 'an armor chest: a sturdy trunk with a breastplate and a helmet resting on the open lid',
+  guerra: 'a war chest: a heavy trunk with two locks, one shaped like a sword and one like a shield, with a crossed sword and shield emblem on the front',
+  joias: 'a jewelry chest: an elegant velvet-lined jewelry box with rings, amulets and a necklace glinting inside',
+  alquimia: 'an alchemy chest: a padded box with rows of glowing potion bottles and bubbling vials packed in straw'
+};
+const CH_GRADE = {
+  1: 'IRON grade: rough dark iron and plain wood, simple rivets, modest look',
+  2: 'SILVER grade: polished silver bands, clean engravings, cool silver-blue sheen',
+  3: 'GOLD grade: ornate gold trim and runes, a glowing gem lock',
+  4: 'DRAGON grade: dragon-scale surface, a dragon head clasp, warm ember glow leaking from the seams',
+  5: 'MONARCH grade: obsidian black with violet shadow flames, a black crown seal and a dark purple aura, the most powerful and luxurious'
+};
+const chIds = Object.keys(I).filter((k) => I[k].chestFam).sort((a, b) => (S.CHEST_FAMS.map((f) => f.id).indexOf(I[a].chestFam) - S.CHEST_FAMS.map((f) => f.id).indexOf(I[b].chestFam)) || (I[a].chestGrade - I[b].chestGrade));
+if (chIds.length) UPD.push({ title: 'Baús especializados', cols: 5, rows: 5, ar: '1:1',
+  intro: 'Treasure chests for an RPG shop. Each ROW is one chest family (same shape and contents), and each COLUMN is a grade that gets clearly richer from left to right: iron, silver, gold, dragon, monarch. Same camera angle and scale for all 25.',
+  note: 'Os 25 baús especializados: linha 1 Arsenal (armas), linha 2 Armaria (armaduras), linha 3 Arca de Guerra (armas e armaduras), linha 4 Porta-Joias (acessórios), linha 5 Cofre Alquímico (poções). Da esquerda para a direita: Ferro, Prata, Ouro, Dragão, Monarca.',
+  panels: chIds.map((k) => ({ id: k, pt: I[k].name, en: CH_FAM[I[k].chestFam] + '; ' + CH_GRADE[I[k].chestGrade] + ', rarity glow ' + RAR[I[k].rarity], file: 'assets/items/' + k + '.png' })) });
 UPD.forEach((u) => sheets.push(u));
 sheets.forEach((s) => { s.shape = 'square'; });
 
@@ -142,7 +162,7 @@ if (a < 0) a = html.indexOf('  /* ---------- itens ---------- */');
 const b = html.indexOf('  items.forEach(function (p) { p.icon = true;');
 if (a < 0 || b < 0) throw new Error('secção de itens não encontrada');
 html = html.slice(0, a) + '  /* ---------- itens (gerado por tools/build-prompts.js) ---------- */\n  var items = ' + JSON.stringify(sheets.map((s) => ({ title: s.title, cols: s.cols, rows: s.rows, shape: s.shape, ar: s.ar, note: s.note, intro: s.intro, panels: s.panels.map((p) => ({ pt: p.pt, en: p.en, file: p.file })) }))) + ';\n' + html.slice(b);
-html = html.replace(/\{ id: 'itens', name: 'Itens', text: '[^']*'/, "{ id: 'itens', name: 'Itens', text: 'Ícones de inventário: " + sheets.reduce((n, x) => n + x.panels.length, 0) + " imagens em " + sheets.length + " folhas, uma imagem própria para cada item. As folhas 1 a 14 têm os itens base. As folhas 15 a 24 (atualização) dão aparência própria às versões do Artesão (prateado e azul, mais refinada) e do Campeão (ouro e carmesim, mais grandiosa), aos graus Maior, Ancestral e Primordial e aos talismãs II e III. A folha 25 tem os itens novos da loja e a folha 26 os Artefatos do Sistema. A cor do brilho é a da raridade: cinza comum, verde incomum, azul raro, roxo épico, dourado lendário, rosa mítico, prateado secreto.'");
+html = html.replace(/\{ id: 'itens', name: 'Itens', text: '[^']*'/, "{ id: 'itens', name: 'Itens', text: 'Ícones de inventário: " + sheets.reduce((n, x) => n + x.panels.length, 0) + " imagens em " + sheets.length + " folhas, uma imagem própria para cada item. As folhas 1 a 14 têm os itens base. As folhas 15 a 24 (atualização) dão aparência própria às versões do Artesão (prateado e azul, mais refinada) e do Campeão (ouro e carmesim, mais grandiosa), aos graus Maior, Ancestral e Primordial e aos talismãs II e III. A folha 25 tem os itens novos da loja, a folha 26 os Artefatos do Sistema e a folha 27 os baús especializados. A cor do brilho é a da raridade: cinza comum, verde incomum, azul raro, roxo épico, dourado lendário, rosa mítico, prateado secreto.'");
 fs.writeFileSync(page, html);
 fs.writeFileSync(path.join(__dirname, 'item-sheets.json'), JSON.stringify(sheets.map((s) => ({ title: s.title, cols: s.cols, rows: s.rows, ids: s.panels.map((p) => p.id) })), null, 1));
 console.log(sheets.length + ' folhas, ' + base.length + ' imagens:');

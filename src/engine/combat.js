@@ -111,19 +111,21 @@
     return { bossDmg: 1 + gap * 0.04, playerDmg: Math.max(0.4, 1 - gap * 0.03) };
   };
 
-  C.start = function (bossId) {
+  C.start = function (bossId, opts) {
     var st = E.state;
     if (st.battle && !st.battle.over) return { ok: false, msg: 'Já estás numa batalha.' };
     var b = S.BOSS_BY_ID[bossId];
     if (!b) return { ok: false, msg: 'Chefe desconhecido.' };
-    if (!b.premium && st.defeated[b.id]) return { ok: false, msg: 'Este chefe já foi derrotado e não volta.' };
+    var spar = !!(opts && opts.spar);
+    if (spar && !(S.shadows && S.shadows.ensure(st).owned[b.id])) return { ok: false, msg: 'Só podes treinar com sombras que são tuas.' };
+    if (!spar && !b.premium && st.defeated[b.id]) return { ok: false, msg: 'Este chefe já foi derrotado e não volta.' };
     if (b.premium) S.premium.ensure(st);
-    if (!C.bossUnlocked(st, b)) {
+    if (!spar && !C.bossUnlocked(st, b)) {
       if (!b.premium) return { ok: false, msg: 'Este portão ainda está selado.' };
       if (!st.arena.unlocked[b.arenaKey]) return { ok: false, msg: 'Esta arena ainda está selada. Desbloqueia-a com Cristais.' };
       return { ok: false, msg: 'Vence primeiro ' + S.premium.prevBoss(b).name + '.' };
     }
-    if (b.premium && S.premium.cooldown(st, b) > now()) return { ok: false, msg: (b.champion ? 'O Campeão' : b.name) + ' ainda está a recuperar. Volta mais tarde.' };
+    if (!spar && b.premium && S.premium.cooldown(st, b) > now()) return { ok: false, msg: (b.champion ? 'O Campeão' : b.name) + ' ainda está a recuperar. Volta mais tarde.' };
     var ps = E.combatStats(st);
     if (E.curHp(st) < 1) return { ok: false, msg: 'Não tens vida para lutar. Bebe uma poção de vida na Bolsa.' };
     var bs = C.bossStats(st, b);
@@ -139,9 +141,18 @@
     };
     if (ps.openShield) { st.battle.p.shield = Math.round(ps.maxHp * ps.openShield / 100); }
     // servos (sombras convocadas) entram no combate
-    var squad = S.shadows ? S.shadows.battleSquad(st, ps, C.pressure(st.battle.gap).playerDmg) : [];
+    var squad = S.shadows ? S.shadows.battleSquad(st, ps, C.pressure(st.battle.gap).playerDmg).filter(function (x) { return x.id !== b.id; }) : [];
+    if (spar) { st.battle.spar = true; st.battle.hpIn = E.curHp(st); st.battle.empowered = null; }
     st.battle.shadows = squad;
     st.battle.cmd = S.shadows ? S.shadows.commandBonus(st) : 0;
+    if (spar) {
+      var sn = S.shadows.name(st, b.id), sl = (S.SHADOW_SPAR || {})[b.id];
+      log(st.battle, '🌑 TREINO: ' + sn + ' ergue-se das tuas sombras para lutar contigo (Nv. ' + b.level + ').', 'sys');
+      if (sl) log(st.battle, sn + ': «' + sl[0].replace(/\{nome\}/g, st.name) + '»', 'say');
+      log(st.battle, 'Treino: não perdes nível, XP nem moedas. A vida volta ao que era no fim.', 'muted');
+      E.commit('treino iniciado');
+      return { ok: true };
+    }
     if (b.level >= st.level + 20) E.bump(st, 'braveFights');
     E.bump(st, 'battlesStarted');
     log(st.battle, '⚔️ ' + b.name + ' (Nv. ' + b.level + ') aparece!', 'sys');
@@ -505,11 +516,33 @@
     if (p.hp > 0) return;
     if (p.stats.lastStand && !p.lastStandUsed) { p.lastStandUsed = true; p.hp = 1; log(bt, '🔥 Vontade Inabalável! Sobreviveste com 1 de vida.', 'warn'); return; }
     if (p.stats.revive && !p.reviveUsed) { p.reviveUsed = true; p.hp = Math.round(p.maxHp * p.stats.revive / 100); log(bt, '🔥 Renasceste das cinzas com ' + p.hp + ' de vida!', 'warn'); return; }
-    if (E.removeItem(st, 'pr_fenix', 1)) { p.hp = p.maxHp; log(bt, '🖤 A Lágrima da Fénix Negra arde: renasces com a vida toda!', 'warn'); return; }
+    if (E.count(st, 'pr_fenix') > 0 && S.premium.relicReady(st, 'pr_fenix')) { S.premium.relicSpend(st, 'pr_fenix'); p.hp = p.maxHp; log(bt, '🖤 A Lágrima da Fénix Negra arde: renasces com a vida toda! (recarrega em ' + S.ITEMS.pr_fenix.recharge + 'h)', 'warn'); return; }
     if (E.removeItem(st, 'sx_fenix', 1)) { p.hp = Math.round(p.maxHp * 0.5); log(bt, '🪶 A Pena da Fénix arde e devolve-te à vida!', 'warn'); }
   }
 
+  /* fim de um treino com uma sombra: recompensa pequena, sem perdas */
+  function finishSpar(st, bt, won) {
+    var def = S.BOSS_BY_ID[bt.bossId], Sh = S.shadows, sn = Sh.name(st, def.id), sl = (S.SHADOW_SPAR || {})[def.id] || [];
+    bt.over = won ? 'win' : 'lose';
+    E.setHp(st, bt.hpIn);
+    var r = Sh.sparReward(st, def, won), xp = 0, coins = 0;
+    if (r) { xp = E.gainXp(st, r.xp); coins = E.gainCoins(st, r.coins); Sh.ensure(st).spar[def.id] = now(); }
+    var say = (won ? sl[1] : sl[2]) || (won ? 'Venceste, meu senhor.' : 'Levanta-te, meu senhor.');
+    say = say.replace(/\{nome\}/g, st.name);
+    bt.result = { xp: xp, coins: coins, items: [], spar: true, lastWords: say };
+    log(bt, sn + ': «' + say + '»', 'say');
+    log(bt, won ? '🌑 Treino vencido.' : '🌑 Treino perdido. Sem castigo.', won ? 'win' : 'lose');
+    log(bt, '✚ O Sistema restaurou a tua vida: ' + E.curHp(st) + ' / ' + E.combatStats(st).maxHp + ', a mesma de antes do treino.', 'good');
+    var lines = r ? ['+' + xp + ' XP', '+' + coins + ' moedas'] : ['Esta sombra já te deu recompensa há pouco. Volta dentro de ' + Sh.SPAR_H + ' horas para ganhar mais.'];
+    if (!won) lines.push('Treino: não perdeste nível, XP nem moedas.');
+    E.emit({ type: won ? 'victory' : 'defeat', title: won ? 'TREINO VENCIDO' : 'TREINO PERDIDO', name: sn, lastWords: say, lines: ['«' + say + '»'].concat(lines) });
+    E.emit({ type: 'watch', good: true, heal: true, level: 1, title: 'O SISTEMA RESTAUROU-TE',
+      lines: ['O treino terminou. Nenhum ferimento fica registado.', 'Vida restabelecida: ' + E.curHp(st) + ' / ' + E.combatStats(st).maxHp + '.', 'Exatamente a vida que tinhas antes de entrar.'] });
+        E.bump(st, won ? 'sparWins' : 'sparLosses');
+    E.history(st, '🌑', 'Treino com ' + sn + ': ' + (won ? 'vitória' : 'derrota') + (xp ? ' (+' + xp + ' XP, +' + coins + ' moedas)' : '') + '.');
+  }
   function finishWin(st, bt) {
+    if (bt.spar) return finishSpar(st, bt, true);
     var def = S.BOSS_BY_ID[bt.bossId];
     var r = C.rewards(st, def);
     bt.over = 'win';
@@ -529,7 +562,7 @@
     E.addItem(st, 'bau_' + r.chest, 1);
     if (r.special) (r.special.items || []).forEach(function (id) { E.addItem(st, id, 1); items.push(id); });
     // drop raro aleatório
-    if (def.premium && !r.first && chance(def.guardian ? 0.05 : 0.15)) { var pc = S.PREMIUM_CONSUMABLES[Math.floor(S.rng.random() * S.PREMIUM_CONSUMABLES.length)]; E.addItem(st, pc, 1); items.push(pc); }
+    if (def.premium && !r.first && chance(def.guardian ? 0.05 : 0.15) && S.premium.rechargeAll(st)) log(bt, '✨ A arena recarregou todas as tuas relíquias.', 'good');
     if (chance(0.04 + def.level / 2500)) { var sx = ['sx_moeda', 'sx_fenix', 'sx_fragmento'][Math.floor(S.rng.random() * 3)]; E.addItem(st, sx, 1); items.push(sx); }
     E.bump(st, 'bossesKilled');
     E.bump(st, 'battlesWon');
@@ -556,6 +589,7 @@
     E.history(st, '🏆', (def.premium ? 'Venceu na arena ' : 'Derrotou ') + def.name + ' (Nv. ' + def.level + '): +' + xp + ' XP, +' + coins + ' moedas.');
   }
   function finishLose(st, bt) {
+    if (bt.spar) return finishSpar(st, bt, false);
     var def = S.BOSS_BY_ID[bt.bossId];
     bt.over = 'lose';
     E.bump(st, 'battlesLost');
@@ -595,7 +629,12 @@
   C.act = function (type, id) {
     var res = actInner(type, id);
     var st = E.state, bt = st && st.battle;
-    if (bt && bt.over && bt.over !== 'lose' && !bt.hpSaved) {
+    if (bt && bt.over && !bt.hpSaved && bt.spar) {
+      // treino: o Sistema devolve exatamente a vida que tinhas antes de entrar
+      bt.hpSaved = true;
+      E.setHp(st, bt.hpIn);
+      E.commit('vida');
+    } else if (bt && bt.over && bt.over !== 'lose' && !bt.hpSaved) {
       bt.hpSaved = true;
       E.setHp(st, bt.p.hp);
       E.commit('vida');
@@ -631,13 +670,14 @@
         var it = S.ITEMS[id];
         if (!it || !it.battle) return { ok: false, msg: 'Este item não se usa em combate.' };
         if (E.count(st, id) < 1) return { ok: false, msg: 'Não tens este item.' };
+        if (it.perma && !S.premium.relicReady(st, id)) return { ok: false, msg: it.name + ' ainda está a recarregar.' };
         if (!S.time.itemActive(it)) return { ok: false, msg: 'Este item só funciona ' + S.time.PHASES[it.phase].desc + '.' };
         if (it.premium && (bt.premiumUsed || 0) >= S.PREMIUM_RULES.perBattle) return { ok: false, msg: 'O Sistema só permite ' + S.PREMIUM_RULES.perBattle + ' relíquia premium por batalha.' };
         if (it.premium) bt.premiumUsed = (bt.premiumUsed || 0) + 1;
         var isHeal = it.use.type === 'heal' || it.use.type === 'restore';
         if (isHeal && (bt.healsUsed || 0) >= C.HEAL_LIMIT) return { ok: false, msg: 'Já usaste ' + C.HEAL_LIMIT + ' poções de cura nesta batalha. O corpo não aguenta mais.' };
         if (isHeal) bt.healsUsed = (bt.healsUsed || 0) + 1;
-        E.removeItem(st, id, 1);
+        if (it.perma) S.premium.relicSpend(st, id); else E.removeItem(st, id, 1);
         E.bump(st, 'consumablesUsed');
         var u = it.use;
         log(bt, '🎒 Usaste ' + it.name + '.', 'skill');
@@ -684,6 +724,7 @@
         log(bt, '🛡️ Defendeste (+60% defesa, +' + mg + ' mana).', 'good');
         break;
       case 'flee': {
+        if (bt.spar) { bt.over = 'fled'; bt.result = { coins: 0 }; E.setHp(st, bt.hpIn); log(bt, '🌑 Terminaste o treino.', 'sys'); E.emit({ type: 'watch', good: true, heal: true, level: 1, title: 'O SISTEMA RESTAUROU-TE', lines: ['Saíste do treino.', 'Vida restabelecida: ' + E.curHp(st) + ' / ' + E.combatStats(st).maxHp + '.', 'Exatamente a vida que tinhas antes de entrar.'] }); E.commit('fim do treino'); return { ok: true }; }
         var lost = E.loseCoins(st, st.coins * 0.05);
         bt.over = 'fled';
         bt.result = { coins: -lost };

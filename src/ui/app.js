@@ -274,6 +274,7 @@
     var t = E.totalStats(st);
     var need = S.xpToNext(st.level);
     var r = S.rankFor(st.level);
+    var dl = E.equipDelta(st);
     var h = '';
     h += '<section class="win"><div class="win-h">Estado <small>' + uiIcon('ui_sysday', '', 'tag-ico') + 'Dia ' + S.time.systemDay(st) + ' do Sistema · Poder ' + fmt(cs.power) + '</small></div>' +
       '<div class="hero" style="--aura:' + r.color + '">' + heroAvatar(st) +
@@ -281,24 +282,24 @@
       '<div><div class="hero-name' + nameCls(st) + '"' + nameStyle(st) + '>' + esc(st.name) + '</div><div class="hero-title shine">' + esc(S.titleFor(st.level)) + '</div></div>' +
       '<div class="row" style="align-items:flex-end"><div><div class="lv-lab">Nível</div><div class="lv-big">' + st.level + '</div></div>' +
       '<div class="grow" style="padding-bottom:4px"><div class="lv-lab">Classe</div><div style="color:' + cls.color + ';font-family:var(--f-display);font-weight:700">' + classIcon(st.cls) + ' ' + cls.name + '</div>' +
-      '<div class="lv-lab" style="margin-top:4px">Rank <b style="color:' + r.color + '">' + r.rank + '</b></div></div></div>' +
+      '<div class="lv-lab" style="margin-top:4px">Rank <b style="color:' + r.color + '">' + r.rank + '</b>' + (S.body.current(st) ? ' · Peso <b>' + String(S.body.current(st)).replace('.', ',') + ' kg</b>' : '') + '</div></div></div>' +
       '<div>' + (need ? bar('xp', st.xp, need, 'XP', 'st-xp') : '<div class="hint" style="color:var(--gold)">NÍVEL MÁXIMO</div>') + '</div>' +
       formsHtml(st) +
       '</div></div>' +
       '<div class="stack" style="margin-top:12px;gap:8px">' + bar('hp', E.curHp(st), cs.maxHp, 'Vida', 'st-hp') + bar('mp', cs.maxMp, cs.maxMp, 'Mana') + '</div>' +
       '<div class="kv" style="margin-top:12px">' +
-      '<div><span class="muted">Ataque</span><b>' + fmt(cs.atk) + '</b></div><div><span class="muted">Ataque mágico</span><b>' + fmt(cs.matk) + '</b></div>' +
-      '<div><span class="muted">Defesa</span><b>' + fmt(cs.def) + '</b></div><div><span class="muted">Crítico</span><b>' + cs.crit.toFixed(1) + '%</b></div>' +
-      '<div><span class="muted">Dano crítico</span><b>' + cs.critDmg + '%</b></div><div><span class="muted">Esquiva</span><b>' + cs.eva.toFixed(1) + '%</b></div>' +
+      '<div><span class="muted">Ataque</span><b>' + fmt(cs.atk) + eqPlus(dl.combat.atk) + '</b></div><div><span class="muted">Ataque mágico</span><b>' + fmt(cs.matk) + eqPlus(dl.combat.matk) + '</b></div>' +
+      '<div><span class="muted">Defesa</span><b>' + fmt(cs.def) + eqPlus(dl.combat.def) + '</b></div><div><span class="muted">Crítico</span><b>' + cs.crit.toFixed(1) + '%' + eqPlus(dl.combat.crit, '%') + '</b></div>' +
+      '<div><span class="muted">Dano crítico</span><b>' + cs.critDmg + '%' + eqPlus(dl.combat.critDmg, '%') + '</b></div><div><span class="muted">Esquiva</span><b>' + cs.eva.toFixed(1) + '%' + eqPlus(dl.combat.eva, '%') + '</b></div>' +
       '</div>' + effectsHtml(st) + '</section>';
 
     h += '<section class="win' + (st.freePoints ? ' gold' : '') + '"><div class="win-h">Atributos' + (st.freePoints ? ' <span class="points">' + st.freePoints + ' pontos livres</span>' : '<small>+' + S.POINTS_PER_LEVEL + ' pontos por nível</small>') + '</div>' +
       S.STATS.map(function (k) {
         var info = S.STAT_INFO[k];
-        var tr = st.trained[k];
+        var tr = st.trained[k], eqb = dl.stats[k];
         return '<div class="stat"><span class="stat-k">' + uiIcon('stat_' + k, '', 'stat-img') + info.short + '</span>' +
           '<span class="stat-n">' + info.name + '<small>' + info.desc + (tr > 0 ? ' · treino +' + tr.toFixed(1) : '') + '</small></span>' +
-          '<span class="stat-v" data-stat="' + k + '">' + Math.floor(t[k]) + '</span>' +
+          '<span class="stat-v" data-stat="' + k + '">' + Math.floor(t[k]) + (eqb ? '<small class="eq-plus' + (eqb < 0 ? ' neg' : '') + '">' + (eqb > 0 ? '+' : '') + eqb + '</small>' : '') + '</span>' +
           (st.freePoints ? '<button class="btn icon gold" data-a="alloc" data-s="' + k + '" aria-label="Adicionar ponto em ' + info.name + '">+</button>' : '<span></span>') + '</div>';
       }).join('') + '</section>';
 
@@ -308,7 +309,7 @@
         return '<button class="card tap" data-a="slot" data-s="' + sl[0] + '"><div class="card-h">' + itemIco(it) + '' +
           '<div class="grow"><div class="hint">' + sl[1] + '</div><div class="card-t" style="color:' + (it ? rc(it.rarity) : 'var(--faint)') + '">' + (it ? esc(it.name) : 'Vazio') + '</div>' +
           (it ? '<div class="meta">' + equipSummary(it) + phaseTag(it) + '</div>' : '') + '</div></div></button>';
-      }).join('') + '</div></section>';
+      }).join('') + '</div>' + equipTotalsHtml(dl) + '</section>';
 
     var achDone = Object.keys(st.achievements).length;
     h += '<section class="win"><div class="win-h">Registos</div><div class="menu-grid">' +
@@ -325,10 +326,37 @@
       '</div></section>';
     return h;
   }
+  /* bónus do equipamento: pequeno "+N" ao lado de cada valor */
+  function eqPlus(v, unit) {
+    if (!v) return '';
+    var n = Math.abs(v) % 1 ? Math.abs(v).toFixed(1) : fmt(Math.abs(v));
+    return '<small class="eq-plus' + (v < 0 ? ' neg' : '') + '">' + (v > 0 ? '+' : '−') + n + (unit || '') + '</small>';
+  }
+  var EQ_LABELS = [['maxHp', 'Vida máxima', ''], ['maxMp', 'Mana máxima', ''], ['atk', 'Ataque', ''], ['matk', 'Ataque mágico', ''], ['def', 'Defesa', ''],
+    ['crit', 'Crítico', '%'], ['critDmg', 'Dano crítico', '%'], ['eva', 'Esquiva', '%'], ['lifesteal', 'Roubo de vida', '%'], ['regenHp', 'Regeneração de vida', '%/turno'],
+    ['regenMp', 'Regeneração de mana', '/turno'], ['summonPct', 'Força das invocações', '%'], ['xpPct', 'XP ganho', '%'], ['coinPct', 'Moedas ganhas', '%'],
+    ['thorns', 'Espinhos (devolve dano)', '%'], ['openShield', 'Escudo inicial', '% da vida'], ['execute', 'Dano a chefes com <30% de vida', '%'], ['firstStrike', 'Dano do 1.º golpe', '%'],
+    ['manaOnHit', 'Mana por golpe', '%'], ['dotPct', 'Dano de veneno/queimadura', '%'], ['stunRes', 'Resistência a atordoar', '%'], ['potionPct', 'Força das poções', '%']];
+  /* Conjunto do Monarca: bónus por peças soberanas equipadas */
+  function monarchSetHtml(st) {
+    var n = E.monarchPieces(st);
+    return '<div class="mset"><div class="mset-h">Conjunto do Monarca <span class="mono">' + n + '/4 equipadas</span></div><p class="small muted" style="margin:2px 0 6px">Todo o equipamento soberano cresce contigo e fica sempre acima do melhor equipamento normal do teu nível. Usar várias peças ao mesmo tempo dá bónus extra:</p><ul>' +
+      S.MONARCH_SET.map(function (t) { return '<li class="' + (n >= t.n ? 'on' : '') + '"><b>' + t.n + ' peças</b> ' + esc(t.desc) + '</li>'; }).join('') + '</ul></div>';
+  }
+  function equipTotalsHtml(dl) {
+    var stats = S.STATS.filter(function (k) { return dl.stats[k]; }).map(function (k) { return '<li><span>' + S.STAT_INFO[k].name + '</span>' + eqPlus(dl.stats[k]) + '</li>'; });
+    var comb = EQ_LABELS.filter(function (x) { return dl.combat[x[0]]; }).map(function (x) { return '<li><span>' + x[1] + '</span>' + eqPlus(dl.combat[x[0]], x[2]) + '</li>'; });
+    if (!stats.length && !comb.length) return '<p class="hint" style="margin:10px 0 0">Sem equipamento: nenhum bónus ativo.</p>';
+    var mp = E.monarchPieces(E.state);
+    if (mp >= 2) comb.push('<li class="eq-set"><span>Conjunto do Monarca (' + mp + ' peças)</span><small class="eq-plus">ativo</small></li>');
+    return '<div class="eq-total"><div class="eq-total-h">Total que o teu equipamento te dá</div><ul>' + stats.concat(comb).join('') + '</ul>' +
+      '<p class="hint" style="margin:6px 0 0">Valores somados de todas as peças equipadas, já com as percentagens aplicadas aos teus atributos.</p></div>';
+  }
   function effectsHtml(st) {
     E.cleanEffects(st);
-    if (!st.effects.length) return '';
-    return '<div class="row wrap" style="margin-top:10px">' + st.effects.map(function (e) {
+    var perk = st.perks && st.perks.monarca ? '<span class="tag prem-perm">🔱 Selo do Monarca Eterno · +15% XP e moedas</span>' : '';
+    if (!st.effects.length && !perk) return '';
+    return '<div class="row wrap" style="margin-top:10px">' + perk + st.effects.map(function (e) {
       var d = S.TIMED_EFFECTS[e.id];
       return '<span class="tag" style="border-color:' + (d.good ? 'var(--good)' : 'var(--danger)') + '">' + uiIcon('eff_' + e.id, d.icon, 'tag-ico') + ' ' + d.name + ' · ' + cd(e.until) + '</span>';
     }).join('') + '</div>';
@@ -427,22 +455,76 @@
       }).join('') + '</div></section>';
     return h;
   }
+  /* conquistas: grelha de medalhas por categoria */
+  var ACH_CATS = [
+    ['missoes', 'Missões e disciplina', '📋', 'm1 m10 m50 m100 m500 m1000 mS mS10 create10 d1 d7 d30 d100 d365 emg1 emg10 hid1 hid10 zone1 trust leisure night early fail1'],
+    ['progresso', 'Progresso e poder', '⭐', 'l5 l10 l25 l50 l75 l100 points all50 all100 core skill20 secret3 form10 form34'],
+    ['combate', 'Combate e portões', '⚔️', 'b1 b10 b25 b50 b100 b200 giant giant10 giant3 clutch flawless flaw10 lose5 lose15 brave secretboss architect'],
+    ['sombras', 'Sombras e servos', '🌑', 'sh1 sh10 sh25 sh50 sh100 shking shking10 shar1 shar10 sharch shar100 shfirst shlast shlost shlost10 shname shfull spar1 spar25 sparlose'],
+    ['coliseu', 'Coliseu', '🏟️', 'ar_1 ar_5 ar_10 ar_first ar1 ar5 ar10 grd1 grd45 grd90 ten1 champ1 champ5 champ10 firstp rematch'],
+    ['trofeus', 'Troféus', '🏆', 'tr25 tr100 tr202 set1 set5 set10'],
+    ['riqueza', 'Riqueza e coleção', '💰', 'rich rich2 rich3 spend sell50 collector items100 arsenal chest25 chest100 chest500 spch10 spchm secretchest potions talk50'],
+    ['exclusiva', 'Loja Exclusiva e aparência', '💎', 'prem1 relic1 relic7 mset2 mset4 eternal frame1 frame5'],
+    ['corpo', 'Corpo e peso', '⚖️', 'body1 body7 body30 bodyg']
+  ];
+  function achGroups() {
+    var byId = {}, used = {};
+    S.ACHIEVEMENTS.forEach(function (a) { byId[a.id] = a; });
+    var g = ACH_CATS.map(function (c) {
+      var list = c[3].split(' ').filter(function (id) { return byId[id] && !used[id] && (used[id] = 1); }).map(function (id) { return byId[id]; });
+      return { id: c[0], name: c[1], icon: c[2], list: list };
+    });
+    var rest = S.ACHIEVEMENTS.filter(function (a) { return !used[a.id]; });
+    if (rest.length) g.push({ id: 'outras', name: 'Outras', icon: '✨', list: rest });
+    return g;
+  }
+  function achReward(a, hidden) {
+    var r = a.reward || {}, rw = [];
+    if (r.chest) rw.push(S.ITEMS['bau_' + r.chest].name);
+    if (r.coins) rw.push(fmt(r.coins) + ' moedas');
+    if (r.item) rw.push(S.ITEMS[r.item].name);
+    if (r.skill) rw.push(hidden ? 'Habilidade secreta' : 'Habilidade ' + S.ALL_SKILLS[r.skill].name);
+    return rw.join(' · ');
+  }
+  function achTile(st, a) {
+    var done = st.achievements[a.id], hidden = a.secret && !done;
+    var img = hidden ? uiIcon('ach_hidden', '<span class="ach-emo">❔</span>', 'ach-medal') : uiIcon('ach_' + a.id, '<span class="ach-emo">' + a.icon + '</span>', 'ach-medal');
+    return '<button class="ach-tile' + (done ? ' got' : '') + (a.secret ? ' secret' : '') + '" data-a="ach-info" data-id="' + a.id + '">' +
+      '<span class="ach-orb">' + img + (done ? '<i class="ach-ok">✓</i>' : '') + '</span>' +
+      '<span class="ach-name">' + esc(hidden ? '???' : (a.realName || a.name)) + '</span></button>';
+  }
   function achPage(st) {
+    var f = ui.achFilter || 'todas', groups = achGroups();
+    var total = S.ACHIEVEMENTS.length, got = S.ACHIEVEMENTS.filter(function (a) { return st.achievements[a.id]; }).length;
     var h = backBtn('Conquistas');
-    h += '<section class="win"><div class="list">' + S.ACHIEVEMENTS.map(function (a) {
-      var done = st.achievements[a.id];
-      var hidden = a.secret && !done;
-      var r = a.reward || {};
-      var rw = [];
-      if (r.chest) rw.push(S.ITEMS['bau_' + r.chest].name);
-      if (r.coins) rw.push(fmt(r.coins) + ' moedas');
-      if (r.item) rw.push(S.ITEMS[r.item].name);
-      if (r.skill) rw.push(hidden ? 'Habilidade secreta' : 'Habilidade ' + S.ALL_SKILLS[r.skill].name);
-      return '<div class="card' + (done ? '' : ' done') + '"><div class="card-h"><div class="ico' + (hasArt(hidden ? 'ach_hidden' : 'ach_' + a.id) ? ' has-img' : '') + '">' + (hidden ? uiIcon('ach_hidden', '❔', 'ach-img') : uiIcon('ach_' + a.id, a.icon, 'ach-img')) + '</div><div class="grow">' +
-        '<div class="card-t">' + esc(hidden ? '???' : (a.realName || a.name)) + '</div><div class="small muted">' + esc(hidden ? 'Conquista secreta.' : a.desc) + '</div>' +
-        '<div class="reward">' + esc(rw.join(' · ')) + '</div></div>' + (done ? '<span class="stamp ok">Feito</span>' : '') + '</div></div>';
-    }).join('') + '</div></section>';
+    h += '<section class="win ach-head"><div class="ach-sum"><b>' + got + '</b><span class="muted">/ ' + total + '</span><span class="small muted grow" style="text-align:right">' + Math.round(got / total * 100) + '% completo</span></div>' +
+      '<div class="ach-bar"><i style="width:' + (got / total * 100).toFixed(1) + '%"></i></div>' +
+      '<div class="chips" style="margin-top:10px">' + [['todas', 'Todas'], ['feitas', 'Feitas'], ['falta', 'Por fazer']].map(function (x) {
+        return '<button class="chip' + (f === x[0] ? ' on' : '') + '" data-a="ach-filter" data-f="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div></section>';
+    var any = false;
+    groups.forEach(function (g) {
+      var n = g.list.filter(function (a) { return st.achievements[a.id]; }).length;
+      var list = g.list.filter(function (a) { var d = !!st.achievements[a.id]; return f === 'todas' || (f === 'feitas' ? d : !d); });
+      if (!list.length) return;
+      any = true;
+      h += '<section class="win ach-sec"><div class="win-h">' + g.icon + ' ' + esc(g.name) + ' <small>' + n + '/' + g.list.length + '</small></div>' +
+        '<div class="ach-bar thin"><i style="width:' + (n / g.list.length * 100).toFixed(1) + '%"></i></div>' +
+        '<div class="ach-grid">' + list.map(function (a) { return achTile(st, a); }).join('') + '</div></section>';
+    });
+    if (!any) h += '<section class="win"><div class="empty">' + (f === 'feitas' ? 'Ainda não tens conquistas.' : 'Completaste todas as conquistas!') + '</div></section>';
     return h;
+  }
+  function achInfoModal(m) {
+    var st = E.state, a = S.ACHIEVEMENTS.filter(function (x) { return x.id === m.id; })[0];
+    if (!a) return '';
+    var done = st.achievements[a.id], hidden = a.secret && !done, rw = achReward(a, hidden);
+    var g = achGroups().filter(function (x) { return x.list.indexOf(a) >= 0; })[0];
+    var when = typeof done === 'number' && done > 1e9 ? timeStr(done) : '';
+    var img = hidden ? uiIcon('ach_hidden', '❔', 'medal-img') : uiIcon('ach_' + a.id, a.icon, 'medal-img');
+    return '<div class="sheet-h"><h2>' + esc(hidden ? 'Conquista secreta' : (a.realName || a.name)) + '</h2>' + backOrClose(m) + '</div>' +
+      '<div class="ach-big' + (done ? ' got' : '') + '">' + img + '</div>' +
+      '<p class="small" style="text-align:center">' + esc(hidden ? 'Esta conquista é secreta. Descobre-a a jogar.' : a.desc) + '</p>' +
+      infoSecs([{ title: 'Registo', rows: [['Categoria', g ? g.name : '—'], ['Estado', done ? 'Concluída' : 'Por fazer']].concat(when ? [['Conquistada', when]] : []).concat(rw ? [['Recompensa', rw]] : []) }]);
   }
   function collectionPage(st) {
     var h = backBtn('Coleção');
@@ -495,12 +577,16 @@
     return h;
   }
   function premItemCard(st, it) {
-    var owned = it.equip && (E.count(st, it.id) > 0 || Object.keys(st.equip).some(function (k) { return st.equip[k] === it.id; }));
+    var owned = (it.equip && (E.count(st, it.id) > 0 || Object.keys(st.equip).some(function (k) { return st.equip[k] === it.id; }))) ||
+      (it.perma && E.count(st, it.id) > 0) || (it.perk && ((st.perks && st.perks[it.perk]) || E.count(st, it.id) > 0));
+    var tag = it.perma ? '<span class="tag prem-perm">Permanente · recarrega em ' + it.recharge + 'h</span>' : it.perk ? '<span class="tag prem-perm">Bónus para sempre</span>' : it.equip ? '<span class="tag prem-perm">Equipamento permanente</span>' : '';
     var price = S.premium.price(it.id);
     var can = (st.crystals || 0) >= price;
     return '<div class="card prem-card"><div class="card-h">' + tapInfo(itemIco(it), 'item', it.id) + '<div class="grow">' +
-      '<div class="card-t" style="color:' + rc(it.rarity) + '">' + esc(it.name) + '</div><div class="small muted">' + esc(it.desc) + '</div>' +
-      (it.equip ? '<div class="meta">' + equipSummary(it) + '</div>' : '') + (st.inv[it.id] && !it.equip ? '<div class="hint">Tens ' + st.inv[it.id] + '</div>' : '') + '</div></div>' +
+      '<div class="card-t" style="color:' + rc(it.rarity) + '">' + esc(it.name) + '</div>' + (tag ? '<div style="margin:2px 0 4px">' + tag + '</div>' : '') + '<div class="small muted">' + esc(it.desc) + '</div>' +
+      (it.equip ? '<div class="meta">' + equipSummary(it) + '</div>' : '') +
+      (it.perma && owned ? '<div class="hint">' + (S.premium.relicReady(st, it.id) ? 'Pronta a usar' : 'A recarregar: <span data-cd="' + S.premium.relicReadyAt(st, it.id) + '">' + cdText(S.premium.relicReadyAt(st, it.id)) + '</span>') + '</div>' : '') +
+      (st.inv[it.id] && !it.equip && !it.perma && !it.perk ? '<div class="hint">Tens ' + st.inv[it.id] + '</div>' : '') + '</div></div>' +
       '<div class="row between" style="margin-top:8px">' + crys(price) +
       (owned ? '<span class="tag good">Já é teu</span>' : '<button class="btn sm prem" data-a="prem-buy" data-id="' + it.id + '"' + (can ? '' : ' disabled') + '>' + (can ? 'Comprar' : 'Faltam ' + (price - (st.crystals || 0))) + '</button>') + '</div></div>';
   }
@@ -684,6 +770,7 @@
       h += donateHtml(st);
       S.PREMIUM_SHOP.forEach(function (g) {
         h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">' + esc(g.title) + '</span></div>' + (g.note ? '<p class="hint" style="margin-top:0">' + esc(g.note) + '</p>' : '') +
+          (g.ids.indexOf('pr_lamina') >= 0 ? monarchSetHtml(st) : '') +
           '<div class="list">' + g.ids.map(function (id) { return premItemCard(st, S.ITEMS[id]); }).join('') + '</div></section>';
       });
       h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">Câmbio do Sistema</span></div><p class="hint" style="margin-top:0">Troca Cristais por moedas do jogo. O contrário não existe.</p><div class="list">' +
@@ -748,6 +835,15 @@
         '<p class="arise-say">«' + esc(Sh.line(st, b.id)) + '»</p>' +
         '<p class="arise-txt">A sombra de <b>' + esc(b.name) + '</b> obedece-te. É agora o teu servo.<br><span class="muted">' + (res.auto ? 'Já está convocado e luta ao teu lado no próximo combate.' : 'Convoca-o no menu Servos quando tiveres um lugar livre.') + '</span></p>' +
         '<div class="row" style="margin-top:12px"><button class="btn ghost grow" data-a="close">Fechar</button><button class="btn pri grow" data-a="sh-open" data-id="' + b.id + '">Ver servo</button></div>';
+    } else if (status === 'sealed') {
+      var price = Sh.buyPrice(b), have = st.crystals || 0;
+      h += '<h2 class="arise-name">' + esc(b.name) + '</h2>' +
+        '<p class="arise-txt bad">A sombra resistiu ' + S.SHADOW_RULES.tries + ' vezes e ficou <b>selada</b>.</p>' +
+        '<p class="arise-txt"><span class="muted">As sombras das arenas não se perdem. O Sistema aceita quebrar o selo em troca de Cristais, e a sombra torna-se tua serva na hora.</span></p>' +
+        triesDots(0) +
+        '<button class="btn prem block" style="margin-top:14px" data-a="sh-buy" data-id="' + b.id + '"><i class="crys-ico"></i> Quebrar o selo · ' + price + ' Cristais</button>' +
+        (have < price ? '<p class="hint" style="text-align:center;margin:6px 0 0">Tens ' + have + ' Cristais.</p>' : '') +
+        '<button class="btn ghost block sm" style="margin-top:8px" data-a="close">Fechar</button>';
     } else if (status === 'lost') {
       h += '<h2 class="arise-name">' + esc(b.name) + '</h2>' +
         '<p class="arise-txt bad">A sombra resistiu ' + S.SHADOW_RULES.tries + ' vezes e dissipou-se para sempre.<br><span class="muted">Este inimigo nunca poderá ser teu servo.</span></p>' +
@@ -759,7 +855,7 @@
         '<div class="arise-info">' + triesDots(left) +
         '<div><span class="muted small">Hipótese por tentativa</span><b class="mono">' + ch + '%</b></div>' +
         '<div><span class="muted small">' + (pend.exp ? 'A sombra desvanece em' : 'Sombra adormecida') + '</span><b class="mono">' + (pend.exp ? '<span data-cd="' + pend.exp + '">' + cdText(pend.exp) + '</span>' : 'sem prazo') + '</b></div></div>' +
-        '<p class="hint" style="text-align:center;margin:6px 0 0">Se falhares as ' + S.SHADOW_RULES.tries + ' tentativas, a sombra perde-se para sempre.' + (st.cls === 'invocador' ? ' Como Invocador, as almas ouvem-te melhor (+12%).' : '') + '</p>' +
+        '<p class="hint" style="text-align:center;margin:6px 0 0">' + (Sh.isArena(b) ? 'Sombra da arena: nunca desvanece. Se falhares as ' + S.SHADOW_RULES.tries + ' tentativas, fica selada e podes obtê-la por ' + Sh.buyPrice(b) + ' Cristais.' : 'Se falhares as ' + S.SHADOW_RULES.tries + ' tentativas, a sombra perde-se para sempre.') + (st.cls === 'invocador' ? ' Como Invocador, as almas ouvem-te melhor (+12%).' : '') + '</p>' +
         '<button class="btn arise-btn block" data-a="arise-try" data-id="' + b.id + '">EXTRAIR SOMBRA</button>' +
         '<button class="btn ghost block sm" style="margin-top:8px" data-a="close">' + (pend.exp ? 'Deixar para depois' : 'Fechar') + '</button>';
     } else {
@@ -775,13 +871,19 @@
     return '<div class="sheet-h"><h2>' + esc(Sh.name(st, b.id)) + '</h2><button class="btn sm ghost" data-a="close">Fechar</button></div>' +
       '<button class="sh-say" data-a="sh-talk" data-id="' + b.id + '"><span class="sh-say-t">«' + esc(m.line || Sh.line(st, b.id)) + '»</span><span class="sh-say-h">toca para ouvir outra vez</span></button>' +
       '<div class="sh-detail">' + shadowArt(b, 'big') + '<div class="stack" style="gap:6px;min-width:0">' +
-      '<div class="small muted">Sombra de ' + esc(b.name) + '<br>' + esc(g ? g.name : '') + ' · Nv ' + b.level + (b.king ? ' · Rei do Portão' : '') + '</div>' +
+      '<div class="small muted">Sombra de ' + esc(b.name) + '<br>' + (b.premium ? esc(b.arenaName) + ' · Nv ' + b.level + (b.champion ? ' · Campeão da Arena' : b.lieutenant ? ' · Tenente' : ' · Sub-chefe') : esc(g ? g.name : '') + ' · Nv ' + b.level + (b.king ? ' · Rei do Portão' : '')) + '</div>' +
       '<div><span class="tag sh-role ' + role + '">' + ri.name + '</span> ' + (on ? '<span class="tag good">Convocado</span>' : '') + '</div>' +
       '<div class="small">' + esc(ri.desc) + '</div>' +
       '<ul class="sh-stats"><li>Ataca em cada turno com <b>' + f + '%</b> do teu ataque</li>' + (fx ? '<li>' + fx + '</li>' : '') + '</ul>' +
       '</div></div>' +
-      '<label class="f" style="margin-top:12px"><span class="small muted">Nome do servo</span><div class="row"><input class="in grow" id="sh-name" maxlength="18" value="' + esc(st.shadows.names[b.id] || '') + '" placeholder="' + esc('Sombra de ' + b.name.split(',')[0]) + '"><button class="btn sm" data-a="sh-rename" data-id="' + b.id + '">Guardar</button></div></label>' +
-      '<button class="btn block ' + (on ? 'ghost' : 'arise-btn') + '" style="margin-top:12px" data-a="sh-toggle" data-id="' + b.id + '">' + (on ? 'Dispensar (regressa às sombras)' : 'Convocar para os combates') + '</button>';
+      '<label class="f" style="margin-top:12px"><span class="small muted">Nome do servo</span><div class="row"><input class="in grow" id="sh-name" maxlength="18" value="' + esc(st.shadows.names[b.id] || '') + '" placeholder="' + esc(Sh.baseName(b)) + '"><button class="btn sm" data-a="sh-rename" data-id="' + b.id + '">Guardar</button></div></label>' +
+      '<button class="btn block ' + (on ? 'ghost' : 'arise-btn') + '" style="margin-top:12px" data-a="sh-toggle" data-id="' + b.id + '">' + (on ? 'Dispensar (regressa às sombras)' : 'Convocar para os combates') + '</button>' +
+      (function () {
+        var rw = Sh.sparReward(st, b, true), ready = Sh.sparReady(st, b.id);
+        return '<div class="sh-spar"><div class="info-h">Treinar com esta sombra</div><p class="small muted" style="margin:0 0 6px">Enfrenta ' + esc(Sh.name(st, b.id)) + ' na sua forma dominada, com a força que tinha quando o venceste. Não perdes nível, XP nem moedas, e a vida volta ao que era.</p>' +
+          '<div class="small">' + (ready ? 'Recompensa de treino: <b>+' + fmt(rw.xp) + ' XP · +' + fmt(rw.coins) + ' moedas</b> se venceres (menos se perderes).' : 'Já te deu recompensa: volta em <span data-cd="' + Sh.sparReadyAt(st, b.id) + '">' + cdText(Sh.sparReadyAt(st, b.id)) + '</span> para ganhar mais. Podes treinar na mesma, sem recompensa.') + '</div>' +
+          '<button class="btn block" style="margin-top:8px" data-a="sh-spar" data-id="' + b.id + '">Desafiar ' + esc(Sh.name(st, b.id)) + '</button></div>';
+      })();
   }
   function shadowCard(st, b, act) {
     var on = st.shadows.active.indexOf(b.id) >= 0;
@@ -793,12 +895,15 @@
     var h = backBtn('Servos');
     Sh.expire(st);
     var owned = Sh.owned(st), active = Sh.active(st), pend = Sh.pendingList(st), slots = Sh.slots(st), next = Sh.nextSlotLevel(st);
-    var lost = Object.keys(st.shadows.lost).length, total = S.BOSSES.length;
+    var lost = Object.keys(st.shadows.lost).length, total = S.BOSSES.length + (S.ARENA_GUARDIANS || []).length + (S.ARENA_BOSSES || []).length;
+    var sealed = Object.keys(st.shadows.sealed).map(function (id) { return S.BOSS_BY_ID[id]; }).filter(Boolean).sort(function (a, c) { return a.level - c.level; });
     h += '<section class="win sh-win"><div class="win-h">Exército das Sombras <small>' + owned.length + '/' + total + '</small></div>' +
       '<p class="small muted" style="margin:0">Quando derrotas um chefe, a sua sombra fica para trás. Tens 3 tentativas para a extrair e torná-la tua serva; se falharem todas, perde-se para sempre. Os servos convocados lutam ao teu lado em todos os combates.</p>' +
+      '<p class="small muted" style="margin:6px 0 0">Nas arenas premium a sombra nunca desvanece. Se as 3 tentativas falharem, fica selada e podes obtê-la com Cristais: ' + S.SHADOW_RULES.buyGuardian + ' por sub-chefe e ' + S.SHADOW_RULES.buyChampion + ' por Campeão.</p>' +
       '<div class="kv" style="margin-top:10px"><div><span class="muted">Convocados</span><b>' + active.length + '/' + slots + '</b></div>' +
       '<div><span class="muted">Próximo lugar</span><b>' + (next ? 'Nível ' + next : 'Todos') + '</b></div>' +
-      '<div><span class="muted">À espera</span><b>' + pend.length + '</b></div><div><span class="muted">Perdidas</span><b>' + lost + '</b></div></div>' +
+      '<div><span class="muted">À espera</span><b>' + pend.length + '</b></div><div><span class="muted">Perdidas</span><b>' + lost + '</b></div>' +
+      (sealed.length ? '<div><span class="muted">Seladas</span><b>' + sealed.length + '</b></div>' : '') + '</div>' +
       (st.cls === 'invocador' ? '<p class="hint" style="margin:8px 0 0">Invocador: +1 lugar, servos 25% mais fortes e +12% na extração.</p>' : '') + '</section>';
     if (pend.length) {
       h += '<section class="win sh-win"><div class="win-h">Sombras por extrair <small>' + pend.length + '</small></div><div class="stack" style="gap:8px">' + pend.map(function (p) {
@@ -807,10 +912,20 @@
           '<button class="btn sm arise-btn" data-a="arise-open" data-id="' + p.id + '">Extrair</button></div></div>';
       }).join('') + '</div></section>';
     }
+    if (sealed.length) {
+      h += '<section class="win sh-win"><div class="win-h">Sombras seladas <small>arenas</small></div><div class="stack" style="gap:8px">' + sealed.map(function (b) {
+        return '<div class="card sh-pend"><div class="card-h">' + preShadowArt(b, 'sm dead') + '<div class="grow"><div class="card-t">' + esc(b.name) + '</div>' +
+          '<div class="meta"><span>' + esc(b.arenaName) + '</span><span>' + (b.champion ? 'Campeão' : 'Sub-chefe') + '</span></div></div>' +
+          '<button class="btn sm prem" data-a="arise-open" data-id="' + b.id + '"><i class="crys-ico"></i> ' + Sh.buyPrice(b) + '</button></div></div>';
+      }).join('') + '</div></section>';
+    }
     if (active.length) h += '<section class="win sh-win"><div class="win-h">Convocados <small>lutam contigo</small></div><div class="sh-grid">' + active.map(function (b) { return shadowCard(st, b); }).join('') + '</div></section>';
-    h += '<section class="win sh-win"><div class="win-h">Exército <small>' + owned.length + '</small></div>' +
-      (owned.length ? '<div class="sh-grid">' + owned.map(function (b) { return shadowCard(st, b); }).join('') + '</div>'
-        : '<div class="empty">Ainda não tens servos. Derrota um chefe e extrai a sua sombra.</div>') + '</section>';
+    var ownG = owned.filter(function (b) { return !b.premium; }), ownA = owned.filter(function (b) { return b.premium; });
+    h += '<section class="win sh-win"><div class="win-h">Exército dos Portões <small>' + ownG.length + '/' + S.BOSSES.length + '</small></div>' +
+      (ownG.length ? '<div class="sh-grid">' + ownG.map(function (b) { return shadowCard(st, b); }).join('') + '</div>'
+        : '<div class="empty">Ainda não tens servos dos portões. Derrota um chefe e extrai a sua sombra.</div>') + '</section>';
+    if (ownA.length) h += '<section class="win sh-win"><div class="win-h">Exército das Arenas <small>' + ownA.length + '/' + ((S.ARENA_GUARDIANS || []).length + (S.ARENA_BOSSES || []).length) + '</small></div>' +
+      '<div class="sh-grid">' + ownA.map(function (b) { return shadowCard(st, b); }).join('') + '</div></section>';
     return h;
   }
   function trophiesPage(st) {
@@ -825,10 +940,20 @@
     if (S.ARENA_BOSSES.some(function (b) { return st.trophies[b.id] || (st.arena && st.arena.unlocked[b.id]); })) {
       h += '<section class="win prem-win"><div class="win-h"><span class="prem-t"><i class="crys-ico"></i> Coliseu dos Condenados</span><small>' + S.ARENA_BOSSES.filter(function (b) { return st.trophies[b.id]; }).length + '/10</small></div><div class="trophy-grid">' +
         S.ARENA_BOSSES.map(function (b) {
-          var tr = S.TROPHIES[b.id], art = S.BOSS_ART && S.BOSS_ART[b.id];
+          var tr = S.TROPHIES[b.id], art = trophyArt(b) || (S.BOSS_ART && S.BOSS_ART[b.id]);
           if (!st.trophies[b.id]) return '<div class="trophy locked"><span class="tr-seal"></span><span class="tr-lock">' + uiIcon('ic_lock', '🔒', 'lock-img') + '</span></div>';
           return '<button class="trophy got" style="--rc:' + b.color + '" data-a="boss" data-id="' + b.id + '">' + (art ? '<img src="' + art + '" alt="" loading="lazy">' : '<span class="tr-ico">' + b.icon + '</span>') + '<span class="tr-name">' + esc(tr.name) + '</span></button>';
         }).join('') + '</div></section>';
+      S.ARENA_BOSSES.forEach(function (c) {
+        if (!(st.arena && st.arena.unlocked[c.id])) return;
+        var gs = S.ARENA_LADDER[c.arena].filter(function (b) { return b.guardian; }), have = gs.filter(function (b) { return st.trophies[b.id]; }).length;
+        h += '<section class="win prem-win"><div class="win-h"><span style="color:' + c.color + '">' + esc(c.arenaName) + '</span><small>sub-chefes ' + have + '/9</small></div><div class="trophy-grid">' +
+          gs.map(function (b) {
+            var tr = S.TROPHIES[b.id], tart = trophyArt(b), art = tart || (S.BOSS_ART && S.BOSS_ART[b.id]);
+            if (!st.trophies[b.id]) return '<div class="trophy locked"><span class="tr-seal"></span><span class="tr-lock">' + uiIcon('ic_lock', '🔒', 'lock-img') + '</span></div>';
+            return '<button class="trophy got' + (tart ? ' t-art' : '') + '" style="--rc:' + rc(tr.rarity) + '" title="' + esc(tr.name) + '" data-a="info" data-k="trophy" data-id="' + b.id + '">' + (art ? '<img src="' + art + '" alt="" loading="lazy">' : '<span class="tr-ico">' + b.icon + '</span>') + '<span class="tr-name">' + esc(tr.name) + '</span></button>';
+          }).join('') + '</div></section>';
+      });
     }
     gates.forEach(function (g) {
       var t = E.gateTrophies(st, g.id), done = sets.indexOf(g.id) >= 0;
@@ -950,6 +1075,56 @@
     }
     return h;
   }
+  /* ---------- corpo: peso e calorias ---------- */
+  function kcal(n) { return fmt(Math.round(n)) + ' kcal'; }
+  function kgTxt(n) { return String(Math.round(n * 10) / 10).replace('.', ',') + ' kg'; }
+  function bodyHtml(st) {
+    var B = S.body, b = B.ensure(st), c = B.calc(st), editing = ui.bodyEdit || !c;
+    var GOALS = [['perder', 'Perder peso'], ['manter', 'Manter'], ['ganhar', 'Ganhar peso']];
+    var h = '<section class="win body-win" id="body-win"><div class="win-h">Corpo e peso <small>' + (c ? kgTxt(c.kg) : 'sem registo') + '</small></div>';
+    if (editing) {
+      h += '<p class="small muted" style="margin:0 0 8px">' + (c ? 'Corrige o que mudou e guarda.' : 'Escreve o teu peso e, se quiseres, os outros dados para um cálculo mais certo. Depois carrega em Guardar.') + '</p>' +
+        '<div class="stack" style="gap:8px">' +
+        '<label class="f" style="margin:0"><span class="small muted">Peso de hoje (kg)</span><input class="in" id="body-kg" inputmode="decimal" placeholder="ex.: 72,5" value="' + (c ? String(c.kg).replace('.', ',') : '') + '"></label>' +
+        '<div class="row" style="gap:8px"><label class="f grow" style="margin:0"><span class="small muted">Altura (cm)</span><input class="in" id="body-h" inputmode="numeric" placeholder="ex.: 175" value="' + (b.height || '') + '"></label>' +
+        '<label class="f grow" style="margin:0"><span class="small muted">Idade</span><input class="in" id="body-a" inputmode="numeric" placeholder="ex.: 28" value="' + (b.age || '') + '"></label></div>' +
+        '<label class="f" style="margin:0"><span class="small muted">Sexo</span><select class="in" id="body-s"><option value="">—</option><option value="m"' + (b.sex === 'm' ? ' selected' : '') + '>Masculino</option><option value="f"' + (b.sex === 'f' ? ' selected' : '') + '>Feminino</option></select></label>' +
+        '<label class="f" style="margin:0"><span class="small muted">Atividade física</span><select class="in" id="body-act">' + Object.keys(B.ACT).map(function (k) { return '<option value="' + k + '"' + (b.activity === k ? ' selected' : '') + '>' + B.ACT[k].name + ': ' + B.ACT[k].desc + '</option>'; }).join('') + '</select></label>' +
+        '<label class="f" style="margin:0"><span class="small muted">Objetivo</span><select class="in" id="body-goal">' + GOALS.map(function (g) { return '<option value="' + g[0] + '"' + ((b.goal || 'manter') === g[0] ? ' selected' : '') + '>' + g[1] + '</option>'; }).join('') + '</select></label>' +
+        '<div class="row" style="gap:8px">' + (c ? '<button class="btn ghost grow" data-a="body-cancel">Cancelar</button>' : '') + '<button class="btn pri grow" data-a="body-save">Guardar</button></div></div>';
+      return h + '</section>';
+    }
+    // resumo guardado
+    h += '<div class="kv"><div><span class="muted">Peso</span><b>' + kgTxt(c.kg) + '</b></div>' +
+      (b.height ? '<div><span class="muted">Altura</span><b>' + b.height + ' cm</b></div>' : '') +
+      (b.age ? '<div><span class="muted">Idade</span><b>' + b.age + '</b></div>' : '') +
+      '<div><span class="muted">Objetivo</span><b>' + ({ perder: 'Perder peso', ganhar: 'Ganhar peso', manter: 'Manter' }[b.goal || 'manter']) + '</b></div>' +
+      '<div><span class="muted">Manutenção</span><b>' + kcal(c.tdee) + '/dia</b></div>' +
+      (c.bmi ? '<div><span class="muted">IMC</span><b>' + String(c.bmi).replace('.', ',') + ' · ' + B.bmiLabel(c.bmi) + '</b></div>' : '') + '</div>';
+    var g = b.goal || 'manter';
+    h += '<div class="body-goals">' +
+      '<div class="body-goal up' + (g === 'ganhar' ? ' sel' : '') + '"><div class="bg-h">Ganhar 1 kg</div><div class="bg-v">' + kcal(c.gain.perDay) + '<small>/dia</small></div>' +
+      '<div class="small muted">+' + c.gain.extra + ' kcal acima da manutenção durante cerca de <b>' + c.gain.days + ' dias</b> (' + fmt(c.kcalPerKg) + ' kcal a mais no total).</div></div>' +
+      '<div class="body-goal down' + (g === 'perder' ? ' sel' : '') + '"><div class="bg-h">Perder 1 kg</div><div class="bg-v">' + kcal(c.lose.perDay) + '<small>/dia</small></div>' +
+      '<div class="small muted">−' + c.lose.less + ' kcal abaixo da manutenção durante cerca de <b>' + c.lose.days + ' dias</b> (' + fmt(c.kcalPerKg) + ' kcal a menos no total).' + (c.lose.floored ? ' O Sistema não desce abaixo deste mínimo diário.' : '') + '</div></div></div>';
+    h += '<p class="hint" style="margin:8px 0 0">' + (c.full ? 'Calculado com o teu peso, altura, idade, sexo e atividade.' : 'Estimativa só com o peso. Junta altura, idade e sexo para um valor mais certo.') +
+      ' Ritmo de cerca de 0,5 kg por semana. São estimativas: um nutricionista ou médico dá-te valores exatos.</p>';
+    var wk = B.weekly(st);
+    if (wk) {
+      h += '<div class="body-week"><div class="bg-h">Avaliação semanal</div><div class="row between"><span class="small muted">' + wk.from.d.split('-').reverse().slice(0, 2).join('/') + ' → ' + wk.to.d.split('-').reverse().slice(0, 2).join('/') + ' (' + wk.days + ' dias)</span>' +
+        '<b class="mono" style="color:' + (wk.diff > 0 ? 'var(--gold)' : wk.diff < 0 ? 'var(--glow)' : 'inherit') + '">' + (wk.diff > 0 ? '+' : '') + kgTxt(wk.diff) + '</b></div>' +
+        '<div class="small">≈ ' + (wk.perWeek > 0 ? '+' : '') + String(wk.perWeek).replace('.', ',') + ' kg por semana · ' + esc(wk.verdict) + '</div></div>';
+    }
+    h += '<div class="row" style="gap:8px;margin-top:10px"><button class="btn grow" data-a="body-edit">Atualizar peso e dados</button></div>';
+    h += '<details style="margin-top:10px"' + (ui.bodyHist ? ' open' : '') + '><summary class="small muted" data-a="body-hist">Registos de peso (' + b.weights.length + ')</summary><div class="list" style="margin-top:6px">' +
+      b.weights.slice(-20).reverse().map(function (w) {
+        if (ui.bodyFix === w.d) return '<div class="row small body-row"><span class="mono faint">' + w.d.split('-').reverse().join('/') + '</span><input class="in grow" id="body-fix-in" inputmode="decimal" style="padding:6px 8px" value="' + String(w.kg).replace('.', ',') + '">' +
+          '<button class="btn sm pri" data-a="body-fix-ok" data-d="' + w.d + '">Guardar</button><button class="btn sm ghost" data-a="body-fix-no">✕</button></div>';
+        return '<div class="row between small body-row"><span class="mono faint">' + w.d.split('-').reverse().join('/') + '</span><b class="mono grow" style="text-align:right;margin-right:8px">' + kgTxt(w.kg) + '</b>' +
+          '<button class="btn sm ghost" data-a="body-fix" data-d="' + w.d + '">Corrigir</button><button class="btn sm ghost" data-a="body-del" data-d="' + w.d + '" aria-label="Apagar">✕</button></div>';
+      }).join('') + '</div></details>';
+    return h + '</section>';
+  }
   function missionsHtml(st) {
     var t = E.dateKey();
     var h = liveCards(st);
@@ -1010,6 +1185,7 @@
           '<div class="grow"><div class="card-t">' + esc(m.title) + '</div><div class="meta"><span>' + when + ' · até ' + m.deadline + '</span></div></div><span class="muted">Editar</span></div></button>';
       }).join('') + '</div></section>';
     }
+    h += bodyHtml(st);
     var hist = M.history(st, 12);
     if (hist.length) {
       h += '<section class="win"><div class="win-h">Registo recente</div><div class="list">' + hist.map(function (x) {
@@ -1228,6 +1404,13 @@
   }
   /* balão de fala do chefe: provocação no início, últimas palavras na vitória */
   function bossSpeech(bt, b) {
+    if (bt.spar) {
+      var sl = (S.SHADOW_SPAR || {})[b.id]; if (!sl) return '';
+      var stx = bt.over === 'win' ? sl[1] : bt.over === 'lose' ? sl[2] : (bt.turn <= 2 ? sl[0] : null);
+      if (!stx) return '';
+      var sk = bt.bossId + ':spar:' + (bt.over || 'in'), sf = ui.lastSpeech !== sk; ui.lastSpeech = sk;
+      return '<div class="speech sh-speech' + (sf ? ' fresh' : '') + '"><span class="speech-name">' + esc(S.shadows.name(E.state, b.id)) + '</span><span class="speech-txt">«' + esc(stx.replace(/\{nome\}/g, E.state.name)) + '»</span></div>';
+    }
     var lines = (S.BOSS_LINES || {})[b.id];
     if (!lines) return '';
     var txt = null, cls = '';
@@ -1244,8 +1427,10 @@
     var bossCls = ui.spawn ? ' spawn' : (bt.over === 'win' && !ui.victoryAnim ? ' dead' : '');
     var auraC = b.king ? 'rgba(255,176,46,.55)' : 'rgba(255,60,90,.5)';
     var h = '<div class="battle">';
-    h += '<section class="win danger boss-panel phase-' + bt.phase + '"><div class="win-h"><span>' + esc(b.name) + '</span><small>Nv ' + b.level + ' · turno ' + bt.turn + (bt.phase > 1 ? ' · fase ' + bt.phase : '') + '</small></div>' +
-      '<div class="boss-wrap"><div class="boss-aura" style="--c:' + auraC + '"></div>' + bossArt(b, 'boss-ico' + bossCls, 'boss-ico') + '</div>' + bossSpeech(bt, b) +
+    if (bt.spar) auraC = 'rgba(123,77,255,.6)';
+    var shSrc = bt.spar && S.SHADOW_ART && S.SHADOW_ART[b.id];
+    h += '<section class="win danger boss-panel phase-' + bt.phase + (bt.spar ? ' spar-panel' : '') + '"><div class="win-h"><span>' + esc(bt.spar ? S.shadows.name(st, b.id) : b.name) + '</span><small>' + (bt.spar ? 'Treino · ' : '') + 'Nv ' + b.level + ' · turno ' + bt.turn + (bt.phase > 1 ? ' · fase ' + bt.phase : '') + '</small></div>' +
+      '<div class="boss-wrap"><div class="boss-aura" style="--c:' + auraC + '"></div>' + (bt.spar ? (shSrc ? '<div class="boss-ico' + bossCls + ' has-art sh-boss" id="boss-ico"><img src="' + shSrc + '" alt=""></div>' : '<div class="boss-ico' + bossCls + ' has-art sh-boss shade-boss" id="boss-ico">' + (S.BOSS_ART && S.BOSS_ART[b.id] ? '<img src="' + S.BOSS_ART[b.id] + '" alt="">' : b.icon) + '</div>') : bossArt(b, 'boss-ico' + bossCls, 'boss-ico')) + '</div>' + bossSpeech(bt, b) +
       '<div style="margin-top:8px">' + bar('boss', bt.b.hp, bt.b.maxHp, 'Vida' + (bt.b.shield ? ' · escudo ' + fmt(bt.b.shield) : ''), 'boss-' + bt.bossId + '-' + bt.started) + '</div>' +
       '<div class="statuses" style="margin-top:6px">' + statusTags(bt.b.st, true) + (bt.b.stunned ? '<span class="tag good">atordoado</span>' : '') + '</div></section>';
     h += '<div class="log" id="blog" aria-live="polite">' + bt.log.map(function (l) { return '<div class="' + l.c + '">' + logLine(l.t) + '</div>'; }).join('') + '</div>';
@@ -1294,8 +1479,9 @@
       (items.length ? items.map(function (id) {
         var it = S.ITEMS[id];
         var heal = it.use.type === 'heal' || it.use.type === 'restore';
-        var dis = (heal && used >= lim) || !S.time.itemActive(it);
-        return '<button class="skill-btn" data-a="b-item" data-id="' + id + '"' + (dis ? ' disabled' : '') + '><b>' + tapInfo(itemTiny(it), 'item', id) + ' ' + esc(it.name) + '</b><span class="mono small">×' + st.inv[id] + '</span><small>' + esc(it.desc) + (it.phase && !S.time.itemActive(it) ? ' — inativo agora' : '') + '</small></button>';
+        var cool = it.perma && !S.premium.relicReady(st, id);
+        var dis = (heal && used >= lim) || !S.time.itemActive(it) || cool;
+        return '<button class="skill-btn" data-a="b-item" data-id="' + id + '"' + (dis ? ' disabled' : '') + '><b>' + tapInfo(itemTiny(it), 'item', id) + ' ' + esc(it.name) + '</b><span class="mono small">' + (it.perma ? (cool ? 'recarrega em ' + cdText(S.premium.relicReadyAt(st, id)) : 'pronta') : '×' + st.inv[id]) + '</span><small>' + esc(it.desc) + (it.phase && !S.time.itemActive(it) ? ' — inativo agora' : '') + '</small></button>';
       }).join('') : '<div class="empty">Sem itens de combate. Compra poções na Loja.</div>') + '</div>';
   }
 
@@ -1308,7 +1494,7 @@
   /* ================= LOJA ================= */
   function shopHtml(st) {
     var h = '<div class="chips" style="margin-top:14px">' + S.SHOP_TABS.map(function (t) {
-      return '<button class="chip' + (ui.shopTab === t.id ? ' on' : '') + '" data-a="shop-tab" data-v="' + t.id + '">' + uiIcon(t.id === 'sistema' ? 'ui_eye' : 'tab_' + t.id, t.icon) + ' ' + t.name + '</button>';
+      return '<button class="chip' + (ui.shopTab === t.id ? ' on' : '') + '" data-a="shop-tab" data-v="' + t.id + '">' + uiIcon(t.id === 'sistema' && !hasArt('tab_sistema') ? 'ui_eye' : 'tab_' + t.id, t.icon) + ' ' + t.name + '</button>';
     }).join('') + '</div>';
     var list = E.shopList(st, ui.shopTab);
     var tab = S.SHOP_TABS.filter(function (t) { return t.id === ui.shopTab; })[0];
@@ -1320,6 +1506,14 @@
       if (E.extraMissions(st)) xs.push('+' + E.extraMissions(st) + ' missões novas permitidas hoje');
       h += '<p class="hint" style="margin-top:0">' + uiIcon('ui_eye', '', 'tag-ico') + ' Artefatos que mexem com o próprio Sistema. Usam-se na Bolsa. O Sistema permite-os, mas regista cada um.</p>' + (xs.length ? '<p class="small" style="color:var(--good);margin-top:0">Ativo: ' + xs.map(esc).join(' · ') + '</p>' : ''); }
     if (ui.shopTab === 'atributo') h += '<p class="hint" style="margin-top:0">Melhorias permanentes. Os elixires ficam mais caros a cada compra.</p>';
+    if (ui.shopTab === 'bau') {
+      var cf = ui.chestFam || 'todos';
+      h += '<p class="hint" style="margin-top:0">Os baús especializados só dão um tipo de item. Quanto melhor o grau (Ferro, Prata, Ouro, Dragão, Monarca), mais alto o nível e melhor a versão do que sai. Os graus Ouro, Dragão e Monarca também estão na Loja Exclusiva, em Cristais.</p>' +
+        '<div class="chips" style="margin-bottom:10px">' + [['todos', 'Todos', '📦'], ['gerais', 'Gerais', '🎁']].concat(S.CHEST_FAMS.map(function (f) { return [f.id, f.name, f.icon]; })).map(function (x) {
+          return '<button class="chip' + (cf === x[0] ? ' on' : '') + '" data-a="chest-fam" data-v="' + x[0] + '">' + x[2] + ' ' + esc(x[1]) + '</button>'; }).join('') + '</div>';
+      if (cf !== 'todos') list = list.filter(function (it) { return cf === 'gerais' ? !it.chestFam : it.chestFam === cf; });
+      list = list.slice().sort(function (a, b) { var fa = a.chestFam ? S.CHEST_FAMS.map(function (f) { return f.id; }).indexOf(a.chestFam) + 1 : 0, fb = b.chestFam ? S.CHEST_FAMS.map(function (f) { return f.id; }).indexOf(b.chestFam) + 1 : 0; return fa - fb || (a.chestGrade || 0) - (b.chestGrade || 0) || a.price - b.price; });
+    }
     var rows = list.map(function (it) { return { it: it, rq: it.custom ? { ok: true, lines: [] } : E.reqStatus(st, it) }; });
     var open = rows.filter(function (x) { return x.rq.ok; }), locked = rows.filter(function (x) { return !x.rq.ok; });
     var card = function (x) {
@@ -1373,7 +1567,7 @@
   }
   function bagHtml(st) {
     var h = '<div class="chips" style="margin-top:14px">' + BAG_FILTERS.map(function (f) {
-      return '<button class="chip' + (ui.bag === f[0] ? ' on' : '') + '" data-a="bag" data-v="' + f[0] + '">' + uiIcon({ tudo: 'bag_tudo', equip: 'bag_equip', secreto: 'bag_secreto', sistema: 'ui_eye' }[f[0]] || 'tab_' + f[0], '') + f[1] + '</button>';
+      return '<button class="chip' + (ui.bag === f[0] ? ' on' : '') + '" data-a="bag" data-v="' + f[0] + '">' + uiIcon(hasArt('tab_' + f[0]) ? 'tab_' + f[0] : ({ tudo: 'bag_tudo', equip: 'bag_equip', secreto: 'bag_secreto', sistema: 'ui_eye', premium: 'ui_crystal' }[f[0]] || 'tab_' + f[0]), '') + f[1] + '</button>';
     }).join('') + '</div>';
     var ids = Object.keys(st.inv).filter(function (id) { var it = E.item(id); return it && bagMatch(it, ui.bag); })
       .sort(function (a, b) { var A = E.item(a), B = E.item(b); return (A.cat === 'bau' ? -1 : 0) - (B.cat === 'bau' ? -1 : 0) || S.RARITY[B.rarity].order - S.RARITY[A.rarity].order || A.name.localeCompare(B.name); });
@@ -1460,6 +1654,7 @@
     else if (m.type === 'order') inner = orderModal(m);
     else if (m.type === 'arise') inner = ariseModal(m);
     else if (m.type === 'shadow') inner = shadowModal(m);
+    else if (m.type === 'ach') inner = achInfoModal(m);
     var fresh = ui.modal !== ui.shownModal;
     return '<div class="overlay' + (fresh ? ' fresh' : '') + (m.type === 'arise' ? ' arise-ov' : '') + '" data-a="overlay"><div class="sheet' + (fresh ? ' fresh' : '') + (m.type === 'arise' ? ' arise-sheet' : '') + '" role="dialog" aria-modal="true">' + inner + '</div></div>';
   }
@@ -1496,7 +1691,7 @@
       cls = 'loot' + (S.RARITY[r].order >= 4 ? ' gold' : ''); tag = 'BAÚ';
       nLines = ev.items.length + 1;
       body = '<div class="chest-stage" style="--c:' + rc2 + '"><div class="pillar"></div><span class="chest-ico">' + (artId('bau_' + ev.tier) ? '<img src="' + artId('bau_' + ev.tier) + '" alt="">' : (ev.icon || '📦')) + '</span></div><h2>' + esc(ev.title) + '</h2>' +
-        '<ul class="sys-lines">' + li('+' + fmt(ev.coins) + ' moedas', 0, 'color:var(--gold)') +
+        '<ul class="sys-lines">' + (ev.coins ? li('+' + fmt(ev.coins) + ' moedas', 0, 'color:var(--gold)') : '') +
         ev.items.map(function (id, i) { var it = S.ITEMS[id]; return li(itemTiny(it) + ' ' + esc(it.name), i + 1, 'color:' + rc(it.rarity) + (S.RARITY[it.rarity].order >= 3 ? ';text-shadow:0 0 10px ' + rc(it.rarity) : '')); }).join('') + '</ul>';
     } else if (ev.type === 'victory') {
       cls = 'gold'; extra = '<div class="rays"></div>';
@@ -1584,6 +1779,9 @@
       FX.flash('#ff1f3d', .3); FX.vignette(); FX.vibrate([200, 80, 200, 80, 400]); setTimeout(function () { FX.shake(2); }, 300);
     } else if (ev.type === 'report' && (ev.report.grade === 'S' || ev.report.grade === 'A')) {
       setTimeout(function () { FX.burst(c.x, c.y - 60, '#ffc85a', 60, { speed: 9 }); FX.shock(c.x, c.y - 60, '#ffc85a'); }, 600);
+    } else if (ev.type === 'watch' && ev.heal) {
+      FX.flash('#5be08a', .3); FX.vibrate([30, 40, 120]);
+      setTimeout(function () { FX.rise(c.x, window.innerHeight, 240, '#5be08a', 60); FX.burst(c.x, c.y - 40, '#5be08a', 50, { speed: 8 }); }, 300);
     } else if (ev.type === 'watch' && !ev.good) {
       FX.flash('#ff1f3d', .18 + ev.level * .08); FX.vignette();
       FX.vibrate(ev.level >= 3 ? [300, 80, 300, 80, 600] : [80, 60, 80, 60, 220]);
@@ -1720,7 +1918,7 @@
       if (!ui.holdTimer) ui.holdTimer = setTimeout(function () { ui.holdTimer = null; render(); }, ui.holdUntil - Date.now() + 20);
     } else if (pop && pop._id !== ui.shownPop) {
       ui.shownPop = pop._id;
-      sfx({ levelup: 'levelup', victory: 'quest', mission: 'quest', crystals: 'gain', gift: 'gain' }[pop.type] || 'system');
+      sfx({ levelup: 'levelup', victory: 'quest', mission: 'quest', crystals: 'gain', gift: 'gain', defeat: 'death', emergency: 'emergency', penalty: 'penalty', zone: 'penalty' }[pop.type] || 'system');
       popupFx(pop);
     }
     ui.fxMission = null; ui.fxDaily = false; ui.spawn = false;
@@ -1947,6 +2145,16 @@
     },
     'pop-ok': function () { ui.popups.shift(); render(); },
     // sombras
+    'sh-buy': function (d) {
+      var b = S.BOSS_BY_ID[d.id], price = S.shadows.buyPrice(b);
+      confirmBox('Quebrar o selo', 'Usar ' + price + ' Cristais para tornar a sombra de ' + b.name + ' tua serva?', 'Pagar ' + price + ' Cristais', function () {
+        var r = S.shadows.buy(d.id);
+        if (!r.ok) { if (r.need) { ui.modal = null; ui.tab = 'status'; ui.page = 'premium'; ui.premTab = 'obter'; loadShop(); } return act(r); }
+        ui.modal = { type: 'arise', id: d.id, res: r }; pullEvents(); render();
+        var c = FX.center(document.getElementById('arise-stage'));
+        sfx('arise'); FX.flash('#7b4dff', .55); FX.burst(c.x, c.y, '#8b6bff', 90, { speed: 10 }); FX.vibrate([80, 40, 220]);
+      });
+    },
     'arise-open': function (d) { ui.modal = { type: 'arise', id: d.id }; render(); },
     'arise-try': function (d) {
       if (ui.ariseBusy) return;
@@ -1961,15 +2169,31 @@
         ui.modal = { type: 'arise', id: d.id, res: r };
         pullEvents(); render();
         var c = FX.center(document.getElementById('arise-stage'));
-        if (r.success) { sfx('levelup'); FX.flash('#7b4dff', .55); FX.burst(c.x, c.y, '#8b6bff', 90, { speed: 10 }); FX.rise(c.x, c.y + 80, 220, '#5a3dff', 60); FX.shake(2); FX.vibrate([80, 40, 220]); }
+        if (r.success) { sfx('arise'); FX.flash('#7b4dff', .55); FX.burst(c.x, c.y, '#8b6bff', 90, { speed: 10 }); FX.rise(c.x, c.y + 80, 220, '#5a3dff', 60); FX.shake(2); FX.vibrate([80, 40, 220]); }
         else { sfx(r.lost ? 'back' : 'hurt'); FX.shake(r.lost ? 2 : 1); FX.vibrate(r.lost ? [120, 60, 120] : 60); }
       }, FX.full() ? 1150 : 150);
     },
+    'body-edit': function () { ui.bodyEdit = true; render(); var e = document.getElementById('body-win'); if (e) e.scrollIntoView(); },
+    'body-cancel': function () { ui.bodyEdit = false; render(); },
+    'body-save': function () {
+      var v = function (id) { var e = document.getElementById(id); return e ? e.value : ''; };
+      var r = S.body.saveAll({ kg: v('body-kg'), height: v('body-h'), age: v('body-a'), sex: v('body-s'), activity: v('body-act'), goal: v('body-goal') });
+      if (r.ok) ui.bodyEdit = false;
+      act(r); var e = document.getElementById('body-win'); if (e && r.ok) e.scrollIntoView();
+    },
+    'body-hist': function () { ui.bodyHist = !ui.bodyHist; },
+    'body-fix': function (d) { ui.bodyHist = true; ui.bodyFix = d.d; render(); var e = document.getElementById('body-fix-in'); if (e) e.focus(); },
+    'body-fix-ok': function (d) { var e = document.getElementById('body-fix-in'); var r = S.body.editEntry(d.d, e ? e.value : ''); if (r.ok) ui.bodyFix = null; act(r); },
+    'body-fix-no': function () { ui.bodyFix = null; render(); },
+    'body-del': function (d) { confirmBox('Apagar registo', 'Apagar o peso de ' + d.d.split('-').reverse().join('/') + '?', 'Apagar', function () { ui.bodyHist = true; act(S.body.removeEntry(d.d)); }, true); },
     'sh-open': function (d) { ui.modal = { type: 'shadow', id: d.id, line: S.shadows.line(E.state, d.id, true) }; S.storage.write(E.state); render(); },
     'sh-talk': function (d) { ui.modal.line = S.shadows.line(E.state, d.id, true); S.storage.write(E.state); render(); },
     'sh-toggle': function (d) { var r = S.shadows.toggle(d.id); act(r); },
     'sh-rename': function (d) { var el = document.getElementById('sh-name'); act(S.shadows.rename(d.id, el ? el.value : '')); },
     'prem-open': function (d) { ui.tab = 'status'; ui.page = 'premium'; ui.premTab = d.t || ui.premTab || 'arenas'; ui.modal = null; render(); window.scrollTo(0, 0); if (ui.premTab === 'obter') loadShop(); },
+    'ach-filter': function (d) { ui.achFilter = d.f; render(); },
+    'ach-info': function (d) { ui.modal = { type: 'ach', id: d.id }; render(); },
+    'chest-fam': function (d) { ui.chestFam = d.v; render(); },
     'prem-tab': function (d) { ui.premTab = d.t; render(); if (d.t === 'obter') loadShop(); },
     'prem-buy': function (d) {
       var it = S.ITEMS[d.id], p = { x: ui.pt.x, y: ui.pt.y };
@@ -2103,6 +2327,7 @@
       if (r.watch) { ui.modal = null; pullEvents(); render(); return; }
       if (!r.ok) return toast(r.msg, true);
       ui.modal = null; ui.form = null;
+      if (!f.id) sfx('create');
       act(r, f.id ? 'Missão atualizada.' : 'Missão criada.');
       if (!f.id && r.ok) talkTry('create', { missao: f.title, diff: f.difficulty }, 1300);
     },
@@ -2186,6 +2411,15 @@
       window.scrollTo(0, 0);
       if (r && r.ok !== false) FX.portal(g ? g.color : '#ffc85a', b.name, 'NÍVEL ' + b.level + (b.king ? ' · REI DO PORTÃO' : ''));
     },
+    'sh-spar': function (d) {
+      var st = E.state;
+      if (st.battle && !st.battle.over) return toast('Já estás numa batalha.', true);
+      if (st.battle) C.close();
+      ui.modal = null; ui.tab = 'combate'; ui.page = null; ui.spawn = true;
+      var b = S.BOSS_BY_ID[d.id], r = act(S.shadows.spar(d.id));
+      window.scrollTo(0, 0);
+      if (r && r.ok !== false) { sfx('arise'); FX.portal('#8b6bff', S.shadows.name(st, d.id), 'TREINO · NÍVEL ' + b.level); }
+    },
     'b-attack': function () { battleAct('attack'); },
     'b-defend': function () { battleAct('defend'); },
     'b-pass': function () { battleAct('pass'); },
@@ -2194,7 +2428,7 @@
     'b-item': function (d) { ui.modal = null; battleAct('item', d.id); },
     'b-flee': function () {
       var lost = Math.round(E.state.coins * 0.05);
-      confirmBox('Fugir', 'Se fugires perdes ' + lost + ' moedas (usa Pó de Fumo para fugir sem perdas). O chefe continua vivo.', 'Fugir', function () { battleAct('flee'); FX.text('FUGA', window.innerWidth / 2, window.innerHeight / 2, '#8396ba'); }, true);
+      confirmBox('Fugir', 'Se fugires perdes ' + lost + ' moedas (usa Pó de Fumo para fugir sem perdas). O chefe continua vivo.', 'Fugir', function () { sfx('death'); battleAct('flee'); FX.text('FUGA', window.innerWidth / 2, window.innerHeight / 2, '#8396ba'); }, true);
     },
     'b-close': function () { FX.battle(false); FX.flash('#6fd6ff', .25); ui.lastView = null; act(C.close()); },
 

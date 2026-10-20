@@ -246,5 +246,99 @@
    "ach_ar_first",
    "log_hurt"
   ]
+ },
+ {
+  "title": "Conquistas novas 1",
+  "cols": 6,
+  "rows": 3,
+  "ids": [
+   "ach_sh1",
+   "ach_sh10",
+   "ach_sh25",
+   "ach_sh50",
+   "ach_sh100",
+   "ach_shking",
+   "ach_shking10",
+   "ach_shfirst",
+   "ach_shlast",
+   "ach_shlost",
+   "ach_shlost10",
+   "ach_shname",
+   "ach_shfull",
+   "ach_spar1",
+   "ach_spar25",
+   "ach_sparlose",
+   "ach_ar1",
+   "ach_ar5"
+  ]
+ },
+ {
+  "title": "Conquistas novas 2",
+  "cols": 6,
+  "rows": 3,
+  "ids": [
+   "ach_ar10",
+   "ach_grd1",
+   "ach_grd45",
+   "ach_grd90",
+   "ach_ten1",
+   "ach_champ1",
+   "ach_champ5",
+   "ach_champ10",
+   "ach_firstp",
+   "ach_rematch",
+   "ach_tr100",
+   "ach_tr202",
+   "ach_set10",
+   "ach_prem1",
+   "ach_relic1",
+   "ach_relic7",
+   "ach_mset2",
+   "ach_mset4"
+  ]
+ },
+ {
+  "title": "Conquistas novas 3",
+  "cols": 6,
+  "rows": 3,
+  "ids": [
+   "ach_eternal",
+   "ach_frame1",
+   "ach_frame5",
+   "ach_body1",
+   "ach_body7",
+   "ach_body30",
+   "ach_bodyg",
+   "ach_m1000",
+   "ach_mS10",
+   "ach_create10",
+   "ach_d365",
+   "ach_emg1",
+   "ach_emg10",
+   "ach_hid1",
+   "ach_hid10",
+   "ach_zone1",
+   "ach_trust",
+   "ach_b200"
+  ]
+ },
+ {
+  "title": "Conquistas novas 4",
+  "cols": 6,
+  "rows": 2,
+  "ids": [
+   "ach_flaw10",
+   "ach_giant10",
+   "ach_skill20",
+   "ach_secret3",
+   "ach_all100",
+   "ach_form10",
+   "ach_form34",
+   "ach_rich3",
+   "ach_sell50",
+   "ach_chest500",
+   "ach_items100",
+   "ach_talk50"
+  ]
  }
 ]

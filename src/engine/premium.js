@@ -20,8 +20,19 @@
   };
   P.ensure = function (st) {
     if (typeof st.crystals !== 'number') st.crystals = 0;
+    if (!st.relics) st.relics = {};
+    if (!st.perks) st.perks = {};
+    // relíquias passaram a ser permanentes: quem tinha várias fica com uma e recebe o resto em Cristais
+    if (!st.relicsV2) {
+      st.relicsV2 = 1;
+      var back = 0;
+      (S.PREMIUM_RELICS || []).forEach(function (id) { var n = st.inv[id] || 0, it = S.ITEMS[id]; if (n > 1) { back += (n - 1) * (it.oldPrice || 0); st.inv[id] = 1; } });
+      if (back) { st.crystals += back; if (E.history) E.history(st, '◆', 'As relíquias premium passaram a ser permanentes: ficaste com uma de cada e recebeste +' + back + ' Cristais pelas repetidas.'); }
+    }
     if (!st.arena) st.arena = { unlocked: {}, wins: {}, last: {} };
     ['unlocked', 'wins', 'last'].forEach(function (k) { if (!st.arena[k]) st.arena[k] = {}; });
+    // troféus dos sub-chefes das arenas (novos): quem já os venceu recebe-os
+    if (st.trophies) Object.keys(st.arena.wins || {}).forEach(function (id) { if (S.TROPHIES[id] && !st.trophies[id]) st.trophies[id] = st.arena.last[id] || 1; });
     if (!st.playerId) st.playerId = P.newId();
     if (!st.cosmetics) st.cosmetics = { owned: {}, moldura: null, nome: null };
     if (!st.cosmetics.owned) st.cosmetics.owned = {};
@@ -51,7 +62,9 @@
     qty = Math.max(1, Math.floor(qty || 1));
     var it = S.ITEMS[id], price = P.price(id);
     if (!it || !price) return { ok: false, msg: 'Este item não está na Loja Exclusiva.' };
-    if (it.equip && qty > 1) qty = 1;
+    if ((it.equip || it.perma || it.perk) && qty > 1) qty = 1;
+    if (it.perma && E.count(st, id) > 0) return { ok: false, msg: 'Esta relíquia já é tua para sempre.' };
+    if (it.perk && ((st.perks && st.perks[it.perk]) || E.count(st, id) > 0)) return { ok: false, msg: 'Este bónus já é teu.' };
     if (it.equip && (E.count(st, id) > 0 || Object.keys(st.equip).some(function (k) { return st.equip[k] === id; }))) return { ok: false, msg: 'Já tens este equipamento.' };
     var total = price * qty;
     if (st.crystals < total) return { ok: false, msg: 'Faltam ' + (total - st.crystals) + ' Cristais.', need: total - st.crystals };
@@ -65,6 +78,15 @@
     return { ok: true, total: total, msg: 'Compraste ' + (qty > 1 ? qty + '× ' : '') + it.name + '.' };
   };
 
+  /* relíquias permanentes: prontas ou a recarregar */
+  P.relicReady = function (st, id) { return !(st.relics && st.relics[id] > now()); };
+  P.relicReadyAt = function (st, id) { return (st.relics && st.relics[id]) || 0; };
+  P.relicSpend = function (st, id) { st.relics = st.relics || {}; st.relics[id] = now() + (S.ITEMS[id].recharge || 24) * 3600000; E.bump(st, 'consumablesUsed'); };
+  P.rechargeAll = function (st) {
+    var n = 0; st.relics = st.relics || {};
+    (S.PREMIUM_RELICS || []).forEach(function (id) { if (st.inv[id] > 0 && st.relics[id] > now()) { st.relics[id] = 0; n++; } });
+    return n;
+  };
   /* preço em Cristais: itens premium ou itens normais vendidos também por Cristais */
   P.price = function (id) { var it = S.ITEMS[id]; return it ? (it.premium && it.crystals) || (S.PREMIUM_PRICES && S.PREMIUM_PRICES[id]) || 0 : 0; };
 

@@ -83,6 +83,7 @@
   /* o que acontece ao usar */
   L.useRows = function (it, st) {
     var u = it.use, rows = [];
+    if (it.perma) { rows.push(['Tipo', 'Relíquia permanente: compras uma vez, fica para sempre']); rows.push(['Recarga', it.recharge + ' horas depois de usada']); }
     if (!u) return rows;
     switch (u.type) {
       case 'heal': rows.push(['Efeito', 'Recupera ' + u.pct + '% da vida máxima']); break;
@@ -118,11 +119,12 @@
         } else rows.push(['Efeito', 'Chama um ' + S.ITEMS['bau_' + u.tier].name + (u.bonusChance ? ', com ' + pct(u.bonusChance) + ' de hipótese de um ' + S.ITEMS['bau_' + u.bonus].name : '')]);
         break;
       case 'unlockSkill': rows.push(['Efeito', 'Aprendes a habilidade secreta ' + S.ALL_SKILLS[u.skill].name]); break;
-      case 'revive': rows.push(['Efeito', 'Ao morrer em combate, renasces com ' + u.pct + '% da vida (gasta-se)']); break;
+      case 'revive': rows.push(['Efeito', 'Ao morrer em combate, renasces com ' + u.pct + '% da vida' + (it.perma ? '' : ' (gasta-se)')]); break;
       case 'coins': rows.push(['Efeito', 'Recebes ' + fmt(u.amount) + ' moedas']); break;
       case 'judgment': rows.push(['Efeito', 'Tira ' + S.PREMIUM_RULES.judgmentPct + '% da vida máxima do chefe'], ['Contra Campeões e chefes finais', S.PREMIUM_RULES.judgmentPctPremium + '% da vida máxima'], ['Limite', S.PREMIUM_RULES.perBattle + ' relíquia premium por batalha']); break;
       case 'monarch': rows.push(['Efeito', 'Vida e mana a 100%, remove efeitos negativos e +40% de ataque e ataque mágico durante 3 turnos'], ['Limite', S.PREMIUM_RULES.perBattle + ' relíquia premium por batalha (não conta para o limite de poções)']); break;
-      case 'monarchChest': rows.push(['Contém', 'Baú Lendário + 1 relíquia de combate premium ao acaso + moedas que acompanham o teu nível']); break;
+      case 'monarchChest': rows.push(['Contém', 'Baú Lendário + Baú Secreto + moedas que acompanham o teu nível + recarga de todas as relíquias']); break;
+      case 'perk': rows.push(['Duração', 'Para sempre (usa-se uma vez)']); break;
       case 'revealBoss': rows.push(['Efeito', 'Revela um portão escondido']); break;
       case 'system': rows.push(['Efeito', it.desc], ['Tipo', 'Artefato do Sistema (usa-se na Bolsa)']); break;
       case 'fragment': rows.push(['Efeito', 'Junta ' + u.need + ' para formar o ' + S.ITEMS[u.result].name]); break;
