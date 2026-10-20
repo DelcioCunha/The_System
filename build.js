@@ -153,6 +153,7 @@ delete INLINE.SHADOW_ART;
 Object.keys(INLINE).forEach((name) => { previewJs = previewJs.replace('SYS.' + name + ' = ' + JSON.stringify(INLINE[name]) + ';', 'SYS.' + name + ' = ' + JSON.stringify(inlineMap(INLINE[name])) + ';'); });
 previewJs = previewJs.replace('SYS.SHADOW_ART = ' + JSON.stringify(shadowArt) + ';', 'SYS.SHADOW_ART = ' + JSON.stringify(inlineMap(shadowPv)) + ';');
 // as sombras das arenas vão num ficheiro à parte (pv-extra.js), carregado depois da página: não pesa no limite de 16 MB da página nem no de ficheiros
+fs.mkdirSync(path.join(ROOT, 'dist'), { recursive: true });
 fs.writeFileSync(path.join(ROOT, 'dist', 'pv-extra.js'), 'Object.assign(SYS.SHADOW_ART, ' + JSON.stringify(inlineMap(shadowFiles)) + ');\nif (SYS.ui && SYS.ui.render) SYS.ui.render();\n');
 // as imagens das classes são iguais ao retrato de nível 1: a pré-visualização usa essas (limite de 512 ficheiros)
 previewJs = previewJs.replace(/"classes\/([a-z]+)\.webp"/g, '"avatars/$1/1.webp"');
