@@ -35,5 +35,6 @@
   "src/engine/body.js",
   "src/engine/premium.js",
   "src/engine/shop.js",
+  "src/engine/social.js",
   "src/engine/lore.js"
 ]

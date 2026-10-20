@@ -566,4 +566,147 @@ await test('apagar conta: exige confirmação, apaga os dados, o jogo é avisado
   assert.ok((await A.get('/api/admin/audit')).audit.some((e) => e.action === 'player.delete'));
 });
 
+console.log('Social e duelos');
+const P3 = 'jogador_ttt33333', TOK3 = 'segredo-do-jogador-3-xxxxxxxxxxxxxx';
+const as = (pid, tok) => ({ player_id: pid, token: tok });
+async function trio(S) {
+  await syncP(S, P1, TOK1, { name: 'Delcio', cls: 'guerreiro', level: 30 });
+  await syncP(S, P2, TOK2, { name: 'Ana', cls: 'mago', level: 30 });
+  await syncP(S, P3, TOK3, { name: 'Rui', cls: 'assassino', level: 5 });
+}
+const FIGHT = { hp: 1400, mp: 170, atk: 330, matk: 17, def: 108, crit: 10, critDmg: 150, eva: 3, lifesteal: 0, agi: 12 };
+
+await test('amigos: pedido, aceitar, lista com online/offline, recusar e remover; só jogadores reais', async () => {
+  const S = await setup('production'); await trio(S);
+  const C = (u, b) => S.call('POST', u, b);
+  assert.equal((await C('/api/social/state', as(P1, 'token-errado-xxxxxxxxxxxxxx'))).status, 403);
+  assert.equal((await C('/api/social/friend/request', Object.assign(as(P1, TOK1), { to: 'jogador_inexistente' }))).status, 404);
+  assert.equal((await C('/api/social/friend/request', Object.assign(as(P1, TOK1), { to: P1 }))).status, 400);
+  const f = await C('/api/social/find', Object.assign(as(P1, TOK1), { query: 'An' }));
+  assert.equal(f.players.length, 1); assert.equal(f.players[0].id, P2); assert.equal(f.players[0].relation, 'none');
+  assert.equal((await C('/api/social/friend/request', Object.assign(as(P1, TOK1), { to: P2 }))).status, 'sent');
+  let s2 = await C('/api/social/state', as(P2, TOK2));
+  assert.equal(s2.requests_in.length, 1); assert.equal(s2.requests_in[0].name, 'Delcio');
+  assert.equal((await C('/api/social/friend/respond', Object.assign(as(P2, TOK2), { from: P1, accept: true }))).status, 'friend');
+  let s1 = await C('/api/social/state', as(P1, TOK1));
+  assert.equal(s1.friends.length, 1); assert.ok(s1.friends[0].online, 'acabou de usar o jogo: online');
+  tick(10 * 60 * 1000);
+  s1 = await C('/api/social/state', as(P1, TOK1)); assert.ok(!s1.friends[0].online, 'sem atividade há 10 min: offline');
+  // pedido cruzado vira amizade; recusar apaga
+  await C('/api/social/friend/request', Object.assign(as(P3, TOK3), { to: P1 }));
+  assert.equal((await C('/api/social/friend/respond', Object.assign(as(P1, TOK1), { from: P3, accept: false }))).status, 'none');
+  assert.equal((await C('/api/social/state', as(P3, TOK3))).requests_out.length, 0);
+  await C('/api/social/friend/request', Object.assign(as(P3, TOK3), { to: P1 }));
+  assert.equal((await C('/api/social/friend/request', Object.assign(as(P1, TOK1), { to: P3 }))).status, 'friend');
+  assert.equal((await C('/api/social/friend/remove', Object.assign(as(P1, TOK1), { other: P3 }))).status, 'none');
+  assert.equal((await C('/api/social/state', as(P1, TOK1))).friends.length, 1);
+});
+
+await test('conversa: só entre amigos, mensagens por ler, histórico e limite de envio', async () => {
+  const S = await setup('production'); await trio(S);
+  const C = (u, b) => S.call('POST', u, b);
+  assert.equal((await C('/api/social/chat/send', Object.assign(as(P1, TOK1), { to: P2, text: 'olá' }))).status, 403, 'ainda não são amigos');
+  await C('/api/social/friend/request', Object.assign(as(P1, TOK1), { to: P2 }));
+  await C('/api/social/friend/respond', Object.assign(as(P2, TOK2), { from: P1, accept: true }));
+  const m = await C('/api/social/chat/send', Object.assign(as(P1, TOK1), { to: P2, text: '  Bora um duelo? <b>x</b>  ' }));
+  assert.equal(m.status, 200, m.error); assert.equal(m.message.text, 'Bora um duelo? <b>x</b>');
+  await C('/api/social/chat/send', Object.assign(as(P1, TOK1), { to: P2, text: 'Estou online' }));
+  let s2 = await C('/api/social/state', as(P2, TOK2));
+  assert.equal(s2.unread, 2); assert.equal(s2.friends[0].unread, 2);
+  const h = await C('/api/social/chat/history', Object.assign(as(P2, TOK2), { with: P1 }));
+  assert.deepEqual(h.messages.map((x) => x.text), ['Bora um duelo? <b>x</b>', 'Estou online']);
+  s2 = await C('/api/social/state', as(P2, TOK2)); assert.equal(s2.unread, 0, 'lidas');
+  const r = await C('/api/social/chat/send', Object.assign(as(P2, TOK2), { to: P1, text: 'Vamos!' }));
+  const after = await C('/api/social/chat/history', Object.assign(as(P1, TOK1), { with: P2, after: h.messages[1].id }));
+  assert.deepEqual(after.messages.map((x) => x.id), [r.message.id], 'só as novas');
+  assert.equal((await C('/api/social/chat/send', Object.assign(as(P1, TOK1), { to: P2, text: '   ' }))).status, 400);
+  let last; for (let i = 0; i < 31; i++) last = await C('/api/social/chat/send', Object.assign(as(P1, TOK1), { to: P2, text: 'spam ' + i }));
+  assert.equal(last.status, 429);
+  assert.equal((await C('/api/social/chat/history', Object.assign(as(P3, TOK3), { with: P1 }))).status, 403);
+});
+
+await test('duelo: sala, convite, entrar por código, turnos decididos pelo servidor até ao fim, registo e pontuação', async () => {
+  const S = await setup('production'); await trio(S);
+  const C = (u, b) => S.call('POST', u, b);
+  await C('/api/social/friend/request', Object.assign(as(P1, TOK1), { to: P2 }));
+  await C('/api/social/friend/respond', Object.assign(as(P2, TOK2), { from: P1, accept: true }));
+  assert.equal((await C('/api/duel/create', Object.assign(as(P1, TOK1), { fighter: FIGHT, invite: P3 }))).status, 400, 'só convida amigos');
+  const c = await C('/api/duel/create', Object.assign(as(P1, TOK1), { fighter: Object.assign({}, FIGHT, { hp: 1e9, atk: 1e9, crit: 100 }), invite: P2, public: false }));
+  assert.equal(c.status, 200, c.error); assert.match(c.duel.code, /^[A-Z2-9]{6}$/);
+  assert.ok(c.duel.fighters[P1].maxHp <= (150 * 30 + 800) * 1.5 && c.duel.fighters[P1].atk <= 25 * 30 + 200 && c.duel.fighters[P1].crit <= 50, 'atributos limitados ao nível registado');
+  assert.equal((await C('/api/duel/create', Object.assign(as(P1, TOK1), { fighter: FIGHT }))).status, 409, 'só uma sala de cada vez');
+  let s2 = await C('/api/social/state', as(P2, TOK2));
+  assert.equal(s2.invites.length, 1); assert.equal(s2.open.length, 0, 'sala privada não aparece na lista');
+  assert.equal((await C('/api/duel/join', Object.assign(as(P1, TOK1), { code: c.duel.code, fighter: FIGHT }))).status, 400, 'o dono não entra na própria sala');
+  const j = await C('/api/duel/join', Object.assign(as(P2, TOK2), { code: c.duel.code.toLowerCase(), fighter: Object.assign({}, FIGHT, { agi: 50 }) }));
+  assert.equal(j.status, 200, j.error); assert.equal(j.duel.status, 'active'); assert.equal(j.duel.turn, P2, 'mais ágil começa');
+  assert.equal((await C('/api/duel/join', Object.assign(as(P3, TOK3), { code: c.duel.code, fighter: FIGHT }))).status, 409, 'sala cheia');
+  assert.equal((await C('/api/duel/act', Object.assign(as(P1, TOK1), { id: c.duel.id, action: 'attack' }))).status, 409, 'não é a vez dele');
+  // jogada repetida (mesma versão) não conta duas vezes
+  const v = j.duel.version;
+  const a1 = await C('/api/duel/act', Object.assign(as(P2, TOK2), { id: c.duel.id, action: 'attack', version: v }));
+  assert.equal(a1.duel.turn, P1);
+  const a2 = await C('/api/duel/act', Object.assign(as(P2, TOK2), { id: c.duel.id, action: 'attack', version: v }));
+  assert.ok(a2.stale); assert.equal(a2.duel.version, a1.duel.version);
+  // poções: só 2; habilidade com recarga
+  let d = a1.duel, turnOf = { [P1]: TOK1, [P2]: TOK2 }, used = 0, guard = 0;
+  while (d.status === 'active' && guard++ < 400) {
+    const who = d.turn, tok = turnOf[who], F = d.fighters[who];
+    let action = 'attack';
+    if (F.hp < F.maxHp * 0.5 && F.pots > 0) action = 'potion';
+    else if (!F.cds.skill && F.mp >= F.maxMp * 0.4) action = 'skill';
+    const r = await C('/api/duel/act', Object.assign(as(who, tok), { id: d.id, action, version: d.version }));
+    assert.equal(r.status, 200, r.error);
+    if (action === 'potion') used++;
+    d = r.duel;
+  }
+  assert.equal(d.status, 'done'); assert.ok(d.winner === P1 || d.winner === P2);
+  assert.ok(used <= 4); assert.ok(d.log.some((l) => /venceu o duelo/.test(l.t)));
+  const loser = d.winner === P1 ? P2 : P1;
+  assert.equal((await C('/api/duel/act', Object.assign(as(d.winner, turnOf[d.winner]), { id: d.id, action: 'attack' }))).status, 409);
+  const sw = await C('/api/social/state', as(d.winner, turnOf[d.winner])), sl = await C('/api/social/state', as(loser, turnOf[loser]));
+  assert.equal(sw.me.wins, 1); assert.equal(sl.me.losses, 1); assert.ok(sw.me.rating > 1000 && sl.me.rating < 1000);
+  assert.equal((await C('/api/duel/history', as(P1, TOK1))).duels.length, 1);
+});
+
+await test('duelo: salas públicas, tempo esgotado (2 vezes = derrota), desistir e salas esquecidas', async () => {
+  const S = await setup('production'); await trio(S);
+  const C = (u, b) => S.call('POST', u, b);
+  const c = await C('/api/duel/create', Object.assign(as(P1, TOK1), { fighter: FIGHT }));
+  assert.equal((await C('/api/social/state', as(P3, TOK3))).open.length, 1, 'sala pública visível');
+  const j = await C('/api/duel/join', Object.assign(as(P3, TOK3), { id: c.duel.id, fighter: FIGHT }));
+  const first = j.duel.turn, tokOf = { [P1]: TOK1, [P3]: TOK3 }, other = first === P1 ? P3 : P1;
+  tick(46 * 1000);
+  let g = await C('/api/duel/state', Object.assign(as(other, tokOf[other]), { id: c.duel.id }));
+  assert.equal(g.duel.turn, other, 'tempo esgotado: passa a vez');
+  await C('/api/duel/act', Object.assign(as(other, tokOf[other]), { id: c.duel.id, action: 'defend' }));
+  tick(46 * 1000);
+  g = await C('/api/duel/state', Object.assign(as(other, tokOf[other]), { id: c.duel.id }));
+  assert.equal(g.duel.status, 'done'); assert.equal(g.duel.winner, other); assert.equal(g.duel.reason, 'timeout');
+  // desistir
+  const c2 = await C('/api/duel/create', Object.assign(as(P1, TOK1), { fighter: FIGHT }));
+  await C('/api/duel/join', Object.assign(as(P2, TOK2), { code: c2.duel.code, fighter: FIGHT }));
+  const l = await C('/api/duel/leave', Object.assign(as(P1, TOK1), { id: c2.duel.id }));
+  assert.equal(l.duel.winner, P2); assert.equal(l.duel.reason, 'forfeit');
+  // convidar um amigo para uma sala já aberta
+  await C('/api/social/friend/request', Object.assign(as(P1, TOK1), { to: P2 }));
+  await C('/api/social/friend/respond', Object.assign(as(P2, TOK2), { from: P1, accept: true }));
+  const c5 = await C('/api/duel/create', Object.assign(as(P1, TOK1), { fighter: FIGHT }));
+  assert.equal((await C('/api/duel/invite', Object.assign(as(P1, TOK1), { id: c5.duel.id, to: P3 }))).status, 400, 'P3 não é amigo');
+  assert.equal((await C('/api/duel/invite', Object.assign(as(P2, TOK2), { id: c5.duel.id, to: P1 }))).status, 404, 'só o dono convida');
+  assert.equal((await C('/api/duel/invite', Object.assign(as(P1, TOK1), { id: c5.duel.id, to: P2 }))).duel.invited, P2);
+  assert.equal((await C('/api/social/state', as(P2, TOK2))).invites.length, 1);
+  await C('/api/duel/leave', Object.assign(as(P1, TOK1), { id: c5.duel.id }));
+  // sala sem adversário fecha ao fim de 30 min; fechar a própria sala
+  const c3 = await C('/api/duel/create', Object.assign(as(P1, TOK1), { fighter: FIGHT }));
+  tick(31 * 60 * 1000);
+  assert.equal((await C('/api/duel/join', Object.assign(as(P2, TOK2), { code: c3.duel.code, fighter: FIGHT }))).status, 404);
+  const c4 = await C('/api/duel/create', Object.assign(as(P1, TOK1), { fighter: FIGHT }));
+  assert.equal((await C('/api/duel/leave', Object.assign(as(P1, TOK1), { id: c4.duel.id }))).duel.status, 'cancelled');
+  // jogador suspenso não entra no social
+  const A = S.admin(await S.login());
+  await A.post('/api/admin/players/' + P3 + '/ban', { reason: 'Teste', days: 1 });
+  assert.equal((await C('/api/social/state', as(P3, TOK3))).status, 403);
+});
+
 console.log('\n' + passed + ' testes do servidor passaram' + (process.exitCode ? ' (com falhas)' : ''));

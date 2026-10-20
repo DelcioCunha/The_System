@@ -1805,6 +1805,28 @@ test('Sombras: treino com um servo dá recompensa pequena, não castiga a derrot
   });
 });
 
+test('Duelos: a recompensa entra uma vez por duelo e só nos primeiros 5 do dia; perder não tira nada', () => {
+  const { S } = boot();
+  at(S, 2026, 10, 20, 10);
+  const E = S.engine, SO = S.social;
+  E.start('Delcio', 'guerreiro');
+  const st = E.state; st.level = 30;
+  const me = st.playerId, mk = (id, won) => ({ id, status: 'done', me, host: me, guest: 'outro_jogador1', winner: won ? me : 'outro_jogador1', reason: 'ko', fighters: { [me]: { name: 'Delcio', hp: 10, maxHp: 100 }, outro_jogador1: { name: 'Ana', hp: 0, maxHp: 100 } } });
+  const xp0 = st.xp, c0 = st.coins, lv = st.level;
+  const r1 = SO.reward(mk('d1', true));
+  assert.ok(r1.won && r1.xp > 0 && r1.coins > 0);
+  assert.strictEqual(SO.reward(mk('d1', true)), r1, 'o mesmo duelo não paga duas vezes');
+  const c1 = st.coins; assert.strictEqual(SO.reward(mk('d1', true)).coins, r1.coins); assert.strictEqual(st.coins, c1);
+  const lose = SO.reward(mk('d2', false)); assert.ok(!lose.won && lose.xp > 0 && lose.xp < r1.xp); assert.ok(st.level >= lv);
+  ['d3', 'd4', 'd5'].forEach((id) => SO.reward(mk(id, true)));
+  const capped = SO.reward(mk('d6', true)); assert.ok(capped.capped && !capped.xp, 'só 5 por dia');
+  at(S, 2026, 10, 21, 10); assert.ok(SO.reward(mk('d7', true)).xp > 0, 'no dia seguinte volta');
+  assert.strictEqual(st.c.duelsPlayed, 7); assert.strictEqual(st.c.duelWins, 6);
+  assert.ok(st.achievements.duel1);
+  const f = SO.fighter(st); assert.ok(f.hp > 0 && f.atk > 0 && f.cls === 'guerreiro');
+  void xp0; void c0;
+});
+
 test('Conquistas II: 66 novas, todas avaliam sem erro e desbloqueiam com o progresso certo', () => {
   const { S } = boot();
   at(S, 2026, 10, 20, 10);

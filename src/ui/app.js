@@ -266,6 +266,9 @@
     if (ui.page === 'trophies') return trophiesPage(st);
     if (ui.page === 'servos') return servantsPage(st);
     if (ui.page === 'avisos') return noticesPage(st);
+    if (ui.page === 'social') return socialPage(st);
+    if (ui.page === 'chat') return chatPage(st);
+    if (ui.page === 'duel') return duelPage(st);
     if (ui.page === 'settings') return settingsPage(st);
     if (ui.page === 'credits') return creditsPage(st);
     if (ui.page === 'reports') return reportsPage(st);
@@ -321,6 +324,7 @@
       '<button class="btn" data-a="page" data-p="ach">Conquistas <span class="muted">' + achDone + '/' + S.ACHIEVEMENTS.length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="trophies">Troféus <span class="muted">' + E.trophyCount(st) + '/' + Object.keys(S.TROPHIES).length + '</span></button>' +
       '<button class="btn notice-menu' + (S.shop.unread(st) ? ' has-new' : '') + '" data-a="page" data-p="avisos">Avisos ' + (S.shop.unread(st) ? '<span class="badge-in">' + S.shop.unread(st) + '</span>' : '<span class="muted">' + S.shop.notices(st).list.length + '</span>') + '</button>' +
+      '<button class="btn soc-menu' + (SO.badge() ? ' has-new' : '') + '" data-a="page" data-p="social">Duelos e Amigos ' + (SO.badge() ? '<span class="badge-in">' + SO.badge() + '</span>' : (SO.cache && SO.cache.ok ? '<span class="muted">' + SO.cache.friends.filter(function (f) { return f.online; }).length + ' online</span>' : '')) + '</button>' +
       '<button class="btn sh-menu" data-a="page" data-p="servos">Servos <span class="muted">' + Sh.owned(st).length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="collection">Coleção</button>' +
       '<button class="btn" data-a="page" data-p="history">Histórico</button>' +
@@ -464,7 +468,7 @@
     ['missoes', 'Missões e disciplina', '📋', 'm1 m10 m50 m100 m500 m1000 mS mS10 create10 d1 d7 d30 d100 d365 emg1 emg10 hid1 hid10 zone1 trust leisure night early fail1'],
     ['progresso', 'Progresso e poder', '⭐', 'l5 l10 l25 l50 l75 l100 points all50 all100 core skill20 secret3 form10 form34'],
     ['combate', 'Combate e portões', '⚔️', 'b1 b10 b25 b50 b100 b200 giant giant10 giant3 clutch flawless flaw10 lose5 lose15 brave secretboss architect'],
-    ['sombras', 'Sombras e servos', '🌑', 'sh1 sh10 sh25 sh50 sh100 shking shking10 shar1 shar10 sharch shar100 shfirst shlast shlost shlost10 shname shfull spar1 spar25 sparlose'],
+    ['sombras', 'Sombras e servos', '🌑', 'duel1 duel10 duel50 duelperf friend5 friend20 sh1 sh10 sh25 sh50 sh100 shking shking10 shar1 shar10 sharch shar100 shfirst shlast shlost shlost10 shname shfull spar1 spar25 sparlose'],
     ['coliseu', 'Coliseu', '🏟️', 'ar_1 ar_5 ar_10 ar_first ar1 ar5 ar10 grd1 grd45 grd90 ten1 champ1 champ5 champ10 firstp rematch'],
     ['trofeus', 'Troféus', '🏆', 'tr25 tr100 tr202 set1 set5 set10'],
     ['riqueza', 'Riqueza e coleção', '💰', 'rich rich2 rich3 spend sell50 collector items100 arsenal chest25 chest100 chest500 spch10 spchm secretchest potions talk50'],
@@ -840,6 +844,156 @@
     }
     return h;
   }
+  /* ================= SOCIAL: amigos, conversas e duelos ================= */
+  var SO = S.social;
+  function clsName(c) { return S.CLASSES[c] ? S.CLASSES[c].name : 'Caçador'; }
+  function socAvatar(p, cls) { return '<span class="soc-av ' + (cls || '') + '">' + (p.cls && S.CLASSES[p.cls] ? S.avatar.html(p.cls, p.level || 1, 'mini') : '<span class="soc-av-x">' + esc((p.name || '?')[0]) + '</span>') + (p.online != null ? '<i class="dot ' + (p.online ? 'on' : 'off') + '"></i>' : '') + '</span>'; }
+  function seenText(p) {
+    if (p.online) return 'Online';
+    if (!p.seen) return 'Offline';
+    var d = SO.serverNow() - p.seen, m = Math.floor(d / 60000);
+    return m < 60 ? 'Visto há ' + Math.max(1, m) + ' min' : m < 1440 ? 'Visto há ' + Math.floor(m / 60) + ' h' : 'Visto há ' + Math.floor(m / 1440) + ' d';
+  }
+  function socNoLink() {
+    return '<section class="win"><div class="empty">O Social precisa de ligação ao servidor do Sistema.<br><span class="small muted">Verifica a internet e volta a abrir esta página.</span></div></section>';
+  }
+  function socialPage(st) {
+    var h = backBtn('Social');
+    if (!SO.ready()) return h + socNoLink();
+    var c = SO.cache, t = ui.socTab || 'amigos';
+    if (!c) { socLoad(true); return h + '<section class="win"><div class="empty">A ligar ao Sistema…</div></section>'; }
+    if (!c.ok) return h + '<section class="win"><div class="empty">' + esc(c.msg || 'Não foi possível ligar.') + '</div><button class="btn block" data-a="soc-reload">Tentar outra vez</button></section>';
+    var me = c.me, inc = c.requests_in.length + c.invites.length;
+    h += '<section class="win soc-me"><div class="row">' + socAvatar({ cls: st.cls, level: st.level, name: st.name, online: true }, 'big') +
+      '<div class="grow"><div class="card-t">' + esc(st.name) + '</div><div class="small muted">' + clsName(st.cls) + ' · Nv ' + st.level + '</div>' +
+      '<button class="btn sm mono id-chip" data-a="id-copy">' + esc(st.playerId) + ' ⧉</button></div>' +
+      '<div class="soc-rec"><b class="mono">' + me.rating + '</b><span class="small muted">pontos</span><span class="small"><span style="color:var(--good)">' + me.wins + 'V</span> · <span style="color:var(--danger)">' + me.losses + 'D</span></span></div></div>' +
+      '<p class="hint" style="margin:8px 0 0">Partilha o teu ID para os outros jogadores te adicionarem.</p></section>';
+    h += '<div class="chips" style="margin-top:12px">' + [['amigos', 'Amigos', c.friends.length, c.unread], ['duelos', 'Duelos', null, c.invites.length], ['pedidos', 'Pedidos', null, c.requests_in.length]].map(function (x) {
+      return '<button class="chip' + (t === x[0] ? ' on' : '') + '" data-a="soc-tab" data-v="' + x[0] + '">' + x[1] + (x[2] != null ? ' <span class="muted">' + x[2] + '</span>' : '') + (x[3] ? ' <span class="badge-in">' + x[3] + '</span>' : '') + '</button>';
+    }).join('') + '</div>';
+    if (c.duel) h += '<button class="notice-banner duel-banner" data-a="duel-open" data-id="' + c.duel.id + '"><span class="nb-ico">⚔</span><span class="grow"><b>' + (c.duel.status === 'active' ? 'Duelo em curso' : 'A tua sala de duelo está aberta') + '</b><span class="small muted">Sala ' + esc(c.duel.code) + '</span></span><span class="nb-go">Abrir ›</span></button>';
+    if (t === 'amigos') h += friendsTab(st, c);
+    else if (t === 'duelos') h += duelsTab(st, c);
+    else h += requestsTab(st, c);
+    return h;
+  }
+  function friendsTab(st, c) {
+    var h = '<section class="win"><div class="win-h">Adicionar amigo</div><div class="row"><input class="in grow" id="soc-q" data-keep maxlength="40" placeholder="ID de Jogador ou nome" autocomplete="off"><button class="btn" data-a="soc-find">Procurar</button></div>';
+    if (ui.socFound) {
+      h += '<div class="stack" style="gap:8px;margin-top:10px">' + (ui.socFound.length ? ui.socFound.map(function (p) {
+        var rel = p.relation, btn = rel === 'friend' ? '<span class="tag good">Amigo</span>' : rel === 'sent' ? '<span class="tag">Pedido enviado</span>' : rel === 'received' ? '<button class="btn sm pri" data-a="soc-accept" data-id="' + esc(p.id) + '">Aceitar</button>' : '<button class="btn sm pri" data-a="soc-add" data-id="' + esc(p.id) + '">Adicionar</button>';
+        return '<div class="card soc-row"><div class="card-h">' + socAvatar(p) + '<div class="grow"><div class="card-t">' + esc(p.name) + '</div><div class="small muted">' + clsName(p.cls) + ' · Nv ' + p.level + ' · ' + seenText(p) + '</div></div>' + btn + '</div></div>';
+      }).join('') : '<div class="small muted">Ninguém encontrado.</div>') + '</div>';
+    }
+    h += '</section>';
+    var on = c.friends.filter(function (f) { return f.online; }).length;
+    h += '<section class="win"><div class="win-h">Amigos <small>' + on + ' online · ' + c.friends.length + '</small></div>';
+    if (!c.friends.length) h += '<div class="empty">Ainda não tens amigos no Sistema. Procura alguém pelo ID ou pelo nome.</div>';
+    else h += '<div class="stack" style="gap:8px">' + c.friends.map(function (f) {
+      return '<div class="card soc-row' + (f.online ? ' online' : '') + '"><div class="card-h">' + socAvatar(f) + '<div class="grow"><div class="card-t">' + esc(f.name) + (f.unread ? ' <span class="badge-in">' + f.unread + '</span>' : '') + '</div>' +
+        '<div class="small muted">' + clsName(f.cls) + ' · Nv ' + f.level + ' · <span class="' + (f.online ? 'on-txt' : '') + '">' + seenText(f) + '</span></div></div></div>' +
+        '<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm grow" data-a="chat-open" data-id="' + esc(f.id) + '">💬 Conversar</button><button class="btn sm grow bad" data-a="duel-invite" data-id="' + esc(f.id) + '">⚔ Desafiar</button><button class="btn sm ghost" data-a="soc-remove" data-id="' + esc(f.id) + '" aria-label="Remover amigo">✕</button></div></div>';
+    }).join('') + '</div>';
+    return h + '</section>';
+  }
+  function requestsTab(st, c) {
+    var h = '<section class="win"><div class="win-h">Pedidos recebidos <small>' + c.requests_in.length + '</small></div>';
+    h += c.requests_in.length ? '<div class="stack" style="gap:8px">' + c.requests_in.map(function (p) {
+      return '<div class="card soc-row"><div class="card-h">' + socAvatar(p) + '<div class="grow"><div class="card-t">' + esc(p.name) + '</div><div class="small muted">' + clsName(p.cls) + ' · Nv ' + p.level + '</div></div></div>' +
+        '<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm pri grow" data-a="soc-accept" data-id="' + esc(p.id) + '">Aceitar</button><button class="btn sm ghost grow" data-a="soc-decline" data-id="' + esc(p.id) + '">Recusar</button></div></div>';
+    }).join('') + '</div>' : '<div class="empty">Sem pedidos de amizade.</div>';
+    h += '</section><section class="win"><div class="win-h">Pedidos enviados <small>' + c.requests_out.length + '</small></div>';
+    h += c.requests_out.length ? '<div class="stack" style="gap:8px">' + c.requests_out.map(function (p) {
+      return '<div class="card soc-row"><div class="card-h">' + socAvatar(p) + '<div class="grow"><div class="card-t">' + esc(p.name) + '</div><div class="small muted">À espera de resposta</div></div><button class="btn sm ghost" data-a="soc-remove" data-id="' + esc(p.id) + '">Cancelar</button></div></div>';
+    }).join('') + '</div>' : '<div class="empty">Nenhum pedido à espera.</div>';
+    return h + '</section>';
+  }
+  function duelsTab(st, c) {
+    var so = SO.ensure(st), today = E.dateKey(), left = Math.max(0, SO.DAILY - (so.day === today ? so.count : 0));
+    var h = '<section class="win duel-win"><div class="win-h">Arena de Duelos</div>' +
+      '<p class="small muted" style="margin:0 0 10px">Combate 1 contra 1, por turnos, contra jogadores reais. Cada um usa os seus atributos e a habilidade da sua classe. Perder não tira nada. Recompensas hoje: <b>' + left + '/' + SO.DAILY + '</b> duelos.</p>' +
+      '<div class="row" style="gap:6px"><button class="btn bad grow" data-a="duel-create" data-p="1">⚔ Criar sala pública</button><button class="btn grow" data-a="duel-create" data-p="0">Sala privada</button></div>' +
+      '<div class="row" style="margin-top:8px"><input class="in grow mono" id="duel-code" data-keep maxlength="6" placeholder="Código da sala" autocomplete="off" style="text-transform:uppercase"><button class="btn" data-a="duel-join-code">Entrar</button></div></section>';
+    if (c.invites.length) h += '<section class="win gold"><div class="win-h">Desafios recebidos <small>' + c.invites.length + '</small></div><div class="stack" style="gap:8px">' + c.invites.map(function (d) {
+      return '<div class="card soc-row"><div class="card-h">' + socAvatar(d) + '<div class="grow"><div class="card-t">' + esc(d.name) + ' desafia-te</div><div class="small muted">' + clsName(d.cls) + ' · Nv ' + d.level + ' · sala ' + esc(d.code) + '</div></div><button class="btn sm bad" data-a="duel-join" data-id="' + esc(d.id) + '">Aceitar</button></div></div>';
+    }).join('') + '</div></section>';
+    h += '<section class="win"><div class="win-h">Salas abertas <small>' + c.open.length + '</small></div>' + (c.open.length ? '<div class="stack" style="gap:8px">' + c.open.map(function (d) {
+      var gap = d.level - st.level;
+      return '<div class="card soc-row"><div class="card-h">' + socAvatar(d) + '<div class="grow"><div class="card-t">' + esc(d.name) + '</div><div class="small muted">' + clsName(d.cls) + ' · Nv ' + d.level + ' · ' + d.rating + ' pontos' + (Math.abs(gap) >= 10 ? ' · <span style="color:' + (gap > 0 ? 'var(--danger)' : 'var(--good)') + '">' + (gap > 0 ? '+' : '') + gap + ' níveis</span>' : '') + '</div></div><button class="btn sm bad" data-a="duel-join" data-id="' + esc(d.id) + '">Lutar</button></div></div>';
+    }).join('') + '</div>' : '<div class="empty">Nenhuma sala aberta agora. Cria a tua e espera por um adversário.</div>') + '</section>';
+    h += '<section class="win"><div class="win-h">Últimos duelos</div>' + (ui.duelHist ? (ui.duelHist.length ? '<div class="stack" style="gap:6px">' + ui.duelHist.map(function (x) {
+      return '<div class="row between small"><span>' + (x.won ? '<b style="color:var(--good)">Vitória</b>' : '<b style="color:var(--danger)">Derrota</b>') + ' contra ' + esc(x.opponent || '?') + '</span><span class="muted">' + timeStr(x.at) + '</span></div>';
+    }).join('') + '</div>' : '<div class="empty">Ainda não fizeste nenhum duelo.</div>') : '<button class="btn block ghost" data-a="duel-hist">Ver histórico</button>') + '</section>';
+    return h;
+  }
+  function chatPage(st) {
+    var c = SO.cache, fid = ui.chatWith, f = (c && c.friends || []).filter(function (x) { return x.id === fid; })[0] || ui.chatFriend || { id: fid, name: 'Amigo' };
+    var msgs = ui.chatMsgs || [];
+    var h = '<div class="row" style="margin-top:14px"><button class="btn sm ghost" data-a="soc-back">‹ Voltar</button>' + socAvatar(f) + '<div class="grow"><h2 style="font-size:17px;margin:0">' + esc(f.name) + '</h2><div class="small muted">' + (f.level ? clsName(f.cls) + ' · Nv ' + f.level + ' · ' : '') + seenText(f) + '</div></div>' +
+      '<button class="btn sm bad" data-a="duel-invite" data-id="' + esc(fid) + '">⚔</button></div>';
+    h += '<section class="win chat-win"><div class="chat-list" id="chat-list">' + (ui.chatLoading && !msgs.length ? '<div class="empty">A carregar…</div>' : msgs.length ? msgs.map(function (m, i) {
+      var mine = m.from === st.playerId, prev = msgs[i - 1], day = new Date(m.at).toDateString(), sep = !prev || new Date(prev.at).toDateString() !== day;
+      return (sep ? '<div class="chat-day">' + new Date(m.at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' }) + '</div>' : '') +
+        '<div class="msg ' + (mine ? 'me' : 'them') + (m.pending ? ' pending' : '') + '"><div class="bubble">' + esc(m.text) + '</div><div class="msg-t">' + clockOf(m.at) + (mine ? (m.pending ? ' · a enviar' : m.failed ? ' · falhou' : '') : '') + '</div></div>';
+    }).join('') : '<div class="empty">Ainda não há mensagens. Diz olá!</div>') + '</div>' +
+      '<div class="chat-in"><input class="in grow" id="chat-text" data-keep maxlength="500" placeholder="Escreve uma mensagem…" autocomplete="off"><button class="btn pri" data-a="chat-send">Enviar</button></div></section>';
+    return h;
+  }
+  /* ---------- duelo ---------- */
+  function duelFighter(F, me, turn, side) {
+    var hpP = Math.max(0, F.hp / F.maxHp * 100), mpP = Math.max(0, F.mp / F.maxMp * 100);
+    return '<div class="df ' + side + (turn ? ' turn' : '') + (F.hp <= 0 ? ' dead' : '') + '">' +
+      '<div class="df-av">' + (S.CLASSES[F.cls] ? S.avatar.html(F.cls, F.level, 'duel') : '') + (F.guard ? '<span class="df-st">🛡</span>' : '') + (F.shield > 0 ? '<span class="df-st sh">◈ ' + F.shield + '</span>' : '') + (F.legion > 0 ? '<span class="df-st lg">👻 ' + F.legion + '</span>' : '') + '</div>' +
+      '<div class="df-name">' + esc(F.name) + (me ? ' <span class="muted">(tu)</span>' : '') + '</div><div class="small muted">' + clsName(F.cls) + ' · Nv ' + F.level + '</div>' +
+      '<div class="bar hp"><i style="width:' + hpP.toFixed(1) + '%"></i></div><div class="small mono">' + fmt(F.hp) + ' / ' + fmt(F.maxHp) + '</div>' +
+      '<div class="bar mp"><i style="width:' + mpP.toFixed(1) + '%"></i></div><div class="small mono muted">' + fmt(F.mp) + ' / ' + fmt(F.maxMp) + ' MP</div></div>';
+  }
+  function duelPage(st) {
+    var d = ui.duel;
+    var h = '<div class="row" style="margin-top:14px"><button class="btn sm ghost" data-a="soc-back">‹ Social</button><h2 style="font-size:18px">Duelo</h2></div>';
+    if (!d) return h + '<section class="win"><div class="empty">A carregar o duelo…</div></section>';
+    var me = d.me, opId = d.host === me ? d.guest : d.host, F = d.fighters || {}, A = F[me], B = opId ? F[opId] : null;
+    if (d.status === 'waiting') {
+      var c = SO.cache, fr = (c && c.friends) || [];
+      h += '<section class="win duel-win duel-wait"><div class="win-h">Sala de duelo</div><div class="duel-code mono">' + esc(d.code) + '</div>' +
+        '<p class="small muted" style="text-align:center;margin:4px 0 12px">' + (d.public ? 'Sala pública: aparece na lista de salas abertas.' : 'Sala privada: só entra quem tiver o código ou for convidado.') + '<br>A sala fecha sozinha ao fim de 30 minutos sem adversário.</p>' +
+        '<div class="duel-radar"><i></i><i></i><i></i></div><p style="text-align:center" class="small">À espera de um adversário…</p>' +
+        '<button class="btn block" data-a="duel-copy">Copiar código</button>';
+      if (fr.length) h += '<div class="info-h" style="margin-top:12px">Convidar um amigo</div><div class="stack" style="gap:6px">' + fr.slice(0, 12).map(function (f) {
+        return '<div class="row between"><span class="row" style="gap:8px">' + socAvatar(f) + '<span>' + esc(f.name) + ' <span class="small muted">Nv ' + f.level + '</span></span></span>' + (d.invited === f.id ? '<span class="tag good">Convidado</span>' : '<button class="btn sm" data-a="duel-reinvite" data-id="' + esc(f.id) + '">Convidar</button>') + '</div>';
+      }).join('') + '</div>';
+      h += '<button class="btn block ghost" style="margin-top:12px" data-a="duel-leave">Fechar a sala</button></section>';
+      return h;
+    }
+    if (d.status === 'cancelled') return h + '<section class="win"><div class="empty">Esta sala foi fechada.</div><button class="btn block" data-a="soc-back">Voltar</button></section>';
+    var myTurn = d.status === 'active' && d.turn === me;
+    h += '<section class="win duel-win duel-arena' + (myTurn ? ' my-turn' : '') + '"><div class="win-h">' + (d.status === 'done' ? 'Duelo terminado' : 'Turno ' + d.turn_no) + (d.status === 'active' ? '<small class="duel-timer" data-until="' + d.deadline + '">' + Math.max(0, Math.ceil((d.deadline - SO.serverNow()) / 1000)) + 's</small>' : '') + '</div>' +
+      '<div class="duel-stage">' + (A ? duelFighter(A, true, d.turn === me, 'l') : '') + '<div class="duel-vs">VS</div>' + (B ? duelFighter(B, false, d.turn === opId, 'r') : '') + '</div>';
+    if (d.status === 'active') {
+      if (myTurn) {
+        var sk = d.skills[A.cls] || { name: 'Habilidade', mp: 0.35 }, skCost = Math.round(A.maxMp * sk.mp), hvCost = Math.round(A.maxMp * 0.2), cd = (A.cds && A.cds.skill) || 0;
+        h += '<div class="duel-turn">É A TUA VEZ</div><div class="duel-acts">' +
+          '<button class="btn" data-a="duel-act" data-v="attack">⚔ Atacar</button>' +
+          '<button class="btn" data-a="duel-act" data-v="heavy"' + (A.mp < hvCost ? ' disabled' : '') + '>💥 Golpe Poderoso <small>' + hvCost + ' MP</small></button>' +
+          '<button class="btn pri" data-a="duel-act" data-v="skill"' + (cd || A.mp < skCost ? ' disabled' : '') + '>✦ ' + esc(sk.name) + ' <small>' + (cd ? 'recarga ' + cd : skCost + ' MP') + '</small></button>' +
+          '<button class="btn" data-a="duel-act" data-v="defend">🛡 Defender</button>' +
+          '<button class="btn" data-a="duel-act" data-v="potion"' + (A.pots < 1 ? ' disabled' : '') + '>🧪 Poção <small>' + A.pots + '/2</small></button></div>';
+      } else h += '<div class="duel-turn wait">Vez de ' + esc(B ? B.name : 'adversário') + '…</div>';
+    } else if (d.status === 'done') {
+      var won = d.winner === me, rw = SO.reward(d), rt = d.result && d.result.rating && d.result.rating[me];
+      h += '<div class="duel-end ' + (won ? 'win' : 'lose') + '"><div class="duel-end-t">' + (won ? 'VITÓRIA' : 'DERROTA') + '</div>' +
+        '<div class="small">' + (d.reason === 'forfeit' ? (won ? 'O adversário desistiu.' : 'Desististe do duelo.') : d.reason === 'timeout' ? (won ? 'O adversário deixou passar o tempo duas vezes.' : 'Deixaste passar o tempo duas vezes.') : d.reason === 'turns' ? 'Limite de turnos: venceu quem tinha mais vida.' : (won ? 'Derrubaste ' + esc(B ? B.name : 'o adversário') + '.' : esc(B ? B.name : 'O adversário') + ' derrubou-te.')) + '</div>' +
+        (rt ? '<div class="small mono" style="margin-top:6px">Pontos: ' + rt[0] + ' → <b>' + rt[1] + '</b> (' + (rt[1] >= rt[0] ? '+' : '') + (rt[1] - rt[0]) + ')</div>' : '') +
+        (rw ? (rw.capped ? '<div class="small muted" style="margin-top:6px">Já recebeste as recompensas de duelo de hoje (' + SO.DAILY + ').</div>' : '<div class="small" style="margin-top:6px;color:var(--gold)">+' + fmt(rw.xp) + ' XP · +' + fmt(rw.coins) + ' moedas</div>') : '') +
+        '<div class="row" style="gap:6px;margin-top:12px"><button class="btn grow" data-a="soc-back">Voltar</button>' + (B && ((SO.cache && SO.cache.friends) || []).some(function (f) { return f.id === opId; }) ? '<button class="btn bad grow" data-a="duel-invite" data-id="' + esc(opId) + '">Revanche</button>' : '<button class="btn bad grow" data-a="duel-create" data-p="1">Nova sala</button>') + '</div></div>';
+    }
+    h += '</section><section class="win"><div class="win-h">Registo</div><div class="log duel-log">' + (d.log || []).slice().reverse().slice(0, 25).map(function (l) {
+      return '<div class="ln k-' + esc(l.c || 'x') + (l.w === me ? ' mine' : l.w ? ' theirs' : '') + '">' + esc(l.t) + '</div>';
+    }).join('') + '</div>' + (d.status === 'active' ? '<button class="btn block ghost sm" style="margin-top:10px" data-a="duel-leave">Desistir</button>' : '') + '</section>';
+    return h;
+  }
+
   /* ================= SOMBRAS: Tornar Servo e menu Servos ================= */
   var Sh = S.shadows;
   /* aparência sombria: imagem própria (assets/shadows) ou a do chefe escurecida */
@@ -1852,7 +2006,7 @@
   /* ================= RENDER ================= */
   function viewKey(st) {
     return ui.tab + '|' + (ui.page || '') + '|' + (st.battle ? 'b' + st.battle.started : '') + '|' +
-      (ui.tab === 'combate' ? ui.gate : ui.tab === 'loja' ? ui.shopTab : ui.tab === 'bolsa' ? ui.bag : '');
+      (ui.tab === 'combate' ? ui.gate : ui.tab === 'loja' ? ui.shopTab : ui.tab === 'bolsa' ? ui.bag : '') + '|' + (ui.chatWith || ui.duelId || '');
   }
   function animateBars() {
     var full = FX.full();
@@ -1927,7 +2081,14 @@
     var entering = vk !== ui.lastView;
     var tabChanged = !ui.lastView || ui.lastView.split('|')[0] !== ui.tab;
     var pop = ui.popups[0];
+    var keep = {}, ae = document.activeElement, focus = null;
+    root.querySelectorAll('[data-keep]').forEach(function (el) { if (el.id) keep[el.id] = el.value; });
+    if (ae && ae.id && keep[ae.id] != null) focus = { id: ae.id, s: ae.selectionStart, e: ae.selectionEnd };
+    var chatEl = document.getElementById('chat-list'), chatTop = chatEl ? chatEl.scrollTop : null;
     root.innerHTML = topHtml(st) + '<main' + (entering ? ' class="enter"' : '') + '>' + body + '</main>' + navHtml(st) + modalHtml() + popupHtml();
+    Object.keys(keep).forEach(function (id) { var el = document.getElementById(id); if (el && !entering) el.value = keep[id]; });
+    if (focus && !entering) { var fe = document.getElementById(focus.id); if (fe) { fe.focus({ preventScroll: true }); try { fe.setSelectionRange(focus.s, focus.e); } catch (e) { /* tipo sem seleção */ } } }
+    if (chatTop != null && !entering) { var ce = document.getElementById('chat-list'); if (ce) ce.scrollTop = chatTop; }
 
     if (entering) {
       var wi = 0;
@@ -2146,7 +2307,7 @@
       render();
     },
     tab: function (d) { var was = ui.tab; ui.tab = d.t; ui.page = null; ui.modal = null; render(); window.scrollTo(0, 0); if (was !== d.t) talkTry('tab', { tab: d.t }, 1400); },
-    page: function (d) { ui.page = d.p; ui.histLimit = 40; render(); window.scrollTo(0, 0); if (d.p === 'avisos') S.shop.markRead(E.state); },
+    page: function (d) { ui.page = d.p; ui.histLimit = 40; render(); window.scrollTo(0, 0); if (d.p === 'avisos') S.shop.markRead(E.state); if (d.p === 'social') socLoad(true); },
     back: function () { ui.page = null; render(); },
     'hist-more': function () { ui.histLimit += 60; render(); },
     alloc: function (d) {
@@ -2236,6 +2397,67 @@
       confirmBox('Começar de novo', 'O progresso deste aparelho é apagado e começas um registo novo, do nível 1.', 'Começar de novo', function () {
         E.resetAll(); ui.intro = { step: 0, name: '', cls: null }; ui.tab = 'status'; ui.page = null; ui.popups = []; ui.bars = {}; ui.lastCoins = null; ui.lastView = null; render();
       }, true);
+    },
+    // ---- social ----
+    'soc-tab': function (d) { ui.socTab = d.v; render(); if (d.v === 'duelos') { ui.duelHist = null; } },
+    'soc-reload': function () { SO.cache = null; render(); },
+    'soc-back': function () { ui.page = 'social'; ui.chatWith = null; ui.chatMsgs = null; ui.duelId = null; ui.duel = null; render(); socLoad(true); window.scrollTo(0, 0); },
+    'soc-find': function () {
+      var q = (document.getElementById('soc-q') || {}).value || '';
+      SO.find(q.trim()).then(function (j) { if (!j.ok) return toast(j.msg, true); ui.socFound = j.players; render(); });
+    },
+    'soc-add': function (d) { SO.request(d.id).then(function (j) { act(j); if (j.ok) { ui.socFound = (ui.socFound || []).map(function (p) { return p.id === d.id ? Object.assign({}, p, { relation: j.status }) : p; }); socLoad(true); } }); },
+    'soc-accept': function (d) { SO.respond(d.id, true).then(function (j) { if (j.ok) { toast('Agora são amigos.'); sfx('quest'); ui.socFound = null; } else toast(j.msg, true); socLoad(true); }); },
+    'soc-decline': function (d) { SO.respond(d.id, false).then(function (j) { if (!j.ok) toast(j.msg, true); socLoad(true); }); },
+    'soc-remove': function (d) {
+      var f = ((SO.cache && SO.cache.friends) || []).filter(function (x) { return x.id === d.id; })[0];
+      var go = function () { SO.remove(d.id).then(function (j) { if (!j.ok) toast(j.msg, true); socLoad(true); }); };
+      if (f) confirmBox('Remover amigo', 'Remover ' + f.name + ' da tua lista de amigos? As conversas deixam de estar disponíveis.', 'Remover', go, true); else go();
+    },
+    'chat-open': function (d) {
+      ui.page = 'chat'; ui.chatWith = d.id; ui.chatMsgs = []; ui.chatLoading = true; ui.chatFriend = ((SO.cache && SO.cache.friends) || []).filter(function (x) { return x.id === d.id; })[0] || null;
+      render(); window.scrollTo(0, 0); chatLoad(true);
+    },
+    'chat-send': function () {
+      var el = document.getElementById('chat-text'), text = el ? el.value.trim() : '';
+      if (!text || !ui.chatWith) return;
+      el.value = '';
+      var tmp = { id: 'tmp' + Date.now(), from: E.state.playerId, text: text, at: SO.serverNow(), pending: true };
+      ui.chatMsgs = (ui.chatMsgs || []).concat([tmp]); render(); chatScroll(); sfx('click');
+      SO.send(ui.chatWith, text).then(function (j) {
+        if (!j.ok) { tmp.pending = false; tmp.failed = true; toast(j.msg, true); render(); return; }
+        ui.chatMsgs = ui.chatMsgs.map(function (m) { return m === tmp ? j.message : m; }); render(); chatScroll();
+      });
+      var nel = document.getElementById('chat-text'); if (nel) nel.focus();
+    },
+    'duel-hist': function () { SO.duels().then(function (j) { if (!j.ok) return toast(j.msg, true); ui.duelHist = j.duels; render(); }); },
+    'duel-create': function (d) { duelStart(SO.create({ public: d.p === '1' })); },
+    'duel-invite': function (d) {
+      var c = SO.cache, open = c && c.duel;
+      if (open && open.status === 'active') { toast('Já tens um duelo em curso.', true); return H['duel-open']({ id: open.id }); }
+      if (open && open.status === 'waiting') { SO.invite(open.id, d.id).then(function (j) { act(j, j.ok ? 'Convite enviado.' : null); if (j.ok) { ui.duelId = open.id; ui.duel = j.duel; ui.page = 'duel'; render(); duelPoll(); } }); return; }
+      duelStart(SO.create({ public: false, invite: d.id }), 'Convite enviado. À espera que aceite…');
+    },
+    'duel-reinvite': function (d) { if (ui.duel) SO.invite(ui.duel.id, d.id).then(function (j) { act(j, j.ok ? 'Convite enviado.' : null); if (j.ok) { ui.duel = j.duel; render(); } }); },
+    'duel-join': function (d) { duelStart(SO.join({ id: d.id })); },
+    'duel-join-code': function () { var v = ((document.getElementById('duel-code') || {}).value || '').trim(); if (v.length < 6) return toast('Escreve o código da sala (6 letras).', true); duelStart(SO.join({ code: v })); },
+    'duel-open': function (d) { ui.page = 'duel'; ui.duelId = d.id; ui.duel = null; render(); window.scrollTo(0, 0); duelPoll(); },
+    'duel-copy': function () { if (ui.duel) copyText(ui.duel.code, 'Código ' + ui.duel.code + ' copiado.'); },
+    'duel-act': function (d) {
+      if (!ui.duel || ui.duelBusy) return;
+      ui.duelBusy = true;
+      document.querySelectorAll('.duel-acts .btn').forEach(function (b) { b.disabled = true; });
+      sfx(d.v === 'potion' ? 'potion' : d.v === 'defend' ? 'click' : d.v === 'skill' ? 'skill' : 'attack');
+      SO.act(ui.duel.id, d.v, ui.duel.version).then(function (j) {
+        ui.duelBusy = false;
+        if (!j.ok) { toast(j.msg, true); render(); return; }
+        duelShow(j.duel);
+      });
+    },
+    'duel-leave': function () {
+      var d = ui.duel; if (!d) return;
+      var go = function () { SO.leave(d.id).then(function (j) { if (!j.ok) return toast(j.msg, true); duelShow(j.duel); if (j.duel.status === 'cancelled') H['soc-back'](); }); };
+      if (d.status === 'active') confirmBox('Desistir do duelo', 'Se desistires, o adversário ganha e perdes pontos de duelo.', 'Desistir', go, true); else go();
     },
     'chest-fam': function (d) { ui.chestFam = d.v; render(); },
     'prem-tab': function (d) { ui.premTab = d.t; render(); if (d.t === 'obter') loadShop(); },
@@ -2685,6 +2907,100 @@
   function onKey(ev) {
     if (ev.key === 'Escape' && ui.modal) { H.close(); }
     if (ev.key === 'Enter' && ev.target && ev.target.id === 'in-name' && ui.intro.cls) H['intro-go']();
+    if (ev.key === 'Enter' && ev.target && ev.target.id === 'chat-text') { ev.preventDefault(); H['chat-send'](); }
+    if (ev.key === 'Enter' && ev.target && ev.target.id === 'soc-q') { ev.preventDefault(); H['soc-find'](); }
+    if (ev.key === 'Enter' && ev.target && ev.target.id === 'duel-code') { ev.preventDefault(); H['duel-join-code'](); }
+  }
+
+  /* ---------- social: atualização automática ---------- */
+  var socBusy = false, chatBusy = false, duelBusy = false;
+  function socLoad(force) {
+    if (!E.state || !SO.ready() || socBusy) return;
+    if (!force && Date.now() - SO.cacheAt < 8000) return;
+    socBusy = true;
+    SO.state().then(function (j) {
+      socBusy = false;
+      if (!j.ok) { if (!SO.cache || !SO.cache.ok) { SO.cache = j; if (ui.page === 'social') render(); } return; }
+      var news = (j.news || []).filter(function (n) { return !(n.type === 'message' && ui.page === 'chat' && ui.chatWith === n.id); });
+      if (news.length) {
+        var n = news[0];
+        toast(n.type === 'request' ? n.name + ' quer ser teu amigo.' : n.type === 'invite' ? n.name + ' desafiou-te para um duelo!' : n.type === 'accepted' ? n.name + ' aceitou o teu pedido de amizade.' : 'Mensagem nova de ' + n.name + '.');
+        sfx('notify'); if (n.type === 'invite') FX.vibrate([60, 40, 60]);
+      }
+      if (ui.page === 'social' || ui.page === 'chat' || news.length || ui.tab === 'status') softRender();
+    }, function () { socBusy = false; });
+  }
+  function chatScroll() { var l = document.getElementById('chat-list'); if (l) l.scrollTop = l.scrollHeight; }
+  function chatLoad(first) {
+    if (!ui.chatWith || chatBusy) return;
+    chatBusy = true;
+    var fid = ui.chatWith, real = (ui.chatMsgs || []).filter(function (m) { return typeof m.id === 'number'; }), after = first ? 0 : (real.length ? real[real.length - 1].id : 0);
+    SO.history(fid, after).then(function (j) {
+      chatBusy = false; ui.chatLoading = false;
+      if (ui.chatWith !== fid) return;
+      if (!j.ok) { toast(j.msg, true); render(); return; }
+      if (j.friend) ui.chatFriend = j.friend;
+      var have = {}; (ui.chatMsgs || []).forEach(function (m) { have[m.id] = 1; });
+      var add = j.messages.filter(function (m) { return !have[m.id]; });
+      if (first) { ui.chatMsgs = j.messages.concat((ui.chatMsgs || []).filter(function (m) { return m.pending; })); render(); chatScroll(); return; }
+      if (add.length) {
+        var list = document.getElementById('chat-list'), atEnd = list && list.scrollHeight - list.scrollTop - list.clientHeight < 60;
+        ui.chatMsgs = ui.chatMsgs.concat(add);
+        if (add.some(function (m) { return m.from !== E.state.playerId; })) sfx('notify');
+        softRender(); if (atEnd) chatScroll();
+      }
+    }, function () { chatBusy = false; });
+  }
+  function duelStart(p, msg) {
+    p.then(function (j) {
+      if (!j.ok) { toast(j.msg, true); socLoad(true); return; }
+      if (msg) toast(msg);
+      ui.page = 'duel'; ui.tab = 'status'; ui.duelId = j.duel.id; ui.duel = null; duelShow(j.duel); window.scrollTo(0, 0); socLoad(true);
+    });
+  }
+  function duelShow(d) {
+    var prev = ui.duel;
+    ui.duel = d; ui.duelId = d.id;
+    var me = d.me, last = prev && prev.log && prev.log.length ? prev.log[prev.log.length - 1].n : 0;
+    var fresh = (d.log || []).filter(function (l) { return l.n > last; });
+    if (prev && prev.status === 'waiting' && d.status === 'active') { sfx('emergency'); FX.flash('#ff2a48', .35); FX.vibrate([120, 60, 120]); }
+    if (prev && fresh.length) {
+      fresh.forEach(function (l) {
+        if (l.w && l.w !== me && (l.c === 'hit' || l.c === 'crit')) { sfx('hurt'); FX.shake(l.c === 'crit' ? 2 : 1); }
+      });
+    }
+    if (prev && prev.status === 'active' && d.status === 'done') {
+      var won = d.winner === me;
+      sfx(won ? 'levelup' : 'death'); FX.flash(won ? '#ffc85a' : '#ff1f3d', .5); FX.vibrate(won ? [80, 40, 200] : [300, 80, 300]);
+    }
+    if (prev && prev.status === 'active' && d.status === 'active' && prev.turn !== me && d.turn === me) { sfx('notify'); FX.vibrate(50); }
+    render(); pullEvents();
+  }
+  function duelPoll() {
+    if (ui.page !== 'duel' || !ui.duelId || duelBusy || ui.duelBusy) return;
+    duelBusy = true;
+    SO.duel(ui.duelId).then(function (j) {
+      duelBusy = false;
+      if (!j.ok) { toast(j.msg, true); return; }
+      if (!ui.duel || j.duel.version !== ui.duel.version || j.duel.status !== ui.duel.status) duelShow(j.duel);
+    }, function () { duelBusy = false; });
+  }
+  /* redesenha sem animação de entrada, mantendo a posição da página */
+  function softRender() { if (ui.modal || ui.popups.length) return; var y = window.scrollY; render(); window.scrollTo(0, y); }
+  function copyText(t, msg) {
+    try { if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { toast(msg); }, function () { toast(t); }); else toast(t); } catch (e) { toast(t); }
+  }
+  var socTicks = 0;
+  function socTick() {
+    if (!E.state || document.visibilityState === 'hidden' || !SO.ready()) return;
+    socTicks++;
+    if (ui.page === 'duel') {
+      if (ui.duel && ui.duel.status !== 'done' && ui.duel.status !== 'cancelled' && socTicks % 2 === 0) duelPoll();
+      document.querySelectorAll('.duel-timer').forEach(function (el) { var s = Math.max(0, Math.ceil((+el.getAttribute('data-until') - SO.serverNow()) / 1000)); el.textContent = s + 's'; el.classList.toggle('urgent', s <= 10); });
+    }
+    if (ui.page === 'chat' && socTicks % 3 === 0) chatLoad(false);
+    if (ui.page === 'social' && socTicks % 8 === 0) socLoad(true);
+    else if (socTicks % 45 === 0) socLoad(true); // de fundo: pedidos, convites e mensagens novas
   }
 
   /* ---------------- relógio ---------------- */
@@ -2920,6 +3236,8 @@
       }
     });
     setInterval(tick, 1000);
+    setInterval(socTick, 1000);
+    setTimeout(function () { socLoad(true); }, 6000);
     setInterval(checkDeadlines, 30000);
     // conversas aleatórias: só enquanto o jogador está a usar a app (tocou em algo nos últimos 2 minutos)
     ui.bootAt = Date.now();

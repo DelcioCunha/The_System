@@ -966,6 +966,73 @@ button.trophy { font: inherit; color: inherit; padding: 0; cursor: pointer; appe
 .role-chip.r-parceria { color: #b98cff; border-color: rgba(185, 140, 255, .6); }
 .role-chip.r-teste { color: var(--muted); }
 
+/* ---------- Social: amigos, conversas e duelos ---------- */
+.soc-menu { border-color: rgba(255, 90, 110, .45); }
+.soc-menu.has-new { border-color: #ff5a6e; box-shadow: 0 0 12px rgba(255, 90, 110, .35); }
+.soc-av { position: relative; flex: none; width: 44px; height: 44px; border-radius: 50%; overflow: visible; display: inline-grid; place-items: center; background: var(--panel-solid); border: 1px solid var(--line-hi); }
+.soc-av .avatar { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; margin: 0; }
+.soc-av .avatar img, .soc-av .avatar svg { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.soc-av.big { width: 58px; height: 58px; }
+.soc-av-x { font-family: var(--f-display); font-size: 18px; color: var(--glow); }
+.soc-av .dot { position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--panel-solid); background: #56627a; }
+.soc-av .dot.on { background: var(--good); box-shadow: 0 0 8px var(--good); }
+.soc-row .card-h { align-items: center; gap: 10px; }
+.soc-row.online { border-color: rgba(91, 224, 138, .35); }
+.on-txt { color: var(--good); }
+.soc-me .row { gap: 12px; align-items: center; }
+.soc-rec { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
+.soc-rec b { font-size: 22px; color: var(--gold); }
+.duel-banner { border-color: #ff5a6e !important; }
+/* conversa */
+.chat-win { display: flex; flex-direction: column; padding-bottom: 10px; }
+.chat-list { height: min(58vh, 520px); overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 4px 2px 10px; overscroll-behavior: contain; }
+.chat-day { align-self: center; font-size: 11px; color: var(--muted); padding: 2px 10px; border: 1px solid var(--line); border-radius: 99px; margin: 6px 0; }
+.msg { display: flex; flex-direction: column; max-width: 82%; }
+.msg.me { align-self: flex-end; align-items: flex-end; }
+.msg.them { align-self: flex-start; }
+.msg .bubble { padding: 8px 12px; border-radius: 14px; font-size: 14px; line-height: 1.4; white-space: pre-wrap; word-break: break-word; }
+.msg.them .bubble { background: rgba(29, 51, 88, .8); border-bottom-left-radius: 4px; }
+.msg.me .bubble { background: linear-gradient(135deg, rgba(61, 125, 255, .55), rgba(111, 214, 255, .35)); border-bottom-right-radius: 4px; }
+.msg.pending .bubble { opacity: .6; }
+.msg-t { font-size: 10.5px; color: var(--muted); margin-top: 2px; font-family: var(--f-mono); }
+.chat-in { display: flex; gap: 8px; border-top: 1px solid var(--line); padding-top: 10px; }
+/* duelo */
+.duel-win { border-color: rgba(255, 90, 110, .5); }
+.duel-code { font-size: 36px; letter-spacing: .25em; text-align: center; color: var(--gold); margin: 6px 0; text-shadow: 0 0 18px rgba(255, 200, 90, .4); }
+.duel-radar { position: relative; width: 90px; height: 90px; margin: 10px auto; }
+.duel-radar i { position: absolute; inset: 0; border: 2px solid #ff5a6e; border-radius: 50%; opacity: 0; animation: radar 2.4s ease-out infinite; }
+.duel-radar i:nth-child(2) { animation-delay: .8s; } .duel-radar i:nth-child(3) { animation-delay: 1.6s; }
+@keyframes radar { from { transform: scale(.2); opacity: .9; } to { transform: scale(1); opacity: 0; } }
+.duel-stage { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: start; }
+.duel-vs { font-family: var(--f-display); font-size: 20px; color: #ff5a6e; align-self: center; text-shadow: 0 0 12px rgba(255, 90, 110, .6); }
+.df { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 8px; border: 1px solid var(--line); border-radius: 8px; transition: border-color .3s, box-shadow .3s; }
+.df.turn { border-color: var(--gold); box-shadow: 0 0 14px rgba(255, 200, 90, .3); }
+.df.dead { opacity: .5; filter: grayscale(.8); }
+.df-av { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: var(--void); }
+.df-av .avatar { width: 100%; height: 100%; margin: 0; }
+.df-av .avatar img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.df.r .df-av .avatar img { transform: scaleX(-1); }
+.df-st { position: absolute; top: 4px; left: 4px; font-size: 11px; background: rgba(0, 0, 0, .65); padding: 1px 6px; border-radius: 99px; }
+.df-st.sh { top: 24px; color: #bfe9ff; } .df-st.lg { top: 44px; color: #c8b5ff; }
+.df-name { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.duel-turn { text-align: center; font-family: var(--f-display); letter-spacing: .2em; color: var(--gold); margin: 12px 0 8px; animation: pulseT 1.4s ease-in-out infinite; }
+.duel-turn.wait { color: var(--muted); animation: none; letter-spacing: .05em; font-family: inherit; }
+@keyframes pulseT { 50% { opacity: .55; } }
+.duel-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.duel-acts .btn { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px; }
+.duel-acts .btn small { font-size: 10.5px; opacity: .75; }
+.duel-acts .btn.pri { grid-column: 1 / -1; }
+.duel-timer { font-family: var(--f-mono); }
+.duel-timer.urgent { color: #ff5a6e; }
+.duel-end { text-align: center; margin-top: 12px; padding: 14px; border-radius: 10px; border: 1px solid var(--line); }
+.duel-end.win { border-color: var(--gold); background: radial-gradient(circle at 50% 0, rgba(255, 200, 90, .18), transparent 70%); }
+.duel-end.lose { border-color: #ff5a6e; background: radial-gradient(circle at 50% 0, rgba(255, 90, 110, .15), transparent 70%); }
+.duel-end-t { font-family: var(--f-display); font-size: 28px; letter-spacing: .25em; }
+.duel-end.win .duel-end-t { color: var(--gold); } .duel-end.lose .duel-end-t { color: #ff5a6e; }
+.duel-log .ln.mine { color: #bfe9ff; } .duel-log .ln.theirs { color: #ffc2c9; }
+.duel-log .ln.k-crit { color: var(--gold); font-weight: 600; } .duel-log .ln.k-win { color: var(--gold); font-weight: 700; }
+.duel-log .ln.k-sys, .duel-log .ln.k-miss { color: var(--muted); } .duel-log .ln.k-heal { color: var(--good); } .duel-log .ln.k-skill { font-weight: 600; }
+
 /* ==========================================================
    ANIMAÇÕES E EFEITOS
    ========================================================== */
@@ -5507,6 +5574,12 @@ body::after {
     { id: 'shar100', icon: "🌑", name: "Coliseu das Sombras", desc: "Torna servos os 100 inimigos das arenas premium.", check: function (s) { return sh(s).arena>=100; }, reward: {chest:'secreto',coins:100000} },
     { id: 'spch10', icon: "🧰", name: "Cliente Especial", desc: "Abre 10 baús especializados.", check: function (s) { return c(s,'specialChests')>=10; }, reward: {chest:'epico'} },
     { id: 'spchm', icon: "🔱", name: "Selo Negro", desc: "Abre um baú especializado do grau Monarca.", check: function (s) { return c(s,'monarchChests')>=1; }, reward: {coins:5000} },
+    { id: 'duel1', icon: "⚔️", name: "Primeiro Duelo", desc: "Termina um duelo contra outro jogador.", check: function (s) { return c(s,'duelsPlayed')>=1; }, reward: {chest:'raro'} },
+    { id: 'duel10', icon: "🤺", name: "Duelista", desc: "Vence 10 duelos contra jogadores.", check: function (s) { return c(s,'duelWins')>=10; }, reward: {chest:'lendario'} },
+    { id: 'duel50', icon: "🏆", name: "Campeão dos Duelos", desc: "Vence 50 duelos contra jogadores.", check: function (s) { return c(s,'duelWins')>=50; }, reward: {chest:'secreto',coins:20000} },
+    { id: 'duelperf', icon: "💎", name: '???', realName: "Intocável na Arena", secret: true, desc: "Vence um duelo sem perder vida nenhuma.", check: function (s) { return c(s,'duelFlawless')>=1; }, reward: {chest:'epico'} },
+    { id: 'friend5', icon: "🤝", name: "Grupo de Caça", desc: "Tem 5 amigos no Sistema.", check: function (s) { return c(s,'friendsMax')>=5; }, reward: {chest:'epico'} },
+    { id: 'friend20', icon: "🌐", name: "Guilda", desc: "Tem 20 amigos no Sistema.", check: function (s) { return c(s,'friendsMax')>=20; }, reward: {chest:'lendario',coins:5000} },
     { id: 'sparlose', icon: "🤕", name: '???', realName: "Humildade", secret: true, desc: "Perde um treino contra um dos teus servos.", check: function (s) { return c(s,'sparLosses')>=1; }, reward: {coins:200} },
     { id: 'ar1', icon: "🏟️", name: "Entrada no Coliseu", desc: "Abre a tua primeira arena.", check: function (s) { return Object.keys((s.arena||{}).unlocked||{}).length>=1; }, reward: {chest:'raro'} },
     { id: 'ar5', icon: "🗝️", name: "Cinco Portas", desc: "Abre 5 arenas.", check: function (s) { return Object.keys((s.arena||{}).unlocked||{}).length>=5; }, reward: {chest:'lendario'} },
@@ -10963,6 +11036,7 @@ body::after {
       .catch(function () { if (timer) clearTimeout(timer); return { ok: false, offline: true, msg: 'Sem ligação ao servidor. Verifica a internet e tenta outra vez.' }; });
   }
 
+  SH.call = call;
   /* pacotes, preços e se a loja está aberta (o preço vem SEMPRE do servidor) */
   SH.config = function (force) {
     if (!force && cfgCache && Date.now() - cfgAt < 60000) return Promise.resolve(cfgCache);
@@ -11126,6 +11200,123 @@ body::after {
       }, Promise.resolve()).then(function () { E.commit('sincronização'); return { ok: true, changed: changed || nn > 0, gifts: inbox.length, notices: nn }; });
     }).then(function (r) { syncing = null; return r; }, function () { syncing = null; return { ok: false }; });
     return syncing;
+  };
+})(globalThis.SYS = globalThis.SYS || {});
+
+/* src/engine/social.js */
+/* ==========================================================
+   SOCIAL: amigos, conversas e duelos entre jogadores
+   Tudo passa pelo servidor da loja (S.shop). O servidor decide os
+   duelos; o jogo só escolhe a ação e mostra o resultado.
+   A recompensa de um duelo entra uma única vez (por ID do duelo) e
+   só os primeiros DAILY duelos de cada dia dão recompensa.
+   ========================================================== */
+(function (S) {
+  'use strict';
+  var E = S.engine;
+  var SO = S.social = { DAILY: 5, cache: null, cacheAt: 0, offset: 0 };
+
+  SO.ensure = function (st) {
+    if (!st.social) st.social = { rewarded: {}, day: null, count: 0 };
+    if (!st.social.rewarded) st.social.rewarded = {};
+    return st.social;
+  };
+  SO.ready = function () { return S.shop && S.shop.ready(); };
+  function auth(st) { S.shop.ensure(st); return { player_id: st.playerId, token: st.shop.secret }; }
+  /* o servidor só conhece jogadores que já sincronizaram: sincroniza uma vez antes */
+  function registered(st) {
+    if (st.shop && st.shop.lastSync) return Promise.resolve(true);
+    return S.shop.sync(true).then(function (r) { return !!(r && r.ok); });
+  }
+  function post(path, body) {
+    var st = E.state;
+    if (!st) return Promise.resolve({ ok: false, msg: 'Sem jogo.' });
+    if (!SO.ready()) return Promise.resolve({ ok: false, offline: true, msg: 'O social precisa de ligação ao servidor do Sistema.' });
+    return registered(st).then(function () {
+      return S.shop.call('POST', path, Object.assign(auth(st), body || {}));
+    }).then(function (j) {
+      if (j && j.server_time) SO.offset = j.server_time - Date.now();
+      if (j && j.duel && j.duel.server_time) SO.offset = j.duel.server_time - Date.now();
+      return j;
+    });
+  }
+  SO.serverNow = function () { return Date.now() + SO.offset; };
+
+  /* atributos de combate enviados para o duelo (o servidor limita-os ao nível) */
+  SO.fighter = function (st) {
+    var c = E.combatStats(st), t = E.totalStats(st);
+    return { cls: st.cls, hp: c.maxHp, mp: c.maxMp, atk: c.atk, matk: c.matk, def: c.def, crit: c.crit, critDmg: c.critDmg, eva: c.eva, lifesteal: c.lifesteal || 0, agi: t.agi, avatar: String(st.level) };
+  };
+
+  SO.state = function () {
+    return post('/api/social/state').then(function (j) {
+      if (j.ok) {
+        var prev = SO.cache;
+        SO.cache = j; SO.cacheAt = Date.now();
+        var st = E.state;
+        if (st && j.friends) { var n = j.friends.length; if (n > (st.c.friendsMax || 0)) { st.c.friendsMax = n; E.checkAchievements(st); E.commit('amigos'); } }
+        j.news = diff(prev, j);
+      }
+      return j;
+    });
+  };
+  /* o que mudou desde a última vez (para avisar o jogador) */
+  function diff(a, b) {
+    var out = [];
+    if (!a) return out;
+    var had = {}; (a.requests_in || []).forEach(function (r) { had[r.id] = 1; });
+    (b.requests_in || []).forEach(function (r) { if (!had[r.id]) out.push({ type: 'request', name: r.name }); });
+    var inv = {}; (a.invites || []).forEach(function (r) { inv[r.id] = 1; });
+    (b.invites || []).forEach(function (r) { if (!inv[r.id]) out.push({ type: 'invite', name: r.name, id: r.id }); });
+    var un = {}; (a.friends || []).forEach(function (f) { un[f.id] = f.unread || 0; });
+    (b.friends || []).forEach(function (f) { if ((f.unread || 0) > (un[f.id] || 0)) out.push({ type: 'message', name: f.name, id: f.id }); });
+    var acc = {}; (a.requests_out || []).forEach(function (r) { acc[r.id] = 1; });
+    (b.friends || []).forEach(function (f) { if (acc[f.id]) out.push({ type: 'accepted', name: f.name }); });
+    return out;
+  }
+  SO.badge = function () { var c = SO.cache; if (!c || !c.ok) return 0; return (c.unread || 0) + (c.requests_in || []).length + (c.invites || []).length; };
+
+  SO.find = function (q) { return post('/api/social/find', { query: q }); };
+  SO.request = function (to) { return post('/api/social/friend/request', { to: to }); };
+  SO.respond = function (from, accept) { return post('/api/social/friend/respond', { from: from, accept: !!accept }); };
+  SO.remove = function (other) { return post('/api/social/friend/remove', { other: other }); };
+  SO.history = function (w, after) { return post('/api/social/chat/history', { with: w, after: after || 0 }); };
+  SO.send = function (to, text) { return post('/api/social/chat/send', { to: to, text: text }); };
+
+  SO.create = function (opts) { opts = opts || {}; return post('/api/duel/create', { fighter: SO.fighter(E.state), public: opts.public !== false, invite: opts.invite || null }); };
+  SO.join = function (opts) { return post('/api/duel/join', Object.assign({ fighter: SO.fighter(E.state) }, opts)); };
+  SO.duel = function (id) { return post('/api/duel/state', { id: id }); };
+  SO.act = function (id, action, version) { return post('/api/duel/act', { id: id, action: action, version: version }); };
+  SO.invite = function (id, to) { return post('/api/duel/invite', { id: id, to: to }); };
+  SO.leave = function (id) { return post('/api/duel/leave', { id: id }); };
+  SO.duels = function () { return post('/api/duel/history'); };
+
+  /* recompensa de um duelo terminado: uma única vez por duelo, até DAILY por dia */
+  SO.reward = function (d) {
+    var st = E.state;
+    if (!st || !d || d.status !== 'done' || !d.winner) return null;
+    var so = SO.ensure(st);
+    if (so.rewarded[d.id]) return so.rewarded[d.id] === 1 ? null : so.rewarded[d.id];
+    var today = E.dateKey();
+    if (so.day !== today) { so.day = today; so.count = 0; }
+    var won = d.winner === d.me, L = st.level, res = { won: won, xp: 0, coins: 0, capped: false };
+    if (so.count < SO.DAILY) {
+      so.count++;
+      var xp = Math.max(5, Math.round(S.xpToNext(Math.min(L, 99)) * (won ? 0.06 : 0.02)));
+      var coins = won ? Math.round((30 + 12 * L + 0.6 * L * L) * 0.5) : Math.round((30 + 12 * L) * 0.3);
+      res.xp = E.gainXp(st, xp); res.coins = E.gainCoins(st, coins);
+    } else res.capped = true;
+    E.bump(st, 'duelsPlayed');
+    if (won) E.bump(st, 'duelWins'); else E.bump(st, 'duelLosses');
+    if (won && d.reason === 'ko' && d.fighters && d.fighters[d.me] && d.fighters[d.me].hp === d.fighters[d.me].maxHp) E.bump(st, 'duelFlawless');
+    var opp = d.fighters ? d.fighters[d.me === d.host ? d.guest : d.host] : null;
+    E.history(st, '⚔️', 'Duelo contra ' + (opp ? opp.name : 'outro jogador') + ': ' + (won ? 'vitória' : 'derrota') + (res.xp ? ' (+' + res.xp + ' XP, +' + res.coins + ' moedas)' : '') + '.');
+    so.rewarded[d.id] = res;
+    // guarda só os últimos 200 duelos
+    var ks = Object.keys(so.rewarded); if (ks.length > 200) ks.slice(0, ks.length - 200).forEach(function (k) { delete so.rewarded[k]; });
+    E.checkAchievements(st);
+    E.commit('duelo terminado');
+    return res;
   };
 })(globalThis.SYS = globalThis.SYS || {});
 
@@ -12156,6 +12347,9 @@ body::after {
     if (ui.page === 'trophies') return trophiesPage(st);
     if (ui.page === 'servos') return servantsPage(st);
     if (ui.page === 'avisos') return noticesPage(st);
+    if (ui.page === 'social') return socialPage(st);
+    if (ui.page === 'chat') return chatPage(st);
+    if (ui.page === 'duel') return duelPage(st);
     if (ui.page === 'settings') return settingsPage(st);
     if (ui.page === 'credits') return creditsPage(st);
     if (ui.page === 'reports') return reportsPage(st);
@@ -12211,6 +12405,7 @@ body::after {
       '<button class="btn" data-a="page" data-p="ach">Conquistas <span class="muted">' + achDone + '/' + S.ACHIEVEMENTS.length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="trophies">Troféus <span class="muted">' + E.trophyCount(st) + '/' + Object.keys(S.TROPHIES).length + '</span></button>' +
       '<button class="btn notice-menu' + (S.shop.unread(st) ? ' has-new' : '') + '" data-a="page" data-p="avisos">Avisos ' + (S.shop.unread(st) ? '<span class="badge-in">' + S.shop.unread(st) + '</span>' : '<span class="muted">' + S.shop.notices(st).list.length + '</span>') + '</button>' +
+      '<button class="btn soc-menu' + (SO.badge() ? ' has-new' : '') + '" data-a="page" data-p="social">Duelos e Amigos ' + (SO.badge() ? '<span class="badge-in">' + SO.badge() + '</span>' : (SO.cache && SO.cache.ok ? '<span class="muted">' + SO.cache.friends.filter(function (f) { return f.online; }).length + ' online</span>' : '')) + '</button>' +
       '<button class="btn sh-menu" data-a="page" data-p="servos">Servos <span class="muted">' + Sh.owned(st).length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="collection">Coleção</button>' +
       '<button class="btn" data-a="page" data-p="history">Histórico</button>' +
@@ -12354,7 +12549,7 @@ body::after {
     ['missoes', 'Missões e disciplina', '📋', 'm1 m10 m50 m100 m500 m1000 mS mS10 create10 d1 d7 d30 d100 d365 emg1 emg10 hid1 hid10 zone1 trust leisure night early fail1'],
     ['progresso', 'Progresso e poder', '⭐', 'l5 l10 l25 l50 l75 l100 points all50 all100 core skill20 secret3 form10 form34'],
     ['combate', 'Combate e portões', '⚔️', 'b1 b10 b25 b50 b100 b200 giant giant10 giant3 clutch flawless flaw10 lose5 lose15 brave secretboss architect'],
-    ['sombras', 'Sombras e servos', '🌑', 'sh1 sh10 sh25 sh50 sh100 shking shking10 shar1 shar10 sharch shar100 shfirst shlast shlost shlost10 shname shfull spar1 spar25 sparlose'],
+    ['sombras', 'Sombras e servos', '🌑', 'duel1 duel10 duel50 duelperf friend5 friend20 sh1 sh10 sh25 sh50 sh100 shking shking10 shar1 shar10 sharch shar100 shfirst shlast shlost shlost10 shname shfull spar1 spar25 sparlose'],
     ['coliseu', 'Coliseu', '🏟️', 'ar_1 ar_5 ar_10 ar_first ar1 ar5 ar10 grd1 grd45 grd90 ten1 champ1 champ5 champ10 firstp rematch'],
     ['trofeus', 'Troféus', '🏆', 'tr25 tr100 tr202 set1 set5 set10'],
     ['riqueza', 'Riqueza e coleção', '💰', 'rich rich2 rich3 spend sell50 collector items100 arsenal chest25 chest100 chest500 spch10 spchm secretchest potions talk50'],
@@ -12730,6 +12925,156 @@ body::after {
     }
     return h;
   }
+  /* ================= SOCIAL: amigos, conversas e duelos ================= */
+  var SO = S.social;
+  function clsName(c) { return S.CLASSES[c] ? S.CLASSES[c].name : 'Caçador'; }
+  function socAvatar(p, cls) { return '<span class="soc-av ' + (cls || '') + '">' + (p.cls && S.CLASSES[p.cls] ? S.avatar.html(p.cls, p.level || 1, 'mini') : '<span class="soc-av-x">' + esc((p.name || '?')[0]) + '</span>') + (p.online != null ? '<i class="dot ' + (p.online ? 'on' : 'off') + '"></i>' : '') + '</span>'; }
+  function seenText(p) {
+    if (p.online) return 'Online';
+    if (!p.seen) return 'Offline';
+    var d = SO.serverNow() - p.seen, m = Math.floor(d / 60000);
+    return m < 60 ? 'Visto há ' + Math.max(1, m) + ' min' : m < 1440 ? 'Visto há ' + Math.floor(m / 60) + ' h' : 'Visto há ' + Math.floor(m / 1440) + ' d';
+  }
+  function socNoLink() {
+    return '<section class="win"><div class="empty">O Social precisa de ligação ao servidor do Sistema.<br><span class="small muted">Verifica a internet e volta a abrir esta página.</span></div></section>';
+  }
+  function socialPage(st) {
+    var h = backBtn('Social');
+    if (!SO.ready()) return h + socNoLink();
+    var c = SO.cache, t = ui.socTab || 'amigos';
+    if (!c) { socLoad(true); return h + '<section class="win"><div class="empty">A ligar ao Sistema…</div></section>'; }
+    if (!c.ok) return h + '<section class="win"><div class="empty">' + esc(c.msg || 'Não foi possível ligar.') + '</div><button class="btn block" data-a="soc-reload">Tentar outra vez</button></section>';
+    var me = c.me, inc = c.requests_in.length + c.invites.length;
+    h += '<section class="win soc-me"><div class="row">' + socAvatar({ cls: st.cls, level: st.level, name: st.name, online: true }, 'big') +
+      '<div class="grow"><div class="card-t">' + esc(st.name) + '</div><div class="small muted">' + clsName(st.cls) + ' · Nv ' + st.level + '</div>' +
+      '<button class="btn sm mono id-chip" data-a="id-copy">' + esc(st.playerId) + ' ⧉</button></div>' +
+      '<div class="soc-rec"><b class="mono">' + me.rating + '</b><span class="small muted">pontos</span><span class="small"><span style="color:var(--good)">' + me.wins + 'V</span> · <span style="color:var(--danger)">' + me.losses + 'D</span></span></div></div>' +
+      '<p class="hint" style="margin:8px 0 0">Partilha o teu ID para os outros jogadores te adicionarem.</p></section>';
+    h += '<div class="chips" style="margin-top:12px">' + [['amigos', 'Amigos', c.friends.length, c.unread], ['duelos', 'Duelos', null, c.invites.length], ['pedidos', 'Pedidos', null, c.requests_in.length]].map(function (x) {
+      return '<button class="chip' + (t === x[0] ? ' on' : '') + '" data-a="soc-tab" data-v="' + x[0] + '">' + x[1] + (x[2] != null ? ' <span class="muted">' + x[2] + '</span>' : '') + (x[3] ? ' <span class="badge-in">' + x[3] + '</span>' : '') + '</button>';
+    }).join('') + '</div>';
+    if (c.duel) h += '<button class="notice-banner duel-banner" data-a="duel-open" data-id="' + c.duel.id + '"><span class="nb-ico">⚔</span><span class="grow"><b>' + (c.duel.status === 'active' ? 'Duelo em curso' : 'A tua sala de duelo está aberta') + '</b><span class="small muted">Sala ' + esc(c.duel.code) + '</span></span><span class="nb-go">Abrir ›</span></button>';
+    if (t === 'amigos') h += friendsTab(st, c);
+    else if (t === 'duelos') h += duelsTab(st, c);
+    else h += requestsTab(st, c);
+    return h;
+  }
+  function friendsTab(st, c) {
+    var h = '<section class="win"><div class="win-h">Adicionar amigo</div><div class="row"><input class="in grow" id="soc-q" data-keep maxlength="40" placeholder="ID de Jogador ou nome" autocomplete="off"><button class="btn" data-a="soc-find">Procurar</button></div>';
+    if (ui.socFound) {
+      h += '<div class="stack" style="gap:8px;margin-top:10px">' + (ui.socFound.length ? ui.socFound.map(function (p) {
+        var rel = p.relation, btn = rel === 'friend' ? '<span class="tag good">Amigo</span>' : rel === 'sent' ? '<span class="tag">Pedido enviado</span>' : rel === 'received' ? '<button class="btn sm pri" data-a="soc-accept" data-id="' + esc(p.id) + '">Aceitar</button>' : '<button class="btn sm pri" data-a="soc-add" data-id="' + esc(p.id) + '">Adicionar</button>';
+        return '<div class="card soc-row"><div class="card-h">' + socAvatar(p) + '<div class="grow"><div class="card-t">' + esc(p.name) + '</div><div class="small muted">' + clsName(p.cls) + ' · Nv ' + p.level + ' · ' + seenText(p) + '</div></div>' + btn + '</div></div>';
+      }).join('') : '<div class="small muted">Ninguém encontrado.</div>') + '</div>';
+    }
+    h += '</section>';
+    var on = c.friends.filter(function (f) { return f.online; }).length;
+    h += '<section class="win"><div class="win-h">Amigos <small>' + on + ' online · ' + c.friends.length + '</small></div>';
+    if (!c.friends.length) h += '<div class="empty">Ainda não tens amigos no Sistema. Procura alguém pelo ID ou pelo nome.</div>';
+    else h += '<div class="stack" style="gap:8px">' + c.friends.map(function (f) {
+      return '<div class="card soc-row' + (f.online ? ' online' : '') + '"><div class="card-h">' + socAvatar(f) + '<div class="grow"><div class="card-t">' + esc(f.name) + (f.unread ? ' <span class="badge-in">' + f.unread + '</span>' : '') + '</div>' +
+        '<div class="small muted">' + clsName(f.cls) + ' · Nv ' + f.level + ' · <span class="' + (f.online ? 'on-txt' : '') + '">' + seenText(f) + '</span></div></div></div>' +
+        '<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm grow" data-a="chat-open" data-id="' + esc(f.id) + '">💬 Conversar</button><button class="btn sm grow bad" data-a="duel-invite" data-id="' + esc(f.id) + '">⚔ Desafiar</button><button class="btn sm ghost" data-a="soc-remove" data-id="' + esc(f.id) + '" aria-label="Remover amigo">✕</button></div></div>';
+    }).join('') + '</div>';
+    return h + '</section>';
+  }
+  function requestsTab(st, c) {
+    var h = '<section class="win"><div class="win-h">Pedidos recebidos <small>' + c.requests_in.length + '</small></div>';
+    h += c.requests_in.length ? '<div class="stack" style="gap:8px">' + c.requests_in.map(function (p) {
+      return '<div class="card soc-row"><div class="card-h">' + socAvatar(p) + '<div class="grow"><div class="card-t">' + esc(p.name) + '</div><div class="small muted">' + clsName(p.cls) + ' · Nv ' + p.level + '</div></div></div>' +
+        '<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm pri grow" data-a="soc-accept" data-id="' + esc(p.id) + '">Aceitar</button><button class="btn sm ghost grow" data-a="soc-decline" data-id="' + esc(p.id) + '">Recusar</button></div></div>';
+    }).join('') + '</div>' : '<div class="empty">Sem pedidos de amizade.</div>';
+    h += '</section><section class="win"><div class="win-h">Pedidos enviados <small>' + c.requests_out.length + '</small></div>';
+    h += c.requests_out.length ? '<div class="stack" style="gap:8px">' + c.requests_out.map(function (p) {
+      return '<div class="card soc-row"><div class="card-h">' + socAvatar(p) + '<div class="grow"><div class="card-t">' + esc(p.name) + '</div><div class="small muted">À espera de resposta</div></div><button class="btn sm ghost" data-a="soc-remove" data-id="' + esc(p.id) + '">Cancelar</button></div></div>';
+    }).join('') + '</div>' : '<div class="empty">Nenhum pedido à espera.</div>';
+    return h + '</section>';
+  }
+  function duelsTab(st, c) {
+    var so = SO.ensure(st), today = E.dateKey(), left = Math.max(0, SO.DAILY - (so.day === today ? so.count : 0));
+    var h = '<section class="win duel-win"><div class="win-h">Arena de Duelos</div>' +
+      '<p class="small muted" style="margin:0 0 10px">Combate 1 contra 1, por turnos, contra jogadores reais. Cada um usa os seus atributos e a habilidade da sua classe. Perder não tira nada. Recompensas hoje: <b>' + left + '/' + SO.DAILY + '</b> duelos.</p>' +
+      '<div class="row" style="gap:6px"><button class="btn bad grow" data-a="duel-create" data-p="1">⚔ Criar sala pública</button><button class="btn grow" data-a="duel-create" data-p="0">Sala privada</button></div>' +
+      '<div class="row" style="margin-top:8px"><input class="in grow mono" id="duel-code" data-keep maxlength="6" placeholder="Código da sala" autocomplete="off" style="text-transform:uppercase"><button class="btn" data-a="duel-join-code">Entrar</button></div></section>';
+    if (c.invites.length) h += '<section class="win gold"><div class="win-h">Desafios recebidos <small>' + c.invites.length + '</small></div><div class="stack" style="gap:8px">' + c.invites.map(function (d) {
+      return '<div class="card soc-row"><div class="card-h">' + socAvatar(d) + '<div class="grow"><div class="card-t">' + esc(d.name) + ' desafia-te</div><div class="small muted">' + clsName(d.cls) + ' · Nv ' + d.level + ' · sala ' + esc(d.code) + '</div></div><button class="btn sm bad" data-a="duel-join" data-id="' + esc(d.id) + '">Aceitar</button></div></div>';
+    }).join('') + '</div></section>';
+    h += '<section class="win"><div class="win-h">Salas abertas <small>' + c.open.length + '</small></div>' + (c.open.length ? '<div class="stack" style="gap:8px">' + c.open.map(function (d) {
+      var gap = d.level - st.level;
+      return '<div class="card soc-row"><div class="card-h">' + socAvatar(d) + '<div class="grow"><div class="card-t">' + esc(d.name) + '</div><div class="small muted">' + clsName(d.cls) + ' · Nv ' + d.level + ' · ' + d.rating + ' pontos' + (Math.abs(gap) >= 10 ? ' · <span style="color:' + (gap > 0 ? 'var(--danger)' : 'var(--good)') + '">' + (gap > 0 ? '+' : '') + gap + ' níveis</span>' : '') + '</div></div><button class="btn sm bad" data-a="duel-join" data-id="' + esc(d.id) + '">Lutar</button></div></div>';
+    }).join('') + '</div>' : '<div class="empty">Nenhuma sala aberta agora. Cria a tua e espera por um adversário.</div>') + '</section>';
+    h += '<section class="win"><div class="win-h">Últimos duelos</div>' + (ui.duelHist ? (ui.duelHist.length ? '<div class="stack" style="gap:6px">' + ui.duelHist.map(function (x) {
+      return '<div class="row between small"><span>' + (x.won ? '<b style="color:var(--good)">Vitória</b>' : '<b style="color:var(--danger)">Derrota</b>') + ' contra ' + esc(x.opponent || '?') + '</span><span class="muted">' + timeStr(x.at) + '</span></div>';
+    }).join('') + '</div>' : '<div class="empty">Ainda não fizeste nenhum duelo.</div>') : '<button class="btn block ghost" data-a="duel-hist">Ver histórico</button>') + '</section>';
+    return h;
+  }
+  function chatPage(st) {
+    var c = SO.cache, fid = ui.chatWith, f = (c && c.friends || []).filter(function (x) { return x.id === fid; })[0] || ui.chatFriend || { id: fid, name: 'Amigo' };
+    var msgs = ui.chatMsgs || [];
+    var h = '<div class="row" style="margin-top:14px"><button class="btn sm ghost" data-a="soc-back">‹ Voltar</button>' + socAvatar(f) + '<div class="grow"><h2 style="font-size:17px;margin:0">' + esc(f.name) + '</h2><div class="small muted">' + (f.level ? clsName(f.cls) + ' · Nv ' + f.level + ' · ' : '') + seenText(f) + '</div></div>' +
+      '<button class="btn sm bad" data-a="duel-invite" data-id="' + esc(fid) + '">⚔</button></div>';
+    h += '<section class="win chat-win"><div class="chat-list" id="chat-list">' + (ui.chatLoading && !msgs.length ? '<div class="empty">A carregar…</div>' : msgs.length ? msgs.map(function (m, i) {
+      var mine = m.from === st.playerId, prev = msgs[i - 1], day = new Date(m.at).toDateString(), sep = !prev || new Date(prev.at).toDateString() !== day;
+      return (sep ? '<div class="chat-day">' + new Date(m.at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' }) + '</div>' : '') +
+        '<div class="msg ' + (mine ? 'me' : 'them') + (m.pending ? ' pending' : '') + '"><div class="bubble">' + esc(m.text) + '</div><div class="msg-t">' + clockOf(m.at) + (mine ? (m.pending ? ' · a enviar' : m.failed ? ' · falhou' : '') : '') + '</div></div>';
+    }).join('') : '<div class="empty">Ainda não há mensagens. Diz olá!</div>') + '</div>' +
+      '<div class="chat-in"><input class="in grow" id="chat-text" data-keep maxlength="500" placeholder="Escreve uma mensagem…" autocomplete="off"><button class="btn pri" data-a="chat-send">Enviar</button></div></section>';
+    return h;
+  }
+  /* ---------- duelo ---------- */
+  function duelFighter(F, me, turn, side) {
+    var hpP = Math.max(0, F.hp / F.maxHp * 100), mpP = Math.max(0, F.mp / F.maxMp * 100);
+    return '<div class="df ' + side + (turn ? ' turn' : '') + (F.hp <= 0 ? ' dead' : '') + '">' +
+      '<div class="df-av">' + (S.CLASSES[F.cls] ? S.avatar.html(F.cls, F.level, 'duel') : '') + (F.guard ? '<span class="df-st">🛡</span>' : '') + (F.shield > 0 ? '<span class="df-st sh">◈ ' + F.shield + '</span>' : '') + (F.legion > 0 ? '<span class="df-st lg">👻 ' + F.legion + '</span>' : '') + '</div>' +
+      '<div class="df-name">' + esc(F.name) + (me ? ' <span class="muted">(tu)</span>' : '') + '</div><div class="small muted">' + clsName(F.cls) + ' · Nv ' + F.level + '</div>' +
+      '<div class="bar hp"><i style="width:' + hpP.toFixed(1) + '%"></i></div><div class="small mono">' + fmt(F.hp) + ' / ' + fmt(F.maxHp) + '</div>' +
+      '<div class="bar mp"><i style="width:' + mpP.toFixed(1) + '%"></i></div><div class="small mono muted">' + fmt(F.mp) + ' / ' + fmt(F.maxMp) + ' MP</div></div>';
+  }
+  function duelPage(st) {
+    var d = ui.duel;
+    var h = '<div class="row" style="margin-top:14px"><button class="btn sm ghost" data-a="soc-back">‹ Social</button><h2 style="font-size:18px">Duelo</h2></div>';
+    if (!d) return h + '<section class="win"><div class="empty">A carregar o duelo…</div></section>';
+    var me = d.me, opId = d.host === me ? d.guest : d.host, F = d.fighters || {}, A = F[me], B = opId ? F[opId] : null;
+    if (d.status === 'waiting') {
+      var c = SO.cache, fr = (c && c.friends) || [];
+      h += '<section class="win duel-win duel-wait"><div class="win-h">Sala de duelo</div><div class="duel-code mono">' + esc(d.code) + '</div>' +
+        '<p class="small muted" style="text-align:center;margin:4px 0 12px">' + (d.public ? 'Sala pública: aparece na lista de salas abertas.' : 'Sala privada: só entra quem tiver o código ou for convidado.') + '<br>A sala fecha sozinha ao fim de 30 minutos sem adversário.</p>' +
+        '<div class="duel-radar"><i></i><i></i><i></i></div><p style="text-align:center" class="small">À espera de um adversário…</p>' +
+        '<button class="btn block" data-a="duel-copy">Copiar código</button>';
+      if (fr.length) h += '<div class="info-h" style="margin-top:12px">Convidar um amigo</div><div class="stack" style="gap:6px">' + fr.slice(0, 12).map(function (f) {
+        return '<div class="row between"><span class="row" style="gap:8px">' + socAvatar(f) + '<span>' + esc(f.name) + ' <span class="small muted">Nv ' + f.level + '</span></span></span>' + (d.invited === f.id ? '<span class="tag good">Convidado</span>' : '<button class="btn sm" data-a="duel-reinvite" data-id="' + esc(f.id) + '">Convidar</button>') + '</div>';
+      }).join('') + '</div>';
+      h += '<button class="btn block ghost" style="margin-top:12px" data-a="duel-leave">Fechar a sala</button></section>';
+      return h;
+    }
+    if (d.status === 'cancelled') return h + '<section class="win"><div class="empty">Esta sala foi fechada.</div><button class="btn block" data-a="soc-back">Voltar</button></section>';
+    var myTurn = d.status === 'active' && d.turn === me;
+    h += '<section class="win duel-win duel-arena' + (myTurn ? ' my-turn' : '') + '"><div class="win-h">' + (d.status === 'done' ? 'Duelo terminado' : 'Turno ' + d.turn_no) + (d.status === 'active' ? '<small class="duel-timer" data-until="' + d.deadline + '">' + Math.max(0, Math.ceil((d.deadline - SO.serverNow()) / 1000)) + 's</small>' : '') + '</div>' +
+      '<div class="duel-stage">' + (A ? duelFighter(A, true, d.turn === me, 'l') : '') + '<div class="duel-vs">VS</div>' + (B ? duelFighter(B, false, d.turn === opId, 'r') : '') + '</div>';
+    if (d.status === 'active') {
+      if (myTurn) {
+        var sk = d.skills[A.cls] || { name: 'Habilidade', mp: 0.35 }, skCost = Math.round(A.maxMp * sk.mp), hvCost = Math.round(A.maxMp * 0.2), cd = (A.cds && A.cds.skill) || 0;
+        h += '<div class="duel-turn">É A TUA VEZ</div><div class="duel-acts">' +
+          '<button class="btn" data-a="duel-act" data-v="attack">⚔ Atacar</button>' +
+          '<button class="btn" data-a="duel-act" data-v="heavy"' + (A.mp < hvCost ? ' disabled' : '') + '>💥 Golpe Poderoso <small>' + hvCost + ' MP</small></button>' +
+          '<button class="btn pri" data-a="duel-act" data-v="skill"' + (cd || A.mp < skCost ? ' disabled' : '') + '>✦ ' + esc(sk.name) + ' <small>' + (cd ? 'recarga ' + cd : skCost + ' MP') + '</small></button>' +
+          '<button class="btn" data-a="duel-act" data-v="defend">🛡 Defender</button>' +
+          '<button class="btn" data-a="duel-act" data-v="potion"' + (A.pots < 1 ? ' disabled' : '') + '>🧪 Poção <small>' + A.pots + '/2</small></button></div>';
+      } else h += '<div class="duel-turn wait">Vez de ' + esc(B ? B.name : 'adversário') + '…</div>';
+    } else if (d.status === 'done') {
+      var won = d.winner === me, rw = SO.reward(d), rt = d.result && d.result.rating && d.result.rating[me];
+      h += '<div class="duel-end ' + (won ? 'win' : 'lose') + '"><div class="duel-end-t">' + (won ? 'VITÓRIA' : 'DERROTA') + '</div>' +
+        '<div class="small">' + (d.reason === 'forfeit' ? (won ? 'O adversário desistiu.' : 'Desististe do duelo.') : d.reason === 'timeout' ? (won ? 'O adversário deixou passar o tempo duas vezes.' : 'Deixaste passar o tempo duas vezes.') : d.reason === 'turns' ? 'Limite de turnos: venceu quem tinha mais vida.' : (won ? 'Derrubaste ' + esc(B ? B.name : 'o adversário') + '.' : esc(B ? B.name : 'O adversário') + ' derrubou-te.')) + '</div>' +
+        (rt ? '<div class="small mono" style="margin-top:6px">Pontos: ' + rt[0] + ' → <b>' + rt[1] + '</b> (' + (rt[1] >= rt[0] ? '+' : '') + (rt[1] - rt[0]) + ')</div>' : '') +
+        (rw ? (rw.capped ? '<div class="small muted" style="margin-top:6px">Já recebeste as recompensas de duelo de hoje (' + SO.DAILY + ').</div>' : '<div class="small" style="margin-top:6px;color:var(--gold)">+' + fmt(rw.xp) + ' XP · +' + fmt(rw.coins) + ' moedas</div>') : '') +
+        '<div class="row" style="gap:6px;margin-top:12px"><button class="btn grow" data-a="soc-back">Voltar</button>' + (B && ((SO.cache && SO.cache.friends) || []).some(function (f) { return f.id === opId; }) ? '<button class="btn bad grow" data-a="duel-invite" data-id="' + esc(opId) + '">Revanche</button>' : '<button class="btn bad grow" data-a="duel-create" data-p="1">Nova sala</button>') + '</div></div>';
+    }
+    h += '</section><section class="win"><div class="win-h">Registo</div><div class="log duel-log">' + (d.log || []).slice().reverse().slice(0, 25).map(function (l) {
+      return '<div class="ln k-' + esc(l.c || 'x') + (l.w === me ? ' mine' : l.w ? ' theirs' : '') + '">' + esc(l.t) + '</div>';
+    }).join('') + '</div>' + (d.status === 'active' ? '<button class="btn block ghost sm" style="margin-top:10px" data-a="duel-leave">Desistir</button>' : '') + '</section>';
+    return h;
+  }
+
   /* ================= SOMBRAS: Tornar Servo e menu Servos ================= */
   var Sh = S.shadows;
   /* aparência sombria: imagem própria (assets/shadows) ou a do chefe escurecida */
@@ -13742,7 +14087,7 @@ body::after {
   /* ================= RENDER ================= */
   function viewKey(st) {
     return ui.tab + '|' + (ui.page || '') + '|' + (st.battle ? 'b' + st.battle.started : '') + '|' +
-      (ui.tab === 'combate' ? ui.gate : ui.tab === 'loja' ? ui.shopTab : ui.tab === 'bolsa' ? ui.bag : '');
+      (ui.tab === 'combate' ? ui.gate : ui.tab === 'loja' ? ui.shopTab : ui.tab === 'bolsa' ? ui.bag : '') + '|' + (ui.chatWith || ui.duelId || '');
   }
   function animateBars() {
     var full = FX.full();
@@ -13817,7 +14162,14 @@ body::after {
     var entering = vk !== ui.lastView;
     var tabChanged = !ui.lastView || ui.lastView.split('|')[0] !== ui.tab;
     var pop = ui.popups[0];
+    var keep = {}, ae = document.activeElement, focus = null;
+    root.querySelectorAll('[data-keep]').forEach(function (el) { if (el.id) keep[el.id] = el.value; });
+    if (ae && ae.id && keep[ae.id] != null) focus = { id: ae.id, s: ae.selectionStart, e: ae.selectionEnd };
+    var chatEl = document.getElementById('chat-list'), chatTop = chatEl ? chatEl.scrollTop : null;
     root.innerHTML = topHtml(st) + '<main' + (entering ? ' class="enter"' : '') + '>' + body + '</main>' + navHtml(st) + modalHtml() + popupHtml();
+    Object.keys(keep).forEach(function (id) { var el = document.getElementById(id); if (el && !entering) el.value = keep[id]; });
+    if (focus && !entering) { var fe = document.getElementById(focus.id); if (fe) { fe.focus({ preventScroll: true }); try { fe.setSelectionRange(focus.s, focus.e); } catch (e) { /* tipo sem seleção */ } } }
+    if (chatTop != null && !entering) { var ce = document.getElementById('chat-list'); if (ce) ce.scrollTop = chatTop; }
 
     if (entering) {
       var wi = 0;
@@ -14036,7 +14388,7 @@ body::after {
       render();
     },
     tab: function (d) { var was = ui.tab; ui.tab = d.t; ui.page = null; ui.modal = null; render(); window.scrollTo(0, 0); if (was !== d.t) talkTry('tab', { tab: d.t }, 1400); },
-    page: function (d) { ui.page = d.p; ui.histLimit = 40; render(); window.scrollTo(0, 0); if (d.p === 'avisos') S.shop.markRead(E.state); },
+    page: function (d) { ui.page = d.p; ui.histLimit = 40; render(); window.scrollTo(0, 0); if (d.p === 'avisos') S.shop.markRead(E.state); if (d.p === 'social') socLoad(true); },
     back: function () { ui.page = null; render(); },
     'hist-more': function () { ui.histLimit += 60; render(); },
     alloc: function (d) {
@@ -14126,6 +14478,67 @@ body::after {
       confirmBox('Começar de novo', 'O progresso deste aparelho é apagado e começas um registo novo, do nível 1.', 'Começar de novo', function () {
         E.resetAll(); ui.intro = { step: 0, name: '', cls: null }; ui.tab = 'status'; ui.page = null; ui.popups = []; ui.bars = {}; ui.lastCoins = null; ui.lastView = null; render();
       }, true);
+    },
+    // ---- social ----
+    'soc-tab': function (d) { ui.socTab = d.v; render(); if (d.v === 'duelos') { ui.duelHist = null; } },
+    'soc-reload': function () { SO.cache = null; render(); },
+    'soc-back': function () { ui.page = 'social'; ui.chatWith = null; ui.chatMsgs = null; ui.duelId = null; ui.duel = null; render(); socLoad(true); window.scrollTo(0, 0); },
+    'soc-find': function () {
+      var q = (document.getElementById('soc-q') || {}).value || '';
+      SO.find(q.trim()).then(function (j) { if (!j.ok) return toast(j.msg, true); ui.socFound = j.players; render(); });
+    },
+    'soc-add': function (d) { SO.request(d.id).then(function (j) { act(j); if (j.ok) { ui.socFound = (ui.socFound || []).map(function (p) { return p.id === d.id ? Object.assign({}, p, { relation: j.status }) : p; }); socLoad(true); } }); },
+    'soc-accept': function (d) { SO.respond(d.id, true).then(function (j) { if (j.ok) { toast('Agora são amigos.'); sfx('quest'); ui.socFound = null; } else toast(j.msg, true); socLoad(true); }); },
+    'soc-decline': function (d) { SO.respond(d.id, false).then(function (j) { if (!j.ok) toast(j.msg, true); socLoad(true); }); },
+    'soc-remove': function (d) {
+      var f = ((SO.cache && SO.cache.friends) || []).filter(function (x) { return x.id === d.id; })[0];
+      var go = function () { SO.remove(d.id).then(function (j) { if (!j.ok) toast(j.msg, true); socLoad(true); }); };
+      if (f) confirmBox('Remover amigo', 'Remover ' + f.name + ' da tua lista de amigos? As conversas deixam de estar disponíveis.', 'Remover', go, true); else go();
+    },
+    'chat-open': function (d) {
+      ui.page = 'chat'; ui.chatWith = d.id; ui.chatMsgs = []; ui.chatLoading = true; ui.chatFriend = ((SO.cache && SO.cache.friends) || []).filter(function (x) { return x.id === d.id; })[0] || null;
+      render(); window.scrollTo(0, 0); chatLoad(true);
+    },
+    'chat-send': function () {
+      var el = document.getElementById('chat-text'), text = el ? el.value.trim() : '';
+      if (!text || !ui.chatWith) return;
+      el.value = '';
+      var tmp = { id: 'tmp' + Date.now(), from: E.state.playerId, text: text, at: SO.serverNow(), pending: true };
+      ui.chatMsgs = (ui.chatMsgs || []).concat([tmp]); render(); chatScroll(); sfx('click');
+      SO.send(ui.chatWith, text).then(function (j) {
+        if (!j.ok) { tmp.pending = false; tmp.failed = true; toast(j.msg, true); render(); return; }
+        ui.chatMsgs = ui.chatMsgs.map(function (m) { return m === tmp ? j.message : m; }); render(); chatScroll();
+      });
+      var nel = document.getElementById('chat-text'); if (nel) nel.focus();
+    },
+    'duel-hist': function () { SO.duels().then(function (j) { if (!j.ok) return toast(j.msg, true); ui.duelHist = j.duels; render(); }); },
+    'duel-create': function (d) { duelStart(SO.create({ public: d.p === '1' })); },
+    'duel-invite': function (d) {
+      var c = SO.cache, open = c && c.duel;
+      if (open && open.status === 'active') { toast('Já tens um duelo em curso.', true); return H['duel-open']({ id: open.id }); }
+      if (open && open.status === 'waiting') { SO.invite(open.id, d.id).then(function (j) { act(j, j.ok ? 'Convite enviado.' : null); if (j.ok) { ui.duelId = open.id; ui.duel = j.duel; ui.page = 'duel'; render(); duelPoll(); } }); return; }
+      duelStart(SO.create({ public: false, invite: d.id }), 'Convite enviado. À espera que aceite…');
+    },
+    'duel-reinvite': function (d) { if (ui.duel) SO.invite(ui.duel.id, d.id).then(function (j) { act(j, j.ok ? 'Convite enviado.' : null); if (j.ok) { ui.duel = j.duel; render(); } }); },
+    'duel-join': function (d) { duelStart(SO.join({ id: d.id })); },
+    'duel-join-code': function () { var v = ((document.getElementById('duel-code') || {}).value || '').trim(); if (v.length < 6) return toast('Escreve o código da sala (6 letras).', true); duelStart(SO.join({ code: v })); },
+    'duel-open': function (d) { ui.page = 'duel'; ui.duelId = d.id; ui.duel = null; render(); window.scrollTo(0, 0); duelPoll(); },
+    'duel-copy': function () { if (ui.duel) copyText(ui.duel.code, 'Código ' + ui.duel.code + ' copiado.'); },
+    'duel-act': function (d) {
+      if (!ui.duel || ui.duelBusy) return;
+      ui.duelBusy = true;
+      document.querySelectorAll('.duel-acts .btn').forEach(function (b) { b.disabled = true; });
+      sfx(d.v === 'potion' ? 'potion' : d.v === 'defend' ? 'click' : d.v === 'skill' ? 'skill' : 'attack');
+      SO.act(ui.duel.id, d.v, ui.duel.version).then(function (j) {
+        ui.duelBusy = false;
+        if (!j.ok) { toast(j.msg, true); render(); return; }
+        duelShow(j.duel);
+      });
+    },
+    'duel-leave': function () {
+      var d = ui.duel; if (!d) return;
+      var go = function () { SO.leave(d.id).then(function (j) { if (!j.ok) return toast(j.msg, true); duelShow(j.duel); if (j.duel.status === 'cancelled') H['soc-back'](); }); };
+      if (d.status === 'active') confirmBox('Desistir do duelo', 'Se desistires, o adversário ganha e perdes pontos de duelo.', 'Desistir', go, true); else go();
     },
     'chest-fam': function (d) { ui.chestFam = d.v; render(); },
     'prem-tab': function (d) { ui.premTab = d.t; render(); if (d.t === 'obter') loadShop(); },
@@ -14575,6 +14988,100 @@ body::after {
   function onKey(ev) {
     if (ev.key === 'Escape' && ui.modal) { H.close(); }
     if (ev.key === 'Enter' && ev.target && ev.target.id === 'in-name' && ui.intro.cls) H['intro-go']();
+    if (ev.key === 'Enter' && ev.target && ev.target.id === 'chat-text') { ev.preventDefault(); H['chat-send'](); }
+    if (ev.key === 'Enter' && ev.target && ev.target.id === 'soc-q') { ev.preventDefault(); H['soc-find'](); }
+    if (ev.key === 'Enter' && ev.target && ev.target.id === 'duel-code') { ev.preventDefault(); H['duel-join-code'](); }
+  }
+
+  /* ---------- social: atualização automática ---------- */
+  var socBusy = false, chatBusy = false, duelBusy = false;
+  function socLoad(force) {
+    if (!E.state || !SO.ready() || socBusy) return;
+    if (!force && Date.now() - SO.cacheAt < 8000) return;
+    socBusy = true;
+    SO.state().then(function (j) {
+      socBusy = false;
+      if (!j.ok) { if (!SO.cache || !SO.cache.ok) { SO.cache = j; if (ui.page === 'social') render(); } return; }
+      var news = (j.news || []).filter(function (n) { return !(n.type === 'message' && ui.page === 'chat' && ui.chatWith === n.id); });
+      if (news.length) {
+        var n = news[0];
+        toast(n.type === 'request' ? n.name + ' quer ser teu amigo.' : n.type === 'invite' ? n.name + ' desafiou-te para um duelo!' : n.type === 'accepted' ? n.name + ' aceitou o teu pedido de amizade.' : 'Mensagem nova de ' + n.name + '.');
+        sfx('notify'); if (n.type === 'invite') FX.vibrate([60, 40, 60]);
+      }
+      if (ui.page === 'social' || ui.page === 'chat' || news.length || ui.tab === 'status') softRender();
+    }, function () { socBusy = false; });
+  }
+  function chatScroll() { var l = document.getElementById('chat-list'); if (l) l.scrollTop = l.scrollHeight; }
+  function chatLoad(first) {
+    if (!ui.chatWith || chatBusy) return;
+    chatBusy = true;
+    var fid = ui.chatWith, real = (ui.chatMsgs || []).filter(function (m) { return typeof m.id === 'number'; }), after = first ? 0 : (real.length ? real[real.length - 1].id : 0);
+    SO.history(fid, after).then(function (j) {
+      chatBusy = false; ui.chatLoading = false;
+      if (ui.chatWith !== fid) return;
+      if (!j.ok) { toast(j.msg, true); render(); return; }
+      if (j.friend) ui.chatFriend = j.friend;
+      var have = {}; (ui.chatMsgs || []).forEach(function (m) { have[m.id] = 1; });
+      var add = j.messages.filter(function (m) { return !have[m.id]; });
+      if (first) { ui.chatMsgs = j.messages.concat((ui.chatMsgs || []).filter(function (m) { return m.pending; })); render(); chatScroll(); return; }
+      if (add.length) {
+        var list = document.getElementById('chat-list'), atEnd = list && list.scrollHeight - list.scrollTop - list.clientHeight < 60;
+        ui.chatMsgs = ui.chatMsgs.concat(add);
+        if (add.some(function (m) { return m.from !== E.state.playerId; })) sfx('notify');
+        softRender(); if (atEnd) chatScroll();
+      }
+    }, function () { chatBusy = false; });
+  }
+  function duelStart(p, msg) {
+    p.then(function (j) {
+      if (!j.ok) { toast(j.msg, true); socLoad(true); return; }
+      if (msg) toast(msg);
+      ui.page = 'duel'; ui.tab = 'status'; ui.duelId = j.duel.id; ui.duel = null; duelShow(j.duel); window.scrollTo(0, 0); socLoad(true);
+    });
+  }
+  function duelShow(d) {
+    var prev = ui.duel;
+    ui.duel = d; ui.duelId = d.id;
+    var me = d.me, last = prev && prev.log && prev.log.length ? prev.log[prev.log.length - 1].n : 0;
+    var fresh = (d.log || []).filter(function (l) { return l.n > last; });
+    if (prev && prev.status === 'waiting' && d.status === 'active') { sfx('emergency'); FX.flash('#ff2a48', .35); FX.vibrate([120, 60, 120]); }
+    if (prev && fresh.length) {
+      fresh.forEach(function (l) {
+        if (l.w && l.w !== me && (l.c === 'hit' || l.c === 'crit')) { sfx('hurt'); FX.shake(l.c === 'crit' ? 2 : 1); }
+      });
+    }
+    if (prev && prev.status === 'active' && d.status === 'done') {
+      var won = d.winner === me;
+      sfx(won ? 'levelup' : 'death'); FX.flash(won ? '#ffc85a' : '#ff1f3d', .5); FX.vibrate(won ? [80, 40, 200] : [300, 80, 300]);
+    }
+    if (prev && prev.status === 'active' && d.status === 'active' && prev.turn !== me && d.turn === me) { sfx('notify'); FX.vibrate(50); }
+    render(); pullEvents();
+  }
+  function duelPoll() {
+    if (ui.page !== 'duel' || !ui.duelId || duelBusy || ui.duelBusy) return;
+    duelBusy = true;
+    SO.duel(ui.duelId).then(function (j) {
+      duelBusy = false;
+      if (!j.ok) { toast(j.msg, true); return; }
+      if (!ui.duel || j.duel.version !== ui.duel.version || j.duel.status !== ui.duel.status) duelShow(j.duel);
+    }, function () { duelBusy = false; });
+  }
+  /* redesenha sem animação de entrada, mantendo a posição da página */
+  function softRender() { if (ui.modal || ui.popups.length) return; var y = window.scrollY; render(); window.scrollTo(0, y); }
+  function copyText(t, msg) {
+    try { if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { toast(msg); }, function () { toast(t); }); else toast(t); } catch (e) { toast(t); }
+  }
+  var socTicks = 0;
+  function socTick() {
+    if (!E.state || document.visibilityState === 'hidden' || !SO.ready()) return;
+    socTicks++;
+    if (ui.page === 'duel') {
+      if (ui.duel && ui.duel.status !== 'done' && ui.duel.status !== 'cancelled' && socTicks % 2 === 0) duelPoll();
+      document.querySelectorAll('.duel-timer').forEach(function (el) { var s = Math.max(0, Math.ceil((+el.getAttribute('data-until') - SO.serverNow()) / 1000)); el.textContent = s + 's'; el.classList.toggle('urgent', s <= 10); });
+    }
+    if (ui.page === 'chat' && socTicks % 3 === 0) chatLoad(false);
+    if (ui.page === 'social' && socTicks % 8 === 0) socLoad(true);
+    else if (socTicks % 45 === 0) socLoad(true); // de fundo: pedidos, convites e mensagens novas
   }
 
   /* ---------------- relógio ---------------- */
@@ -14810,6 +15317,8 @@ body::after {
       }
     });
     setInterval(tick, 1000);
+    setInterval(socTick, 1000);
+    setTimeout(function () { socLoad(true); }, 6000);
     setInterval(checkDeadlines, 30000);
     // conversas aleatórias: só enquanto o jogador está a usar a app (tocou em algo nos últimos 2 minutos)
     ui.bootAt = Date.now();
@@ -14848,7 +15357,7 @@ SYS.AVATARS = {"arqueiro":{"1":"assets/avatars/arqueiro/1.webp","4":"assets/avat
 SYS.CLASS_ART = {"arqueiro":"assets/classes/arqueiro.webp","assassino":"assets/classes/assassino.webp","guardiao":"assets/classes/guardiao.webp","guerreiro":"assets/classes/guerreiro.webp","invocador":"assets/classes/invocador.webp","mago":"assets/classes/mago.webp"};
 SYS.BOSS_ART = {"ar1":"assets/bosses/ar1.webp","ar10":"assets/bosses/ar10.webp","ar10g1":"assets/bosses/ar10g1.webp","ar10g2":"assets/bosses/ar10g2.webp","ar10g3":"assets/bosses/ar10g3.webp","ar10g4":"assets/bosses/ar10g4.webp","ar10g5":"assets/bosses/ar10g5.webp","ar10g6":"assets/bosses/ar10g6.webp","ar10g7":"assets/bosses/ar10g7.webp","ar10g8":"assets/bosses/ar10g8.webp","ar10g9":"assets/bosses/ar10g9.webp","ar1g1":"assets/bosses/ar1g1.webp","ar1g2":"assets/bosses/ar1g2.webp","ar1g3":"assets/bosses/ar1g3.webp","ar1g4":"assets/bosses/ar1g4.webp","ar1g5":"assets/bosses/ar1g5.webp","ar1g6":"assets/bosses/ar1g6.webp","ar1g7":"assets/bosses/ar1g7.webp","ar1g8":"assets/bosses/ar1g8.webp","ar1g9":"assets/bosses/ar1g9.webp","ar2":"assets/bosses/ar2.webp","ar2g1":"assets/bosses/ar2g1.webp","ar2g2":"assets/bosses/ar2g2.webp","ar2g3":"assets/bosses/ar2g3.webp","ar2g4":"assets/bosses/ar2g4.webp","ar2g5":"assets/bosses/ar2g5.webp","ar2g6":"assets/bosses/ar2g6.webp","ar2g7":"assets/bosses/ar2g7.webp","ar2g8":"assets/bosses/ar2g8.webp","ar2g9":"assets/bosses/ar2g9.webp","ar3":"assets/bosses/ar3.webp","ar3g1":"assets/bosses/ar3g1.webp","ar3g2":"assets/bosses/ar3g2.webp","ar3g3":"assets/bosses/ar3g3.webp","ar3g4":"assets/bosses/ar3g4.webp","ar3g5":"assets/bosses/ar3g5.webp","ar3g6":"assets/bosses/ar3g6.webp","ar3g7":"assets/bosses/ar3g7.webp","ar3g8":"assets/bosses/ar3g8.webp","ar3g9":"assets/bosses/ar3g9.webp","ar4":"assets/bosses/ar4.webp","ar4g1":"assets/bosses/ar4g1.webp","ar4g2":"assets/bosses/ar4g2.webp","ar4g3":"assets/bosses/ar4g3.webp","ar4g4":"assets/bosses/ar4g4.webp","ar4g5":"assets/bosses/ar4g5.webp","ar4g6":"assets/bosses/ar4g6.webp","ar4g7":"assets/bosses/ar4g7.webp","ar4g8":"assets/bosses/ar4g8.webp","ar4g9":"assets/bosses/ar4g9.webp","ar5":"assets/bosses/ar5.webp","ar5g1":"assets/bosses/ar5g1.webp","ar5g2":"assets/bosses/ar5g2.webp","ar5g3":"assets/bosses/ar5g3.webp","ar5g4":"assets/bosses/ar5g4.webp","ar5g5":"assets/bosses/ar5g5.webp","ar5g6":"assets/bosses/ar5g6.webp","ar5g7":"assets/bosses/ar5g7.webp","ar5g8":"assets/bosses/ar5g8.webp","ar5g9":"assets/bosses/ar5g9.webp","ar6":"assets/bosses/ar6.webp","ar6g1":"assets/bosses/ar6g1.webp","ar6g2":"assets/bosses/ar6g2.webp","ar6g3":"assets/bosses/ar6g3.webp","ar6g4":"assets/bosses/ar6g4.webp","ar6g5":"assets/bosses/ar6g5.webp","ar6g6":"assets/bosses/ar6g6.webp","ar6g7":"assets/bosses/ar6g7.webp","ar6g8":"assets/bosses/ar6g8.webp","ar6g9":"assets/bosses/ar6g9.webp","ar7":"assets/bosses/ar7.webp","ar7g1":"assets/bosses/ar7g1.webp","ar7g2":"assets/bosses/ar7g2.webp","ar7g3":"assets/bosses/ar7g3.webp","ar7g4":"assets/bosses/ar7g4.webp","ar7g5":"assets/bosses/ar7g5.webp","ar7g6":"assets/bosses/ar7g6.webp","ar7g7":"assets/bosses/ar7g7.webp","ar7g8":"assets/bosses/ar7g8.webp","ar7g9":"assets/bosses/ar7g9.webp","ar8":"assets/bosses/ar8.webp","ar8g1":"assets/bosses/ar8g1.webp","ar8g2":"assets/bosses/ar8g2.webp","ar8g3":"assets/bosses/ar8g3.webp","ar8g4":"assets/bosses/ar8g4.webp","ar8g5":"assets/bosses/ar8g5.webp","ar8g6":"assets/bosses/ar8g6.webp","ar8g7":"assets/bosses/ar8g7.webp","ar8g8":"assets/bosses/ar8g8.webp","ar8g9":"assets/bosses/ar8g9.webp","ar9":"assets/bosses/ar9.webp","ar9g1":"assets/bosses/ar9g1.webp","ar9g2":"assets/bosses/ar9g2.webp","ar9g3":"assets/bosses/ar9g3.webp","ar9g4":"assets/bosses/ar9g4.webp","ar9g5":"assets/bosses/ar9g5.webp","ar9g6":"assets/bosses/ar9g6.webp","ar9g7":"assets/bosses/ar9g7.webp","ar9g8":"assets/bosses/ar9g8.webp","ar9g9":"assets/bosses/ar9g9.webp","b1":"assets/bosses/b1.webp","b10":"assets/bosses/b10.webp","b100":"assets/bosses/b100.webp","b11":"assets/bosses/b11.webp","b12":"assets/bosses/b12.webp","b13":"assets/bosses/b13.webp","b14":"assets/bosses/b14.webp","b15":"assets/bosses/b15.webp","b16":"assets/bosses/b16.webp","b17":"assets/bosses/b17.webp","b18":"assets/bosses/b18.webp","b19":"assets/bosses/b19.webp","b2":"assets/bosses/b2.webp","b20":"assets/bosses/b20.webp","b21":"assets/bosses/b21.webp","b22":"assets/bosses/b22.webp","b23":"assets/bosses/b23.webp","b24":"assets/bosses/b24.webp","b25":"assets/bosses/b25.webp","b26":"assets/bosses/b26.webp","b27":"assets/bosses/b27.webp","b28":"assets/bosses/b28.webp","b29":"assets/bosses/b29.webp","b3":"assets/bosses/b3.webp","b30":"assets/bosses/b30.webp","b31":"assets/bosses/b31.webp","b32":"assets/bosses/b32.webp","b33":"assets/bosses/b33.webp","b34":"assets/bosses/b34.webp","b35":"assets/bosses/b35.webp","b36":"assets/bosses/b36.webp","b37":"assets/bosses/b37.webp","b38":"assets/bosses/b38.webp","b39":"assets/bosses/b39.webp","b4":"assets/bosses/b4.webp","b40":"assets/bosses/b40.webp","b41":"assets/bosses/b41.webp","b42":"assets/bosses/b42.webp","b43":"assets/bosses/b43.webp","b44":"assets/bosses/b44.webp","b45":"assets/bosses/b45.webp","b46":"assets/bosses/b46.webp","b47":"assets/bosses/b47.webp","b48":"assets/bosses/b48.webp","b49":"assets/bosses/b49.webp","b5":"assets/bosses/b5.webp","b50":"assets/bosses/b50.webp","b51":"assets/bosses/b51.webp","b52":"assets/bosses/b52.webp","b53":"assets/bosses/b53.webp","b54":"assets/bosses/b54.webp","b55":"assets/bosses/b55.webp","b56":"assets/bosses/b56.webp","b57":"assets/bosses/b57.webp","b58":"assets/bosses/b58.webp","b59":"assets/bosses/b59.webp","b6":"assets/bosses/b6.webp","b60":"assets/bosses/b60.webp","b61":"assets/bosses/b61.webp","b62":"assets/bosses/b62.webp","b63":"assets/bosses/b63.webp","b64":"assets/bosses/b64.webp","b65":"assets/bosses/b65.webp","b66":"assets/bosses/b66.webp","b67":"assets/bosses/b67.webp","b68":"assets/bosses/b68.webp","b69":"assets/bosses/b69.webp","b7":"assets/bosses/b7.webp","b70":"assets/bosses/b70.webp","b71":"assets/bosses/b71.webp","b72":"assets/bosses/b72.webp","b73":"assets/bosses/b73.webp","b74":"assets/bosses/b74.webp","b75":"assets/bosses/b75.webp","b76":"assets/bosses/b76.webp","b77":"assets/bosses/b77.webp","b78":"assets/bosses/b78.webp","b79":"assets/bosses/b79.webp","b8":"assets/bosses/b8.webp","b80":"assets/bosses/b80.webp","b81":"assets/bosses/b81.webp","b82":"assets/bosses/b82.webp","b83":"assets/bosses/b83.webp","b84":"assets/bosses/b84.webp","b85":"assets/bosses/b85.webp","b86":"assets/bosses/b86.webp","b87":"assets/bosses/b87.webp","b88":"assets/bosses/b88.webp","b89":"assets/bosses/b89.webp","b9":"assets/bosses/b9.webp","b90":"assets/bosses/b90.webp","b91":"assets/bosses/b91.webp","b92":"assets/bosses/b92.webp","b93":"assets/bosses/b93.webp","b94":"assets/bosses/b94.webp","b95":"assets/bosses/b95.webp","b96":"assets/bosses/b96.webp","b97":"assets/bosses/b97.webp","b98":"assets/bosses/b98.webp","b99":"assets/bosses/b99.webp","secret_1":"assets/bosses/secret_1.webp","secret_2":"assets/bosses/secret_2.webp"};
 SYS.ITEM_ART = {"ac_abismo":"assets/items/ac_abismo.webp","ac_agi":"assets/items/ac_agi.webp","ac_agi_anc":"assets/items/ac_agi_anc.webp","ac_agi_maior":"assets/items/ac_agi_maior.webp","ac_agi_prim":"assets/items/ac_agi_prim.webp","ac_ancora":"assets/items/ac_ancora.webp","ac_aureola":"assets/items/ac_aureola.webp","ac_aurora":"assets/items/ac_aurora.webp","ac_cacador_lenda":"assets/items/ac_cacador_lenda.webp","ac_cobre":"assets/items/ac_cobre.webp","ac_colecionador":"assets/items/ac_colecionador.webp","ac_coragem":"assets/items/ac_coragem.webp","ac_coruja":"assets/items/ac_coruja.webp","ac_cristal":"assets/items/ac_cristal.webp","ac_disciplina":"assets/items/ac_disciplina.webp","ac_dragao":"assets/items/ac_dragao.webp","ac_escaravelho":"assets/items/ac_escaravelho.webp","ac_espinhos":"assets/items/ac_espinhos.webp","ac_fonte":"assets/items/ac_fonte.webp","ac_forca":"assets/items/ac_forca.webp","ac_fortuna":"assets/items/ac_fortuna.webp","ac_furia":"assets/items/ac_furia.webp","ac_galo":"assets/items/ac_galo.webp","ac_gelo":"assets/items/ac_gelo.webp","ac_gigante":"assets/items/ac_gigante.webp","ac_herbalista":"assets/items/ac_herbalista.webp","ac_insignia":"assets/items/ac_insignia.webp","ac_int":"assets/items/ac_int.webp","ac_int_anc":"assets/items/ac_int_anc.webp","ac_int_maior":"assets/items/ac_int_maior.webp","ac_int_prim":"assets/items/ac_int_prim.webp","ac_lobo":"assets/items/ac_lobo.webp","ac_lua":"assets/items/ac_lua.webp","ac_mana":"assets/items/ac_mana.webp","ac_monge":"assets/items/ac_monge.webp","ac_muralha":"assets/items/ac_muralha.webp","ac_musgo":"assets/items/ac_musgo.webp","ac_ourico":"assets/items/ac_ourico.webp","ac_per":"assets/items/ac_per.webp","ac_per_anc":"assets/items/ac_per_anc.webp","ac_per_maior":"assets/items/ac_per_maior.webp","ac_per_prim":"assets/items/ac_per_prim.webp","ac_perola":"assets/items/ac_perola.webp","ac_praga":"assets/items/ac_praga.webp","ac_primeiro":"assets/items/ac_primeiro.webp","ac_rank_a":"assets/items/ac_rank_a.webp","ac_rank_b":"assets/items/ac_rank_b.webp","ac_rank_c":"assets/items/ac_rank_c.webp","ac_rank_d":"assets/items/ac_rank_d.webp","ac_rank_s":"assets/items/ac_rank_s.webp","ac_rank_ss":"assets/items/ac_rank_ss.webp","ac_selo":"assets/items/ac_selo.webp","ac_sentenca":"assets/items/ac_sentenca.webp","ac_sol":"assets/items/ac_sol.webp","ac_str_anc":"assets/items/ac_str_anc.webp","ac_str_maior":"assets/items/ac_str_maior.webp","ac_str_prim":"assets/items/ac_str_prim.webp","ac_t_crit1":"assets/items/ac_t_crit1.webp","ac_t_crit2":"assets/items/ac_t_crit2.webp","ac_t_crit3":"assets/items/ac_t_crit3.webp","ac_t_def1":"assets/items/ac_t_def1.webp","ac_t_def2":"assets/items/ac_t_def2.webp","ac_t_def3":"assets/items/ac_t_def3.webp","ac_t_eva1":"assets/items/ac_t_eva1.webp","ac_t_eva2":"assets/items/ac_t_eva2.webp","ac_t_eva3":"assets/items/ac_t_eva3.webp","ac_t_lifesteal1":"assets/items/ac_t_lifesteal1.webp","ac_t_lifesteal2":"assets/items/ac_t_lifesteal2.webp","ac_t_lifesteal3":"assets/items/ac_t_lifesteal3.webp","ac_titan":"assets/items/ac_titan.webp","ac_toxina":"assets/items/ac_toxina.webp","ac_vampiro":"assets/items/ac_vampiro.webp","ac_vazio":"assets/items/ac_vazio.webp","ac_vit":"assets/items/ac_vit.webp","ac_vit_anc":"assets/items/ac_vit_anc.webp","ac_vit_maior":"assets/items/ac_vit_maior.webp","ac_vit_prim":"assets/items/ac_vit_prim.webp","ar_abismo":"assets/items/ar_abismo.webp","ar_abismo_art":"assets/items/ar_abismo_art.webp","ar_abismo_camp":"assets/items/ar_abismo_camp.webp","ar_acolchoada":"assets/items/ar_acolchoada.webp","ar_acolchoada_art":"assets/items/ar_acolchoada_art.webp","ar_acolchoada_camp":"assets/items/ar_acolchoada_camp.webp","ar_alquimista":"assets/items/ar_alquimista.webp","ar_arquimago":"assets/items/ar_arquimago.webp","ar_arquimago_art":"assets/items/ar_arquimago_art.webp","ar_arquimago_camp":"assets/items/ar_arquimago_camp.webp","ar_bastiao":"assets/items/ar_bastiao.webp","ar_cacador":"assets/items/ar_cacador.webp","ar_cacador_art":"assets/items/ar_cacador_art.webp","ar_cacador_camp":"assets/items/ar_cacador_camp.webp","ar_celeste":"assets/items/ar_celeste.webp","ar_celeste_art":"assets/items/ar_celeste_art.webp","ar_celeste_camp":"assets/items/ar_celeste_camp.webp","ar_coral":"assets/items/ar_coral.webp","ar_coral_art":"assets/items/ar_coral_art.webp","ar_coral_camp":"assets/items/ar_coral_camp.webp","ar_couro":"assets/items/ar_couro.webp","ar_couro_art":"assets/items/ar_couro_art.webp","ar_couro_camp":"assets/items/ar_couro_camp.webp","ar_dragao":"assets/items/ar_dragao.webp","ar_dragao_art":"assets/items/ar_dragao_art.webp","ar_dragao_camp":"assets/items/ar_dragao_camp.webp","ar_escamas":"assets/items/ar_escamas.webp","ar_escamas_art":"assets/items/ar_escamas_art.webp","ar_escamas_camp":"assets/items/ar_escamas_camp.webp","ar_espinhos":"assets/items/ar_espinhos.webp","ar_malha":"assets/items/ar_malha.webp","ar_malha_art":"assets/items/ar_malha_art.webp","ar_malha_camp":"assets/items/ar_malha_camp.webp","ar_meianoite":"assets/items/ar_meianoite.webp","ar_placas":"assets/items/ar_placas.webp","ar_placas_art":"assets/items/ar_placas_art.webp","ar_placas_camp":"assets/items/ar_placas_camp.webp","ar_runica":"assets/items/ar_runica.webp","ar_runica_art":"assets/items/ar_runica_art.webp","ar_runica_camp":"assets/items/ar_runica_camp.webp","ar_soberano":"assets/items/ar_soberano.webp","ar_sombra":"assets/items/ar_sombra.webp","ar_sombra_art":"assets/items/ar_sombra_art.webp","ar_sombra_camp":"assets/items/ar_sombra_camp.webp","ar_vontade":"assets/items/ar_vontade.webp","bau_alquimia_1":"assets/items/bau_alquimia_1.webp","bau_alquimia_2":"assets/items/bau_alquimia_2.webp","bau_alquimia_3":"assets/items/bau_alquimia_3.webp","bau_alquimia_4":"assets/items/bau_alquimia_4.webp","bau_alquimia_5":"assets/items/bau_alquimia_5.webp","bau_armaria_1":"assets/items/bau_armaria_1.webp","bau_armaria_2":"assets/items/bau_armaria_2.webp","bau_armaria_3":"assets/items/bau_armaria_3.webp","bau_armaria_4":"assets/items/bau_armaria_4.webp","bau_armaria_5":"assets/items/bau_armaria_5.webp","bau_arsenal_1":"assets/items/bau_arsenal_1.webp","bau_arsenal_2":"assets/items/bau_arsenal_2.webp","bau_arsenal_3":"assets/items/bau_arsenal_3.webp","bau_arsenal_4":"assets/items/bau_arsenal_4.webp","bau_arsenal_5":"assets/items/bau_arsenal_5.webp","bau_comum":"assets/items/bau_comum.webp","bau_epico":"assets/items/bau_epico.webp","bau_guerra_1":"assets/items/bau_guerra_1.webp","bau_guerra_2":"assets/items/bau_guerra_2.webp","bau_guerra_3":"assets/items/bau_guerra_3.webp","bau_guerra_4":"assets/items/bau_guerra_4.webp","bau_guerra_5":"assets/items/bau_guerra_5.webp","bau_joias_1":"assets/items/bau_joias_1.webp","bau_joias_2":"assets/items/bau_joias_2.webp","bau_joias_3":"assets/items/bau_joias_3.webp","bau_joias_4":"assets/items/bau_joias_4.webp","bau_joias_5":"assets/items/bau_joias_5.webp","bau_lendario":"assets/items/bau_lendario.webp","bau_raro":"assets/items/bau_raro.webp","bau_secreto":"assets/items/bau_secreto.webp","el_agi":"assets/items/el_agi.webp","el_ascensao":"assets/items/el_ascensao.webp","el_int":"assets/items/el_int.webp","el_nectar":"assets/items/el_nectar.webp","el_per":"assets/items/el_per.webp","el_ponto":"assets/items/el_ponto.webp","el_reset":"assets/items/el_reset.webp","el_selo":"assets/items/el_selo.webp","el_str":"assets/items/el_str.webp","el_vit":"assets/items/el_vit.webp","elg_agi":"assets/items/elg_agi.webp","elg_int":"assets/items/elg_int.webp","elg_per":"assets/items/elg_per.webp","elg_str":"assets/items/elg_str.webp","elg_vit":"assets/items/elg_vit.webp","lz_amigos":"assets/items/lz_amigos.webp","lz_banho":"assets/items/lz_banho.webp","lz_cafe":"assets/items/lz_cafe.webp","lz_cinema":"assets/items/lz_cinema.webp","lz_descanso":"assets/items/lz_descanso.webp","lz_desejo":"assets/items/lz_desejo.webp","lz_doce":"assets/items/lz_doce.webp","lz_dourado":"assets/items/lz_dourado.webp","lz_episodio":"assets/items/lz_episodio.webp","lz_gadget":"assets/items/lz_gadget.webp","lz_jogo":"assets/items/lz_jogo.webp","lz_livro":"assets/items/lz_livro.webp","lz_maratona":"assets/items/lz_maratona.webp","lz_musica":"assets/items/lz_musica.webp","lz_passeio":"assets/items/lz_passeio.webp","lz_preguica":"assets/items/lz_preguica.webp","lz_redes":"assets/items/lz_redes.webp","lz_refeicao":"assets/items/lz_refeicao.webp","lz_restaurante":"assets/items/lz_restaurante.webp","lz_roupa":"assets/items/lz_roupa.webp","lz_sesta":"assets/items/lz_sesta.webp","lz_snack":"assets/items/lz_snack.webp","lz_spa":"assets/items/lz_spa.webp","lz_viagem":"assets/items/lz_viagem.webp","po_abismo":"assets/items/po_abismo.webp","po_antidoto":"assets/items/po_antidoto.webp","po_areia":"assets/items/po_areia.webp","po_barreira":"assets/items/po_barreira.webp","po_bomba":"assets/items/po_bomba.webp","po_cafe":"assets/items/po_cafe.webp","po_coin2":"assets/items/po_coin2.webp","po_coin3":"assets/items/po_coin3.webp","po_correntes":"assets/items/po_correntes.webp","po_crepusculo":"assets/items/po_crepusculo.webp","po_descanso":"assets/items/po_descanso.webp","po_eclipse":"assets/items/po_eclipse.webp","po_equilibrio":"assets/items/po_equilibrio.webp","po_escudo":"assets/items/po_escudo.webp","po_espelho":"assets/items/po_espelho.webp","po_fenix":"assets/items/po_fenix.webp","po_foco":"assets/items/po_foco.webp","po_fogo":"assets/items/po_fogo.webp","po_fraqueza":"assets/items/po_fraqueza.webp","po_fumo":"assets/items/po_fumo.webp","po_furia":"assets/items/po_furia.webp","po_furia2":"assets/items/po_furia2.webp","po_gelo":"assets/items/po_gelo.webp","po_horamorta":"assets/items/po_horamorta.webp","po_lunar":"assets/items/po_lunar.webp","po_mana1":"assets/items/po_mana1.webp","po_mana15":"assets/items/po_mana15.webp","po_mana2":"assets/items/po_mana2.webp","po_mel":"assets/items/po_mel.webp","po_mercador":"assets/items/po_mercador.webp","po_orvalho":"assets/items/po_orvalho.webp","po_pedra":"assets/items/po_pedra.webp","po_predador":"assets/items/po_predador.webp","po_raio":"assets/items/po_raio.webp","po_restaura":"assets/items/po_restaura.webp","po_ritual":"assets/items/po_ritual.webp","po_sorte":"assets/items/po_sorte.webp","po_tita":"assets/items/po_tita.webp","po_vampiro":"assets/items/po_vampiro.webp","po_veneno":"assets/items/po_veneno.webp","po_vento":"assets/items/po_vento.webp","po_vida1":"assets/items/po_vida1.webp","po_vida2":"assets/items/po_vida2.webp","po_vida3":"assets/items/po_vida3.webp","po_xp15":"assets/items/po_xp15.webp","po_xp2":"assets/items/po_xp2.webp","po_xp3":"assets/items/po_xp3.webp","pr_ampulheta":"assets/items/pr_ampulheta.webp","pr_armadura":"assets/items/pr_armadura.webp","pr_bau":"assets/items/pr_bau.webp","pr_coracao":"assets/items/pr_coracao.webp","pr_coroa":"assets/items/pr_coroa.webp","pr_eco":"assets/items/pr_eco.webp","pr_egide":"assets/items/pr_egide.webp","pr_elixir":"assets/items/pr_elixir.webp","pr_espinho":"assets/items/pr_espinho.webp","pr_executor":"assets/items/pr_executor.webp","pr_fenix":"assets/items/pr_fenix.webp","pr_foco":"assets/items/pr_foco.webp","pr_juizo":"assets/items/pr_juizo.webp","pr_lamina":"assets/items/pr_lamina.webp","pr_legiao":"assets/items/pr_legiao.webp","pr_olho":"assets/items/pr_olho.webp","pr_ruptura":"assets/items/pr_ruptura.webp","pr_selo":"assets/items/pr_selo.webp","pr_tempo":"assets/items/pr_tempo.webp","pr_trevo":"assets/items/pr_trevo.webp","rl_cinzas":"assets/items/rl_cinzas.webp","rl_eclipse":"assets/items/rl_eclipse.webp","rl_espelho":"assets/items/rl_espelho.webp","rl_laminas":"assets/items/rl_laminas.webp","rl_mare":"assets/items/rl_mare.webp","rl_necro":"assets/items/rl_necro.webp","rl_primeiro":"assets/items/rl_primeiro.webp","rl_relogio":"assets/items/rl_relogio.webp","rl_runa":"assets/items/rl_runa.webp","rl_tempestade":"assets/items/rl_tempestade.webp","sx_ampulheta":"assets/items/sx_ampulheta.webp","sx_coracao":"assets/items/sx_coracao.webp","sx_coroa":"assets/items/sx_coroa.webp","sx_fenix":"assets/items/sx_fenix.webp","sx_fragmento":"assets/items/sx_fragmento.webp","sx_lamina":"assets/items/sx_lamina.webp","sx_mapa":"assets/items/sx_mapa.webp","sx_moeda":"assets/items/sx_moeda.webp","sx_nucleo":"assets/items/sx_nucleo.webp","sx_olho":"assets/items/sx_olho.webp","sys_bilhete":"assets/items/sys_bilhete.webp","sys_bussola":"assets/items/sys_bussola.webp","sys_dado":"assets/items/sys_dado.webp","sys_dobro":"assets/items/sys_dobro.webp","sys_licenca":"assets/items/sys_licenca.webp","sys_pacto":"assets/items/sys_pacto.webp","sys_silencio":"assets/items/sys_silencio.webp","sys_sino":"assets/items/sys_sino.webp","sys_tregua":"assets/items/sys_tregua.webp","w_arqueiro_1":"assets/items/w_arqueiro_1.webp","w_arqueiro_10":"assets/items/w_arqueiro_10.webp","w_arqueiro_10_art":"assets/items/w_arqueiro_10_art.webp","w_arqueiro_10_camp":"assets/items/w_arqueiro_10_camp.webp","w_arqueiro_1_art":"assets/items/w_arqueiro_1_art.webp","w_arqueiro_1_camp":"assets/items/w_arqueiro_1_camp.webp","w_arqueiro_2":"assets/items/w_arqueiro_2.webp","w_arqueiro_2_art":"assets/items/w_arqueiro_2_art.webp","w_arqueiro_2_camp":"assets/items/w_arqueiro_2_camp.webp","w_arqueiro_3":"assets/items/w_arqueiro_3.webp","w_arqueiro_3_art":"assets/items/w_arqueiro_3_art.webp","w_arqueiro_3_camp":"assets/items/w_arqueiro_3_camp.webp","w_arqueiro_4":"assets/items/w_arqueiro_4.webp","w_arqueiro_4_art":"assets/items/w_arqueiro_4_art.webp","w_arqueiro_4_camp":"assets/items/w_arqueiro_4_camp.webp","w_arqueiro_5":"assets/items/w_arqueiro_5.webp","w_arqueiro_5_art":"assets/items/w_arqueiro_5_art.webp","w_arqueiro_5_camp":"assets/items/w_arqueiro_5_camp.webp","w_arqueiro_6":"assets/items/w_arqueiro_6.webp","w_arqueiro_6_art":"assets/items/w_arqueiro_6_art.webp","w_arqueiro_6_camp":"assets/items/w_arqueiro_6_camp.webp","w_arqueiro_7":"assets/items/w_arqueiro_7.webp","w_arqueiro_7_art":"assets/items/w_arqueiro_7_art.webp","w_arqueiro_7_camp":"assets/items/w_arqueiro_7_camp.webp","w_arqueiro_8":"assets/items/w_arqueiro_8.webp","w_arqueiro_8_art":"assets/items/w_arqueiro_8_art.webp","w_arqueiro_8_camp":"assets/items/w_arqueiro_8_camp.webp","w_arqueiro_9":"assets/items/w_arqueiro_9.webp","w_arqueiro_9_art":"assets/items/w_arqueiro_9_art.webp","w_arqueiro_9_camp":"assets/items/w_arqueiro_9_camp.webp","w_assassino_1":"assets/items/w_assassino_1.webp","w_assassino_10":"assets/items/w_assassino_10.webp","w_assassino_10_art":"assets/items/w_assassino_10_art.webp","w_assassino_10_camp":"assets/items/w_assassino_10_camp.webp","w_assassino_1_art":"assets/items/w_assassino_1_art.webp","w_assassino_1_camp":"assets/items/w_assassino_1_camp.webp","w_assassino_2":"assets/items/w_assassino_2.webp","w_assassino_2_art":"assets/items/w_assassino_2_art.webp","w_assassino_2_camp":"assets/items/w_assassino_2_camp.webp","w_assassino_3":"assets/items/w_assassino_3.webp","w_assassino_3_art":"assets/items/w_assassino_3_art.webp","w_assassino_3_camp":"assets/items/w_assassino_3_camp.webp","w_assassino_4":"assets/items/w_assassino_4.webp","w_assassino_4_art":"assets/items/w_assassino_4_art.webp","w_assassino_4_camp":"assets/items/w_assassino_4_camp.webp","w_assassino_5":"assets/items/w_assassino_5.webp","w_assassino_5_art":"assets/items/w_assassino_5_art.webp","w_assassino_5_camp":"assets/items/w_assassino_5_camp.webp","w_assassino_6":"assets/items/w_assassino_6.webp","w_assassino_6_art":"assets/items/w_assassino_6_art.webp","w_assassino_6_camp":"assets/items/w_assassino_6_camp.webp","w_assassino_7":"assets/items/w_assassino_7.webp","w_assassino_7_art":"assets/items/w_assassino_7_art.webp","w_assassino_7_camp":"assets/items/w_assassino_7_camp.webp","w_assassino_8":"assets/items/w_assassino_8.webp","w_assassino_8_art":"assets/items/w_assassino_8_art.webp","w_assassino_8_camp":"assets/items/w_assassino_8_camp.webp","w_assassino_9":"assets/items/w_assassino_9.webp","w_assassino_9_art":"assets/items/w_assassino_9_art.webp","w_assassino_9_camp":"assets/items/w_assassino_9_camp.webp","w_guardiao_1":"assets/items/w_guardiao_1.webp","w_guardiao_10":"assets/items/w_guardiao_10.webp","w_guardiao_10_art":"assets/items/w_guardiao_10_art.webp","w_guardiao_10_camp":"assets/items/w_guardiao_10_camp.webp","w_guardiao_1_art":"assets/items/w_guardiao_1_art.webp","w_guardiao_1_camp":"assets/items/w_guardiao_1_camp.webp","w_guardiao_2":"assets/items/w_guardiao_2.webp","w_guardiao_2_art":"assets/items/w_guardiao_2_art.webp","w_guardiao_2_camp":"assets/items/w_guardiao_2_camp.webp","w_guardiao_3":"assets/items/w_guardiao_3.webp","w_guardiao_3_art":"assets/items/w_guardiao_3_art.webp","w_guardiao_3_camp":"assets/items/w_guardiao_3_camp.webp","w_guardiao_4":"assets/items/w_guardiao_4.webp","w_guardiao_4_art":"assets/items/w_guardiao_4_art.webp","w_guardiao_4_camp":"assets/items/w_guardiao_4_camp.webp","w_guardiao_5":"assets/items/w_guardiao_5.webp","w_guardiao_5_art":"assets/items/w_guardiao_5_art.webp","w_guardiao_5_camp":"assets/items/w_guardiao_5_camp.webp","w_guardiao_6":"assets/items/w_guardiao_6.webp","w_guardiao_6_art":"assets/items/w_guardiao_6_art.webp","w_guardiao_6_camp":"assets/items/w_guardiao_6_camp.webp","w_guardiao_7":"assets/items/w_guardiao_7.webp","w_guardiao_7_art":"assets/items/w_guardiao_7_art.webp","w_guardiao_7_camp":"assets/items/w_guardiao_7_camp.webp","w_guardiao_8":"assets/items/w_guardiao_8.webp","w_guardiao_8_art":"assets/items/w_guardiao_8_art.webp","w_guardiao_8_camp":"assets/items/w_guardiao_8_camp.webp","w_guardiao_9":"assets/items/w_guardiao_9.webp","w_guardiao_9_art":"assets/items/w_guardiao_9_art.webp","w_guardiao_9_camp":"assets/items/w_guardiao_9_camp.webp","w_guerreiro_1":"assets/items/w_guerreiro_1.webp","w_guerreiro_10":"assets/items/w_guerreiro_10.webp","w_guerreiro_10_art":"assets/items/w_guerreiro_10_art.webp","w_guerreiro_10_camp":"assets/items/w_guerreiro_10_camp.webp","w_guerreiro_1_art":"assets/items/w_guerreiro_1_art.webp","w_guerreiro_1_camp":"assets/items/w_guerreiro_1_camp.webp","w_guerreiro_2":"assets/items/w_guerreiro_2.webp","w_guerreiro_2_art":"assets/items/w_guerreiro_2_art.webp","w_guerreiro_2_camp":"assets/items/w_guerreiro_2_camp.webp","w_guerreiro_3":"assets/items/w_guerreiro_3.webp","w_guerreiro_3_art":"assets/items/w_guerreiro_3_art.webp","w_guerreiro_3_camp":"assets/items/w_guerreiro_3_camp.webp","w_guerreiro_4":"assets/items/w_guerreiro_4.webp","w_guerreiro_4_art":"assets/items/w_guerreiro_4_art.webp","w_guerreiro_4_camp":"assets/items/w_guerreiro_4_camp.webp","w_guerreiro_5":"assets/items/w_guerreiro_5.webp","w_guerreiro_5_art":"assets/items/w_guerreiro_5_art.webp","w_guerreiro_5_camp":"assets/items/w_guerreiro_5_camp.webp","w_guerreiro_6":"assets/items/w_guerreiro_6.webp","w_guerreiro_6_art":"assets/items/w_guerreiro_6_art.webp","w_guerreiro_6_camp":"assets/items/w_guerreiro_6_camp.webp","w_guerreiro_7":"assets/items/w_guerreiro_7.webp","w_guerreiro_7_art":"assets/items/w_guerreiro_7_art.webp","w_guerreiro_7_camp":"assets/items/w_guerreiro_7_camp.webp","w_guerreiro_8":"assets/items/w_guerreiro_8.webp","w_guerreiro_8_art":"assets/items/w_guerreiro_8_art.webp","w_guerreiro_8_camp":"assets/items/w_guerreiro_8_camp.webp","w_guerreiro_9":"assets/items/w_guerreiro_9.webp","w_guerreiro_9_art":"assets/items/w_guerreiro_9_art.webp","w_guerreiro_9_camp":"assets/items/w_guerreiro_9_camp.webp","w_invocador_1":"assets/items/w_invocador_1.webp","w_invocador_10":"assets/items/w_invocador_10.webp","w_invocador_10_art":"assets/items/w_invocador_10_art.webp","w_invocador_10_camp":"assets/items/w_invocador_10_camp.webp","w_invocador_1_art":"assets/items/w_invocador_1_art.webp","w_invocador_1_camp":"assets/items/w_invocador_1_camp.webp","w_invocador_2":"assets/items/w_invocador_2.webp","w_invocador_2_art":"assets/items/w_invocador_2_art.webp","w_invocador_2_camp":"assets/items/w_invocador_2_camp.webp","w_invocador_3":"assets/items/w_invocador_3.webp","w_invocador_3_art":"assets/items/w_invocador_3_art.webp","w_invocador_3_camp":"assets/items/w_invocador_3_camp.webp","w_invocador_4":"assets/items/w_invocador_4.webp","w_invocador_4_art":"assets/items/w_invocador_4_art.webp","w_invocador_4_camp":"assets/items/w_invocador_4_camp.webp","w_invocador_5":"assets/items/w_invocador_5.webp","w_invocador_5_art":"assets/items/w_invocador_5_art.webp","w_invocador_5_camp":"assets/items/w_invocador_5_camp.webp","w_invocador_6":"assets/items/w_invocador_6.webp","w_invocador_6_art":"assets/items/w_invocador_6_art.webp","w_invocador_6_camp":"assets/items/w_invocador_6_camp.webp","w_invocador_7":"assets/items/w_invocador_7.webp","w_invocador_7_art":"assets/items/w_invocador_7_art.webp","w_invocador_7_camp":"assets/items/w_invocador_7_camp.webp","w_invocador_8":"assets/items/w_invocador_8.webp","w_invocador_8_art":"assets/items/w_invocador_8_art.webp","w_invocador_8_camp":"assets/items/w_invocador_8_camp.webp","w_invocador_9":"assets/items/w_invocador_9.webp","w_invocador_9_art":"assets/items/w_invocador_9_art.webp","w_invocador_9_camp":"assets/items/w_invocador_9_camp.webp","w_mago_1":"assets/items/w_mago_1.webp","w_mago_10":"assets/items/w_mago_10.webp","w_mago_10_art":"assets/items/w_mago_10_art.webp","w_mago_10_camp":"assets/items/w_mago_10_camp.webp","w_mago_1_art":"assets/items/w_mago_1_art.webp","w_mago_1_camp":"assets/items/w_mago_1_camp.webp","w_mago_2":"assets/items/w_mago_2.webp","w_mago_2_art":"assets/items/w_mago_2_art.webp","w_mago_2_camp":"assets/items/w_mago_2_camp.webp","w_mago_3":"assets/items/w_mago_3.webp","w_mago_3_art":"assets/items/w_mago_3_art.webp","w_mago_3_camp":"assets/items/w_mago_3_camp.webp","w_mago_4":"assets/items/w_mago_4.webp","w_mago_4_art":"assets/items/w_mago_4_art.webp","w_mago_4_camp":"assets/items/w_mago_4_camp.webp","w_mago_5":"assets/items/w_mago_5.webp","w_mago_5_art":"assets/items/w_mago_5_art.webp","w_mago_5_camp":"assets/items/w_mago_5_camp.webp","w_mago_6":"assets/items/w_mago_6.webp","w_mago_6_art":"assets/items/w_mago_6_art.webp","w_mago_6_camp":"assets/items/w_mago_6_camp.webp","w_mago_7":"assets/items/w_mago_7.webp","w_mago_7_art":"assets/items/w_mago_7_art.webp","w_mago_7_camp":"assets/items/w_mago_7_camp.webp","w_mago_8":"assets/items/w_mago_8.webp","w_mago_8_art":"assets/items/w_mago_8_art.webp","w_mago_8_camp":"assets/items/w_mago_8_camp.webp","w_mago_9":"assets/items/w_mago_9.webp","w_mago_9_art":"assets/items/w_mago_9_art.webp","w_mago_9_camp":"assets/items/w_mago_9_camp.webp","wk_ankharet":"assets/items/wk_ankharet.webp","wk_auriel":"assets/items/wk_auriel.webp","wk_fenrath":"assets/items/wk_fenrath.webp","wk_lunar":"assets/items/wk_lunar.webp","wk_morvenna":"assets/items/wk_morvenna.webp","wk_nyxaroth":"assets/items/wk_nyxaroth.webp","wk_pyraxis":"assets/items/wk_pyraxis.webp","wk_skadhi":"assets/items/wk_skadhi.webp","wk_soberano":"assets/items/wk_soberano.webp","wk_solar":"assets/items/wk_solar.webp","wk_thalassor":"assets/items/wk_thalassor.webp","wk_varyss":"assets/items/wk_varyss.webp","wx_carrasco":"assets/items/wx_carrasco.webp","wx_espinheira":"assets/items/wx_espinheira.webp","wx_fonte":"assets/items/wx_fonte.webp","wx_peste":"assets/items/wx_peste.webp","wx_relampago":"assets/items/wx_relampago.webp"};
-SYS.UI_ART = {"ach_all100":"assets/ui/ach_all100.webp","ach_all50":"assets/ui/ach_all50.webp","ach_ar1":"assets/ui/ach_ar1.webp","ach_ar10":"assets/ui/ach_ar10.webp","ach_ar5":"assets/ui/ach_ar5.webp","ach_ar_1":"assets/ui/ach_ar_1.webp","ach_ar_10":"assets/ui/ach_ar_10.webp","ach_ar_5":"assets/ui/ach_ar_5.webp","ach_ar_first":"assets/ui/ach_ar_first.webp","ach_architect":"assets/ui/ach_architect.webp","ach_arsenal":"assets/ui/ach_arsenal.webp","ach_b1":"assets/ui/ach_b1.webp","ach_b10":"assets/ui/ach_b10.webp","ach_b100":"assets/ui/ach_b100.webp","ach_b200":"assets/ui/ach_b200.webp","ach_b25":"assets/ui/ach_b25.webp","ach_b50":"assets/ui/ach_b50.webp","ach_body1":"assets/ui/ach_body1.webp","ach_body30":"assets/ui/ach_body30.webp","ach_body7":"assets/ui/ach_body7.webp","ach_bodyg":"assets/ui/ach_bodyg.webp","ach_brave":"assets/ui/ach_brave.webp","ach_champ1":"assets/ui/ach_champ1.webp","ach_champ10":"assets/ui/ach_champ10.webp","ach_champ5":"assets/ui/ach_champ5.webp","ach_chest100":"assets/ui/ach_chest100.webp","ach_chest25":"assets/ui/ach_chest25.webp","ach_chest500":"assets/ui/ach_chest500.webp","ach_clutch":"assets/ui/ach_clutch.webp","ach_collector":"assets/ui/ach_collector.webp","ach_core":"assets/ui/ach_core.webp","ach_create10":"assets/ui/ach_create10.webp","ach_d1":"assets/ui/ach_d1.webp","ach_d100":"assets/ui/ach_d100.webp","ach_d30":"assets/ui/ach_d30.webp","ach_d365":"assets/ui/ach_d365.webp","ach_d7":"assets/ui/ach_d7.webp","ach_early":"assets/ui/ach_early.webp","ach_emg1":"assets/ui/ach_emg1.webp","ach_emg10":"assets/ui/ach_emg10.webp","ach_eternal":"assets/ui/ach_eternal.webp","ach_fail1":"assets/ui/ach_fail1.webp","ach_firstp":"assets/ui/ach_firstp.webp","ach_flaw10":"assets/ui/ach_flaw10.webp","ach_flawless":"assets/ui/ach_flawless.webp","ach_form10":"assets/ui/ach_form10.webp","ach_form34":"assets/ui/ach_form34.webp","ach_frame1":"assets/ui/ach_frame1.webp","ach_frame5":"assets/ui/ach_frame5.webp","ach_giant":"assets/ui/ach_giant.webp","ach_giant10":"assets/ui/ach_giant10.webp","ach_giant3":"assets/ui/ach_giant3.webp","ach_grd1":"assets/ui/ach_grd1.webp","ach_grd45":"assets/ui/ach_grd45.webp","ach_grd90":"assets/ui/ach_grd90.webp","ach_hid1":"assets/ui/ach_hid1.webp","ach_hid10":"assets/ui/ach_hid10.webp","ach_hidden":"assets/ui/ach_hidden.webp","ach_items100":"assets/ui/ach_items100.webp","ach_l10":"assets/ui/ach_l10.webp","ach_l100":"assets/ui/ach_l100.webp","ach_l25":"assets/ui/ach_l25.webp","ach_l5":"assets/ui/ach_l5.webp","ach_l50":"assets/ui/ach_l50.webp","ach_l75":"assets/ui/ach_l75.webp","ach_leisure":"assets/ui/ach_leisure.webp","ach_lose15":"assets/ui/ach_lose15.webp","ach_lose5":"assets/ui/ach_lose5.webp","ach_m1":"assets/ui/ach_m1.webp","ach_m10":"assets/ui/ach_m10.webp","ach_m100":"assets/ui/ach_m100.webp","ach_m1000":"assets/ui/ach_m1000.webp","ach_m50":"assets/ui/ach_m50.webp","ach_m500":"assets/ui/ach_m500.webp","ach_mS":"assets/ui/ach_mS.webp","ach_mS10":"assets/ui/ach_mS10.webp","ach_mset2":"assets/ui/ach_mset2.webp","ach_mset4":"assets/ui/ach_mset4.webp","ach_night":"assets/ui/ach_night.webp","ach_points":"assets/ui/ach_points.webp","ach_potions":"assets/ui/ach_potions.webp","ach_prem1":"assets/ui/ach_prem1.webp","ach_relic1":"assets/ui/ach_relic1.webp","ach_relic7":"assets/ui/ach_relic7.webp","ach_rematch":"assets/ui/ach_rematch.webp","ach_rich":"assets/ui/ach_rich.webp","ach_rich2":"assets/ui/ach_rich2.webp","ach_rich3":"assets/ui/ach_rich3.webp","ach_secret3":"assets/ui/ach_secret3.webp","ach_secretboss":"assets/ui/ach_secretboss.webp","ach_secretchest":"assets/ui/ach_secretchest.webp","ach_sell50":"assets/ui/ach_sell50.webp","ach_set1":"assets/ui/ach_set1.webp","ach_set10":"assets/ui/ach_set10.webp","ach_set5":"assets/ui/ach_set5.webp","ach_sh1":"assets/ui/ach_sh1.webp","ach_sh10":"assets/ui/ach_sh10.webp","ach_sh100":"assets/ui/ach_sh100.webp","ach_sh25":"assets/ui/ach_sh25.webp","ach_sh50":"assets/ui/ach_sh50.webp","ach_shfirst":"assets/ui/ach_shfirst.webp","ach_shfull":"assets/ui/ach_shfull.webp","ach_shking":"assets/ui/ach_shking.webp","ach_shking10":"assets/ui/ach_shking10.webp","ach_shlast":"assets/ui/ach_shlast.webp","ach_shlost":"assets/ui/ach_shlost.webp","ach_shlost10":"assets/ui/ach_shlost10.webp","ach_shname":"assets/ui/ach_shname.webp","ach_skill20":"assets/ui/ach_skill20.webp","ach_spar1":"assets/ui/ach_spar1.webp","ach_spar25":"assets/ui/ach_spar25.webp","ach_sparlose":"assets/ui/ach_sparlose.webp","ach_spend":"assets/ui/ach_spend.webp","ach_talk50":"assets/ui/ach_talk50.webp","ach_ten1":"assets/ui/ach_ten1.webp","ach_tr100":"assets/ui/ach_tr100.webp","ach_tr202":"assets/ui/ach_tr202.webp","ach_tr25":"assets/ui/ach_tr25.webp","ach_trust":"assets/ui/ach_trust.webp","ach_zone1":"assets/ui/ach_zone1.webp","bag_equip":"assets/ui/bag_equip.webp","bag_secreto":"assets/ui/bag_secreto.webp","bag_tudo":"assets/ui/bag_tudo.webp","class_arqueiro":"assets/ui/class_arqueiro.webp","class_assassino":"assets/ui/class_assassino.webp","class_guardiao":"assets/ui/class_guardiao.webp","class_guerreiro":"assets/ui/class_guerreiro.webp","class_invocador":"assets/ui/class_invocador.webp","class_mago":"assets/ui/class_mago.webp","eff_coin2":"assets/ui/eff_coin2.webp","eff_exausto":"assets/ui/eff_exausto.webp","eff_marcado":"assets/ui/eff_marcado.webp","eff_sorte":"assets/ui/eff_sorte.webp","eff_xp15":"assets/ui/eff_xp15.webp","eff_xp2":"assets/ui/eff_xp2.webp","gate_0":"assets/ui/gate_0.webp","gate_1":"assets/ui/gate_1.webp","gate_10":"assets/ui/gate_10.webp","gate_2":"assets/ui/gate_2.webp","gate_3":"assets/ui/gate_3.webp","gate_4":"assets/ui/gate_4.webp","gate_5":"assets/ui/gate_5.webp","gate_6":"assets/ui/gate_6.webp","gate_7":"assets/ui/gate_7.webp","gate_8":"assets/ui/gate_8.webp","gate_9":"assets/ui/gate_9.webp","h_achievement":"assets/ui/h_achievement.webp","h_awaken":"assets/ui/h_awaken.webp","h_buy":"assets/ui/h_buy.webp","h_core":"assets/ui/h_core.webp","h_levelup":"assets/ui/h_levelup.webp","h_map":"assets/ui/h_map.webp","h_mission_done":"assets/ui/h_mission_done.webp","h_mission_fail":"assets/ui/h_mission_fail.webp","h_mission_new":"assets/ui/h_mission_new.webp","h_newday":"assets/ui/h_newday.webp","h_secret_skill":"assets/ui/h_secret_skill.webp","h_sell":"assets/ui/h_sell.webp","h_set":"assets/ui/h_set.webp","h_shield":"assets/ui/h_shield.webp","h_time":"assets/ui/h_time.webp","h_transfer":"assets/ui/h_transfer.webp","ic_lock":"assets/ui/ic_lock.webp","ic_verify":"assets/ui/ic_verify.webp","log_advantage":"assets/ui/log_advantage.webp","log_appear":"assets/ui/log_appear.webp","log_bomb":"assets/ui/log_bomb.webp","log_cleanse":"assets/ui/log_cleanse.webp","log_defeat":"assets/ui/log_defeat.webp","log_dot":"assets/ui/log_dot.webp","log_enrage":"assets/ui/log_enrage.webp","log_flee":"assets/ui/log_flee.webp","log_hit":"assets/ui/log_hit.webp","log_hurt":"assets/ui/log_hurt.webp","log_item":"assets/ui/log_item.webp","log_pressure":"assets/ui/log_pressure.webp","log_reset":"assets/ui/log_reset.webp","log_revive":"assets/ui/log_revive.webp","log_skill":"assets/ui/log_skill.webp","log_smoke":"assets/ui/log_smoke.webp","log_victory":"assets/ui/log_victory.webp","lz_c_beach":"assets/ui/lz_c_beach.webp","lz_c_food":"assets/ui/lz_c_food.webp","lz_c_game":"assets/ui/lz_c_game.webp","lz_c_gift":"assets/ui/lz_c_gift.webp","lz_c_movie":"assets/ui/lz_c_movie.webp","lz_c_phone":"assets/ui/lz_c_phone.webp","lz_c_shop":"assets/ui/lz_c_shop.webp","lz_c_sweet":"assets/ui/lz_c_sweet.webp","nav_bolsa":"assets/ui/nav_bolsa.webp","nav_combate":"assets/ui/nav_combate.webp","nav_loja":"assets/ui/nav_loja.webp","nav_missoes":"assets/ui/nav_missoes.webp","nav_status":"assets/ui/nav_status.webp","phase_crepusculo":"assets/ui/phase_crepusculo.webp","phase_dia":"assets/ui/phase_dia.webp","phase_horaMorta":"assets/ui/phase_horaMorta.webp","phase_manha":"assets/ui/phase_manha.webp","phase_noite":"assets/ui/phase_noite.webp","st_bleed":"assets/ui/st_bleed.webp","st_buff":"assets/ui/st_buff.webp","st_burn":"assets/ui/st_burn.webp","st_crit":"assets/ui/st_crit.webp","st_debuff":"assets/ui/st_debuff.webp","st_heal":"assets/ui/st_heal.webp","st_mana":"assets/ui/st_mana.webp","st_poison":"assets/ui/st_poison.webp","st_reflect":"assets/ui/st_reflect.webp","st_resist":"assets/ui/st_resist.webp","st_shield":"assets/ui/st_shield.webp","st_stun":"assets/ui/st_stun.webp","st_summon":"assets/ui/st_summon.webp","stat_agi":"assets/ui/stat_agi.webp","stat_int":"assets/ui/stat_int.webp","stat_per":"assets/ui/stat_per.webp","stat_str":"assets/ui/stat_str.webp","stat_vit":"assets/ui/stat_vit.webp","tab_acessorio":"assets/ui/tab_acessorio.webp","tab_arma":"assets/ui/tab_arma.webp","tab_armadura":"assets/ui/tab_armadura.webp","tab_atributo":"assets/ui/tab_atributo.webp","tab_bau":"assets/ui/tab_bau.webp","tab_consumivel":"assets/ui/tab_consumivel.webp","tab_lazer":"assets/ui/tab_lazer.webp","tab_premium":"assets/ui/tab_premium.webp","tab_sistema":"assets/ui/tab_sistema.webp","ui_battle":"assets/ui/ui_battle.webp","ui_crystal":"assets/ui/ui_crystal.webp","ui_eye":"assets/ui/ui_eye.webp","ui_king":"assets/ui/ui_king.webp","ui_sysday":"assets/ui/ui_sysday.webp","ui_trofeus":"assets/ui/ui_trofeus.webp","ui_unknown":"assets/ui/ui_unknown.webp"};
+SYS.UI_ART = {"ach_all100":"assets/ui/ach_all100.webp","ach_all50":"assets/ui/ach_all50.webp","ach_ar1":"assets/ui/ach_ar1.webp","ach_ar10":"assets/ui/ach_ar10.webp","ach_ar5":"assets/ui/ach_ar5.webp","ach_ar_1":"assets/ui/ach_ar_1.webp","ach_ar_10":"assets/ui/ach_ar_10.webp","ach_ar_5":"assets/ui/ach_ar_5.webp","ach_ar_first":"assets/ui/ach_ar_first.webp","ach_architect":"assets/ui/ach_architect.webp","ach_arsenal":"assets/ui/ach_arsenal.webp","ach_b1":"assets/ui/ach_b1.webp","ach_b10":"assets/ui/ach_b10.webp","ach_b100":"assets/ui/ach_b100.webp","ach_b200":"assets/ui/ach_b200.webp","ach_b25":"assets/ui/ach_b25.webp","ach_b50":"assets/ui/ach_b50.webp","ach_body1":"assets/ui/ach_body1.webp","ach_body30":"assets/ui/ach_body30.webp","ach_body7":"assets/ui/ach_body7.webp","ach_bodyg":"assets/ui/ach_bodyg.webp","ach_brave":"assets/ui/ach_brave.webp","ach_champ1":"assets/ui/ach_champ1.webp","ach_champ10":"assets/ui/ach_champ10.webp","ach_champ5":"assets/ui/ach_champ5.webp","ach_chest100":"assets/ui/ach_chest100.webp","ach_chest25":"assets/ui/ach_chest25.webp","ach_chest500":"assets/ui/ach_chest500.webp","ach_clutch":"assets/ui/ach_clutch.webp","ach_collector":"assets/ui/ach_collector.webp","ach_core":"assets/ui/ach_core.webp","ach_create10":"assets/ui/ach_create10.webp","ach_d1":"assets/ui/ach_d1.webp","ach_d100":"assets/ui/ach_d100.webp","ach_d30":"assets/ui/ach_d30.webp","ach_d365":"assets/ui/ach_d365.webp","ach_d7":"assets/ui/ach_d7.webp","ach_early":"assets/ui/ach_early.webp","ach_emg1":"assets/ui/ach_emg1.webp","ach_emg10":"assets/ui/ach_emg10.webp","ach_eternal":"assets/ui/ach_eternal.webp","ach_fail1":"assets/ui/ach_fail1.webp","ach_firstp":"assets/ui/ach_firstp.webp","ach_flaw10":"assets/ui/ach_flaw10.webp","ach_flawless":"assets/ui/ach_flawless.webp","ach_form10":"assets/ui/ach_form10.webp","ach_form34":"assets/ui/ach_form34.webp","ach_frame1":"assets/ui/ach_frame1.webp","ach_frame5":"assets/ui/ach_frame5.webp","ach_giant":"assets/ui/ach_giant.webp","ach_giant10":"assets/ui/ach_giant10.webp","ach_giant3":"assets/ui/ach_giant3.webp","ach_grd1":"assets/ui/ach_grd1.webp","ach_grd45":"assets/ui/ach_grd45.webp","ach_grd90":"assets/ui/ach_grd90.webp","ach_hid1":"assets/ui/ach_hid1.webp","ach_hid10":"assets/ui/ach_hid10.webp","ach_hidden":"assets/ui/ach_hidden.webp","ach_items100":"assets/ui/ach_items100.webp","ach_l10":"assets/ui/ach_l10.webp","ach_l100":"assets/ui/ach_l100.webp","ach_l25":"assets/ui/ach_l25.webp","ach_l5":"assets/ui/ach_l5.webp","ach_l50":"assets/ui/ach_l50.webp","ach_l75":"assets/ui/ach_l75.webp","ach_leisure":"assets/ui/ach_leisure.webp","ach_lose15":"assets/ui/ach_lose15.webp","ach_lose5":"assets/ui/ach_lose5.webp","ach_m1":"assets/ui/ach_m1.webp","ach_m10":"assets/ui/ach_m10.webp","ach_m100":"assets/ui/ach_m100.webp","ach_m1000":"assets/ui/ach_m1000.webp","ach_m50":"assets/ui/ach_m50.webp","ach_m500":"assets/ui/ach_m500.webp","ach_mS":"assets/ui/ach_mS.webp","ach_mS10":"assets/ui/ach_mS10.webp","ach_mset2":"assets/ui/ach_mset2.webp","ach_mset4":"assets/ui/ach_mset4.webp","ach_night":"assets/ui/ach_night.webp","ach_points":"assets/ui/ach_points.webp","ach_potions":"assets/ui/ach_potions.webp","ach_prem1":"assets/ui/ach_prem1.webp","ach_relic1":"assets/ui/ach_relic1.webp","ach_relic7":"assets/ui/ach_relic7.webp","ach_rematch":"assets/ui/ach_rematch.webp","ach_rich":"assets/ui/ach_rich.webp","ach_rich2":"assets/ui/ach_rich2.webp","ach_rich3":"assets/ui/ach_rich3.webp","ach_secret3":"assets/ui/ach_secret3.webp","ach_secretboss":"assets/ui/ach_secretboss.webp","ach_secretchest":"assets/ui/ach_secretchest.webp","ach_sell50":"assets/ui/ach_sell50.webp","ach_set1":"assets/ui/ach_set1.webp","ach_set10":"assets/ui/ach_set10.webp","ach_set5":"assets/ui/ach_set5.webp","ach_sh1":"assets/ui/ach_sh1.webp","ach_sh10":"assets/ui/ach_sh10.webp","ach_sh100":"assets/ui/ach_sh100.webp","ach_sh25":"assets/ui/ach_sh25.webp","ach_sh50":"assets/ui/ach_sh50.webp","ach_shar1":"assets/ui/ach_shar1.webp","ach_shar10":"assets/ui/ach_shar10.webp","ach_shar100":"assets/ui/ach_shar100.webp","ach_sharch":"assets/ui/ach_sharch.webp","ach_shfirst":"assets/ui/ach_shfirst.webp","ach_shfull":"assets/ui/ach_shfull.webp","ach_shking":"assets/ui/ach_shking.webp","ach_shking10":"assets/ui/ach_shking10.webp","ach_shlast":"assets/ui/ach_shlast.webp","ach_shlost":"assets/ui/ach_shlost.webp","ach_shlost10":"assets/ui/ach_shlost10.webp","ach_shname":"assets/ui/ach_shname.webp","ach_skill20":"assets/ui/ach_skill20.webp","ach_spar1":"assets/ui/ach_spar1.webp","ach_spar25":"assets/ui/ach_spar25.webp","ach_sparlose":"assets/ui/ach_sparlose.webp","ach_spch10":"assets/ui/ach_spch10.webp","ach_spchm":"assets/ui/ach_spchm.webp","ach_spend":"assets/ui/ach_spend.webp","ach_talk50":"assets/ui/ach_talk50.webp","ach_ten1":"assets/ui/ach_ten1.webp","ach_tr100":"assets/ui/ach_tr100.webp","ach_tr202":"assets/ui/ach_tr202.webp","ach_tr25":"assets/ui/ach_tr25.webp","ach_trust":"assets/ui/ach_trust.webp","ach_zone1":"assets/ui/ach_zone1.webp","bag_equip":"assets/ui/bag_equip.webp","bag_secreto":"assets/ui/bag_secreto.webp","bag_tudo":"assets/ui/bag_tudo.webp","class_arqueiro":"assets/ui/class_arqueiro.webp","class_assassino":"assets/ui/class_assassino.webp","class_guardiao":"assets/ui/class_guardiao.webp","class_guerreiro":"assets/ui/class_guerreiro.webp","class_invocador":"assets/ui/class_invocador.webp","class_mago":"assets/ui/class_mago.webp","eff_coin2":"assets/ui/eff_coin2.webp","eff_exausto":"assets/ui/eff_exausto.webp","eff_marcado":"assets/ui/eff_marcado.webp","eff_sorte":"assets/ui/eff_sorte.webp","eff_xp15":"assets/ui/eff_xp15.webp","eff_xp2":"assets/ui/eff_xp2.webp","gate_0":"assets/ui/gate_0.webp","gate_1":"assets/ui/gate_1.webp","gate_10":"assets/ui/gate_10.webp","gate_2":"assets/ui/gate_2.webp","gate_3":"assets/ui/gate_3.webp","gate_4":"assets/ui/gate_4.webp","gate_5":"assets/ui/gate_5.webp","gate_6":"assets/ui/gate_6.webp","gate_7":"assets/ui/gate_7.webp","gate_8":"assets/ui/gate_8.webp","gate_9":"assets/ui/gate_9.webp","h_achievement":"assets/ui/h_achievement.webp","h_awaken":"assets/ui/h_awaken.webp","h_buy":"assets/ui/h_buy.webp","h_core":"assets/ui/h_core.webp","h_levelup":"assets/ui/h_levelup.webp","h_map":"assets/ui/h_map.webp","h_mission_done":"assets/ui/h_mission_done.webp","h_mission_fail":"assets/ui/h_mission_fail.webp","h_mission_new":"assets/ui/h_mission_new.webp","h_newday":"assets/ui/h_newday.webp","h_secret_skill":"assets/ui/h_secret_skill.webp","h_sell":"assets/ui/h_sell.webp","h_set":"assets/ui/h_set.webp","h_shield":"assets/ui/h_shield.webp","h_time":"assets/ui/h_time.webp","h_transfer":"assets/ui/h_transfer.webp","ic_lock":"assets/ui/ic_lock.webp","ic_verify":"assets/ui/ic_verify.webp","log_advantage":"assets/ui/log_advantage.webp","log_appear":"assets/ui/log_appear.webp","log_bomb":"assets/ui/log_bomb.webp","log_cleanse":"assets/ui/log_cleanse.webp","log_defeat":"assets/ui/log_defeat.webp","log_dot":"assets/ui/log_dot.webp","log_enrage":"assets/ui/log_enrage.webp","log_flee":"assets/ui/log_flee.webp","log_hit":"assets/ui/log_hit.webp","log_hurt":"assets/ui/log_hurt.webp","log_item":"assets/ui/log_item.webp","log_pressure":"assets/ui/log_pressure.webp","log_reset":"assets/ui/log_reset.webp","log_revive":"assets/ui/log_revive.webp","log_skill":"assets/ui/log_skill.webp","log_smoke":"assets/ui/log_smoke.webp","log_victory":"assets/ui/log_victory.webp","lz_c_beach":"assets/ui/lz_c_beach.webp","lz_c_food":"assets/ui/lz_c_food.webp","lz_c_game":"assets/ui/lz_c_game.webp","lz_c_gift":"assets/ui/lz_c_gift.webp","lz_c_movie":"assets/ui/lz_c_movie.webp","lz_c_phone":"assets/ui/lz_c_phone.webp","lz_c_shop":"assets/ui/lz_c_shop.webp","lz_c_sweet":"assets/ui/lz_c_sweet.webp","nav_bolsa":"assets/ui/nav_bolsa.webp","nav_combate":"assets/ui/nav_combate.webp","nav_loja":"assets/ui/nav_loja.webp","nav_missoes":"assets/ui/nav_missoes.webp","nav_status":"assets/ui/nav_status.webp","phase_crepusculo":"assets/ui/phase_crepusculo.webp","phase_dia":"assets/ui/phase_dia.webp","phase_horaMorta":"assets/ui/phase_horaMorta.webp","phase_manha":"assets/ui/phase_manha.webp","phase_noite":"assets/ui/phase_noite.webp","st_bleed":"assets/ui/st_bleed.webp","st_buff":"assets/ui/st_buff.webp","st_burn":"assets/ui/st_burn.webp","st_crit":"assets/ui/st_crit.webp","st_debuff":"assets/ui/st_debuff.webp","st_heal":"assets/ui/st_heal.webp","st_mana":"assets/ui/st_mana.webp","st_poison":"assets/ui/st_poison.webp","st_reflect":"assets/ui/st_reflect.webp","st_resist":"assets/ui/st_resist.webp","st_shield":"assets/ui/st_shield.webp","st_stun":"assets/ui/st_stun.webp","st_summon":"assets/ui/st_summon.webp","stat_agi":"assets/ui/stat_agi.webp","stat_int":"assets/ui/stat_int.webp","stat_per":"assets/ui/stat_per.webp","stat_str":"assets/ui/stat_str.webp","stat_vit":"assets/ui/stat_vit.webp","tab_acessorio":"assets/ui/tab_acessorio.webp","tab_arma":"assets/ui/tab_arma.webp","tab_armadura":"assets/ui/tab_armadura.webp","tab_atributo":"assets/ui/tab_atributo.webp","tab_bau":"assets/ui/tab_bau.webp","tab_consumivel":"assets/ui/tab_consumivel.webp","tab_lazer":"assets/ui/tab_lazer.webp","tab_premium":"assets/ui/tab_premium.webp","tab_sistema":"assets/ui/tab_sistema.webp","ui_battle":"assets/ui/ui_battle.webp","ui_crystal":"assets/ui/ui_crystal.webp","ui_eye":"assets/ui/ui_eye.webp","ui_king":"assets/ui/ui_king.webp","ui_sysday":"assets/ui/ui_sysday.webp","ui_trofeus":"assets/ui/ui_trofeus.webp","ui_unknown":"assets/ui/ui_unknown.webp"};
 SYS.TROPHY_ART = {"ar1":"assets/trophies/ar1.webp","ar10":"assets/trophies/ar10.webp","ar10g1":"assets/trophies/ar10g1.webp","ar10g2":"assets/trophies/ar10g2.webp","ar10g3":"assets/trophies/ar10g3.webp","ar10g4":"assets/trophies/ar10g4.webp","ar10g5":"assets/trophies/ar10g5.webp","ar10g6":"assets/trophies/ar10g6.webp","ar10g7":"assets/trophies/ar10g7.webp","ar10g8":"assets/trophies/ar10g8.webp","ar10g9":"assets/trophies/ar10g9.webp","ar1g1":"assets/trophies/ar1g1.webp","ar1g2":"assets/trophies/ar1g2.webp","ar1g3":"assets/trophies/ar1g3.webp","ar1g4":"assets/trophies/ar1g4.webp","ar1g5":"assets/trophies/ar1g5.webp","ar1g6":"assets/trophies/ar1g6.webp","ar1g7":"assets/trophies/ar1g7.webp","ar1g8":"assets/trophies/ar1g8.webp","ar1g9":"assets/trophies/ar1g9.webp","ar2":"assets/trophies/ar2.webp","ar2g1":"assets/trophies/ar2g1.webp","ar2g2":"assets/trophies/ar2g2.webp","ar2g3":"assets/trophies/ar2g3.webp","ar2g4":"assets/trophies/ar2g4.webp","ar2g5":"assets/trophies/ar2g5.webp","ar2g6":"assets/trophies/ar2g6.webp","ar2g7":"assets/trophies/ar2g7.webp","ar2g8":"assets/trophies/ar2g8.webp","ar2g9":"assets/trophies/ar2g9.webp","ar3":"assets/trophies/ar3.webp","ar3g1":"assets/trophies/ar3g1.webp","ar3g2":"assets/trophies/ar3g2.webp","ar3g3":"assets/trophies/ar3g3.webp","ar3g4":"assets/trophies/ar3g4.webp","ar3g5":"assets/trophies/ar3g5.webp","ar3g6":"assets/trophies/ar3g6.webp","ar3g7":"assets/trophies/ar3g7.webp","ar3g8":"assets/trophies/ar3g8.webp","ar3g9":"assets/trophies/ar3g9.webp","ar4":"assets/trophies/ar4.webp","ar4g1":"assets/trophies/ar4g1.webp","ar4g2":"assets/trophies/ar4g2.webp","ar4g3":"assets/trophies/ar4g3.webp","ar4g4":"assets/trophies/ar4g4.webp","ar4g5":"assets/trophies/ar4g5.webp","ar4g6":"assets/trophies/ar4g6.webp","ar4g7":"assets/trophies/ar4g7.webp","ar4g8":"assets/trophies/ar4g8.webp","ar4g9":"assets/trophies/ar4g9.webp","ar5":"assets/trophies/ar5.webp","ar5g1":"assets/trophies/ar5g1.webp","ar5g2":"assets/trophies/ar5g2.webp","ar5g3":"assets/trophies/ar5g3.webp","ar5g4":"assets/trophies/ar5g4.webp","ar5g5":"assets/trophies/ar5g5.webp","ar5g6":"assets/trophies/ar5g6.webp","ar5g7":"assets/trophies/ar5g7.webp","ar5g8":"assets/trophies/ar5g8.webp","ar5g9":"assets/trophies/ar5g9.webp","ar6":"assets/trophies/ar6.webp","ar6g1":"assets/trophies/ar6g1.webp","ar6g2":"assets/trophies/ar6g2.webp","ar6g3":"assets/trophies/ar6g3.webp","ar6g4":"assets/trophies/ar6g4.webp","ar6g5":"assets/trophies/ar6g5.webp","ar6g6":"assets/trophies/ar6g6.webp","ar6g7":"assets/trophies/ar6g7.webp","ar6g8":"assets/trophies/ar6g8.webp","ar6g9":"assets/trophies/ar6g9.webp","ar7":"assets/trophies/ar7.webp","ar7g1":"assets/trophies/ar7g1.webp","ar7g2":"assets/trophies/ar7g2.webp","ar7g3":"assets/trophies/ar7g3.webp","ar7g4":"assets/trophies/ar7g4.webp","ar7g5":"assets/trophies/ar7g5.webp","ar7g6":"assets/trophies/ar7g6.webp","ar7g7":"assets/trophies/ar7g7.webp","ar7g8":"assets/trophies/ar7g8.webp","ar7g9":"assets/trophies/ar7g9.webp","ar8":"assets/trophies/ar8.webp","ar8g1":"assets/trophies/ar8g1.webp","ar8g2":"assets/trophies/ar8g2.webp","ar8g3":"assets/trophies/ar8g3.webp","ar8g4":"assets/trophies/ar8g4.webp","ar8g5":"assets/trophies/ar8g5.webp","ar8g6":"assets/trophies/ar8g6.webp","ar8g7":"assets/trophies/ar8g7.webp","ar8g8":"assets/trophies/ar8g8.webp","ar8g9":"assets/trophies/ar8g9.webp","ar9":"assets/trophies/ar9.webp","ar9g1":"assets/trophies/ar9g1.webp","ar9g2":"assets/trophies/ar9g2.webp","ar9g3":"assets/trophies/ar9g3.webp","ar9g4":"assets/trophies/ar9g4.webp","ar9g5":"assets/trophies/ar9g5.webp","ar9g6":"assets/trophies/ar9g6.webp","ar9g7":"assets/trophies/ar9g7.webp","ar9g8":"assets/trophies/ar9g8.webp","ar9g9":"assets/trophies/ar9g9.webp","b1":"assets/trophies/b1.webp","b10":"assets/trophies/b10.webp","b100":"assets/trophies/b100.webp","b11":"assets/trophies/b11.webp","b12":"assets/trophies/b12.webp","b13":"assets/trophies/b13.webp","b14":"assets/trophies/b14.webp","b15":"assets/trophies/b15.webp","b16":"assets/trophies/b16.webp","b17":"assets/trophies/b17.webp","b18":"assets/trophies/b18.webp","b19":"assets/trophies/b19.webp","b2":"assets/trophies/b2.webp","b20":"assets/trophies/b20.webp","b21":"assets/trophies/b21.webp","b22":"assets/trophies/b22.webp","b23":"assets/trophies/b23.webp","b24":"assets/trophies/b24.webp","b25":"assets/trophies/b25.webp","b26":"assets/trophies/b26.webp","b27":"assets/trophies/b27.webp","b28":"assets/trophies/b28.webp","b29":"assets/trophies/b29.webp","b3":"assets/trophies/b3.webp","b30":"assets/trophies/b30.webp","b31":"assets/trophies/b31.webp","b32":"assets/trophies/b32.webp","b33":"assets/trophies/b33.webp","b34":"assets/trophies/b34.webp","b35":"assets/trophies/b35.webp","b36":"assets/trophies/b36.webp","b37":"assets/trophies/b37.webp","b38":"assets/trophies/b38.webp","b39":"assets/trophies/b39.webp","b4":"assets/trophies/b4.webp","b40":"assets/trophies/b40.webp","b41":"assets/trophies/b41.webp","b42":"assets/trophies/b42.webp","b43":"assets/trophies/b43.webp","b44":"assets/trophies/b44.webp","b45":"assets/trophies/b45.webp","b46":"assets/trophies/b46.webp","b47":"assets/trophies/b47.webp","b48":"assets/trophies/b48.webp","b49":"assets/trophies/b49.webp","b5":"assets/trophies/b5.webp","b50":"assets/trophies/b50.webp","b51":"assets/trophies/b51.webp","b52":"assets/trophies/b52.webp","b53":"assets/trophies/b53.webp","b54":"assets/trophies/b54.webp","b55":"assets/trophies/b55.webp","b56":"assets/trophies/b56.webp","b57":"assets/trophies/b57.webp","b58":"assets/trophies/b58.webp","b59":"assets/trophies/b59.webp","b6":"assets/trophies/b6.webp","b60":"assets/trophies/b60.webp","b61":"assets/trophies/b61.webp","b62":"assets/trophies/b62.webp","b63":"assets/trophies/b63.webp","b64":"assets/trophies/b64.webp","b65":"assets/trophies/b65.webp","b66":"assets/trophies/b66.webp","b67":"assets/trophies/b67.webp","b68":"assets/trophies/b68.webp","b69":"assets/trophies/b69.webp","b7":"assets/trophies/b7.webp","b70":"assets/trophies/b70.webp","b71":"assets/trophies/b71.webp","b72":"assets/trophies/b72.webp","b73":"assets/trophies/b73.webp","b74":"assets/trophies/b74.webp","b75":"assets/trophies/b75.webp","b76":"assets/trophies/b76.webp","b77":"assets/trophies/b77.webp","b78":"assets/trophies/b78.webp","b79":"assets/trophies/b79.webp","b8":"assets/trophies/b8.webp","b80":"assets/trophies/b80.webp","b81":"assets/trophies/b81.webp","b82":"assets/trophies/b82.webp","b83":"assets/trophies/b83.webp","b84":"assets/trophies/b84.webp","b85":"assets/trophies/b85.webp","b86":"assets/trophies/b86.webp","b87":"assets/trophies/b87.webp","b88":"assets/trophies/b88.webp","b89":"assets/trophies/b89.webp","b9":"assets/trophies/b9.webp","b90":"assets/trophies/b90.webp","b91":"assets/trophies/b91.webp","b92":"assets/trophies/b92.webp","b93":"assets/trophies/b93.webp","b94":"assets/trophies/b94.webp","b95":"assets/trophies/b95.webp","b96":"assets/trophies/b96.webp","b97":"assets/trophies/b97.webp","b98":"assets/trophies/b98.webp","b99":"assets/trophies/b99.webp","secret_1":"assets/trophies/secret_1.webp","secret_2":"assets/trophies/secret_2.webp"};
 SYS.SKILL_ART = {"a1":"assets/skills/a1.webp","a10":"assets/skills/a10.webp","a11":"assets/skills/a11.webp","a12":"assets/skills/a12.webp","a13":"assets/skills/a13.webp","a14":"assets/skills/a14.webp","a15":"assets/skills/a15.webp","a16":"assets/skills/a16.webp","a17":"assets/skills/a17.webp","a18":"assets/skills/a18.webp","a2":"assets/skills/a2.webp","a3":"assets/skills/a3.webp","a4":"assets/skills/a4.webp","a5":"assets/skills/a5.webp","a6":"assets/skills/a6.webp","a7":"assets/skills/a7.webp","a8":"assets/skills/a8.webp","a9":"assets/skills/a9.webp","c1":"assets/skills/c1.webp","c2":"assets/skills/c2.webp","c3":"assets/skills/c3.webp","c4":"assets/skills/c4.webp","c5":"assets/skills/c5.webp","c6":"assets/skills/c6.webp","d1":"assets/skills/d1.webp","d10":"assets/skills/d10.webp","d11":"assets/skills/d11.webp","d12":"assets/skills/d12.webp","d13":"assets/skills/d13.webp","d14":"assets/skills/d14.webp","d15":"assets/skills/d15.webp","d16":"assets/skills/d16.webp","d17":"assets/skills/d17.webp","d18":"assets/skills/d18.webp","d2":"assets/skills/d2.webp","d3":"assets/skills/d3.webp","d4":"assets/skills/d4.webp","d5":"assets/skills/d5.webp","d6":"assets/skills/d6.webp","d7":"assets/skills/d7.webp","d8":"assets/skills/d8.webp","d9":"assets/skills/d9.webp","g1":"assets/skills/g1.webp","g10":"assets/skills/g10.webp","g11":"assets/skills/g11.webp","g12":"assets/skills/g12.webp","g13":"assets/skills/g13.webp","g14":"assets/skills/g14.webp","g15":"assets/skills/g15.webp","g16":"assets/skills/g16.webp","g17":"assets/skills/g17.webp","g18":"assets/skills/g18.webp","g2":"assets/skills/g2.webp","g3":"assets/skills/g3.webp","g4":"assets/skills/g4.webp","g5":"assets/skills/g5.webp","g6":"assets/skills/g6.webp","g7":"assets/skills/g7.webp","g8":"assets/skills/g8.webp","g9":"assets/skills/g9.webp","i1":"assets/skills/i1.webp","i10":"assets/skills/i10.webp","i11":"assets/skills/i11.webp","i12":"assets/skills/i12.webp","i13":"assets/skills/i13.webp","i14":"assets/skills/i14.webp","i15":"assets/skills/i15.webp","i16":"assets/skills/i16.webp","i17":"assets/skills/i17.webp","i18":"assets/skills/i18.webp","i2":"assets/skills/i2.webp","i3":"assets/skills/i3.webp","i4":"assets/skills/i4.webp","i5":"assets/skills/i5.webp","i6":"assets/skills/i6.webp","i7":"assets/skills/i7.webp","i8":"assets/skills/i8.webp","i9":"assets/skills/i9.webp","m1":"assets/skills/m1.webp","m10":"assets/skills/m10.webp","m11":"assets/skills/m11.webp","m12":"assets/skills/m12.webp","m13":"assets/skills/m13.webp","m14":"assets/skills/m14.webp","m15":"assets/skills/m15.webp","m16":"assets/skills/m16.webp","m17":"assets/skills/m17.webp","m18":"assets/skills/m18.webp","m2":"assets/skills/m2.webp","m3":"assets/skills/m3.webp","m4":"assets/skills/m4.webp","m5":"assets/skills/m5.webp","m6":"assets/skills/m6.webp","m7":"assets/skills/m7.webp","m8":"assets/skills/m8.webp","m9":"assets/skills/m9.webp","r1":"assets/skills/r1.webp","r10":"assets/skills/r10.webp","r11":"assets/skills/r11.webp","r12":"assets/skills/r12.webp","r13":"assets/skills/r13.webp","r14":"assets/skills/r14.webp","r15":"assets/skills/r15.webp","r16":"assets/skills/r16.webp","r17":"assets/skills/r17.webp","r18":"assets/skills/r18.webp","r2":"assets/skills/r2.webp","r3":"assets/skills/r3.webp","r4":"assets/skills/r4.webp","r5":"assets/skills/r5.webp","r6":"assets/skills/r6.webp","r7":"assets/skills/r7.webp","r8":"assets/skills/r8.webp","r9":"assets/skills/r9.webp","s1":"assets/skills/s1.webp","s10":"assets/skills/s10.webp","s2":"assets/skills/s2.webp","s3":"assets/skills/s3.webp","s4":"assets/skills/s4.webp","s5":"assets/skills/s5.webp","s6":"assets/skills/s6.webp","s7":"assets/skills/s7.webp","s8":"assets/skills/s8.webp","s9":"assets/skills/s9.webp"};
 SYS.FRAME_ART = {"fr_aurora":"assets/frames/fr_aurora.webp","fr_cacador":"assets/frames/fr_cacador.webp","fr_carrasco":"assets/frames/fr_carrasco.webp","fr_espelho":"assets/frames/fr_espelho.webp","fr_fenix":"assets/frames/fr_fenix.webp","fr_gelo":"assets/frames/fr_gelo.webp","fr_jardim":"assets/frames/fr_jardim.webp","fr_mare":"assets/frames/fr_mare.webp","fr_monarca":"assets/frames/fr_monarca.webp","fr_primeiro":"assets/frames/fr_primeiro.webp","fr_relogio":"assets/frames/fr_relogio.webp","fr_runas":"assets/frames/fr_runas.webp","fr_sistema":"assets/frames/fr_sistema.webp","fr_sombra":"assets/frames/fr_sombra.webp","fr_tempestade":"assets/frames/fr_tempestade.webp"};

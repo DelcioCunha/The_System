@@ -121,6 +121,7 @@
       .catch(function () { if (timer) clearTimeout(timer); return { ok: false, offline: true, msg: 'Sem ligação ao servidor. Verifica a internet e tenta outra vez.' }; });
   }
 
+  SH.call = call;
   /* pacotes, preços e se a loja está aberta (o preço vem SEMPRE do servidor) */
   SH.config = function (force) {
     if (!force && cfgCache && Date.now() - cfgAt < 60000) return Promise.resolve(cfgCache);

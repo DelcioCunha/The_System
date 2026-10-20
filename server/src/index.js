@@ -17,7 +17,7 @@
      MODE              "production" ou "staging" (staging marca tudo como teste)
    ========================================================== */
 
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 const MIN = 60 * 1000, HOUR = 60 * MIN, DAY = 24 * HOUR;
 const SESSION_TTL = 12 * HOUR;       // duração máxima de uma sessão
 const SESSION_IDLE = 2 * HOUR;       // sem uso durante 2 horas, a sessão expira
@@ -693,6 +693,9 @@ async function deletePlayer(env, A, id, body, ip) {
     q(env, 'INSERT OR REPLACE INTO deleted_players (id, name, reason, deleted_at, deleted_by) VALUES (?, ?, ?, ?, ?)', p.id, p.name, reason, t, A.admin),
     q(env, "UPDATE grants SET status = 'revoked', revoked_at = ?, revoke_reason = 'Conta apagada' WHERE player_id = ? AND status = 'pending' AND order_id IS NULL", t, p.id),
     q(env, 'UPDATE notices SET deleted_at = ?, deleted_by = ? WHERE player_id = ? AND deleted_at IS NULL', t, A.admin, p.id),
+    q(env, 'DELETE FROM friends WHERE a = ? OR b = ?', p.id, p.id),
+    q(env, 'DELETE FROM messages WHERE sender = ? OR receiver = ?', p.id, p.id),
+    q(env, "UPDATE duels SET status = 'cancelled', end_reason = 'deleted', updated_at = ? WHERE (host = ? OR guest = ?) AND status IN ('waiting','active')", t, p.id, p.id),
     q(env, 'DELETE FROM players WHERE id = ?', p.id),
     auditStmt(env, A.admin, 'player.delete', p.id, 'ok', { name: p.name, level: p.level, reason: reason || undefined }, ip)
   ]);
@@ -859,6 +862,357 @@ async function deliverOrder(env, A, id, request, ip) {
 /* ==========================================================
    ROUTER
    ========================================================== */
+/* ==========================================================
+   SOCIAL: amigos, conversas e duelos entre jogadores
+   - Só jogadores registados (sincronizados) e não suspensos.
+   - Os duelos são decididos AQUI: o jogo só escolhe a ação; o servidor
+     calcula o golpe, a vida e quem ganha. Cada jogada sobe a versão do
+     duelo, por isso uma jogada repetida (rede lenta) nunca conta duas vezes.
+   ========================================================== */
+const ONLINE_MS = 2 * MIN;
+const DUEL_TURN_MS = 45 * 1000;       // tempo para cada jogada
+const DUEL_WAIT_MS = 30 * MIN;        // uma sala sem adversário fecha sozinha
+const DUEL_MAX_TURNS = 80;
+const DUEL_CODE = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const CLASSES = ['guerreiro', 'assassino', 'mago', 'guardiao', 'arqueiro', 'invocador'];
+
+function pairKey(x, y) { return x < y ? [x, y] : [y, x]; }
+function seenOf(p) { return Math.max(p.last_seen || 0, p.social_seen || 0); }
+function isOnline(p) { return now() - seenOf(p) < ONLINE_MS; }
+function rnd() { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] / 4294967296; }
+
+async function socialAuth(env, body, touch) {
+  const p = await playerAuth(env, body);
+  if (p.status === 'banned') throw new HttpError(403, 'Esta conta está suspensa pelo Sistema.', { banned: true, ban: banInfo(p) });
+  if (touch !== false) await run(env, 'UPDATE players SET social_seen = ? WHERE id = ?', now(), p.id);
+  return p;
+}
+function pub(p, extra) {
+  return Object.assign({ id: p.id, name: p.name, cls: p.cls || null, level: p.level, online: isOnline(p), seen: seenOf(p),
+    wins: p.duel_wins || 0, losses: p.duel_losses || 0, rating: p.duel_rating || 1000 }, extra || {});
+}
+async function friendRow(env, x, y) { const k = pairKey(x, y); return one(env, 'SELECT * FROM friends WHERE a = ? AND b = ?', k[0], k[1]); }
+async function areFriends(env, x, y) { const f = await friendRow(env, x, y); return !!(f && f.status === 'accepted'); }
+
+/* estado social: amigos (online/offline), pedidos, convites, salas abertas e duelo atual */
+async function socialState(env, body) {
+  const p = await socialAuth(env, body);
+  const rows = await all(env, 'SELECT pl.*, f.status AS fstatus, f.requested_by AS freq, f.created_at AS fcreated, f.accepted_at AS facc FROM friends f JOIN players pl ON pl.id = CASE WHEN f.a = ? THEN f.b ELSE f.a END WHERE f.a = ? OR f.b = ?', p.id, p.id, p.id);
+  const unread = await all(env, 'SELECT sender, COUNT(*) AS n FROM messages WHERE receiver = ? AND read_at IS NULL GROUP BY sender', p.id);
+  const un = {}; unread.forEach((u) => { un[u.sender] = u.n; });
+  const friends = [], inc = [], out = [];
+  rows.forEach((r) => {
+    const o = pub(r, { unread: un[r.id] || 0, since: r.facc || r.fcreated });
+    if (r.fstatus === 'accepted') friends.push(o); else if (r.freq === p.id) out.push(o); else inc.push(o);
+  });
+  friends.sort((x, y) => (y.online - x.online) || (y.unread - x.unread) || x.name.localeCompare(y.name));
+  await expireDuels(env);
+  const invites = await all(env, "SELECT d.id, d.code, d.created_at, pl.name, pl.level, pl.cls, pl.id AS host FROM duels d JOIN players pl ON pl.id = d.host WHERE d.invited = ? AND d.status = 'waiting' ORDER BY d.created_at DESC LIMIT 10", p.id);
+  const open = await all(env, "SELECT d.id, d.code, d.created_at, pl.name, pl.level, pl.cls, pl.id AS host, pl.duel_rating AS rating FROM duels d JOIN players pl ON pl.id = d.host WHERE d.status = 'waiting' AND d.public = 1 AND d.host != ? ORDER BY d.created_at DESC LIMIT 20", p.id);
+  const mine = await one(env, "SELECT id, code, status, host, guest FROM duels WHERE (host = ? OR guest = ?) AND status IN ('waiting','active') ORDER BY created_at DESC LIMIT 1", p.id, p.id);
+  return json({ ok: true, me: pub(p, { online: true }), friends, requests_in: inc, requests_out: out, invites, open, duel: mine,
+    unread: unread.reduce((s, u) => s + u.n, 0), server_time: now() });
+}
+
+async function socialFind(env, body) {
+  const p = await socialAuth(env, body, false);
+  if (await limited(env, 'find:' + p.id, 30, MIN)) throw new HttpError(429, 'Muitas pesquisas seguidas. Espera um minuto.');
+  const s = clean(body.query, 40);
+  if (s.length < 2) throw bad('Escreve pelo menos 2 letras ou o ID do jogador.');
+  const rows = await all(env, "SELECT * FROM players WHERE id != ? AND status = 'active' AND (id = ? OR name LIKE ? ESCAPE '\\') ORDER BY (id = ?) DESC, last_seen DESC LIMIT 10",
+    p.id, s, s.replace(/[\\%_]/g, (c) => '\\' + c) + '%', s);
+  const out = [];
+  for (const r of rows) { const f = await friendRow(env, p.id, r.id); out.push(pub(r, { relation: !f ? 'none' : f.status === 'accepted' ? 'friend' : f.requested_by === p.id ? 'sent' : 'received' })); }
+  return json({ ok: true, players: out });
+}
+
+async function friendRequest(env, body) {
+  const p = await socialAuth(env, body);
+  const to = clean(body.to, 64);
+  if (to === p.id) throw bad('Não podes adicionar-te a ti próprio.');
+  if (await limited(env, 'freq:' + p.id, 20, HOUR)) throw new HttpError(429, 'Muitos pedidos de amizade. Tenta mais tarde.');
+  const o = await one(env, "SELECT * FROM players WHERE id = ? AND status = 'active'", to);
+  if (!o) throw new HttpError(404, 'Não existe nenhum jogador com esse ID.');
+  const f = await friendRow(env, p.id, o.id), k = pairKey(p.id, o.id), t = now();
+  if (f && f.status === 'accepted') return json({ ok: true, status: 'friend', msg: 'Já são amigos.' });
+  if (f && f.requested_by === p.id) return json({ ok: true, status: 'sent', msg: 'O pedido já foi enviado.' });
+  if (f) { // ele já te tinha pedido: aceitar
+    await run(env, "UPDATE friends SET status = 'accepted', accepted_at = ? WHERE a = ? AND b = ?", t, k[0], k[1]);
+    return json({ ok: true, status: 'friend', msg: 'Agora tu e ' + o.name + ' são amigos.' });
+  }
+  const n = await one(env, "SELECT COUNT(*) AS n FROM friends WHERE (a = ? OR b = ?) AND status = 'accepted'", p.id, p.id);
+  if (n.n >= 200) throw bad('Chegaste ao limite de 200 amigos.');
+  await run(env, "INSERT INTO friends (a, b, status, requested_by, created_at) VALUES (?, ?, 'pending', ?, ?)", k[0], k[1], p.id, t);
+  return json({ ok: true, status: 'sent', msg: 'Pedido de amizade enviado a ' + o.name + '.' });
+}
+async function friendRespond(env, body) {
+  const p = await socialAuth(env, body);
+  const from = clean(body.from, 64), f = await friendRow(env, p.id, from), k = pairKey(p.id, from);
+  if (!f || f.status !== 'pending' || f.requested_by === p.id) throw new HttpError(404, 'Pedido não encontrado.');
+  if (body.accept) { await run(env, "UPDATE friends SET status = 'accepted', accepted_at = ? WHERE a = ? AND b = ?", now(), k[0], k[1]); return json({ ok: true, status: 'friend' }); }
+  await run(env, 'DELETE FROM friends WHERE a = ? AND b = ?', k[0], k[1]);
+  return json({ ok: true, status: 'none' });
+}
+async function friendRemove(env, body) {
+  const p = await socialAuth(env, body);
+  const other = clean(body.other, 64), k = pairKey(p.id, other);
+  await run(env, 'DELETE FROM friends WHERE a = ? AND b = ?', k[0], k[1]);
+  return json({ ok: true, status: 'none' });
+}
+
+/* conversas */
+function msgOut(m) { return { id: m.id, from: m.sender, to: m.receiver, text: m.body, at: m.created_at, read: !!m.read_at }; }
+async function chatHistory(env, body) {
+  const p = await socialAuth(env, body);
+  const w = clean(body.with, 64), after = int(body.after, 0, 1e12);
+  if (!(await areFriends(env, p.id, w))) throw new HttpError(403, 'Só podes conversar com amigos.');
+  const rows = after
+    ? await all(env, 'SELECT * FROM messages WHERE id > ? AND ((sender = ? AND receiver = ?) OR (sender = ? AND receiver = ?)) ORDER BY id LIMIT 100', after, p.id, w, w, p.id)
+    : (await all(env, 'SELECT * FROM messages WHERE (sender = ? AND receiver = ?) OR (sender = ? AND receiver = ?) ORDER BY id DESC LIMIT 60', p.id, w, w, p.id)).reverse();
+  await run(env, 'UPDATE messages SET read_at = ? WHERE receiver = ? AND sender = ? AND read_at IS NULL', now(), p.id, w);
+  const o = await one(env, 'SELECT * FROM players WHERE id = ?', w);
+  return json({ ok: true, messages: rows.map(msgOut), friend: o ? pub(o) : null });
+}
+async function chatSend(env, body) {
+  const p = await socialAuth(env, body);
+  const to = clean(body.to, 64), text = String(body.text == null ? '' : body.text).replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, ' ').trim().slice(0, 500);
+  if (!text) throw bad('Escreve uma mensagem.');
+  if (!(await areFriends(env, p.id, to))) throw new HttpError(403, 'Só podes enviar mensagens a amigos.');
+  if (await limited(env, 'chat:' + p.id, 30, MIN)) throw new HttpError(429, 'Estás a enviar mensagens demasiado depressa.');
+  const t = now();
+  const r = await run(env, 'INSERT INTO messages (sender, receiver, body, created_at) VALUES (?, ?, ?, ?)', p.id, to, text, t);
+  return json({ ok: true, message: { id: r.meta && r.meta.last_row_id, from: p.id, to, text, at: t, read: false } });
+}
+
+/* ---------------- duelos ---------------- */
+/* o jogo envia os atributos de combate; o servidor limita-os ao que é possível no nível registado */
+function fighter(p, f) {
+  f = f && typeof f === 'object' ? f : {};
+  const L = Math.max(1, Math.min(100, p.level || 1));
+  const cap = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(+v || 0)));
+  const cls = CLASSES.includes(f.cls) ? f.cls : (CLASSES.includes(p.cls) ? p.cls : 'guerreiro');
+  const hp = cap(f.hp, 50, 150 * L + 800), mp = cap(f.mp, 20, 40 * L + 300);
+  const fx = {
+    id: p.id, name: p.name, cls, level: L, avatar: clean(f.avatar, 8) || String(L),
+    maxHp: Math.round(hp * 1.5), maxMp: mp,
+    atk: cap(Math.max(+f.atk || 0, +f.matk || 0), 5, 25 * L + 200), def: cap(f.def, 0, 12 * L + 100),
+    crit: cap(f.crit, 0, 50), critDmg: cap(f.critDmg, 150, 300), eva: cap(f.eva, 0, 25), ls: cap(f.lifesteal, 0, 20), agi: cap(f.agi, 0, 400),
+    pots: 2, cds: {}, guard: false, shield: 0, legion: 0, buff: 0, miss: 0
+  };
+  fx.hp = fx.maxHp; fx.mp = fx.maxMp;
+  return fx;
+}
+const DUEL_SKILLS = {
+  guerreiro: { name: 'Golpe Devastador', mp: 0.35, cd: 3 },
+  assassino: { name: 'Golpe nas Sombras', mp: 0.35, cd: 3 },
+  mago: { name: 'Explosão Arcana', mp: 0.4, cd: 3 },
+  guardiao: { name: 'Muralha Inquebrável', mp: 0.35, cd: 4 },
+  arqueiro: { name: 'Chuva de Flechas', mp: 0.35, cd: 3 },
+  invocador: { name: 'Legião das Almas', mp: 0.4, cd: 4 }
+};
+function newCodeDuel() { let s = ''; while (s.length < 6) { const b = randomBytes(8); for (let i = 0; i < b.length && s.length < 6; i++) if (b[i] < 248) s += DUEL_CODE[b[i] % 31]; } return s; }
+function addLog(st, txt, c, who) { st.seq = (st.seq || 0) + 1; st.log.push({ n: st.seq, t: txt, c: c || '', w: who || null }); if (st.log.length > 40) st.log.splice(0, st.log.length - 40); }
+
+/* um golpe: dano = força × força/(força+defesa), com crítico, esquiva, guarda e escudo */
+function hit(st, A, D, mult, opts) {
+  opts = opts || {};
+  if (!opts.sure && rnd() * 100 < D.eva) { addLog(st, D.name + ' esquivou-se!', 'miss', D.id); return 0; }
+  const pow = A.atk * (A.buff ? 1.25 : 1), def = opts.pierce ? 0 : D.def * (opts.half ? 0.5 : 1);
+  let dmg = pow * pow / (pow + def + 1) * mult * (0.9 + rnd() * 0.2);
+  const crit = opts.crit || rnd() * 100 < A.crit;
+  if (crit) dmg *= A.critDmg / 100;
+  if (D.guard) dmg *= 0.4;
+  dmg = Math.max(1, Math.round(dmg));
+  if (D.shield > 0) { const s = Math.min(D.shield, dmg); D.shield -= s; dmg -= s; if (s) addLog(st, 'O escudo de ' + D.name + ' absorveu ' + s + '.', 'shield', D.id); }
+  D.hp = Math.max(0, D.hp - dmg);
+  if (dmg) addLog(st, (crit ? 'CRÍTICO! ' : '') + A.name + ' causou ' + dmg + ' de dano a ' + D.name + '.', crit ? 'crit' : 'hit', A.id);
+  if (A.ls && dmg) { const h = Math.round(dmg * A.ls / 100); if (h) { A.hp = Math.min(A.maxHp, A.hp + h); } }
+  return dmg;
+}
+/* aplica a ação do jogador da vez; devolve uma mensagem de erro ou null */
+function duelAct(st, me, op, action) {
+  const A = st.f[me], D = st.f[op];
+  if (action === 'skill') {
+    const sk = DUEL_SKILLS[A.cls], cost = Math.round(A.maxMp * sk.mp);
+    if ((A.cds.skill || 0) > 0) return 'A habilidade ainda está a recarregar (' + A.cds.skill + ' turnos).';
+    if (A.mp < cost) return 'Mana insuficiente.';
+    A.mp -= cost; A.cds.skill = sk.cd;
+    addLog(st, A.name + ' usou ' + sk.name + '!', 'skill', me);
+    if (A.cls === 'guerreiro') hit(st, A, D, 2.2);
+    else if (A.cls === 'assassino') hit(st, A, D, 1.7, { crit: true, sure: true });
+    else if (A.cls === 'mago') hit(st, A, D, 1.9, { pierce: true });
+    else if (A.cls === 'guardiao') { A.shield += Math.round(A.maxHp * 0.3); A.buff = 2; addLog(st, A.name + ' ergueu um escudo de ' + Math.round(A.maxHp * 0.3) + ' e fica mais forte.', 'shield', me); }
+    else if (A.cls === 'arqueiro') { for (let i = 0; i < 3 && D.hp > 0; i++) hit(st, A, D, 0.75); }
+    else if (A.cls === 'invocador') { A.legion = 3; addLog(st, 'Três almas erguem-se ao lado de ' + A.name + '.', 'skill', me); hit(st, A, D, 0.8); }
+  } else if (action === 'heavy') {
+    const cost = Math.round(A.maxMp * 0.2);
+    if (A.mp < cost) return 'Mana insuficiente.';
+    A.mp -= cost; addLog(st, A.name + ' carregou um Golpe Poderoso.', 'skill', me);
+    hit(st, A, D, 1.5, { half: true });
+  } else if (action === 'defend') {
+    A.guard = true; const g = Math.round(A.maxMp * 0.15); A.mp = Math.min(A.maxMp, A.mp + g);
+    addLog(st, A.name + ' defende-se (dano recebido -60%) e recupera ' + g + ' de mana.', 'guard', me);
+  } else if (action === 'potion') {
+    if (A.pots < 1) return 'Já usaste as 2 poções deste duelo.';
+    if (A.hp >= A.maxHp) return 'A tua vida já está cheia.';
+    A.pots--; const h = Math.min(A.maxHp - A.hp, Math.round(A.maxHp * 0.3)); A.hp += h;
+    addLog(st, A.name + ' bebeu uma poção: +' + h + ' de vida.', 'heal', me);
+  } else if (action === 'attack') {
+    hit(st, A, D, 1);
+  } else return 'Ação desconhecida.';
+  return null;
+}
+/* fim do turno de "me": almas do invocador, recargas e passagem de vez */
+function endTurn(st, me, op) {
+  const A = st.f[me], D = st.f[op];
+  if (A.legion > 0 && D.hp > 0) { A.legion--; addLog(st, 'As almas de ' + A.name + ' atacam.', 'skill', me); hit(st, A, D, 0.45, { sure: true }); }
+  if (A.buff > 0) A.buff--;
+  Object.keys(A.cds).forEach((k) => { if (A.cds[k] > 0) A.cds[k]--; });
+  D.guard = false; // a guarda dura até ao fim do turno seguinte do adversário
+  A.mp = Math.min(A.maxMp, A.mp + Math.round(A.maxMp * 0.05));
+}
+function winnerByHp(st, a, b) { const ra = st.f[a].hp / st.f[a].maxHp, rb = st.f[b].hp / st.f[b].maxHp; return ra === rb ? (rnd() < 0.5 ? a : b) : (ra > rb ? a : b); }
+
+async function finishDuel(env, d, st, winner, reason) {
+  const loser = winner === d.host ? d.guest : d.host, t = now();
+  const W = await one(env, 'SELECT duel_rating AS r FROM players WHERE id = ?', winner), L = await one(env, 'SELECT duel_rating AS r FROM players WHERE id = ?', loser);
+  const rw = (W && W.r) || 1000, rl = (L && L.r) || 1000, exp = 1 / (1 + Math.pow(10, (rl - rw) / 400)), k = Math.max(1, Math.round(24 * (1 - exp)));
+  st.result = { winner, loser, reason, rating: { [winner]: [rw, rw + k], [loser]: [rl, Math.max(100, rl - k)] } };
+  addLog(st, st.f[winner].name + ' venceu o duelo!' + (reason === 'forfeit' ? ' (o adversário desistiu)' : reason === 'timeout' ? ' (o adversário deixou passar o tempo)' : reason === 'turns' ? ' (mais vida no fim do limite de turnos)' : ''), 'win', winner);
+  return [
+    q(env, "UPDATE duels SET status = 'done', winner = ?, end_reason = ?, state = ?, turn_player = NULL, turn_deadline = NULL, version = version + 1, updated_at = ? WHERE id = ? AND version = ?", winner, reason, JSON.stringify(st), t, d.id, d.version),
+    q(env, 'UPDATE players SET duel_wins = duel_wins + 1, duel_rating = ? WHERE id = ? AND EXISTS (SELECT 1 FROM duels WHERE id = ? AND status = ? AND winner = ?)', rw + k, winner, d.id, 'done', winner),
+    q(env, 'UPDATE players SET duel_losses = duel_losses + 1, duel_rating = ? WHERE id = ? AND EXISTS (SELECT 1 FROM duels WHERE id = ? AND status = ? AND winner = ?)', Math.max(100, rl - k), loser, d.id, 'done', winner)
+  ];
+}
+/* salas esquecidas fecham; turnos sem resposta passam (2 seguidos = derrota) */
+async function expireDuels(env) {
+  await run(env, "UPDATE duels SET status = 'cancelled', end_reason = 'expired', updated_at = ? WHERE status = 'waiting' AND created_at < ?", now(), now() - DUEL_WAIT_MS);
+}
+async function duelTimeout(env, d) {
+  if (d.status !== 'active' || !d.turn_deadline || d.turn_deadline > now()) return d;
+  const st = JSON.parse(d.state), me = d.turn_player, op = me === d.host ? d.guest : d.host;
+  st.f[me].miss = (st.f[me].miss || 0) + 1;
+  let stmts;
+  if (st.f[me].miss >= 2) { addLog(st, st.f[me].name + ' não respondeu duas vezes seguidas.', 'sys'); stmts = await finishDuel(env, d, st, op, 'timeout'); }
+  else {
+    addLog(st, st.f[me].name + ' deixou passar o tempo e defende-se automaticamente.', 'sys', me);
+    st.f[me].guard = true; endTurn(st, me, op);
+    stmts = [q(env, 'UPDATE duels SET state = ?, turn_player = ?, turn_no = turn_no + 1, turn_deadline = ?, version = version + 1, updated_at = ? WHERE id = ? AND version = ?',
+      JSON.stringify(st), op, now() + DUEL_TURN_MS, now(), d.id, d.version)];
+  }
+  await env.DB.batch(stmts);
+  return one(env, 'SELECT * FROM duels WHERE id = ?', d.id);
+}
+function duelOut(d, me) {
+  const st = d.state ? JSON.parse(d.state) : null;
+  return { id: d.id, code: d.code, status: d.status, host: d.host, guest: d.guest, invited: d.invited, public: !!d.public, turn: d.turn_player, turn_no: d.turn_no,
+    deadline: d.turn_deadline, winner: d.winner, reason: d.end_reason, version: d.version, me,
+    fighters: st ? st.f : null, log: st ? st.log : [], result: st ? st.result || null : null, skills: DUEL_SKILLS, server_time: now(), created_at: d.created_at };
+}
+async function myOpenDuel(env, pid) { return one(env, "SELECT * FROM duels WHERE (host = ? OR guest = ?) AND status IN ('waiting','active') ORDER BY created_at DESC LIMIT 1", pid, pid); }
+
+async function duelCreate(env, body) {
+  const p = await socialAuth(env, body);
+  await expireDuels(env);
+  if (await myOpenDuel(env, p.id)) throw new HttpError(409, 'Já tens um duelo aberto. Termina-o ou fecha a sala primeiro.');
+  if (await limited(env, 'duelnew:' + p.id, 30, HOUR)) throw new HttpError(429, 'Criaste demasiadas salas. Espera um pouco.');
+  let invited = clean(body.invite, 64) || null;
+  if (invited && !(await areFriends(env, p.id, invited))) throw bad('Só podes convidar amigos.');
+  const st = { f: { [p.id]: fighter(p, body.fighter) }, log: [], seq: 0 };
+  addLog(st, p.name + ' abriu a sala de duelo.', 'sys');
+  const id = randomId('d'), t = now();
+  let code = newCodeDuel();
+  for (let i = 0; i < 5 && (await one(env, 'SELECT 1 AS x FROM duels WHERE code = ?', code)); i++) code = newCodeDuel();
+  await run(env, "INSERT INTO duels (id, code, host, invited, public, status, state, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'waiting', ?, ?, ?)",
+    id, code, p.id, invited, body.public === false ? 0 : 1, JSON.stringify(st), t, t);
+  return json({ ok: true, duel: duelOut(await one(env, 'SELECT * FROM duels WHERE id = ?', id), p.id) });
+}
+async function duelJoin(env, body) {
+  const p = await socialAuth(env, body);
+  await expireDuels(env);
+  const code = clean(body.code, 12).toUpperCase().replace(/[^A-Z0-9]/g, ''), id = clean(body.id, 40);
+  const d = id ? await one(env, 'SELECT * FROM duels WHERE id = ?', id) : await one(env, 'SELECT * FROM duels WHERE code = ?', code);
+  if (!d || d.status === 'cancelled') throw new HttpError(404, 'Sala não encontrada ou já fechada.');
+  if (d.host === p.id) throw bad('Esta sala é tua: espera por um adversário.');
+  if (d.status !== 'waiting') { if (d.guest === p.id) return json({ ok: true, duel: duelOut(d, p.id) }); throw new HttpError(409, 'Esta sala já tem dois jogadores.'); }
+  const other = await myOpenDuel(env, p.id);
+  if (other) throw new HttpError(409, 'Já tens um duelo aberto. Termina-o primeiro.');
+  const host = await one(env, 'SELECT * FROM players WHERE id = ?', d.host);
+  if (!host) throw new HttpError(404, 'O dono da sala já não existe.');
+  const st = JSON.parse(d.state);
+  st.f[p.id] = fighter(p, body.fighter);
+  // começa quem tem mais agilidade (empate: à sorte)
+  const a = st.f[d.host], b = st.f[p.id];
+  const first = a.agi === b.agi ? (rnd() < 0.5 ? d.host : p.id) : (a.agi > b.agi ? d.host : p.id);
+  addLog(st, p.name + ' entrou na sala. O duelo começa!', 'sys');
+  addLog(st, st.f[first].name + ' é mais rápido e ataca primeiro.', 'sys');
+  const t = now();
+  const r = await run(env, "UPDATE duels SET guest = ?, status = 'active', state = ?, turn_player = ?, turn_no = 1, turn_deadline = ?, version = version + 1, updated_at = ? WHERE id = ? AND status = 'waiting' AND version = ?",
+    p.id, JSON.stringify(st), first, t + DUEL_TURN_MS, t, d.id, d.version);
+  if (changes(r) !== 1) throw new HttpError(409, 'Outro jogador entrou primeiro.');
+  return json({ ok: true, duel: duelOut(await one(env, 'SELECT * FROM duels WHERE id = ?', d.id), p.id) });
+}
+async function duelGet(env, body) {
+  const p = await socialAuth(env, body);
+  let d = await one(env, 'SELECT * FROM duels WHERE id = ?', clean(body.id, 40));
+  if (!d || (d.host !== p.id && d.guest !== p.id)) throw new HttpError(404, 'Duelo não encontrado.');
+  d = await duelTimeout(env, d);
+  return json({ ok: true, duel: duelOut(d, p.id) });
+}
+async function duelMove(env, body) {
+  const p = await socialAuth(env, body);
+  let d = await one(env, 'SELECT * FROM duels WHERE id = ?', clean(body.id, 40));
+  if (!d || (d.host !== p.id && d.guest !== p.id)) throw new HttpError(404, 'Duelo não encontrado.');
+  d = await duelTimeout(env, d);
+  if (body.version != null && +body.version !== d.version) return json({ ok: true, stale: true, duel: duelOut(d, p.id) });
+  if (d.status !== 'active') throw new HttpError(409, 'O duelo já terminou.');
+  if (d.turn_player !== p.id) throw new HttpError(409, 'Ainda não é a tua vez.');
+  const st = JSON.parse(d.state), me = p.id, op = me === d.host ? d.guest : d.host;
+  const err = duelAct(st, me, op, clean(body.action, 12));
+  if (err) throw bad(err);
+  st.f[me].miss = 0;
+  let stmts;
+  if (st.f[op].hp <= 0) stmts = await finishDuel(env, d, st, me, 'ko');
+  else {
+    endTurn(st, me, op);
+    if (st.f[op].hp <= 0) stmts = await finishDuel(env, d, st, me, 'ko');
+    else if (d.turn_no >= DUEL_MAX_TURNS) stmts = await finishDuel(env, d, st, winnerByHp(st, me, op), 'turns');
+    else stmts = [q(env, 'UPDATE duels SET state = ?, turn_player = ?, turn_no = turn_no + 1, turn_deadline = ?, version = version + 1, updated_at = ? WHERE id = ? AND version = ?',
+      JSON.stringify(st), op, now() + DUEL_TURN_MS, now(), d.id, d.version)];
+  }
+  const r = await env.DB.batch(stmts);
+  if (changes(r[0]) !== 1) return json({ ok: true, stale: true, duel: duelOut(await one(env, 'SELECT * FROM duels WHERE id = ?', d.id), p.id) });
+  return json({ ok: true, duel: duelOut(await one(env, 'SELECT * FROM duels WHERE id = ?', d.id), p.id) });
+}
+async function duelInvite(env, body) {
+  const p = await socialAuth(env, body);
+  const d = await one(env, 'SELECT * FROM duels WHERE id = ?', clean(body.id, 40)), to = clean(body.to, 64);
+  if (!d || d.host !== p.id) throw new HttpError(404, 'Sala não encontrada.');
+  if (d.status !== 'waiting') throw new HttpError(409, 'O duelo já começou.');
+  if (!(await areFriends(env, p.id, to))) throw bad('Só podes convidar amigos.');
+  await run(env, 'UPDATE duels SET invited = ?, updated_at = ? WHERE id = ?', to, now(), d.id);
+  return json({ ok: true, duel: duelOut(await one(env, 'SELECT * FROM duels WHERE id = ?', d.id), p.id) });
+}
+async function duelLeave(env, body) {
+  const p = await socialAuth(env, body);
+  const d = await one(env, 'SELECT * FROM duels WHERE id = ?', clean(body.id, 40));
+  if (!d || (d.host !== p.id && d.guest !== p.id)) throw new HttpError(404, 'Duelo não encontrado.');
+  if (d.status === 'waiting') {
+    await run(env, "UPDATE duels SET status = 'cancelled', end_reason = 'closed', version = version + 1, updated_at = ? WHERE id = ? AND status = 'waiting'", now(), d.id);
+  } else if (d.status === 'active') {
+    const st = JSON.parse(d.state);
+    addLog(st, st.f[p.id].name + ' desistiu do duelo.', 'sys', p.id);
+    await env.DB.batch(await finishDuel(env, d, st, d.host === p.id ? d.guest : d.host, 'forfeit'));
+  }
+  return json({ ok: true, duel: duelOut(await one(env, 'SELECT * FROM duels WHERE id = ?', d.id), p.id) });
+}
+async function duelHistory(env, body) {
+  const p = await socialAuth(env, body, false);
+  const rows = await all(env, "SELECT d.id, d.winner, d.end_reason, d.updated_at, d.host, d.guest, h.name AS hname, g.name AS gname FROM duels d LEFT JOIN players h ON h.id = d.host LEFT JOIN players g ON g.id = d.guest WHERE (d.host = ? OR d.guest = ?) AND d.status = 'done' ORDER BY d.updated_at DESC LIMIT 20", p.id, p.id);
+  return json({ ok: true, duels: rows.map((r) => ({ id: r.id, won: r.winner === p.id, reason: r.end_reason, at: r.updated_at, opponent: r.host === p.id ? r.gname : r.hname })) });
+}
+
 async function readJson(request) {
   if (request.method === 'GET') return {};
   const t = await request.text();
@@ -886,6 +1240,21 @@ export async function handle(request, env, ctx) {
     if (m === 'POST' && path === '/api/redeem') return await redeem(env, body, ip);
     if (m === 'POST' && path === '/api/player/sync') return await sync(env, body, ip);
     if (m === 'POST' && path === '/api/player/claim') return await claim(env, body, ip);
+    // ---- social e duelos ----
+    if (m === 'POST' && path === '/api/social/state') return await socialState(env, body);
+    if (m === 'POST' && path === '/api/social/find') return await socialFind(env, body);
+    if (m === 'POST' && path === '/api/social/friend/request') return await friendRequest(env, body);
+    if (m === 'POST' && path === '/api/social/friend/respond') return await friendRespond(env, body);
+    if (m === 'POST' && path === '/api/social/friend/remove') return await friendRemove(env, body);
+    if (m === 'POST' && path === '/api/social/chat/history') return await chatHistory(env, body);
+    if (m === 'POST' && path === '/api/social/chat/send') return await chatSend(env, body);
+    if (m === 'POST' && path === '/api/duel/create') return await duelCreate(env, body);
+    if (m === 'POST' && path === '/api/duel/join') return await duelJoin(env, body);
+    if (m === 'POST' && path === '/api/duel/state') return await duelGet(env, body);
+    if (m === 'POST' && path === '/api/duel/act') return await duelMove(env, body);
+    if (m === 'POST' && path === '/api/duel/invite') return await duelInvite(env, body);
+    if (m === 'POST' && path === '/api/duel/leave') return await duelLeave(env, body);
+    if (m === 'POST' && path === '/api/duel/history') return await duelHistory(env, body);
     // ---- administração ----
     if (m === 'POST' && path === '/api/admin/auth/login') return await login(env, body, ip, request.headers.get('User-Agent'));
     if (path.startsWith('/api/admin/')) {

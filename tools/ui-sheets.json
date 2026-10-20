@@ -340,5 +340,18 @@
    "ach_items100",
    "ach_talk50"
   ]
+ },
+ {
+  "title": "Conquistas novas 5",
+  "cols": 3,
+  "rows": 2,
+  "ids": [
+   "ach_shar1",
+   "ach_shar10",
+   "ach_sharch",
+   "ach_shar100",
+   "ach_spch10",
+   "ach_spchm"
+  ]
  }
 ]
