@@ -937,6 +937,35 @@ button.trophy { font: inherit; color: inherit; padding: 0; cursor: pointer; appe
 .ach-big.got .ui-ico { filter: none; box-shadow: 0 0 34px rgba(255, 200, 90, .4); }
 .ach-big:not(:has(img)) { display: grid; place-items: center; font-size: 72px; }
 
+/* ---------- Avisos da administração ---------- */
+.notice-banner { display: flex; align-items: center; gap: 12px; width: 100%; margin: 0 0 14px; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(111, 214, 255, .55);
+  background: linear-gradient(90deg, rgba(111, 214, 255, .16), rgba(111, 214, 255, .04)); color: var(--text); font: inherit; text-align: left; cursor: pointer; box-shadow: 0 0 18px rgba(111, 214, 255, .18); }
+.notice-banner .grow { display: flex; flex-direction: column; gap: 2px; }
+.nb-ico { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: rgba(111, 214, 255, .2); color: var(--glow); font-size: 17px; flex: 0 0 34px; }
+.nb-go { color: var(--glow); font-family: var(--f-display); letter-spacing: .08em; font-size: 13px; }
+.notice-menu.has-new { border-color: var(--glow); box-shadow: 0 0 12px rgba(111, 214, 255, .3); }
+.badge-in { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--glow); color: #04121f; font-size: 11px; font-weight: 700; margin-left: 4px; }
+.notice-card { --kc: var(--glow); border-left: 3px solid var(--kc); }
+.notice-card.k-importante, .notice-pop.k-importante { --kc: #ff6b7d; }
+.notice-card.k-evento, .notice-pop.k-evento { --kc: var(--gold); }
+.notice-card.k-manutencao, .notice-pop.k-manutencao { --kc: #b9a6ff; }
+.notice-card.new { box-shadow: 0 0 16px color-mix(in srgb, var(--kc) 30%, transparent); }
+.nc-h { display: flex; align-items: flex-start; gap: 10px; }
+.nc-ico { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; flex: 0 0 32px; font-weight: 700; color: var(--kc); background: color-mix(in srgb, var(--kc) 16%, transparent); border: 1px solid color-mix(in srgb, var(--kc) 45%, transparent); }
+.nc-t { font-weight: 700; font-size: 15px; }
+.nc-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.nc-body { margin-top: 10px; font-size: 14px; line-height: 1.5; white-space: normal; overflow-wrap: anywhere; }
+.nc-body.pop { text-align: left; max-height: 40vh; overflow: auto; padding: 10px 12px; border-radius: 8px; background: rgba(0, 0, 0, .25); border: 1px solid var(--line); margin: 12px 0; }
+.nc-big { width: 54px; height: 54px; margin: 4px auto 8px; border-radius: 50%; display: grid; place-items: center; font-size: 26px; font-weight: 700; color: var(--kc, var(--glow)); border: 1px solid currentColor; box-shadow: 0 0 22px currentColor; }
+.notice-pop { --kc: var(--glow); }
+.role-chip { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: .04em; border: 1px solid var(--line-hi); color: var(--text); }
+.role-chip.r-premium { color: #67d5ff; border-color: rgba(103, 213, 255, .6); }
+.role-chip.r-doador { color: #ff7aa8; border-color: rgba(255, 122, 168, .6); }
+.role-chip.r-admin { color: var(--gold); border-color: rgba(255, 200, 90, .6); }
+.role-chip.r-funcionario { color: #5be08a; border-color: rgba(91, 224, 138, .6); }
+.role-chip.r-parceria { color: #b98cff; border-color: rgba(185, 140, 255, .6); }
+.role-chip.r-teste { color: var(--muted); }
+
 /* ==========================================================
    ANIMAÇÕES E EFEITOS
    ========================================================== */
@@ -3750,6 +3779,61 @@ body::after {
   S.SHADOW_LINES = S.SHADOW_LINES || {};
   S.SHADOW_SPAR = S.SHADOW_SPAR || {};
   Object.keys(P).forEach(function (id) { S.SHADOW_LINES[id] = P[id][0]; S.SHADOW_SPAR[id] = P[id][1]; });
+})(globalThis.SYS = globalThis.SYS || {});
+
+/* src/data/spar-voice.js */
+/* ==========================================================
+   VOZ DO SISTEMA NO FIM DOS TREINOS COM AS SOMBRAS
+   O Sistema restaura o jogador, mas não perde a oportunidade
+   de comentar. {nome} = jogador, {servo} = nome do servo.
+   ========================================================== */
+(function (S) {
+  'use strict';
+  S.SPAR_VOICE = {
+    title: {
+      win: ['RESTAURAÇÃO DO SISTEMA', 'O SISTEMA RESTAUROU-TE', 'TREINO ENCERRADO', 'CORPO RESTABELECIDO'],
+      lose: ['RESTAURAÇÃO DO SISTEMA', 'O SISTEMA RESTAUROU-TE', 'RECOLHIDO DO CHÃO', 'RESTAURAÇÃO DE EMERGÊNCIA'],
+      flee: ['TREINO ABANDONADO', 'RESTAURAÇÃO DO SISTEMA', 'O SISTEMA RESTAUROU-TE']
+    },
+    win: [
+      'Venceste a tua própria sombra, {nome}. Era o mínimo.',
+      'Treino concluído. O servo lembra-se de quem manda. Ótimo.',
+      'Ganhaste a quem já tinhas ganho. Não esperes aplausos.',
+      'Registado: o senhor continua acima do servo. Por agora.',
+      'Bom. Agora faz o mesmo com as tuas missões.',
+      'O Sistema devolve o que gastaste. A vitória fica contigo.'
+    ],
+    lose: [
+      'Perdendo para um servo. QUE VERGONHA.',
+      'Derrotado por quem te jurou obediência. Registei isto, {nome}.',
+      'O teu próprio servo. O TEU PRÓPRIO SERVO.',
+      '{servo} venceu o seu senhor. O Sistema vai fingir que não viu. Não vai.',
+      'Vou restaurar-te. A tua dignidade fica por tua conta.',
+      'Um servo de joelhos levantou-se e deitou-te ao chão. Interessante.',
+      'Se o servo é mais forte do que o senhor, quem devia obedecer a quem?',
+      'Deplorável. Levanta-te, {nome}. Ninguém precisa de saber. Eu sei.'
+    ],
+    flee: [
+      'Fugiste de um treino. De um TREINO, {nome}.',
+      'Abandonaste a luta contra o teu próprio servo. Anotado.',
+      'O servo ficou à espera. Tu foste embora. Que exemplo.',
+      'Restauro-te na mesma. Não te habitues a fugir.'
+    ],
+    shame: [
+      'Perdendo para um servo. QUE VERGONHA.',
+      'Caíste perante {servo}. O teu servo, {nome}.',
+      'Até as tuas sombras te ultrapassam.',
+      'O exército ri-se em silêncio.',
+      'Um senhor derrotado pelo servo. O Sistema já viu de tudo. Agora viu isto.'
+    ],
+    close: [
+      'Nenhum ferimento fica registado. O fracasso, esse, fica.',
+      'Volta quando estiveres pronto. Eu estou sempre.',
+      'O Sistema não desperdiça um jogador por causa de um treino.',
+      'Tudo o que gastaste foi devolvido. O tempo, não.',
+      'Restaurado. Agora mexe-te, {nome}.'
+    ]
+  };
 })(globalThis.SYS = globalThis.SYS || {});
 
 /* src/data/credits.js */
@@ -9482,14 +9566,19 @@ body::after {
     if (ps.openShield) { st.battle.p.shield = Math.round(ps.maxHp * ps.openShield / 100); }
     // servos (sombras convocadas) entram no combate
     var squad = S.shadows ? S.shadows.battleSquad(st, ps, C.pressure(st.battle.gap).playerDmg).filter(function (x) { return x.id !== b.id; }) : [];
-    if (spar) { st.battle.spar = true; st.battle.hpIn = E.curHp(st); st.battle.empowered = null; }
+    if (spar) {
+      st.battle.spar = true; st.battle.hpIn = E.curHp(st); st.battle.empowered = null;
+      // o que o treino gastar (itens, relíquias, mana) é devolvido no fim
+      st.battle.invIn = JSON.parse(JSON.stringify(st.inv || {}));
+      st.battle.relicsIn = JSON.parse(JSON.stringify(st.relics || {}));
+    }
     st.battle.shadows = squad;
     st.battle.cmd = S.shadows ? S.shadows.commandBonus(st) : 0;
     if (spar) {
       var sn = S.shadows.name(st, b.id), sl = (S.SHADOW_SPAR || {})[b.id];
       log(st.battle, '🌑 TREINO: ' + sn + ' ergue-se das tuas sombras para lutar contigo (Nv. ' + b.level + ').', 'sys');
       if (sl) log(st.battle, sn + ': «' + sl[0].replace(/\{nome\}/g, st.name) + '»', 'say');
-      log(st.battle, 'Treino: não perdes nível, XP nem moedas. A vida volta ao que era no fim.', 'muted');
+      log(st.battle, 'Treino: não perdes nível, XP nem moedas. No fim, o Sistema devolve a vida, a mana e os itens que gastares.', 'muted');
       E.commit('treino iniciado');
       return { ok: true };
     }
@@ -9860,25 +9949,56 @@ body::after {
     if (E.removeItem(st, 'sx_fenix', 1)) { p.hp = Math.round(p.maxHp * 0.5); log(bt, '🪶 A Pena da Fénix arde e devolve-te à vida!', 'warn'); }
   }
 
+  /* devolve tudo o que o treino gastou: vida, mana, itens e relíquias. Devolve uma única vez. */
+  function sparRestore(st, bt) {
+    if (bt.restored) return bt.restored;
+    var back = [], inv = st.inv || (st.inv = {});
+    Object.keys(bt.invIn || {}).forEach(function (id) {
+      var miss = (bt.invIn[id] || 0) - (inv[id] || 0);
+      if (miss > 0 && S.ITEMS[id]) { E.addItem(st, id, miss); back.push(miss + '× ' + S.ITEMS[id].name); }
+    });
+    st.relics = st.relics || {};
+    Object.keys(st.relics).forEach(function (id) {
+      if ((st.relics[id] || 0) !== ((bt.relicsIn || {})[id] || 0)) { st.relics[id] = (bt.relicsIn || {})[id] || 0; if (S.ITEMS[id]) back.push(S.ITEMS[id].name + ' (recarregada)'); }
+    });
+    var mpUsed = Math.max(0, (bt.p.maxMp || 0) - (bt.p.mp || 0));
+    bt.p.mp = bt.p.maxMp;
+    E.setHp(st, bt.hpIn);
+    bt.p.hp = E.curHp(st);
+    bt.restored = { items: back, mp: mpUsed, hp: E.curHp(st), maxHp: E.combatStats(st).maxHp, maxMp: bt.p.maxMp };
+    return bt.restored;
+  }
+  C.sparRestore = sparRestore;
+  function pick(a) { return a[Math.floor(S.rng.random() * a.length)]; }
+  /* o comunicado do Sistema depois do treino: a personalidade de sempre */
+  function sparNotice(st, bt, how, rs) {
+    var V = S.SPAR_VOICE, n = st.name;
+    var lines = [pick(V[how]).replace(/\{nome\}/g, n).replace(/\{servo\}/g, S.shadows.name(st, bt.bossId))];
+    lines.push('Vida: ' + rs.hp + ' / ' + rs.maxHp + ', exatamente a que tinhas ao entrar.');
+    lines.push('Mana: ' + rs.maxMp + ' / ' + rs.maxMp + (rs.mp ? ' (' + rs.mp + ' devolvida).' : '.'));
+    if (rs.items.length) lines.push('Itens devolvidos: ' + rs.items.join(', ') + '.');
+    lines.push(pick(V.close).replace(/\{nome\}/g, n));
+    E.emit({ type: 'watch', good: true, heal: true, level: 1, title: pick(V.title[how]), lines: lines });
+  }
+
   /* fim de um treino com uma sombra: recompensa pequena, sem perdas */
   function finishSpar(st, bt, won) {
     var def = S.BOSS_BY_ID[bt.bossId], Sh = S.shadows, sn = Sh.name(st, def.id), sl = (S.SHADOW_SPAR || {})[def.id] || [];
     bt.over = won ? 'win' : 'lose';
-    E.setHp(st, bt.hpIn);
+    var rs = sparRestore(st, bt);
     var r = Sh.sparReward(st, def, won), xp = 0, coins = 0;
     if (r) { xp = E.gainXp(st, r.xp); coins = E.gainCoins(st, r.coins); Sh.ensure(st).spar[def.id] = now(); }
-    var say = (won ? sl[1] : sl[2]) || (won ? 'Venceste, meu senhor.' : 'Levanta-te, meu senhor.');
+    var say = (won ? sl[1] : sl[2]) || (won ? 'Venceste, meu senhor.' : 'Ergue-te, meu senhor.');
     say = say.replace(/\{nome\}/g, st.name);
     bt.result = { xp: xp, coins: coins, items: [], spar: true, lastWords: say };
     log(bt, sn + ': «' + say + '»', 'say');
     log(bt, won ? '🌑 Treino vencido.' : '🌑 Treino perdido. Sem castigo.', won ? 'win' : 'lose');
-    log(bt, '✚ O Sistema restaurou a tua vida: ' + E.curHp(st) + ' / ' + E.combatStats(st).maxHp + ', a mesma de antes do treino.', 'good');
+    log(bt, '✚ O Sistema restaurou-te: vida ' + rs.hp + ' / ' + rs.maxHp + ', mana cheia' + (rs.items.length ? ', itens devolvidos (' + rs.items.join(', ') + ')' : '') + '.', 'good');
     var lines = r ? ['+' + xp + ' XP', '+' + coins + ' moedas'] : ['Esta sombra já te deu recompensa há pouco. Volta dentro de ' + Sh.SPAR_H + ' horas para ganhar mais.'];
-    if (!won) lines.push('Treino: não perdeste nível, XP nem moedas.');
+    if (!won) lines.unshift('SISTEMA: ' + pick(S.SPAR_VOICE.shame).replace(/\{nome\}/g, st.name).replace(/\{servo\}/g, sn));
     E.emit({ type: won ? 'victory' : 'defeat', title: won ? 'TREINO VENCIDO' : 'TREINO PERDIDO', name: sn, lastWords: say, lines: ['«' + say + '»'].concat(lines) });
-    E.emit({ type: 'watch', good: true, heal: true, level: 1, title: 'O SISTEMA RESTAUROU-TE',
-      lines: ['O treino terminou. Nenhum ferimento fica registado.', 'Vida restabelecida: ' + E.curHp(st) + ' / ' + E.combatStats(st).maxHp + '.', 'Exatamente a vida que tinhas antes de entrar.'] });
-        E.bump(st, won ? 'sparWins' : 'sparLosses');
+    sparNotice(st, bt, won ? 'win' : 'lose', rs);
+    E.bump(st, won ? 'sparWins' : 'sparLosses');
     E.history(st, '🌑', 'Treino com ' + sn + ': ' + (won ? 'vitória' : 'derrota') + (xp ? ' (+' + xp + ' XP, +' + coins + ' moedas)' : '') + '.');
   }
   function finishWin(st, bt) {
@@ -9972,7 +10092,7 @@ body::after {
     if (bt && bt.over && !bt.hpSaved && bt.spar) {
       // treino: o Sistema devolve exatamente a vida que tinhas antes de entrar
       bt.hpSaved = true;
-      E.setHp(st, bt.hpIn);
+      sparRestore(st, bt);
       E.commit('vida');
     } else if (bt && bt.over && bt.over !== 'lose' && !bt.hpSaved) {
       bt.hpSaved = true;
@@ -10064,7 +10184,7 @@ body::after {
         log(bt, '🛡️ Defendeste (+60% defesa, +' + mg + ' mana).', 'good');
         break;
       case 'flee': {
-        if (bt.spar) { bt.over = 'fled'; bt.result = { coins: 0 }; E.setHp(st, bt.hpIn); log(bt, '🌑 Terminaste o treino.', 'sys'); E.emit({ type: 'watch', good: true, heal: true, level: 1, title: 'O SISTEMA RESTAUROU-TE', lines: ['Saíste do treino.', 'Vida restabelecida: ' + E.curHp(st) + ' / ' + E.combatStats(st).maxHp + '.', 'Exatamente a vida que tinhas antes de entrar.'] }); E.commit('fim do treino'); return { ok: true }; }
+        if (bt.spar) { bt.over = 'fled'; bt.result = { coins: 0 }; var rsf = sparRestore(st, bt); log(bt, '🌑 Terminaste o treino.', 'sys'); sparNotice(st, bt, 'flee', rsf); E.commit('fim do treino'); return { ok: true }; }
         var lost = E.loseCoins(st, st.coins * 0.05);
         bt.over = 'fled';
         bt.result = { coins: -lost };
@@ -10942,6 +11062,29 @@ body::after {
       trust: S.watch ? S.watch.trust(st) : 100, day: S.time && S.time.systemDay ? S.time.systemDay(st) : 0,
       arenas: st.arena ? Object.keys(st.arena.wins || {}).length : 0, spentCrystals: c.crystalsSpent || 0 };
   }
+  /* avisos da administração: guardados no jogo; os novos aparecem uma vez e ficam na área de Avisos */
+  SH.NOTICE_KINDS = { info: 'Informação', importante: 'Importante', evento: 'Evento', manutencao: 'Manutenção' };
+  SH.notices = function (st) {
+    if (!st.notices) st.notices = { list: [], read: {}, shown: {} };
+    ['read', 'shown'].forEach(function (k) { if (!st.notices[k]) st.notices[k] = {}; });
+    if (!Array.isArray(st.notices.list)) st.notices.list = [];
+    return st.notices;
+  };
+  SH.unread = function (st) { var N = SH.notices(st); return N.list.filter(function (n) { return !N.read[n.id]; }).length; };
+  SH.markRead = function (st) { var N = SH.notices(st), ch = false; N.list.forEach(function (n) { if (!N.read[n.id]) { N.read[n.id] = 1; ch = true; } }); if (ch) E.commit('avisos lidos'); };
+  SH.applyNotices = function (st, list) {
+    var N = SH.notices(st), fresh = [];
+    N.list = list.filter(function (n) { return n && n.id && n.title; }).slice(0, 30).map(function (n) {
+      return { id: String(n.id), title: String(n.title).slice(0, 80), body: String(n.body || '').slice(0, 1500), kind: SH.NOTICE_KINDS[n.kind] ? n.kind : 'info', at: +n.at || 0, personal: !!n.personal };
+    });
+    N.list.forEach(function (n) { if (!N.shown[n.id]) { N.shown[n.id] = 1; fresh.push(n); } });
+    // os ids que já não existem (apagados pela administração) saem da memória
+    var ids = {}; N.list.forEach(function (n) { ids[n.id] = 1; });
+    Object.keys(N.read).forEach(function (k) { if (!ids[k]) delete N.read[k]; });
+    Object.keys(N.shown).forEach(function (k) { if (!ids[k]) delete N.shown[k]; });
+    fresh.sort(function (a, b) { return a.at - b.at; }).slice(-2).forEach(function (n) { E.emit({ type: 'notice', notice: n }); });
+    return fresh.length;
+  };
   var syncing = null, lastSync = 0;
   SH.sync = function (force) {
     var st = E.state;
@@ -10958,6 +11101,12 @@ body::after {
         return j;
       }
       st.shop.conflict = false; st.shop.lastSync = S.clock.now();
+      if (j.account === 'deleted') {
+        if (!st.shop.deleted) { st.shop.deleted = { reason: j.reason || null, at: j.deleted_at || S.clock.now() }; E.commit('conta apagada'); }
+        return { ok: true, deleted: true, changed: true };
+      }
+      if (j.role && j.role.id) st.shop.role = { id: j.role.id, name: j.role.name };
+      var nn = Array.isArray(j.notices) ? SH.applyNotices(st, j.notices) : 0;
       if (j.account === 'banned') { setBan(st, j.ban); return { ok: true, banned: true, changed: true }; }
       var changed = false;
       if (st.shop.ban) {
@@ -10974,7 +11123,7 @@ body::after {
             if (r.ok && !r.already) { changed = true; E.emit(giftEvent(c)); }
           });
         });
-      }, Promise.resolve()).then(function () { E.commit('sincronização'); return { ok: true, changed: changed, gifts: inbox.length }; });
+      }, Promise.resolve()).then(function () { E.commit('sincronização'); return { ok: true, changed: changed || nn > 0, gifts: inbox.length, notices: nn }; });
     }).then(function (r) { syncing = null; return r; }, function () { syncing = null; return { ok: false }; });
     return syncing;
   };
@@ -12006,6 +12155,7 @@ body::after {
     if (ui.page === 'history') return historyPage(st);
     if (ui.page === 'trophies') return trophiesPage(st);
     if (ui.page === 'servos') return servantsPage(st);
+    if (ui.page === 'avisos') return noticesPage(st);
     if (ui.page === 'settings') return settingsPage(st);
     if (ui.page === 'credits') return creditsPage(st);
     if (ui.page === 'reports') return reportsPage(st);
@@ -12053,11 +12203,14 @@ body::after {
       }).join('') + '</div>' + equipTotalsHtml(dl) + '</section>';
 
     var achDone = Object.keys(st.achievements).length;
+    var unr = S.shop.unread(st);
+    if (unr) h += '<button class="notice-banner" data-a="page" data-p="avisos"><span class="nb-ico">✉</span><span class="grow"><b>' + (unr === 1 ? '1 aviso novo' : unr + ' avisos novos') + '</b><span class="small muted">da administração do Sistema</span></span><span class="nb-go">Ler ›</span></button>';
     h += '<section class="win"><div class="win-h">Registos</div><div class="menu-grid">' +
       '<button class="btn prem menu-prem" data-a="prem-open" data-t="loja"><i class="crys-ico"></i> Loja Premium <span class="muted">' + fmt(st.crystals || 0) + '</span></button>' +
       '<button class="btn" data-a="page" data-p="skills">Habilidades <span class="muted">' + E.unlockedSkills(st).length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="ach">Conquistas <span class="muted">' + achDone + '/' + S.ACHIEVEMENTS.length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="trophies">Troféus <span class="muted">' + E.trophyCount(st) + '/' + Object.keys(S.TROPHIES).length + '</span></button>' +
+      '<button class="btn notice-menu' + (S.shop.unread(st) ? ' has-new' : '') + '" data-a="page" data-p="avisos">Avisos ' + (S.shop.unread(st) ? '<span class="badge-in">' + S.shop.unread(st) + '</span>' : '<span class="muted">' + S.shop.notices(st).list.length + '</span>') + '</button>' +
       '<button class="btn sh-menu" data-a="page" data-p="servos">Servos <span class="muted">' + Sh.owned(st).length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="collection">Coleção</button>' +
       '<button class="btn" data-a="page" data-p="history">Histórico</button>' +
@@ -12379,6 +12532,34 @@ body::after {
     }).join('') + '</ol></section>';
     return h;
   }
+  /* ---------- avisos da administração ---------- */
+  var NOTICE_ICO = { info: 'ℹ', importante: '!', evento: '★', manutencao: '⚙' };
+  function noticeDate(t) { var d = new Date(t); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear() + ' · ' + clockOf(t); }
+  function noticesPage(st) {
+    var N = S.shop.notices(st), list = N.list.slice().sort(function (a, b) { return b.at - a.at; });
+    var h = backBtn('Avisos');
+    h += '<section class="win notice-win"><div class="win-h">Mensagens da administração <small>' + list.length + '</small></div>' +
+      '<p class="small muted" style="margin:0">Comunicados oficiais da equipa do Sistema: novidades, eventos, manutenções e mensagens só para ti. Chegam sozinhos quando abres o jogo com internet.</p></section>';
+    if (!list.length) h += '<section class="win"><div class="empty">Ainda não há avisos.' + (S.shop.ready() ? '' : ' Liga-te à internet para os receber.') + '</div></section>';
+    list.forEach(function (n) {
+      var isNew = !N.read[n.id];
+      h += '<section class="win notice-card k-' + n.kind + (isNew ? ' new' : '') + '"><div class="nc-h"><span class="nc-ico">' + (NOTICE_ICO[n.kind] || 'ℹ') + '</span>' +
+        '<div class="grow"><div class="nc-t">' + esc(n.title) + '</div><div class="nc-meta">' + esc(S.shop.NOTICE_KINDS[n.kind] || 'Informação') + (n.personal ? ' · <b>só para ti</b>' : '') + ' · ' + noticeDate(n.at) + '</div></div>' +
+        (isNew ? '<span class="tag good">Novo</span>' : '') + '</div><div class="nc-body">' + esc(n.body).replace(/\n/g, '<br>') + '</div></section>';
+    });
+    return h;
+  }
+  /* ---------- conta apagada pela administração ---------- */
+  function deletedHtml(st, d) {
+    return '<div class="ban-screen perm"><div class="ban-veil"></div><div class="ban-box">' +
+      '<div class="watch-eye">' + uiIcon('ui_eye', '<span class="eye-fallback big"></span>', 'eye-big') + '</div>' +
+      '<div class="ban-tag">AVISO DO SISTEMA · REGISTO APAGADO</div><h1 class="glitch" data-t="CONTA APAGADA">CONTA APAGADA</h1>' +
+      '<p class="ban-voice">O teu registo foi removido pela administração, ' + esc(st.name) + '. Para o Sistema, este Jogador deixou de existir.</p>' +
+      '<div class="ban-card">' + (d.reason ? '<div class="small muted">Motivo registado</div><div>' + esc(d.reason) + '</div>' : '') +
+      '<div class="small muted" style="margin-top:8px">Jogador</div><div class="mono">' + esc(st.name) + ' · ' + esc(st.playerId) + '</div></div>' +
+      '<p class="ban-sub">Se achas que foi um engano, fala com o atendimento e indica o teu ID. Ou começa um registo novo: o Sistema aceita-te outra vez, do zero.</p>' +
+      '<button class="btn pri block" data-a="del-restart">Começar de novo</button></div></div>';
+  }
   /* ---------- conta suspensa pelo administrador ---------- */
   function banHtml(st, b) {
     var v = S.shop.banVoice(st, b);
@@ -12420,7 +12601,7 @@ body::after {
   }
   function obterHtml(st) {
     var cfg = S.shop.cached(), ready = S.shop.ready(), orders = (st.shop && st.shop.orders) || [];
-    var h = '<section class="win prem-win"><div class="win-h"><span class="prem-t">Obter Cristais</span>' + (cfg && cfg.test ? '<small class="test-tag">MODO DE TESTE</small>' : '') + '</div>' +
+    var h = '<section class="win prem-win"><div class="win-h"><span class="prem-t">Obter Cristais</span></div>' +
       (st.shop && st.shop.conflict ? '<p class="small" style="margin-top:0;color:var(--warn)">Esta conta está registada noutro aparelho. Se mudaste de telemóvel, usa a Transferência de conta. Se não foste tu, fala com o atendimento com o teu ID de Jogador.</p>' : '');
     var live = ready && cfg && cfg.open && cfg.packages && cfg.packages.length;
     var note = '';
@@ -12428,7 +12609,6 @@ body::after {
     else if (!cfg) note = ui.shopErr ? esc(ui.shopErr) + ' <button class="btn sm" data-a="shop-load">Tentar outra vez</button>' : 'A ligar ao Sistema…';
     else if (!cfg.open) note = 'A loja de Cristais está fechada de momento. Volta mais tarde.';
     else if (!cfg.packages.length) note = 'Ainda não há pacotes à venda.';
-    if (live && cfg.test) h += '<p class="hint test-note" style="margin-top:0">O servidor está em modo de teste. Não faças pagamentos reais.</p>';
     if (note) h += '<p class="small" style="margin-top:0">' + note + '</p>';
     var packs = live ? cfg.packages : S.CRYSTAL_PACKS;
     var sel = packs.filter(function (p) { return p.id === ui.pack; })[0];
@@ -12455,7 +12635,7 @@ body::after {
         orders.slice(0, 10).map(function (o) {
           var stt = S.shop.STATUS[o.status] || { name: o.status, tone: '' };
           return '<div class="card ord-card"><div class="row between"><b class="mono">' + esc(o.id) + '</b><span class="ord-st ' + stt.tone + '">' + esc(stt.name) + '</span></div>' +
-            '<div class="meta">' + crys(o.crystals) + '<span class="mono">' + kz(o.price) + '</span><span>' + timeStr(o.at) + '</span>' + (o.test ? '<span class="test-tag">teste</span>' : '') + '</div>' +
+            '<div class="meta">' + crys(o.crystals) + '<span class="mono">' + kz(o.price) + '</span><span>' + timeStr(o.at) + '</span>' + '</div>' +
             (o.status === 'pending_payment' ? '<div class="row" style="margin-top:8px"><button class="btn sm pri grow" data-a="ord-open" data-id="' + o.id + '">Instruções / WhatsApp</button><button class="btn sm ghost" data-a="ord-cancel" data-id="' + o.id + '">Cancelar</button></div>' : '') +
             (o.status === 'code_issued' ? '<p class="hint" style="margin:6px 0 0">O código foi-te enviado no WhatsApp. Escreve-o acima.</p>' : '') + '</div>';
         }).join('') + '</div></section>';
@@ -12502,6 +12682,7 @@ body::after {
     var h = backBtn('Ala Premium');
     h += '<section class="win prem-win prem-head"><div class="prem-bal"><span class="small muted">Os teus Cristais</span><span class="prem-big">' + crys(st.crystals || 0) + '</span></div>' +
       '<div class="prem-id"><span class="small muted">ID de Jogador</span><button class="mono id-chip" data-a="id-copy">' + esc(st.playerId) + '</button></div>' +
+      (st.shop && st.shop.role ? '<div class="prem-id"><span class="small muted">Tipo de conta</span><span class="role-chip r-' + esc(st.shop.role.id) + '">' + esc(st.shop.role.name) + '</span></div>' : '') +
       '<div class="row" style="margin-top:10px;gap:8px"><button class="btn prem grow" data-a="prem-tab" data-t="obter"><i class="crys-ico"></i> Obter Cristais</button><button class="btn don-btn" data-a="prem-tab" data-t="loja">\u2665 Doar</button></div></section>';
     h += '<div class="chips" style="margin-top:12px">' + [['arenas', 'Arenas'], ['loja', 'Loja Exclusiva'], ['aparencia', 'Aparência'], ['obter', 'Obter Cristais']].map(function (x) {
       return '<button class="chip' + (t === x[0] ? ' on' : '') + '" data-a="prem-tab" data-t="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
@@ -12572,7 +12753,7 @@ body::after {
       '<div class="arise-tag">SISTEMA · EXTRAÇÃO DE SOMBRA</div>' +
       '<div class="arise-stage" id="arise-stage">' + (status === 'owned' ? shadowArt(b, 'big') : preShadowArt(b, 'big dead')) + '<div class="arise-smoke"></div></div>';
     if (res && res.success) {
-      h += '<div class="arise-cry">LEVANTA-TE.</div>' +
+      h += '<div class="arise-cry">ERGA-SE.</div>' +
         '<p class="arise-say">«' + esc(Sh.line(st, b.id)) + '»</p>' +
         '<p class="arise-txt">A sombra de <b>' + esc(b.name) + '</b> obedece-te. É agora o teu servo.<br><span class="muted">' + (res.auto ? 'Já está convocado e luta ao teu lado no próximo combate.' : 'Convoca-o no menu Servos quando tiveres um lugar livre.') + '</span></p>' +
         '<div class="row" style="margin-top:12px"><button class="btn ghost grow" data-a="close">Fechar</button><button class="btn pri grow" data-a="sh-open" data-id="' + b.id + '">Ver servo</button></div>';
@@ -13477,6 +13658,12 @@ body::after {
       }
       nLines = 1;
       if (!R) return '<div class="overlay sys-pop' + (fresh ? ' fresh' : '') + '">' + extra + '<div class="sys-box ' + cls + (fresh ? ' fresh' : '') + '" id="sys-box" role="alertdialog" data-type="talk"><span class="sys-tag">' + tag + '</span>' + body + '</div></div>';
+    } else if (ev.type === 'notice') {
+      var nt = ev.notice;
+      cls = 'watch good notice-pop k-' + nt.kind; tag = 'ADMINISTRAÇÃO'; extra = '<div class="rays blue"></div>';
+      body = '<div class="nc-big">' + (NOTICE_ICO[nt.kind] || 'ℹ') + '</div><h2>' + esc(nt.title) + '</h2><div class="muted small">' + esc(S.shop.NOTICE_KINDS[nt.kind] || 'Informação') + (nt.personal ? ' · só para ti' : '') + '</div>' +
+        '<div class="nc-body pop">' + esc(nt.body).replace(/\n/g, '<br>') + '</div>';
+      nLines = 2;
     } else if (ev.type === 'mission') {
       body = '<h2>' + esc(ev.title) + '</h2><div class="muted">' + esc(ev.name) + '</div><ul class="sys-lines">' + lines + '</ul>';
     } else {
@@ -13604,6 +13791,7 @@ body::after {
       return;
     }
     var st = E.state;
+    if (st.shop && st.shop.deleted) { FX.battle(false); root.innerHTML = deletedHtml(st, st.shop.deleted) + (ui.modal ? modalHtml() : ''); return; }
     var ban = S.shop && S.shop.banned(st);
     if (ban) {
       FX.battle(false); root.innerHTML = banHtml(st, ban);
@@ -13848,7 +14036,7 @@ body::after {
       render();
     },
     tab: function (d) { var was = ui.tab; ui.tab = d.t; ui.page = null; ui.modal = null; render(); window.scrollTo(0, 0); if (was !== d.t) talkTry('tab', { tab: d.t }, 1400); },
-    page: function (d) { ui.page = d.p; ui.histLimit = 40; render(); window.scrollTo(0, 0); },
+    page: function (d) { ui.page = d.p; ui.histLimit = 40; render(); window.scrollTo(0, 0); if (d.p === 'avisos') S.shop.markRead(E.state); },
     back: function () { ui.page = null; render(); },
     'hist-more': function () { ui.histLimit += 60; render(); },
     alloc: function (d) {
@@ -13934,6 +14122,11 @@ body::after {
     'prem-open': function (d) { ui.tab = 'status'; ui.page = 'premium'; ui.premTab = d.t || ui.premTab || 'arenas'; ui.modal = null; render(); window.scrollTo(0, 0); if (ui.premTab === 'obter') loadShop(); },
     'ach-filter': function (d) { ui.achFilter = d.f; render(); },
     'ach-info': function (d) { ui.modal = { type: 'ach', id: d.id }; render(); },
+    'del-restart': function () {
+      confirmBox('Começar de novo', 'O progresso deste aparelho é apagado e começas um registo novo, do nível 1.', 'Começar de novo', function () {
+        E.resetAll(); ui.intro = { step: 0, name: '', cls: null }; ui.tab = 'status'; ui.page = null; ui.popups = []; ui.bars = {}; ui.lastCoins = null; ui.lastView = null; render();
+      }, true);
+    },
     'chest-fam': function (d) { ui.chestFam = d.v; render(); },
     'prem-tab': function (d) { ui.premTab = d.t; render(); if (d.t === 'obter') loadShop(); },
     'prem-buy': function (d) {

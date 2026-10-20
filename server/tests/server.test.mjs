@@ -505,4 +505,65 @@ await test('entrega automática de uma compra: sem código, o pedido fica resgat
   assert.equal(dash.players.total, 1);
 });
 
+await test('tipos de utilizador: automático (Usuário → Usuário Premium depois de comprar) e definido pelo administrador', async () => {
+  const S = await setup('production');
+  const A = S.admin(await S.login());
+  await activate(A, 'c250', 2500);
+  assert.equal((await syncP(S, P1, TOK1)).role.id, 'usuario');
+  let l = await A.get('/api/admin/players');
+  assert.equal(l.players[0].role, 'usuario'); assert.equal(l.players[0].role_auto, true); assert.equal(l.totals.roles.usuario, 1);
+  assert.equal(l.players[0].test, undefined, 'sem marca de teste');
+  const o = await flow(S, A, P1);
+  await A.post('/api/admin/orders/' + o.order.id + '/confirm-payment', { verified: true, payment_ref: 'REF-ROLE-1' });
+  assert.equal((await syncP(S, P1, TOK1)).role.id, 'premium');
+  assert.equal((await A.get('/api/admin/players?role=premium')).players.length, 1);
+  for (const r of ['doador', 'teste', 'admin', 'funcionario', 'parceria', 'usuario']) {
+    const d = await A.put('/api/admin/players/' + P1 + '/role', { role: r });
+    assert.equal(d.status, 200, d.error); assert.equal(d.player.role, r); assert.equal(d.player.role_auto, false);
+  }
+  assert.equal((await A.put('/api/admin/players/' + P1 + '/role', { role: 'rei' })).status, 400);
+  const back = await A.put('/api/admin/players/' + P1 + '/role', { role: 'auto' });
+  assert.equal(back.player.role, 'premium'); assert.equal(back.player.role_auto, true);
+  assert.ok((await A.get('/api/admin/audit')).audit.some((e) => e.action === 'player.role'));
+});
+
+await test('avisos: para todos ou para um jogador; aparecem no jogo; apagar tira-os do jogo', async () => {
+  const S = await setup('production');
+  const A = S.admin(await S.login());
+  await syncP(S, P1, TOK1); await syncP(S, P2, TOK2);
+  assert.equal((await A.post('/api/admin/notices', { title: 'Olá', body: 'x' }, key('n0'))).status, 400);
+  const all = await A.post('/api/admin/notices', { title: 'Nova atualização', body: 'Linha 1\nLinha 2', kind: 'evento' }, key('n1'));
+  assert.equal(all.status, 200, all.error); assert.equal(all.notice.body, 'Linha 1\nLinha 2');
+  assert.equal((await A.post('/api/admin/notices', { title: 'Nova atualização', body: 'Linha 1\nLinha 2', kind: 'evento' }, key('n1'))).repeated, true);
+  const one = await A.post('/api/admin/notices', { title: 'Só para ti', body: 'Mensagem privada', player_id: P1 }, key('n2'));
+  assert.equal((await A.post('/api/admin/notices', { title: 'Ninguém', body: 'Mensagem', player_id: 'jogador_naoexiste1' }, key('n3'))).status, 404);
+  let s1 = await syncP(S, P1, TOK1), s2 = await syncP(S, P2, TOK2);
+  assert.deepEqual(s1.notices.map((n) => n.title).sort(), ['Nova atualização', 'Só para ti']);
+  assert.deepEqual(s2.notices.map((n) => n.title), ['Nova atualização']);
+  assert.equal(s1.notices.find((n) => n.personal).body, 'Mensagem privada');
+  assert.equal((await A.get('/api/admin/notices')).notices.length, 2);
+  assert.equal((await A.get('/api/admin/players/' + P1)).notices.length, 1);
+  assert.equal((await A.post('/api/admin/notices/' + all.notice.id + '/delete', {})).status, 200);
+  s2 = await syncP(S, P2, TOK2); assert.equal(s2.notices.length, 0);
+  assert.equal((await A.get('/api/admin/notices')).notices.length, 1);
+  void one;
+});
+
+await test('apagar conta: exige confirmação, apaga os dados, o jogo é avisado e o ID não volta a registar-se', async () => {
+  const S = await setup('production');
+  const A = S.admin(await S.login());
+  await syncP(S, P1, TOK1);
+  await A.post('/api/admin/grants', { mode: 'auto', player_id: P1, crystals: 50, reason: 'Oferta' }, key('d1'));
+  assert.equal((await A.post('/api/admin/players/' + P1 + '/delete', { confirm: 'outro' })).status, 400);
+  const d = await A.post('/api/admin/players/' + P1 + '/delete', { confirm: P1, reason: 'Conta duplicada' });
+  assert.equal(d.status, 200, d.error);
+  assert.equal((await A.get('/api/admin/players')).players.length, 0);
+  const s = await syncP(S, P1, TOK1);
+  assert.equal(s.account, 'deleted'); assert.equal(s.reason, 'Conta duplicada');
+  assert.equal((await A.get('/api/admin/players')).players.length, 0, 'não volta a registar-se');
+  assert.equal((await S.call('POST', '/api/orders', { player_id: P1, player_name: 'X', package_id: 'p_saco' })).status, 410);
+  assert.equal((await A.get('/api/admin/grants?status=revoked')).grants.length, 1, 'ofertas por receber anuladas');
+  assert.ok((await A.get('/api/admin/audit')).audit.some((e) => e.action === 'player.delete'));
+});
+
 console.log('\n' + passed + ' testes do servidor passaram' + (process.exitCode ? ' (com falhas)' : ''));

@@ -507,7 +507,7 @@ test('equilíbrio: mesmo nível vence na maioria; 12 níveis abaixo nunca', () =
   ['guerreiro', 'assassino', 'mago', 'guardiao', 'arqueiro', 'invocador'].forEach((cls) => {
     let w = 0, n = 0, ww = 0, nn = 0;
     [10, 40, 70, 100].forEach((L) => {
-      for (let i = 0; i < 3; i++) { const S = B.boot(); B.hero(S, cls, L); S.combat.start('b' + L); n++; if (B.fight(S)[0] === 'win') w++; }
+      for (let i = 0; i < 8; i++) { const S = B.boot(); B.hero(S, cls, L); S.combat.start('b' + L); n++; if (B.fight(S)[0] === 'win') w++; }
       if (L > 12) for (let i = 0; i < 2; i++) { const S = B.boot(); B.hero(S, cls, L - 12); S.combat.start('b' + L); nn++; if (B.fight(S)[0] === 'win') ww++; }
     });
     assert.ok(w / n >= 0.5, cls + ' mesmo nível ' + w + '/' + n);
@@ -1789,12 +1789,17 @@ test('Sombras: treino com um servo dá recompensa pequena, não castiga a derrot
     at(S, 2026, 10, 21 + ['win', 'lose', 'flee'].indexOf(how), 9);
     E.setHp(st, Math.round(max * f)); const before = E.curHp(st);
     E.takeEvents();
+    st.inv.po_vida1 = 3;
     Sh.spar('b10');
     st.battle.p.hp = Math.max(1, Math.round(before / 3));
+    st.battle.p.mp = 0;
+    E.removeItem(st, 'po_vida1', 2); // gastou 2 poções durante o treino
     if (how === 'win') { st.battle.b.hp = 1; C.act('attack'); }
     else if (how === 'flee') C.act('flee');
     else { st.battle.p.hp = 1; st.battle.b.atk = 1e7; for (let i = 0; i < 20 && !st.battle.over; i++) { st.battle.b.stunned = 0; st.battle.b.hp = st.battle.b.maxHp; C.act('defend'); } }
     assert.strictEqual(E.curHp(st), before, how + ': vida igual à de antes');
+    assert.strictEqual(st.inv.po_vida1, 3, how + ': itens devolvidos');
+    assert.strictEqual(st.battle.p.mp, st.battle.p.maxMp, how + ': mana devolvida');
     assert.ok(E.takeEvents().some((e) => e.type === 'watch' && e.heal), how + ': o Sistema aparece a curar');
     C.close();
   });

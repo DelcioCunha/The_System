@@ -265,6 +265,7 @@
     if (ui.page === 'history') return historyPage(st);
     if (ui.page === 'trophies') return trophiesPage(st);
     if (ui.page === 'servos') return servantsPage(st);
+    if (ui.page === 'avisos') return noticesPage(st);
     if (ui.page === 'settings') return settingsPage(st);
     if (ui.page === 'credits') return creditsPage(st);
     if (ui.page === 'reports') return reportsPage(st);
@@ -312,11 +313,14 @@
       }).join('') + '</div>' + equipTotalsHtml(dl) + '</section>';
 
     var achDone = Object.keys(st.achievements).length;
+    var unr = S.shop.unread(st);
+    if (unr) h += '<button class="notice-banner" data-a="page" data-p="avisos"><span class="nb-ico">✉</span><span class="grow"><b>' + (unr === 1 ? '1 aviso novo' : unr + ' avisos novos') + '</b><span class="small muted">da administração do Sistema</span></span><span class="nb-go">Ler ›</span></button>';
     h += '<section class="win"><div class="win-h">Registos</div><div class="menu-grid">' +
       '<button class="btn prem menu-prem" data-a="prem-open" data-t="loja"><i class="crys-ico"></i> Loja Premium <span class="muted">' + fmt(st.crystals || 0) + '</span></button>' +
       '<button class="btn" data-a="page" data-p="skills">Habilidades <span class="muted">' + E.unlockedSkills(st).length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="ach">Conquistas <span class="muted">' + achDone + '/' + S.ACHIEVEMENTS.length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="trophies">Troféus <span class="muted">' + E.trophyCount(st) + '/' + Object.keys(S.TROPHIES).length + '</span></button>' +
+      '<button class="btn notice-menu' + (S.shop.unread(st) ? ' has-new' : '') + '" data-a="page" data-p="avisos">Avisos ' + (S.shop.unread(st) ? '<span class="badge-in">' + S.shop.unread(st) + '</span>' : '<span class="muted">' + S.shop.notices(st).list.length + '</span>') + '</button>' +
       '<button class="btn sh-menu" data-a="page" data-p="servos">Servos <span class="muted">' + Sh.owned(st).length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="collection">Coleção</button>' +
       '<button class="btn" data-a="page" data-p="history">Histórico</button>' +
@@ -638,6 +642,34 @@
     }).join('') + '</ol></section>';
     return h;
   }
+  /* ---------- avisos da administração ---------- */
+  var NOTICE_ICO = { info: 'ℹ', importante: '!', evento: '★', manutencao: '⚙' };
+  function noticeDate(t) { var d = new Date(t); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear() + ' · ' + clockOf(t); }
+  function noticesPage(st) {
+    var N = S.shop.notices(st), list = N.list.slice().sort(function (a, b) { return b.at - a.at; });
+    var h = backBtn('Avisos');
+    h += '<section class="win notice-win"><div class="win-h">Mensagens da administração <small>' + list.length + '</small></div>' +
+      '<p class="small muted" style="margin:0">Comunicados oficiais da equipa do Sistema: novidades, eventos, manutenções e mensagens só para ti. Chegam sozinhos quando abres o jogo com internet.</p></section>';
+    if (!list.length) h += '<section class="win"><div class="empty">Ainda não há avisos.' + (S.shop.ready() ? '' : ' Liga-te à internet para os receber.') + '</div></section>';
+    list.forEach(function (n) {
+      var isNew = !N.read[n.id];
+      h += '<section class="win notice-card k-' + n.kind + (isNew ? ' new' : '') + '"><div class="nc-h"><span class="nc-ico">' + (NOTICE_ICO[n.kind] || 'ℹ') + '</span>' +
+        '<div class="grow"><div class="nc-t">' + esc(n.title) + '</div><div class="nc-meta">' + esc(S.shop.NOTICE_KINDS[n.kind] || 'Informação') + (n.personal ? ' · <b>só para ti</b>' : '') + ' · ' + noticeDate(n.at) + '</div></div>' +
+        (isNew ? '<span class="tag good">Novo</span>' : '') + '</div><div class="nc-body">' + esc(n.body).replace(/\n/g, '<br>') + '</div></section>';
+    });
+    return h;
+  }
+  /* ---------- conta apagada pela administração ---------- */
+  function deletedHtml(st, d) {
+    return '<div class="ban-screen perm"><div class="ban-veil"></div><div class="ban-box">' +
+      '<div class="watch-eye">' + uiIcon('ui_eye', '<span class="eye-fallback big"></span>', 'eye-big') + '</div>' +
+      '<div class="ban-tag">AVISO DO SISTEMA · REGISTO APAGADO</div><h1 class="glitch" data-t="CONTA APAGADA">CONTA APAGADA</h1>' +
+      '<p class="ban-voice">O teu registo foi removido pela administração, ' + esc(st.name) + '. Para o Sistema, este Jogador deixou de existir.</p>' +
+      '<div class="ban-card">' + (d.reason ? '<div class="small muted">Motivo registado</div><div>' + esc(d.reason) + '</div>' : '') +
+      '<div class="small muted" style="margin-top:8px">Jogador</div><div class="mono">' + esc(st.name) + ' · ' + esc(st.playerId) + '</div></div>' +
+      '<p class="ban-sub">Se achas que foi um engano, fala com o atendimento e indica o teu ID. Ou começa um registo novo: o Sistema aceita-te outra vez, do zero.</p>' +
+      '<button class="btn pri block" data-a="del-restart">Começar de novo</button></div></div>';
+  }
   /* ---------- conta suspensa pelo administrador ---------- */
   function banHtml(st, b) {
     var v = S.shop.banVoice(st, b);
@@ -679,7 +711,7 @@
   }
   function obterHtml(st) {
     var cfg = S.shop.cached(), ready = S.shop.ready(), orders = (st.shop && st.shop.orders) || [];
-    var h = '<section class="win prem-win"><div class="win-h"><span class="prem-t">Obter Cristais</span>' + (cfg && cfg.test ? '<small class="test-tag">MODO DE TESTE</small>' : '') + '</div>' +
+    var h = '<section class="win prem-win"><div class="win-h"><span class="prem-t">Obter Cristais</span></div>' +
       (st.shop && st.shop.conflict ? '<p class="small" style="margin-top:0;color:var(--warn)">Esta conta está registada noutro aparelho. Se mudaste de telemóvel, usa a Transferência de conta. Se não foste tu, fala com o atendimento com o teu ID de Jogador.</p>' : '');
     var live = ready && cfg && cfg.open && cfg.packages && cfg.packages.length;
     var note = '';
@@ -687,7 +719,6 @@
     else if (!cfg) note = ui.shopErr ? esc(ui.shopErr) + ' <button class="btn sm" data-a="shop-load">Tentar outra vez</button>' : 'A ligar ao Sistema…';
     else if (!cfg.open) note = 'A loja de Cristais está fechada de momento. Volta mais tarde.';
     else if (!cfg.packages.length) note = 'Ainda não há pacotes à venda.';
-    if (live && cfg.test) h += '<p class="hint test-note" style="margin-top:0">O servidor está em modo de teste. Não faças pagamentos reais.</p>';
     if (note) h += '<p class="small" style="margin-top:0">' + note + '</p>';
     var packs = live ? cfg.packages : S.CRYSTAL_PACKS;
     var sel = packs.filter(function (p) { return p.id === ui.pack; })[0];
@@ -714,7 +745,7 @@
         orders.slice(0, 10).map(function (o) {
           var stt = S.shop.STATUS[o.status] || { name: o.status, tone: '' };
           return '<div class="card ord-card"><div class="row between"><b class="mono">' + esc(o.id) + '</b><span class="ord-st ' + stt.tone + '">' + esc(stt.name) + '</span></div>' +
-            '<div class="meta">' + crys(o.crystals) + '<span class="mono">' + kz(o.price) + '</span><span>' + timeStr(o.at) + '</span>' + (o.test ? '<span class="test-tag">teste</span>' : '') + '</div>' +
+            '<div class="meta">' + crys(o.crystals) + '<span class="mono">' + kz(o.price) + '</span><span>' + timeStr(o.at) + '</span>' + '</div>' +
             (o.status === 'pending_payment' ? '<div class="row" style="margin-top:8px"><button class="btn sm pri grow" data-a="ord-open" data-id="' + o.id + '">Instruções / WhatsApp</button><button class="btn sm ghost" data-a="ord-cancel" data-id="' + o.id + '">Cancelar</button></div>' : '') +
             (o.status === 'code_issued' ? '<p class="hint" style="margin:6px 0 0">O código foi-te enviado no WhatsApp. Escreve-o acima.</p>' : '') + '</div>';
         }).join('') + '</div></section>';
@@ -761,6 +792,7 @@
     var h = backBtn('Ala Premium');
     h += '<section class="win prem-win prem-head"><div class="prem-bal"><span class="small muted">Os teus Cristais</span><span class="prem-big">' + crys(st.crystals || 0) + '</span></div>' +
       '<div class="prem-id"><span class="small muted">ID de Jogador</span><button class="mono id-chip" data-a="id-copy">' + esc(st.playerId) + '</button></div>' +
+      (st.shop && st.shop.role ? '<div class="prem-id"><span class="small muted">Tipo de conta</span><span class="role-chip r-' + esc(st.shop.role.id) + '">' + esc(st.shop.role.name) + '</span></div>' : '') +
       '<div class="row" style="margin-top:10px;gap:8px"><button class="btn prem grow" data-a="prem-tab" data-t="obter"><i class="crys-ico"></i> Obter Cristais</button><button class="btn don-btn" data-a="prem-tab" data-t="loja">\u2665 Doar</button></div></section>';
     h += '<div class="chips" style="margin-top:12px">' + [['arenas', 'Arenas'], ['loja', 'Loja Exclusiva'], ['aparencia', 'Aparência'], ['obter', 'Obter Cristais']].map(function (x) {
       return '<button class="chip' + (t === x[0] ? ' on' : '') + '" data-a="prem-tab" data-t="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
@@ -831,7 +863,7 @@
       '<div class="arise-tag">SISTEMA · EXTRAÇÃO DE SOMBRA</div>' +
       '<div class="arise-stage" id="arise-stage">' + (status === 'owned' ? shadowArt(b, 'big') : preShadowArt(b, 'big dead')) + '<div class="arise-smoke"></div></div>';
     if (res && res.success) {
-      h += '<div class="arise-cry">LEVANTA-TE.</div>' +
+      h += '<div class="arise-cry">ERGA-SE.</div>' +
         '<p class="arise-say">«' + esc(Sh.line(st, b.id)) + '»</p>' +
         '<p class="arise-txt">A sombra de <b>' + esc(b.name) + '</b> obedece-te. É agora o teu servo.<br><span class="muted">' + (res.auto ? 'Já está convocado e luta ao teu lado no próximo combate.' : 'Convoca-o no menu Servos quando tiveres um lugar livre.') + '</span></p>' +
         '<div class="row" style="margin-top:12px"><button class="btn ghost grow" data-a="close">Fechar</button><button class="btn pri grow" data-a="sh-open" data-id="' + b.id + '">Ver servo</button></div>';
@@ -1736,6 +1768,12 @@
       }
       nLines = 1;
       if (!R) return '<div class="overlay sys-pop' + (fresh ? ' fresh' : '') + '">' + extra + '<div class="sys-box ' + cls + (fresh ? ' fresh' : '') + '" id="sys-box" role="alertdialog" data-type="talk"><span class="sys-tag">' + tag + '</span>' + body + '</div></div>';
+    } else if (ev.type === 'notice') {
+      var nt = ev.notice;
+      cls = 'watch good notice-pop k-' + nt.kind; tag = 'ADMINISTRAÇÃO'; extra = '<div class="rays blue"></div>';
+      body = '<div class="nc-big">' + (NOTICE_ICO[nt.kind] || 'ℹ') + '</div><h2>' + esc(nt.title) + '</h2><div class="muted small">' + esc(S.shop.NOTICE_KINDS[nt.kind] || 'Informação') + (nt.personal ? ' · só para ti' : '') + '</div>' +
+        '<div class="nc-body pop">' + esc(nt.body).replace(/\n/g, '<br>') + '</div>';
+      nLines = 2;
     } else if (ev.type === 'mission') {
       body = '<h2>' + esc(ev.title) + '</h2><div class="muted">' + esc(ev.name) + '</div><ul class="sys-lines">' + lines + '</ul>';
     } else {
@@ -1863,6 +1901,7 @@
       return;
     }
     var st = E.state;
+    if (st.shop && st.shop.deleted) { FX.battle(false); root.innerHTML = deletedHtml(st, st.shop.deleted) + (ui.modal ? modalHtml() : ''); return; }
     var ban = S.shop && S.shop.banned(st);
     if (ban) {
       FX.battle(false); root.innerHTML = banHtml(st, ban);
@@ -2107,7 +2146,7 @@
       render();
     },
     tab: function (d) { var was = ui.tab; ui.tab = d.t; ui.page = null; ui.modal = null; render(); window.scrollTo(0, 0); if (was !== d.t) talkTry('tab', { tab: d.t }, 1400); },
-    page: function (d) { ui.page = d.p; ui.histLimit = 40; render(); window.scrollTo(0, 0); },
+    page: function (d) { ui.page = d.p; ui.histLimit = 40; render(); window.scrollTo(0, 0); if (d.p === 'avisos') S.shop.markRead(E.state); },
     back: function () { ui.page = null; render(); },
     'hist-more': function () { ui.histLimit += 60; render(); },
     alloc: function (d) {
@@ -2193,6 +2232,11 @@
     'prem-open': function (d) { ui.tab = 'status'; ui.page = 'premium'; ui.premTab = d.t || ui.premTab || 'arenas'; ui.modal = null; render(); window.scrollTo(0, 0); if (ui.premTab === 'obter') loadShop(); },
     'ach-filter': function (d) { ui.achFilter = d.f; render(); },
     'ach-info': function (d) { ui.modal = { type: 'ach', id: d.id }; render(); },
+    'del-restart': function () {
+      confirmBox('Começar de novo', 'O progresso deste aparelho é apagado e começas um registo novo, do nível 1.', 'Começar de novo', function () {
+        E.resetAll(); ui.intro = { step: 0, name: '', cls: null }; ui.tab = 'status'; ui.page = null; ui.popups = []; ui.bars = {}; ui.lastCoins = null; ui.lastView = null; render();
+      }, true);
+    },
     'chest-fam': function (d) { ui.chestFam = d.v; render(); },
     'prem-tab': function (d) { ui.premTab = d.t; render(); if (d.t === 'obter') loadShop(); },
     'prem-buy': function (d) {

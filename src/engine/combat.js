@@ -142,14 +142,19 @@
     if (ps.openShield) { st.battle.p.shield = Math.round(ps.maxHp * ps.openShield / 100); }
     // servos (sombras convocadas) entram no combate
     var squad = S.shadows ? S.shadows.battleSquad(st, ps, C.pressure(st.battle.gap).playerDmg).filter(function (x) { return x.id !== b.id; }) : [];
-    if (spar) { st.battle.spar = true; st.battle.hpIn = E.curHp(st); st.battle.empowered = null; }
+    if (spar) {
+      st.battle.spar = true; st.battle.hpIn = E.curHp(st); st.battle.empowered = null;
+      // o que o treino gastar (itens, relíquias, mana) é devolvido no fim
+      st.battle.invIn = JSON.parse(JSON.stringify(st.inv || {}));
+      st.battle.relicsIn = JSON.parse(JSON.stringify(st.relics || {}));
+    }
     st.battle.shadows = squad;
     st.battle.cmd = S.shadows ? S.shadows.commandBonus(st) : 0;
     if (spar) {
       var sn = S.shadows.name(st, b.id), sl = (S.SHADOW_SPAR || {})[b.id];
       log(st.battle, '🌑 TREINO: ' + sn + ' ergue-se das tuas sombras para lutar contigo (Nv. ' + b.level + ').', 'sys');
       if (sl) log(st.battle, sn + ': «' + sl[0].replace(/\{nome\}/g, st.name) + '»', 'say');
-      log(st.battle, 'Treino: não perdes nível, XP nem moedas. A vida volta ao que era no fim.', 'muted');
+      log(st.battle, 'Treino: não perdes nível, XP nem moedas. No fim, o Sistema devolve a vida, a mana e os itens que gastares.', 'muted');
       E.commit('treino iniciado');
       return { ok: true };
     }
@@ -520,25 +525,56 @@
     if (E.removeItem(st, 'sx_fenix', 1)) { p.hp = Math.round(p.maxHp * 0.5); log(bt, '🪶 A Pena da Fénix arde e devolve-te à vida!', 'warn'); }
   }
 
+  /* devolve tudo o que o treino gastou: vida, mana, itens e relíquias. Devolve uma única vez. */
+  function sparRestore(st, bt) {
+    if (bt.restored) return bt.restored;
+    var back = [], inv = st.inv || (st.inv = {});
+    Object.keys(bt.invIn || {}).forEach(function (id) {
+      var miss = (bt.invIn[id] || 0) - (inv[id] || 0);
+      if (miss > 0 && S.ITEMS[id]) { E.addItem(st, id, miss); back.push(miss + '× ' + S.ITEMS[id].name); }
+    });
+    st.relics = st.relics || {};
+    Object.keys(st.relics).forEach(function (id) {
+      if ((st.relics[id] || 0) !== ((bt.relicsIn || {})[id] || 0)) { st.relics[id] = (bt.relicsIn || {})[id] || 0; if (S.ITEMS[id]) back.push(S.ITEMS[id].name + ' (recarregada)'); }
+    });
+    var mpUsed = Math.max(0, (bt.p.maxMp || 0) - (bt.p.mp || 0));
+    bt.p.mp = bt.p.maxMp;
+    E.setHp(st, bt.hpIn);
+    bt.p.hp = E.curHp(st);
+    bt.restored = { items: back, mp: mpUsed, hp: E.curHp(st), maxHp: E.combatStats(st).maxHp, maxMp: bt.p.maxMp };
+    return bt.restored;
+  }
+  C.sparRestore = sparRestore;
+  function pick(a) { return a[Math.floor(S.rng.random() * a.length)]; }
+  /* o comunicado do Sistema depois do treino: a personalidade de sempre */
+  function sparNotice(st, bt, how, rs) {
+    var V = S.SPAR_VOICE, n = st.name;
+    var lines = [pick(V[how]).replace(/\{nome\}/g, n).replace(/\{servo\}/g, S.shadows.name(st, bt.bossId))];
+    lines.push('Vida: ' + rs.hp + ' / ' + rs.maxHp + ', exatamente a que tinhas ao entrar.');
+    lines.push('Mana: ' + rs.maxMp + ' / ' + rs.maxMp + (rs.mp ? ' (' + rs.mp + ' devolvida).' : '.'));
+    if (rs.items.length) lines.push('Itens devolvidos: ' + rs.items.join(', ') + '.');
+    lines.push(pick(V.close).replace(/\{nome\}/g, n));
+    E.emit({ type: 'watch', good: true, heal: true, level: 1, title: pick(V.title[how]), lines: lines });
+  }
+
   /* fim de um treino com uma sombra: recompensa pequena, sem perdas */
   function finishSpar(st, bt, won) {
     var def = S.BOSS_BY_ID[bt.bossId], Sh = S.shadows, sn = Sh.name(st, def.id), sl = (S.SHADOW_SPAR || {})[def.id] || [];
     bt.over = won ? 'win' : 'lose';
-    E.setHp(st, bt.hpIn);
+    var rs = sparRestore(st, bt);
     var r = Sh.sparReward(st, def, won), xp = 0, coins = 0;
     if (r) { xp = E.gainXp(st, r.xp); coins = E.gainCoins(st, r.coins); Sh.ensure(st).spar[def.id] = now(); }
-    var say = (won ? sl[1] : sl[2]) || (won ? 'Venceste, meu senhor.' : 'Levanta-te, meu senhor.');
+    var say = (won ? sl[1] : sl[2]) || (won ? 'Venceste, meu senhor.' : 'Ergue-te, meu senhor.');
     say = say.replace(/\{nome\}/g, st.name);
     bt.result = { xp: xp, coins: coins, items: [], spar: true, lastWords: say };
     log(bt, sn + ': «' + say + '»', 'say');
     log(bt, won ? '🌑 Treino vencido.' : '🌑 Treino perdido. Sem castigo.', won ? 'win' : 'lose');
-    log(bt, '✚ O Sistema restaurou a tua vida: ' + E.curHp(st) + ' / ' + E.combatStats(st).maxHp + ', a mesma de antes do treino.', 'good');
+    log(bt, '✚ O Sistema restaurou-te: vida ' + rs.hp + ' / ' + rs.maxHp + ', mana cheia' + (rs.items.length ? ', itens devolvidos (' + rs.items.join(', ') + ')' : '') + '.', 'good');
     var lines = r ? ['+' + xp + ' XP', '+' + coins + ' moedas'] : ['Esta sombra já te deu recompensa há pouco. Volta dentro de ' + Sh.SPAR_H + ' horas para ganhar mais.'];
-    if (!won) lines.push('Treino: não perdeste nível, XP nem moedas.');
+    if (!won) lines.unshift('SISTEMA: ' + pick(S.SPAR_VOICE.shame).replace(/\{nome\}/g, st.name).replace(/\{servo\}/g, sn));
     E.emit({ type: won ? 'victory' : 'defeat', title: won ? 'TREINO VENCIDO' : 'TREINO PERDIDO', name: sn, lastWords: say, lines: ['«' + say + '»'].concat(lines) });
-    E.emit({ type: 'watch', good: true, heal: true, level: 1, title: 'O SISTEMA RESTAUROU-TE',
-      lines: ['O treino terminou. Nenhum ferimento fica registado.', 'Vida restabelecida: ' + E.curHp(st) + ' / ' + E.combatStats(st).maxHp + '.', 'Exatamente a vida que tinhas antes de entrar.'] });
-        E.bump(st, won ? 'sparWins' : 'sparLosses');
+    sparNotice(st, bt, won ? 'win' : 'lose', rs);
+    E.bump(st, won ? 'sparWins' : 'sparLosses');
     E.history(st, '🌑', 'Treino com ' + sn + ': ' + (won ? 'vitória' : 'derrota') + (xp ? ' (+' + xp + ' XP, +' + coins + ' moedas)' : '') + '.');
   }
   function finishWin(st, bt) {
@@ -632,7 +668,7 @@
     if (bt && bt.over && !bt.hpSaved && bt.spar) {
       // treino: o Sistema devolve exatamente a vida que tinhas antes de entrar
       bt.hpSaved = true;
-      E.setHp(st, bt.hpIn);
+      sparRestore(st, bt);
       E.commit('vida');
     } else if (bt && bt.over && bt.over !== 'lose' && !bt.hpSaved) {
       bt.hpSaved = true;
@@ -724,7 +760,7 @@
         log(bt, '🛡️ Defendeste (+60% defesa, +' + mg + ' mana).', 'good');
         break;
       case 'flee': {
-        if (bt.spar) { bt.over = 'fled'; bt.result = { coins: 0 }; E.setHp(st, bt.hpIn); log(bt, '🌑 Terminaste o treino.', 'sys'); E.emit({ type: 'watch', good: true, heal: true, level: 1, title: 'O SISTEMA RESTAUROU-TE', lines: ['Saíste do treino.', 'Vida restabelecida: ' + E.curHp(st) + ' / ' + E.combatStats(st).maxHp + '.', 'Exatamente a vida que tinhas antes de entrar.'] }); E.commit('fim do treino'); return { ok: true }; }
+        if (bt.spar) { bt.over = 'fled'; bt.result = { coins: 0 }; var rsf = sparRestore(st, bt); log(bt, '🌑 Terminaste o treino.', 'sys'); sparNotice(st, bt, 'flee', rsf); E.commit('fim do treino'); return { ok: true }; }
         var lost = E.loseCoins(st, st.coins * 0.05);
         bt.over = 'fled';
         bt.result = { coins: -lost };

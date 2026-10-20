@@ -11,6 +11,7 @@
   "src/data/shadow-lines.js",
   "src/data/shadow-spar.js",
   "src/data/shadow-premium.js",
+  "src/data/spar-voice.js",
   "src/data/credits.js",
   "src/data/talk-open.js",
   "src/data/talk-combat.js",

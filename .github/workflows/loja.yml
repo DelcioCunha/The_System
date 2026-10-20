@@ -45,7 +45,7 @@ jobs:
         id: deploy
         working-directory: server
         run: |
-          MODE="${{ vars.LOJA_MODE }}"; [ "$MODE" = "production" ] || MODE=staging
+          MODE="${{ vars.LOJA_MODE }}"; [ "$MODE" = "staging" ] || MODE=production
           npx -y wrangler@4 deploy --var MODE:$MODE | tee deploy.log
           URL=$(grep -o 'https://[a-zA-Z0-9.-]*workers\.dev' deploy.log | head -1)
           echo "url=$URL" >> "$GITHUB_OUTPUT"

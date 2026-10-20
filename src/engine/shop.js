@@ -220,6 +220,29 @@
       trust: S.watch ? S.watch.trust(st) : 100, day: S.time && S.time.systemDay ? S.time.systemDay(st) : 0,
       arenas: st.arena ? Object.keys(st.arena.wins || {}).length : 0, spentCrystals: c.crystalsSpent || 0 };
   }
+  /* avisos da administração: guardados no jogo; os novos aparecem uma vez e ficam na área de Avisos */
+  SH.NOTICE_KINDS = { info: 'Informação', importante: 'Importante', evento: 'Evento', manutencao: 'Manutenção' };
+  SH.notices = function (st) {
+    if (!st.notices) st.notices = { list: [], read: {}, shown: {} };
+    ['read', 'shown'].forEach(function (k) { if (!st.notices[k]) st.notices[k] = {}; });
+    if (!Array.isArray(st.notices.list)) st.notices.list = [];
+    return st.notices;
+  };
+  SH.unread = function (st) { var N = SH.notices(st); return N.list.filter(function (n) { return !N.read[n.id]; }).length; };
+  SH.markRead = function (st) { var N = SH.notices(st), ch = false; N.list.forEach(function (n) { if (!N.read[n.id]) { N.read[n.id] = 1; ch = true; } }); if (ch) E.commit('avisos lidos'); };
+  SH.applyNotices = function (st, list) {
+    var N = SH.notices(st), fresh = [];
+    N.list = list.filter(function (n) { return n && n.id && n.title; }).slice(0, 30).map(function (n) {
+      return { id: String(n.id), title: String(n.title).slice(0, 80), body: String(n.body || '').slice(0, 1500), kind: SH.NOTICE_KINDS[n.kind] ? n.kind : 'info', at: +n.at || 0, personal: !!n.personal };
+    });
+    N.list.forEach(function (n) { if (!N.shown[n.id]) { N.shown[n.id] = 1; fresh.push(n); } });
+    // os ids que já não existem (apagados pela administração) saem da memória
+    var ids = {}; N.list.forEach(function (n) { ids[n.id] = 1; });
+    Object.keys(N.read).forEach(function (k) { if (!ids[k]) delete N.read[k]; });
+    Object.keys(N.shown).forEach(function (k) { if (!ids[k]) delete N.shown[k]; });
+    fresh.sort(function (a, b) { return a.at - b.at; }).slice(-2).forEach(function (n) { E.emit({ type: 'notice', notice: n }); });
+    return fresh.length;
+  };
   var syncing = null, lastSync = 0;
   SH.sync = function (force) {
     var st = E.state;
@@ -236,6 +259,12 @@
         return j;
       }
       st.shop.conflict = false; st.shop.lastSync = S.clock.now();
+      if (j.account === 'deleted') {
+        if (!st.shop.deleted) { st.shop.deleted = { reason: j.reason || null, at: j.deleted_at || S.clock.now() }; E.commit('conta apagada'); }
+        return { ok: true, deleted: true, changed: true };
+      }
+      if (j.role && j.role.id) st.shop.role = { id: j.role.id, name: j.role.name };
+      var nn = Array.isArray(j.notices) ? SH.applyNotices(st, j.notices) : 0;
       if (j.account === 'banned') { setBan(st, j.ban); return { ok: true, banned: true, changed: true }; }
       var changed = false;
       if (st.shop.ban) {
@@ -252,7 +281,7 @@
             if (r.ok && !r.already) { changed = true; E.emit(giftEvent(c)); }
           });
         });
-      }, Promise.resolve()).then(function () { E.commit('sincronização'); return { ok: true, changed: changed, gifts: inbox.length }; });
+      }, Promise.resolve()).then(function () { E.commit('sincronização'); return { ok: true, changed: changed || nn > 0, gifts: inbox.length, notices: nn }; });
     }).then(function (r) { syncing = null; return r; }, function () { syncing = null; return { ok: false }; });
     return syncing;
   };

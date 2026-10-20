@@ -4,8 +4,8 @@ main = "src/index.js"
 compatibility_date = "2025-09-01"
 
 [vars]
-# "staging" marca pedidos como TESTE. Muda para "production" quando fores receber pagamentos reais.
-MODE = "staging"
+# "production": funcionamento real. ("staging" só serve para testes locais.)
+MODE = "production"
 
 [[d1_databases]]
 binding = "DB"

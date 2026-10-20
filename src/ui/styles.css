@@ -917,3 +917,32 @@ button.trophy { font: inherit; color: inherit; padding: 0; cursor: pointer; appe
 .ach-big .ui-ico, .ach-big .medal-img { width: 100%; height: 100%; border-radius: 50%; filter: grayscale(.85) brightness(.5); }
 .ach-big.got .ui-ico { filter: none; box-shadow: 0 0 34px rgba(255, 200, 90, .4); }
 .ach-big:not(:has(img)) { display: grid; place-items: center; font-size: 72px; }
+
+/* ---------- Avisos da administração ---------- */
+.notice-banner { display: flex; align-items: center; gap: 12px; width: 100%; margin: 0 0 14px; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(111, 214, 255, .55);
+  background: linear-gradient(90deg, rgba(111, 214, 255, .16), rgba(111, 214, 255, .04)); color: var(--text); font: inherit; text-align: left; cursor: pointer; box-shadow: 0 0 18px rgba(111, 214, 255, .18); }
+.notice-banner .grow { display: flex; flex-direction: column; gap: 2px; }
+.nb-ico { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: rgba(111, 214, 255, .2); color: var(--glow); font-size: 17px; flex: 0 0 34px; }
+.nb-go { color: var(--glow); font-family: var(--f-display); letter-spacing: .08em; font-size: 13px; }
+.notice-menu.has-new { border-color: var(--glow); box-shadow: 0 0 12px rgba(111, 214, 255, .3); }
+.badge-in { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--glow); color: #04121f; font-size: 11px; font-weight: 700; margin-left: 4px; }
+.notice-card { --kc: var(--glow); border-left: 3px solid var(--kc); }
+.notice-card.k-importante, .notice-pop.k-importante { --kc: #ff6b7d; }
+.notice-card.k-evento, .notice-pop.k-evento { --kc: var(--gold); }
+.notice-card.k-manutencao, .notice-pop.k-manutencao { --kc: #b9a6ff; }
+.notice-card.new { box-shadow: 0 0 16px color-mix(in srgb, var(--kc) 30%, transparent); }
+.nc-h { display: flex; align-items: flex-start; gap: 10px; }
+.nc-ico { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; flex: 0 0 32px; font-weight: 700; color: var(--kc); background: color-mix(in srgb, var(--kc) 16%, transparent); border: 1px solid color-mix(in srgb, var(--kc) 45%, transparent); }
+.nc-t { font-weight: 700; font-size: 15px; }
+.nc-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.nc-body { margin-top: 10px; font-size: 14px; line-height: 1.5; white-space: normal; overflow-wrap: anywhere; }
+.nc-body.pop { text-align: left; max-height: 40vh; overflow: auto; padding: 10px 12px; border-radius: 8px; background: rgba(0, 0, 0, .25); border: 1px solid var(--line); margin: 12px 0; }
+.nc-big { width: 54px; height: 54px; margin: 4px auto 8px; border-radius: 50%; display: grid; place-items: center; font-size: 26px; font-weight: 700; color: var(--kc, var(--glow)); border: 1px solid currentColor; box-shadow: 0 0 22px currentColor; }
+.notice-pop { --kc: var(--glow); }
+.role-chip { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: .04em; border: 1px solid var(--line-hi); color: var(--text); }
+.role-chip.r-premium { color: #67d5ff; border-color: rgba(103, 213, 255, .6); }
+.role-chip.r-doador { color: #ff7aa8; border-color: rgba(255, 122, 168, .6); }
+.role-chip.r-admin { color: var(--gold); border-color: rgba(255, 200, 90, .6); }
+.role-chip.r-funcionario { color: #5be08a; border-color: rgba(91, 224, 138, .6); }
+.role-chip.r-parceria { color: #b98cff; border-color: rgba(185, 140, 255, .6); }
+.role-chip.r-teste { color: var(--muted); }

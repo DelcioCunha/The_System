@@ -17,7 +17,7 @@
      MODE              "production" ou "staging" (staging marca tudo como teste)
    ========================================================== */
 
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 const MIN = 60 * 1000, HOUR = 60 * MIN, DAY = 24 * HOUR;
 const SESSION_TTL = 12 * HOUR;       // duração máxima de uma sessão
 const SESSION_IDLE = 2 * HOUR;       // sem uso durante 2 horas, a sessão expira
@@ -521,9 +521,12 @@ async function liftExpired(env, p) {
   }
   return p;
 }
+async function deletedRow(env, id) { return one(env, 'SELECT * FROM deleted_players WHERE id = ?', id); }
 async function playerRow(env, id) { return liftExpired(env, await one(env, 'SELECT * FROM players WHERE id = ?', id)); }
 function banInfo(p) { return { reason: p.ban_reason || 'Violação das regras do Sistema.', until: p.ban_until || null, since: p.banned_at || null }; }
 async function assertNotBanned(env, playerId) {
+  const del = await deletedRow(env, playerId);
+  if (del) throw new HttpError(410, 'Esta conta foi apagada pela administração.', { deleted: true, reason: del.reason || null });
   const p = await playerRow(env, playerId);
   if (p && p.status === 'banned') throw new HttpError(403, 'Esta conta está suspensa pelo Sistema.', { banned: true, ban: banInfo(p) });
   return p;
@@ -531,6 +534,8 @@ async function assertNotBanned(env, playerId) {
 async function playerAuth(env, body) {
   const pid = clean(body.player_id, 64), tok = String(body.token || '');
   if (!PLAYER_RE.test(pid) || tok.length < 20 || tok.length > 200) throw bad('Identificação do jogador inválida.');
+  const del = await deletedRow(env, pid);
+  if (del) throw new HttpError(410, 'Esta conta foi apagada pela administração.', { deleted: true, reason: del.reason || null });
   const p = await playerRow(env, pid);
   if (!p) throw new HttpError(404, 'Jogador não registado.');
   if (!same(await tokenHash(env, tok), p.token_hash)) throw new HttpError(403, 'Esta conta está registada noutro aparelho.', { conflict: true });
@@ -548,6 +553,8 @@ async function sync(env, body, ip) {
   const snap = { name: clean(body.name, 24) || 'Jogador', cls: clean(body.cls, 16), level: int(body.level, 1, 1000), crystals: int(body.crystals, 0, 1e9),
     coins: int(body.coins, 0, 1e12), stats: JSON.stringify(st), app_version: clean(body.app_version, 16), platform: clean(body.platform, 16) };
   const t = now(), th = await tokenHash(env, tok);
+  const del = await deletedRow(env, pid);
+  if (del) return json({ ok: true, account: 'deleted', reason: del.reason || null, deleted_at: del.deleted_at, inbox: [], notices: [] });
   let p = await playerRow(env, pid);
   if (!p) {
     await env.DB.batch([
@@ -561,9 +568,11 @@ async function sync(env, body, ip) {
     await run(env, 'UPDATE players SET name = ?, cls = ?, level = ?, crystals = ?, coins = ?, stats = ?, app_version = ?, platform = ?, last_seen = ?, syncs = syncs + 1 WHERE id = ?',
       snap.name, snap.cls, snap.level, snap.crystals, snap.coins, snap.stats, snap.app_version, snap.platform, t, pid);
   }
-  if (p.status === 'banned') return json({ ok: true, account: 'banned', ban: banInfo(p), inbox: [] });
+  const notices = await playerNotices(env, p);
+  const role = await playerRole(env, p);
+  if (p.status === 'banned') return json({ ok: true, account: 'banned', ban: banInfo(p), inbox: [], notices, role });
   const inbox = await all(env, "SELECT id, crystals, coins, reason, message, order_id FROM grants WHERE player_id = ? AND mode = 'auto' AND status = 'pending' ORDER BY created_at LIMIT 20", pid);
-  return json({ ok: true, account: 'active', inbox, server_time: t });
+  return json({ ok: true, account: 'active', inbox, notices, role, server_time: t });
 }
 
 /* Receber um presente automático (uma única vez; repetir devolve o mesmo) */
@@ -605,19 +614,105 @@ async function redeemGrant(env, h, playerId, ip) {
   return null;
 }
 
+/* ---------------- tipos de utilizador ---------------- */
+const ROLES = { usuario: 'Usuário', premium: 'Usuário Premium', doador: 'Doador', teste: 'Usuário de Teste', admin: 'Administrador', funcionario: 'Funcionário', parceria: 'Parceria' };
+const ROLE_EFF = "COALESCE(players.role, CASE WHEN (SELECT COUNT(*) FROM orders o WHERE o.player_id = players.id AND o.status IN " + PAID + ") > 0 THEN 'premium' ELSE 'usuario' END)";
+async function playerRole(env, p) {
+  if (p.role && ROLES[p.role]) return { id: p.role, name: ROLES[p.role], auto: false };
+  const n = await one(env, 'SELECT COUNT(*) AS n FROM orders WHERE player_id = ? AND status IN ' + PAID, p.id);
+  const id = n && n.n > 0 ? 'premium' : 'usuario';
+  return { id, name: ROLES[id], auto: true };
+}
+async function setRole(env, A, id, body, ip) {
+  const p = await playerRow(env, clean(id, 64));
+  if (!p) throw new HttpError(404, 'Jogador não encontrado.');
+  const r = clean(body.role, 20);
+  if (r !== 'auto' && !ROLES[r]) throw bad('Tipo de utilizador inválido.');
+  const role = r === 'auto' ? null : r;
+  await env.DB.batch([
+    q(env, 'UPDATE players SET role = ?, role_by = ?, role_at = ? WHERE id = ?', role, A.admin, now(), p.id),
+    auditStmt(env, A.admin, 'player.role', p.id, 'ok', { from: p.role || 'auto', to: role || 'auto' }, ip)
+  ]);
+  return playerDetail(env, p.id);
+}
+
+/* ---------------- avisos da administração ---------------- */
+const NOTICE_KINDS = ['info', 'importante', 'evento', 'manutencao'];
+function cleanText(s, max) {
+  return String(s == null ? '' : s).replace(/\r\n?/g, '\n').replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, ' ')
+    .split('\n').map((l) => l.replace(/\s+/g, ' ').trim()).join('\n').replace(/\n{3,}/g, '\n\n').trim().slice(0, max);
+}
+function noticeOut(n) { return { id: n.id, player_id: n.player_id, title: n.title, body: n.body, kind: n.kind, created_by: n.created_by, created_at: n.created_at, deleted_at: n.deleted_at || null }; }
+async function playerNotices(env, p) {
+  const from = Math.min(p.created_at, now()) - 30 * DAY;
+  const rows = await all(env, 'SELECT id, title, body, kind, created_at, player_id FROM notices WHERE deleted_at IS NULL AND (player_id IS NULL OR player_id = ?) AND created_at >= ? ORDER BY created_at DESC LIMIT 30', p.id, from);
+  return rows.map((n) => ({ id: n.id, title: n.title, body: n.body, kind: n.kind, at: n.created_at, personal: !!n.player_id }));
+}
+async function createNotice(env, A, request, body, ip) {
+  const key = idemKey(request);
+  const prev = await idemGet(env, key, A.admin, 'notice.create', 'notice');
+  if (prev) return json(Object.assign(prev, { repeated: true }));
+  const title = clean(body.title, 80), text = cleanText(body.body, 1500), kind = NOTICE_KINDS.includes(body.kind) ? body.kind : 'info';
+  const pid = body.player_id ? clean(body.player_id, 64) : null;
+  if (title.length < 3) throw bad('Escreve um título (pelo menos 3 letras).');
+  if (text.length < 3) throw bad('Escreve a mensagem.');
+  if (pid && !(await playerRow(env, pid))) throw new HttpError(404, 'Jogador não encontrado.');
+  const id = randomId('n'), t = now();
+  await env.DB.batch([
+    q(env, 'INSERT INTO notices (id, player_id, title, body, kind, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', id, pid, title, text, kind, A.admin, t),
+    auditStmt(env, A.admin, 'notice.create', pid || 'todos', 'ok', { notice: id, title, kind }, ip)
+  ]);
+  const res = { ok: true, notice: noticeOut(await one(env, 'SELECT * FROM notices WHERE id = ?', id)) };
+  await run(env, 'INSERT INTO idem (key, actor, action, target, response, expires_at) VALUES (?, ?, ?, ?, ?, ?)', key, A.admin, 'notice.create', 'notice', JSON.stringify(res), t + IDEM_TTL);
+  return json(res);
+}
+async function listNotices(env, url) {
+  const where = [], args = [];
+  if (url.searchParams.get('player')) { where.push('player_id = ?'); args.push(clean(url.searchParams.get('player'), 64)); }
+  if (url.searchParams.get('deleted') !== '1') where.push('deleted_at IS NULL');
+  const rows = await all(env, 'SELECT * FROM notices' + (where.length ? ' WHERE ' + where.join(' AND ') : '') + ' ORDER BY created_at DESC LIMIT 100', ...args);
+  return json({ ok: true, notices: rows.map(noticeOut) });
+}
+async function deleteNotice(env, A, id, ip) {
+  const n = await one(env, 'SELECT * FROM notices WHERE id = ?', clean(id, 40));
+  if (!n) throw new HttpError(404, 'Aviso não encontrado.');
+  if (!n.deleted_at) await env.DB.batch([
+    q(env, 'UPDATE notices SET deleted_at = ?, deleted_by = ? WHERE id = ? AND deleted_at IS NULL', now(), A.admin, n.id),
+    auditStmt(env, A.admin, 'notice.delete', n.player_id || 'todos', 'ok', { notice: n.id, title: n.title }, ip)
+  ]);
+  return json({ ok: true, notice: noticeOut(await one(env, 'SELECT * FROM notices WHERE id = ?', n.id)) });
+}
+
+/* ---------------- apagar uma conta ---------------- */
+async function deletePlayer(env, A, id, body, ip) {
+  const pid = clean(id, 64), p = await one(env, 'SELECT * FROM players WHERE id = ?', pid);
+  if (!p) throw new HttpError(404, 'Jogador não encontrado.');
+  if (clean(body.confirm, 64) !== p.id) throw bad('Para confirmar, escreve o ID do jogador.');
+  const reason = clean(body.reason, 200) || null, t = now();
+  await env.DB.batch([
+    q(env, 'INSERT OR REPLACE INTO deleted_players (id, name, reason, deleted_at, deleted_by) VALUES (?, ?, ?, ?, ?)', p.id, p.name, reason, t, A.admin),
+    q(env, "UPDATE grants SET status = 'revoked', revoked_at = ?, revoke_reason = 'Conta apagada' WHERE player_id = ? AND status = 'pending' AND order_id IS NULL", t, p.id),
+    q(env, 'UPDATE notices SET deleted_at = ?, deleted_by = ? WHERE player_id = ? AND deleted_at IS NULL', t, A.admin, p.id),
+    q(env, 'DELETE FROM players WHERE id = ?', p.id),
+    auditStmt(env, A.admin, 'player.delete', p.id, 'ok', { name: p.name, level: p.level, reason: reason || undefined }, ip)
+  ]);
+  return json({ ok: true, deleted: p.id });
+}
+
 /* ---------------- administração de jogadores ---------------- */
 function playerAdmin(p) {
   let stats = {}; try { stats = JSON.parse(p.stats || '{}'); } catch (e) { stats = {}; }
   return { id: p.id, name: p.name, cls: p.cls, level: p.level, crystals: p.crystals, coins: p.coins, stats, app_version: p.app_version, platform: p.platform,
     created_at: p.created_at, last_seen: p.last_seen, syncs: p.syncs, status: p.status, ban_reason: p.ban_reason, ban_until: p.ban_until, banned_at: p.banned_at,
-    banned_by: p.banned_by, note: p.note, test: !!p.test, spent_kz: p.spent_kz || 0, paid_orders: p.paid_orders || 0 };
+    banned_by: p.banned_by, note: p.note, spent_kz: p.spent_kz || 0, paid_orders: p.paid_orders || 0,
+    role: p.role_eff || p.role || 'usuario', role_name: ROLES[p.role_eff || p.role || 'usuario'], role_auto: !p.role, role_by: p.role_by || null };
 }
 function grantAdmin(g) {
   return { id: g.id, player_id: g.player_id, order_id: g.order_id, crystals: g.crystals, coins: g.coins, reason: g.reason, message: g.message, mode: g.mode, hint: g.hint,
     status: g.status, created_by: g.created_by, created_at: g.created_at, claimed_at: g.claimed_at, claimed_player: g.claimed_player, revoked_at: g.revoked_at, revoke_reason: g.revoke_reason, test: !!g.test };
 }
 const SPENT = "(SELECT COALESCE(SUM(price_kz),0) FROM orders o WHERE o.player_id = players.id AND o.status IN " + "('payment_confirmed','code_issued','redeemed')) AS spent_kz, " +
-  "(SELECT COUNT(*) FROM orders o WHERE o.player_id = players.id AND o.status IN ('payment_confirmed','code_issued','redeemed')) AS paid_orders";
+  "(SELECT COUNT(*) FROM orders o WHERE o.player_id = players.id AND o.status IN ('payment_confirmed','code_issued','redeemed')) AS paid_orders, " + ROLE_EFF + ' AS role_eff';
 
 async function listPlayers(env, url) {
   const qq = clean(url.searchParams.get('q'), 40), st = url.searchParams.get('status'), sort = url.searchParams.get('sort') || 'seen';
@@ -627,10 +722,14 @@ async function listPlayers(env, url) {
   if (st === 'banned' || st === 'active') { where.push('status = ?'); args.push(st); }
   if (st === 'online') { where.push('last_seen > ?'); args.push(now() - 15 * MIN); }
   if (!isTest(env)) where.push('test = 0');
+  const role = clean(url.searchParams.get('role'), 20);
+  if (ROLES[role]) { where.push('role_eff = ?'); args.push(role); }
   const order = { seen: 'last_seen DESC', level: 'level DESC, last_seen DESC', spent: 'spent_kz DESC, last_seen DESC', new: 'created_at DESC' }[sort] || 'last_seen DESC';
-  const rows = await all(env, 'SELECT *, ' + SPENT + ' FROM players' + (where.length ? ' WHERE ' + where.join(' AND ') : '') + ' ORDER BY ' + order + ' LIMIT ?', ...args, limit);
+  const rows = await all(env, 'SELECT * FROM (SELECT *, ' + SPENT + ' FROM players)' + (where.length ? ' WHERE ' + where.join(' AND ') : '') + ' ORDER BY ' + order + ' LIMIT ?', ...args, limit);
+  const rc = await all(env, 'SELECT ' + ROLE_EFF + ' AS r, COUNT(*) AS n FROM players' + (isTest(env) ? '' : ' WHERE test = 0') + ' GROUP BY r');
+  const roles = {}; Object.keys(ROLES).forEach((k) => { roles[k] = 0; }); rc.forEach((x) => { roles[x.r] = x.n; });
   const tot = await one(env, "SELECT COUNT(*) AS n, SUM(CASE WHEN status = 'banned' THEN 1 ELSE 0 END) AS banned, SUM(CASE WHEN last_seen > ? THEN 1 ELSE 0 END) AS week, SUM(CASE WHEN last_seen > ? THEN 1 ELSE 0 END) AS online FROM players" + (isTest(env) ? '' : ' WHERE test = 0'), now() - 7 * DAY, now() - 15 * MIN);
-  return json({ ok: true, players: rows.map(playerAdmin), totals: { players: tot.n || 0, banned: tot.banned || 0, active_7d: tot.week || 0, online: tot.online || 0 } });
+  return json({ ok: true, players: rows.map(playerAdmin), totals: { players: tot.n || 0, banned: tot.banned || 0, active_7d: tot.week || 0, online: tot.online || 0, roles }, role_names: ROLES });
 }
 async function playerDetail(env, id) {
   const pid = clean(id, 64);
@@ -640,7 +739,8 @@ async function playerDetail(env, id) {
   if (!p && !orders.length) throw new HttpError(404, 'Jogador não encontrado.');
   const grants = await all(env, 'SELECT * FROM grants WHERE player_id = ? OR claimed_player = ? ORDER BY created_at DESC LIMIT 30', pid, pid);
   const log = await all(env, "SELECT at, actor, action, target, result, detail FROM audit WHERE target = ? OR actor = ? ORDER BY id DESC LIMIT 40", pid, 'player:' + pid);
-  return json({ ok: true, player: p ? playerAdmin(p) : null, orders: orders.map(orderAdmin), grants: grants.map(grantAdmin), audit: log });
+  const notices = await all(env, 'SELECT * FROM notices WHERE player_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 20', pid);
+  return json({ ok: true, player: p ? playerAdmin(p) : null, orders: orders.map(orderAdmin), grants: grants.map(grantAdmin), audit: log, notices: notices.map(noticeOut), role_names: ROLES });
 }
 async function banPlayer(env, A, id, body, ip) {
   const p = await playerRow(env, clean(id, 64));
@@ -817,6 +917,11 @@ export async function handle(request, env, ctx) {
       if ((r = path.match(/^\/api\/admin\/grants\/(g[0-9a-f]{18})\/revoke$/)) && m === 'POST') return await revokeGrant(env, A, r[1], body, ip);
       if ((r = path.match(/^\/api\/admin\/orders\/(SIS-\d{6})\/deliver$/)) && m === 'POST') return await deliverOrder(env, A, r[1], request, ip);
       if (m === 'PUT' && path === '/api/admin/settings') return await putSettings(env, A, body, ip);
+      if ((r = path.match(/^\/api\/admin\/players\/([A-Za-z0-9_-]{8,64})\/role$/)) && m === 'PUT') return await setRole(env, A, r[1], body, ip);
+      if ((r = path.match(/^\/api\/admin\/players\/([A-Za-z0-9_-]{8,64})\/delete$/)) && m === 'POST') return await deletePlayer(env, A, r[1], body, ip);
+      if (m === 'POST' && path === '/api/admin/notices') return await createNotice(env, A, request, body, ip);
+      if (m === 'GET' && path === '/api/admin/notices') return await listNotices(env, url);
+      if ((r = path.match(/^\/api\/admin\/notices\/(n[0-9a-f]{18})\/delete$/)) && m === 'POST') return await deleteNotice(env, A, r[1], ip);
     }
     return fail(404, 'Rota inexistente.');
   } catch (e) {
