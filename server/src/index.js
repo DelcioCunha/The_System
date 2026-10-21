@@ -712,7 +712,7 @@ function playerAdmin(p) {
   let stats = {}; try { stats = JSON.parse(p.stats || '{}'); } catch (e) { stats = {}; }
   return { id: p.id, name: p.name, cls: p.cls, level: p.level, crystals: p.crystals, coins: p.coins, stats, app_version: p.app_version, platform: p.platform,
     created_at: p.created_at, last_seen: p.last_seen, syncs: p.syncs, status: p.status, ban_reason: p.ban_reason, ban_until: p.ban_until, banned_at: p.banned_at,
-    banned_by: p.banned_by, note: p.note, duel_wins: p.duel_wins || 0, duel_losses: p.duel_losses || 0, duel_points: p.duel_points || 0, spent_kz: p.spent_kz || 0, paid_orders: p.paid_orders || 0,
+    banned_by: p.banned_by, note: p.note, duel_wins: p.duel_wins || 0, duel_losses: p.duel_losses || 0, duel_points: p.duel_points || 0, duel_best: p.duel_best || 0, spent_kz: p.spent_kz || 0, paid_orders: p.paid_orders || 0,
     role: p.role_eff || p.role || 'usuario', role_name: ROLES[p.role_eff || p.role || 'usuario'], role_auto: !p.role, role_by: p.role_by || null };
 }
 function grantAdmin(g) {
@@ -732,7 +732,7 @@ async function listPlayers(env, url) {
   if (!isTest(env)) where.push('test = 0');
   const role = clean(url.searchParams.get('role'), 20);
   if (ROLES[role]) { where.push('role_eff = ?'); args.push(role); }
-  const order = { seen: 'last_seen DESC', level: 'level DESC, last_seen DESC', spent: 'spent_kz DESC, last_seen DESC', new: 'created_at DESC' }[sort] || 'last_seen DESC';
+  const order = { seen: 'last_seen DESC', level: 'level DESC, last_seen DESC', spent: 'spent_kz DESC, last_seen DESC', new: 'created_at DESC', rank: 'duel_points DESC, duel_wins DESC, last_seen DESC' }[sort] || 'last_seen DESC';
   const rows = await all(env, 'SELECT * FROM (SELECT *, ' + SPENT + ' FROM players)' + (where.length ? ' WHERE ' + where.join(' AND ') : '') + ' ORDER BY ' + order + ' LIMIT ?', ...args, limit);
   const rc = await all(env, 'SELECT ' + ROLE_EFF + ' AS r, COUNT(*) AS n FROM players' + (isTest(env) ? '' : ' WHERE test = 0') + ' GROUP BY r');
   const roles = {}; Object.keys(ROLES).forEach((k) => { roles[k] = 0; }); rc.forEach((x) => { roles[x.r] = x.n; });

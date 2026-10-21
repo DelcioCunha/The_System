@@ -758,6 +758,14 @@ await test('duelo: salas públicas, tempo esgotado (2 vezes = derrota), desistir
     await C('/api/duel/leave', Object.assign(as(P2, TOK2), { id: c6.duel.id }));
     assert.equal((await C('/api/social/state', as(P2, TOK2))).me.points, before - 1, 'derrota tira 1 ponto');
     assert.equal((await C('/api/social/state', as(P1, TOK1))).me.points, 1);
+    // o painel vê a patente de cada jogador e ordena por patente
+    const AD = S.admin(await S.login());
+    const lr = await AD.get('/api/admin/players?sort=rank');
+    assert.equal(lr.status, 200, lr.error);
+    const pts = lr.players.map((x) => x.duel_points);
+    assert.deepEqual(pts, pts.slice().sort((a, b) => b - a), 'ordenado por pontos de patente');
+    const dp = await AD.get('/api/admin/players/' + P2);
+    assert.equal(dp.player.duel_points, before - 1); assert.ok(dp.player.duel_best >= before);
   }
   // convidar um amigo para uma sala já aberta
   await C('/api/social/friend/request', Object.assign(as(P1, TOK1), { to: P2 }));
