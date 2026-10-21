@@ -40,6 +40,7 @@ let T0 = Date.UTC(2026, 9, 18, 10, 0, 0);
 let clock = T0;
 Date.now = () => clock;
 const tick = (ms) => { clock += ms; };
+const DAYMS = 24 * 3600 * 1000;
 
 async function setup(mode) {
   const DB = d1();
@@ -572,6 +573,17 @@ await test('avisos: para todos ou para um jogador; aparecem no jogo; apagar tira
   assert.equal((await A.post('/api/admin/notices/' + all.notice.id + '/delete', {})).status, 200);
   s2 = await syncP(S, P2, TOK2); assert.equal(s2.notices.length, 0);
   assert.equal((await A.get('/api/admin/notices')).notices.length, 1);
+  // um jogador que se regista depois não recebe os avisos gerais antigos (só os novos)
+  await A.post('/api/admin/notices', { title: 'Aviso antigo', body: 'Enviado antes do registo' }, key('n4'));
+  tick(DAYMS);
+  const P3 = 'jogador_novo_99999', TOK3 = 'segredo-do-jogador-tres-55555555';
+  let s3 = await syncP(S, P3, TOK3);
+  assert.ok(!s3.notices.some((n) => n.title === 'Aviso antigo'), 'aviso anterior ao registo não aparece');
+  const A2 = S.admin(await S.login());
+  const nn = await A2.post('/api/admin/notices', { title: 'Aviso novo', body: 'Depois do registo' }, key('n5')); assert.equal(nn.status, 200, nn.error);
+  s3 = await syncP(S, P3, TOK3);
+  assert.deepEqual(s3.notices.map((n) => n.title), ['Aviso novo']);
+  assert.ok((await syncP(S, P1, TOK1)).notices.some((n) => n.title === 'Aviso antigo'), 'quem já estava registado recebe-o');
   void one;
 });
 

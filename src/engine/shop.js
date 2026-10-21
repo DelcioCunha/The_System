@@ -233,7 +233,9 @@
   SH.markRead = function (st) { var N = SH.notices(st), ch = false; N.list.forEach(function (n) { if (!N.read[n.id]) { N.read[n.id] = 1; ch = true; } }); if (ch) E.commit('avisos lidos'); };
   SH.applyNotices = function (st, list) {
     var N = SH.notices(st), fresh = [];
-    N.list = list.filter(function (n) { return n && n.id && n.title; }).slice(0, 30).map(function (n) {
+    // avisos gerais enviados antes de esta jornada começar não interessam a um jogador novo (os pessoais ficam)
+    var born = +st.created || 0;
+    N.list = list.filter(function (n) { return n && n.id && n.title && (n.personal || !born || (+n.at || 0) >= born - 60000); }).slice(0, 30).map(function (n) {
       return { id: String(n.id), title: String(n.title).slice(0, 80), body: String(n.body || '').slice(0, 1500), kind: SH.NOTICE_KINDS[n.kind] ? n.kind : 'info', at: +n.at || 0, personal: !!n.personal };
     });
     N.list.forEach(function (n) { if (!N.shown[n.id]) { N.shown[n.id] = 1; fresh.push(n); } });

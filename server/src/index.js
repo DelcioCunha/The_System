@@ -649,8 +649,9 @@ function cleanText(s, max) {
 }
 function noticeOut(n) { return { id: n.id, player_id: n.player_id, title: n.title, body: n.body, kind: n.kind, created_by: n.created_by, created_at: n.created_at, deleted_at: n.deleted_at || null }; }
 async function playerNotices(env, p) {
-  const from = Math.min(p.created_at, now()) - 30 * DAY;
-  const rows = await all(env, 'SELECT id, title, body, kind, created_at, player_id FROM notices WHERE deleted_at IS NULL AND (player_id IS NULL OR player_id = ?) AND created_at >= ? ORDER BY created_at DESC LIMIT 30', p.id, from);
+  // avisos gerais: só os enviados depois de o jogador se registar; avisos pessoais: sempre
+  const from = Math.min(p.created_at, now()) - MIN;
+  const rows = await all(env, 'SELECT id, title, body, kind, created_at, player_id FROM notices WHERE deleted_at IS NULL AND ((player_id IS NULL AND created_at >= ?) OR player_id = ?) ORDER BY created_at DESC LIMIT 30', from, p.id);
   return rows.map((n) => ({ id: n.id, title: n.title, body: n.body, kind: n.kind, at: n.created_at, personal: !!n.player_id }));
 }
 async function createNotice(env, A, request, body, ip) {
