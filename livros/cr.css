@@ -1,0 +1,33 @@
+
+/* ===== Crónicas do Sistema (narrativa) ===== */
+.page.text .inner { inset: 22mm 22mm 20mm; overflow: hidden; }
+.rh { position: absolute; left: 22mm; right: 22mm; top: 11mm; display: flex; justify-content: space-between; font: 600 6.8pt var(--f-d); letter-spacing: .35em; color: #4c6a92; text-transform: uppercase; border-bottom: 1px solid rgba(111, 214, 255, .15); padding-bottom: 1.5mm; }
+.rh span:last-child { color: var(--glow); letter-spacing: .2em; }
+.page.text .foot { left: 22mm; right: 22mm; }
+p.nar { font: 500 12.2pt/1.62 'Cormorant Garamond', 'Barlow', serif; color: #e3ecf9; margin: 0 0 3.2mm; text-align: justify; hyphens: auto; }
+p.nar.drop::first-letter { font: 900 34pt/.9 var(--f-s); color: var(--glow); float: left; margin: 1.5mm 2.5mm 0 0; text-shadow: 0 0 4mm rgba(111, 214, 255, .5); }
+p.nar.cont-a { margin-bottom: 0; text-align-last: justify; }
+.crfig { margin: 3mm 0 5mm; }
+.crimg { height: 92mm; background-size: cover; background-position: center 30%; border: 1px solid var(--line-hi); box-shadow: 0 0 10mm rgba(111, 214, 255, .1); }
+.crfig figcaption { text-align: left; font: italic 500 9.6pt 'Cormorant Garamond', serif; letter-spacing: 0; text-transform: none; color: var(--muted); margin-top: 2mm; padding-left: 3mm; border-left: 2px solid var(--glow); }
+.reg { margin: 2mm 0 5mm; padding: 3.5mm 4.5mm; border: 1px solid rgba(255, 200, 90, .35); background: linear-gradient(180deg, rgba(255, 200, 90, .07), rgba(8, 16, 31, .7)); }
+.reg-h { font: 700 7.4pt var(--f-d); letter-spacing: .3em; color: var(--gold); margin-bottom: 1.6mm; }
+.reg p { margin: 0; font: 400 9.8pt/1.5 var(--f-b); color: #d9e4f3; }
+.crq { margin: 4mm 6mm 5mm; padding: 0; text-align: center; }
+.crq p { font: italic 600 15pt/1.4 'Cormorant Garamond', serif; color: #fff; margin: 0; text-shadow: 0 0 4mm rgba(111, 214, 255, .35); }
+.crq cite { display: block; margin-top: 1.5mm; font: normal 600 7.6pt var(--f-d); letter-spacing: .25em; text-transform: uppercase; color: var(--gold); }
+.page.text .sysbox { margin: 3mm 0 4mm; }
+.page.text .sysbox p { font-size: 10.6pt; }
+/* aberturas */
+.opener .epi { font: italic 500 15pt/1.4 'Cormorant Garamond', serif; color: #e9f2ff; max-width: 150mm; margin-top: 5mm; border-left: 2px solid var(--glow); padding-left: 4mm; }
+.part-op .op-veil.part { background: radial-gradient(70% 50% at 50% 55%, rgba(6, 10, 20, .35), rgba(6, 10, 20, .88)), linear-gradient(180deg, transparent 50%, var(--void)); }
+.part-op .inner { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+.op-in.part { text-align: center; }
+.op-t.big { font-size: 46pt; }
+.cv-veil.cr { background: linear-gradient(180deg, rgba(6, 10, 20, .1) 0%, rgba(6, 10, 20, .15) 45%, rgba(6, 10, 20, .9) 75%, var(--void) 100%); }
+.cv-in.cr { justify-content: flex-end; padding-bottom: 24mm; }
+.cr-toc .ti { grid-template-columns: 1fr 12mm; padding: 1.25mm 0; }
+.cr-toc .ti .tt { font-size: 9.6pt; padding-left: 5mm; }
+.cr-toc .ti.main { margin-top: 2.5mm; border-bottom-color: var(--line-hi); }
+.cr-toc .ti.main .tt { font: 800 10.4pt var(--f-d); color: var(--glow); padding-left: 0; letter-spacing: .08em; text-transform: uppercase; }
+.cr-toc { columns: 2; column-gap: 8mm; } .cr-toc .ti { break-inside: avoid; }

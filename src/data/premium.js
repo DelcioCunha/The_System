@@ -342,8 +342,8 @@
   /* Tabela oficial de pacotes de Cristais (igual à migração 0003 do servidor).
      Aparece sempre no jogo; quando o servidor está ligado, os pacotes e preços vêm dele. */
   /* WhatsApp do administrador: onde se compram os Cristais (MULTICAIXA Express). */
-  S.SHOP_WHATSAPP = '244958313378';
-  S.SHOP_WHATSAPP_SHOW = '+244 958 313 378';
+  S.SHOP_WHATSAPP = '244947976103';
+  S.SHOP_WHATSAPP_SHOW = '+244 947 976 103';
   S.CRYSTAL_PACKS = [
     { id: 'p_punhado', name: 'Punhado de Cristais', base: 60, bonus: 0, crystals: 60, price_kz: 600 },
     { id: 'p_bolsa', name: 'Bolsa de Cristais', base: 120, bonus: 10, crystals: 130, price_kz: 1200 },

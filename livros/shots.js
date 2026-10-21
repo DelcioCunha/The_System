@@ -1,0 +1,81 @@
+const { chromium } = require('playwright');
+const OUT = '/home/claude/livro/shots/';
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+  const p = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+  const errs = []; p.on('pageerror', e => errs.push(e.message));
+  const W = (ms) => p.waitForTimeout(ms);
+  const shot = async (n, full, keep) => { await W(700); if (!keep && n > '04') await clean(); await W(500); if (full) await ev(() => { const s = document.createElement('style'); s.id = 'nofix'; s.textContent = 'nav, .nav, .bottom-nav { display: none !important; } body::before, body::after, html::before, html::after { display: none !important; }'; document.head.appendChild(s);
+      document.querySelectorAll('body *').forEach((el) => { const cs = getComputedStyle(el); if (cs.position === 'fixed' && !el.closest('.top') && !el.classList.contains('top')) { el.dataset.hid = el.style.visibility || '-'; el.style.visibility = 'hidden'; } }); });
+    await p.screenshot({ path: OUT + n + '.png', fullPage: !!full }); if (full) await ev(() => { const s = document.getElementById('nofix'); s && s.remove(); document.querySelectorAll('[data-hid]').forEach((el) => { el.style.visibility = el.dataset.hid === '-' ? '' : el.dataset.hid; delete el.dataset.hid; }); }); };
+  const ev = (f, a) => p.evaluate(f, a);
+  const R = () => ev(() => { const u = SYS.ui.state; u.popups = []; SYS.engine.takeEvents(); SYS.ui.render(); window.scrollTo(0, 0); });
+  const clean = () => ev(() => { const u = SYS.ui.state; u.popups = u.popups.filter((x) => x._id >= 999); SYS.engine.takeEvents(); u.holdUntil = 0; SYS.ui.render(); });
+  await p.addInitScript((L) => { document.addEventListener('DOMContentLoaded', () => { L.forEach((h) => { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'file://' + h; document.head.appendChild(l); }); }); }, ["/home/claude/livro/fonts/node_modules/@fontsource/oxanium/500.css", "/home/claude/livro/fonts/node_modules/@fontsource/oxanium/600.css", "/home/claude/livro/fonts/node_modules/@fontsource/oxanium/700.css", "/home/claude/livro/fonts/node_modules/@fontsource/oxanium/800.css", "/home/claude/livro/fonts/node_modules/@fontsource/barlow/400.css", "/home/claude/livro/fonts/node_modules/@fontsource/barlow/500.css", "/home/claude/livro/fonts/node_modules/@fontsource/barlow/600.css", "/home/claude/livro/fonts/node_modules/@fontsource/jetbrains-mono/400.css", "/home/claude/livro/fonts/node_modules/@fontsource/jetbrains-mono/500.css"]);
+  await p.goto('file:///home/claude/sistema-app/www/index.html'); await W(1500);
+  await shot('01_intro');
+  await p.click('[data-a="intro-yes"]'); await W(600);
+  await p.fill('#in-name', 'Natan'); await p.click('[data-a="intro-cls"][data-v="mago"]'); await W(300);
+  await shot('02_classes');
+  await ev(() => document.querySelector('.class-card').scrollIntoView({ block: 'center' })); await shot('02b_classes_cards');
+  await p.click('[data-a="intro-go"]'); await W(5500); await shot('03_first_talk');
+  for (let k = 0; k < 5; k++) { const n = await p.$('[data-a="first-next"]'); if (!n) break; await n.click(); await W(200); }
+  await W(4500); await shot('03b_first_ask');
+  // estado de exemplo: nível 34, missões, chefes, itens
+  await ev(() => {
+    const E = SYS.engine, st = E.state, S = SYS, M = SYS.missions;
+    S.engine.gainXp(st, S.totalXpForLevel(34) - S.totalXpForLevel(1), false);
+    st.alloc.int += 40; st.alloc.per += 20; st.alloc.vit += 20; st.freePoints = 21;
+    st.coins = 18450; st.crystals = 340;
+    for (let i = 1; i <= 24; i++) { st.defeated['b' + i] = Date.now() - i * 3600e3; st.trophies['b' + i] = 1; }
+    ['po_vida1','po_vida1','po_mana1','bau_arsenal_2','bau_alquimia_1'].forEach((id) => { if (S.ITEMS[id]) E.addItem(st, id); });
+    const sh = S.shadows; sh.ensure(st); ['b10','b20','b7','b15'].forEach((id) => { st.shadows.owned[id] = Date.now(); }); st.shadows.active = ['b20','b10','b15'];
+    st.shadows.pending.b24 = { at: Date.now(), exp: Date.now() + 20 * 3600e3 };
+    st.daily.streak = 9; st.daily.bestStreak = 14; st.daily.progress.values = { t1: 30, t2: 20, t3: 30 };
+    const mk = (title, desc, diff, stats, dl, rep) => { const r = M.create({ title, desc, difficulty: diff, stats, deadline: dl, recur: rep || 'once', days: [], date: E.dateKey() }); if (!r.ok) console.log('ERRO', r.msg); };
+    mk('Ler 20 páginas de um livro', 'Leitura diária antes de dormir, sem telemóvel', 'C', ['int', 'per'], '22:30', 'daily');
+    mk('Treino de ginásio: pernas', 'Agachamento, prensa e corrida de 15 minutos', 'B', ['str', 'vit'], '20:00');
+    mk('Estudar inglês durante 45 minutos', 'Vocabulário e uma aula gravada', 'C', ['int'], '21:00', 'daily');
+    mk('Arrumar o quarto e lavar a roupa', 'Tudo dobrado e no lugar', 'D', ['vit'], '18:00');
+    st.c.missionsDone = 87; st.c.bossesWon = 24;
+    st.settings.talk = 'off';
+    E.checkAchievements(st); E.takeEvents(); E.commit('livro');
+    setInterval(() => { const u = SYS.ui.state; const before = u.popups.length; u.popups = u.popups.filter((x) => x._id >= 999); if (u.popups.length !== before) SYS.ui.render(); }, 150);
+  });
+  await R(); await shot('04_status'); await shot('04b_status_full', true);
+  await ev(() => { SYS.ui.state.tab = 'missoes'; SYS.ui.render(); window.scrollTo(0,0); }); await shot('05_missoes', true);
+  await ev(() => { const b = document.querySelector('[data-a="m-new"]'); b && b.click(); }); await W(500);
+  await p.fill('#mf-title', 'Correr 5 km no parque').catch(()=>{}); await shot('06_nova_missao');
+  await ev(() => { SYS.ui.state.modal = null; SYS.ui.state.form = null; SYS.ui.state.tab = 'combate'; SYS.ui.state.gate = 3; SYS.ui.render(); window.scrollTo(0,0); }); await shot('07_combate', true);
+  await ev(() => { SYS.ui.state.modal = { type: 'boss', id: 'b29' }; SYS.ui.render(); }); await shot('08_chefe');
+  await ev(() => { const b = document.querySelector('[data-a="fight"]'); b && b.click(); }); await W(9000); await shot('09_batalha');
+  await ev(() => { const b = document.querySelector('[data-a="b-sheet"][data-v="skills"]'); b && b.click(); }); await W(800); await shot('09b_batalha_hab');
+  await ev(() => { const st = SYS.engine.state; st.battle = null; SYS.ui.state.modal = null; SYS.ui.state.tab = 'loja'; SYS.ui.state.shopTab = 'arma'; SYS.ui.render(); window.scrollTo(0,0); }); await shot('10_loja');
+  await ev(() => { SYS.ui.state.shopTab = 'bau'; SYS.ui.render(); }); await shot('10b_loja_baus');
+  await ev(() => { SYS.ui.state.shopTab = 'lazer'; SYS.ui.render(); }); await shot('10c_loja_lazer');
+  await ev(() => { SYS.ui.state.tab = 'bolsa'; SYS.ui.render(); window.scrollTo(0,0); }); await shot('11_bolsa');
+  await ev(() => { SYS.ui.state.tab = 'status'; SYS.ui.state.page = 'trophies'; SYS.ui.render(); window.scrollTo(0,0); }); await shot('12_trofeus');
+  await ev(() => { SYS.ui.state.modal = { type: 'info', k: 'trophy', id: 'b20' }; SYS.ui.render(); }); await shot('12b_trofeu');
+  await ev(() => { SYS.ui.state.modal = null; SYS.ui.state.page = 'servos'; SYS.ui.render(); window.scrollTo(0,0); }); await shot('13_servos', true);
+  await ev(() => { SYS.ui.state.page = 'skills'; SYS.ui.render(); window.scrollTo(0,0); }); await shot('14_habilidades');
+  await ev(() => { SYS.ui.state.page = 'ach'; SYS.ui.render(); window.scrollTo(0,0); }); await shot('15_conquistas');
+  await ev(() => { SYS.ui.state.page = 'history'; SYS.ui.render(); window.scrollTo(0,0); }); await shot('16_historico');
+  await ev(() => { SYS.ui.state.page = 'settings'; SYS.ui.render(); window.scrollTo(0,0); }); await shot('17_definicoes');
+  for (const t of ['arenas', 'loja', 'aparencia', 'obter', 'moedas']) { await ev((t) => { const u = SYS.ui.state; u.page = 'premium'; u.premTab = t; u.arenaN = null; SYS.ui.render(); window.scrollTo(0,0); }, t); await shot('18_premium_' + t); }
+  await ev(() => { const u = SYS.ui.state; u.premTab = 'arenas'; u.arenaN = 1; SYS.engine.state.arena.unlocked.ar1 = 1; SYS.ui.render(); window.scrollTo(0,0); }); await shot('18b_arena1', true);
+  await ev(() => { const SO = SYS.social; SO.ready = () => true; SO.cache = { ok: true, me: { points: 63, wins: 70, losses: 7, best: 63 }, friends: [{ id: 'SIS-RUI001', name: 'Rui', cls: 'guerreiro', level: 41, online: true, points: 112 }, { id: 'SIS-ANA002', name: 'Ana', cls: 'assassino', level: 29, online: false, seen: Date.now() - 7200e3, points: 18 }], requests_in: [], requests_out: [], invites: [], open: [{ id: 'd1', code: 'K7Q2ZP', name: 'Marta', cls: 'arqueiro', level: 36, points: 47 }], unread: 0 };
+    const u = SYS.ui.state; u.page = 'social'; u.socTab = 'amigos'; SYS.ui.render(); window.scrollTo(0,0); }); await shot('19_social');
+  await ev(() => { SYS.ui.state.socTab = 'duelos'; SYS.ui.render(); }); await shot('19b_duelos');
+  await ev(() => { SYS.ui.state.modal = { type: 'ptinfo' }; SYS.ui.render(); }); await shot('20_patentes');
+  await ev(() => { SYS.ui.state.modal = null; SYS.ui.state.page = null; SYS.engine.emit({ type: 'rank', up: true, rank: 12, from: 11, title: 'NOVA PATENTE', name: 'x', lines: ['Próxima patente aos 65 pontos.', 'Pontos de patente: 60'] }); SYS.ui.render(); }); await W(300);
+  await ev(() => { const E = SYS.engine; const evs = E.takeEvents(); evs.forEach((e) => { e._id = 2000 + Math.random(); SYS.ui.state.popups.push(e); }); SYS.ui.render(); }); await shot('21_nova_patente');
+  // conversa do Sistema
+  await ev(() => { const u = SYS.ui.state; u.popups = []; const conv = SYS.talk && SYS.talk.pick ? null : null; u.popups.push({ _id: 999, type: 'talk', conv: { line: 'Sabes quantas vezes abriste esta app sem fazer nada? Eu sei.', choices: [{ t: 'Quantas?' }, { t: 'Hoje vai ser diferente.' }, { t: 'Não me interessa.' }] } }); SYS.ui.render(); }); await shot('22_conversa');
+  await ev(() => { const u = SYS.ui.state; u.popups = [{ _id: 1001, type: 'watch', level: 2, title: 'AVISO DO SISTEMA', lines: ['Natan. «asdasd» não é uma missão.', 'O Sistema não regista ruído.', 'Integridade: 92%'] }]; SYS.ui.render(); }); await shot('23_vigilancia');
+  await ev(() => { const u = SYS.ui.state; u.popups = [{ _id: 1002, type: 'levelup', level: 35, title: 'Herói de Rank B', skills: ['Espelho Arcano'] }]; SYS.ui.render(); }); await shot('24_levelup');
+  await ev(() => { const u = SYS.ui.state; u.popups = [{ _id: 1003, type: 'loot', tier: 'raro', title: 'BAÚ ABERTO', items: ['po_vida1', 'po_mana1'], coins: 350 }]; SYS.ui.render(); }); await shot('25_bau');
+  await ev(() => { const u = SYS.ui.state; u.popups = []; u.page = 'reports'; SYS.ui.render(); window.scrollTo(0,0); }); await shot('26_relatorios');
+  await ev(() => { const u = SYS.ui.state; u.page = 'collection'; SYS.ui.render(); window.scrollTo(0,0); }); await shot('27_colecao');
+  console.log(JSON.stringify(errs));
+  await b.close();
+})();
