@@ -412,6 +412,35 @@
     var src = S.SKILL_ART && S.SKILL_ART[s.id];
     return src ? '<div class="ico has-img skill-ico' + (cls ? ' ' + cls : '') + '"><img src="' + src + '" alt="" loading="lazy"></div>' : '';
   }
+  /* ---------- patentes dos duelos ---------- */
+  function ptIcon(i, cls) { var r = S.DUEL_RANKS[i]; return uiIcon(r.id, '<span class="pt-fb" style="--pc:' + r.color + '">' + r.icon + '</span>', cls || 'pt-img'); }
+  function ptChip(points) {
+    if (points == null || !S.duelRank) return '';
+    var r = S.duelRank(points).rank;
+    return '<span class="pt-chip" style="--pc:' + r.color + '">' + ptIcon(r.i, 'pt-chip-img') + esc(r.tierName) + (r.div ? ' ' + ['I', 'II', 'III', 'IV', 'V'][r.div - 1] : '') + '</span>';
+  }
+  function ptCard(points) {
+    var R = S.duelRank(points), r = R.rank;
+    return '<button class="pt-card" data-a="pt-info" style="--pc:' + r.color + '"><span class="pt-big">' + ptIcon(r.i, 'pt-big-img') + '</span><span class="grow"><span class="small muted">Patente</span><b class="pt-name">' + esc(r.name) + '</b>' +
+      (R.max ? '<span class="small">Patente máxima · <b class="mono">' + R.points + '</b> pontos</span>' :
+        '<span class="pt-bar"><i style="width:' + Math.round(R.into / R.need * 100) + '%"></i></span><span class="small muted">' + R.into + '/' + R.need + ' · faltam ' + R.toNext + (R.toNext === 1 ? ' vitória' : ' vitórias') + ' para ' + esc(R.next.name) + '</span>') +
+      '</span><span class="muted">›</span></button>';
+  }
+  function ptModal() {
+    var c = SO.cache, so = E.state.social || {}, pts = c && c.me ? c.me.points || 0 : (so.points || 0), R = S.duelRank(pts);
+    var best = Math.max(R.rank.i, so.bestRank || 0, c && c.me && c.me.best != null ? S.duelRank(c.me.best).rank.i : 0);
+    var h = '<div class="sheet-h"><h2>Patentes dos duelos</h2><button class="btn sm ghost" data-a="close">Fechar</button></div>' +
+      '<p class="small" style="margin-top:0">Cada vitória num duelo dá <b>+1 ponto</b> e cada derrota tira <b>1 ponto</b>. A cada 5 pontos sobes de patente; se desceres abaixo do limite, voltas à anterior. Aos <b>200 pontos</b> chegas a Monarca dos Duelos: daí para a frente os pontos continuam a contar, mas a patente só muda se voltares aos 199.</p>' +
+      '<div class="pt-now" style="--pc:' + R.rank.color + '">' + ptIcon(R.rank.i, 'pt-now-img') + '<div><b>' + esc(R.rank.name) + '</b><div class="small muted">' + R.points + ' pontos</div></div></div>';
+    S.DUEL_TIERS.concat([{ id: 'monarca', short: 'Monarca', color: '#ffd86b' }]).forEach(function (t) {
+      var list = S.DUEL_RANKS.filter(function (r) { return r.tier === t.id; });
+      h += '<div class="info-h" style="color:' + t.color + '">' + esc(t.short) + '</div><div class="pt-grid">' + list.map(function (r) {
+        var got = r.i <= best, cur = r.i === R.rank.i;
+        return '<div class="pt-cell' + (got ? ' got' : '') + (cur ? ' cur' : '') + '" style="--pc:' + r.color + '">' + ptIcon(r.i, 'pt-cell-img') + '<span class="pt-cell-n">' + (r.div ? ['I', 'II', 'III', 'IV', 'V'][r.div - 1] : '♛') + '</span><span class="pt-cell-p mono">' + r.min + '</span></div>';
+      }).join('') + '</div>';
+    });
+    return h;
+  }
   /* identificador do Comandante (penúltimo) e do Chefe da arena (último) */
   function rankBadge(b, cls) {
     var r = S.shadows && S.shadows.rank(b);
@@ -865,7 +894,7 @@
     h += '<section class="win prem-win prem-head"><div class="prem-bal"><span class="small muted">Os teus Cristais</span><span class="prem-big">' + crys(st.crystals || 0) + '</span></div>' +
       '<div class="prem-id"><span class="small muted">ID de Jogador</span><button class="mono id-chip" data-a="id-copy">' + esc(st.playerId) + '</button></div>' +
       (st.shop && st.shop.role ? '<div class="prem-id"><span class="small muted">Tipo de conta</span><span class="role-chip r-' + esc(st.shop.role.id) + '">' + esc(st.shop.role.name) + '</span></div>' : '') +
-      '<div class="row" style="margin-top:10px;gap:8px"><button class="btn prem grow" data-a="prem-tab" data-t="obter"><i class="crys-ico"></i> Obter Cristais</button><button class="btn coin-btn" data-a="prem-tab" data-t="moedas"><i class="coin-ico"></i> Moedas</button><button class="btn don-btn" data-a="prem-tab" data-t="loja">\u2665 Doar</button></div></section>';
+      '<div class="row" style="margin-top:10px;gap:8px"><button class="btn prem grow" data-a="prem-tab" data-t="obter"><i class="crys-ico"></i> Cristais</button><button class="btn coin-btn" data-a="prem-tab" data-t="moedas"><i class="coin-ico"></i> Moedas</button><button class="btn don-btn" data-a="prem-tab" data-t="loja">\u2665 Doar</button></div></section>';
     h += '<div class="chips" style="margin-top:12px">' + [['arenas', 'Arenas'], ['loja', 'Loja Exclusiva'], ['aparencia', 'Aparência'], ['obter', 'Obter Cristais'], ['moedas', 'Comprar Moedas']].map(function (x) {
       return '<button class="chip' + (t === x[0] ? ' on' : '') + '" data-a="prem-tab" data-t="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
     if (t === 'arenas') {
@@ -937,7 +966,8 @@
     h += '<section class="win soc-me"><div class="row">' + socAvatar({ cls: st.cls, level: st.level, name: st.name, online: true }, 'big') +
       '<div class="grow"><div class="card-t">' + esc(st.name) + '</div><div class="small muted">' + clsName(st.cls) + ' · Nv ' + st.level + '</div>' +
       '<button class="btn sm mono id-chip" data-a="id-copy">' + esc(st.playerId) + ' ⧉</button></div>' +
-      '<div class="soc-rec"><b class="mono">' + me.rating + '</b><span class="small muted">pontos</span><span class="small"><span style="color:var(--good)">' + me.wins + 'V</span> · <span style="color:var(--danger)">' + me.losses + 'D</span></span></div></div>' +
+      '<div class="soc-rec"><b class="mono">' + (me.points || 0) + '</b><span class="small muted">pontos</span><span class="small"><span style="color:var(--good)">' + me.wins + 'V</span> · <span style="color:var(--danger)">' + me.losses + 'D</span></span></div></div>' +
+      ptCard(me.points || 0) +
       '<p class="hint" style="margin:8px 0 0">Partilha o teu ID para os outros jogadores te adicionarem.</p></section>';
     h += '<div class="chips" style="margin-top:12px">' + [['amigos', 'Amigos', c.friends.length, c.unread], ['duelos', 'Duelos', null, c.invites.length], ['pedidos', 'Pedidos', null, c.requests_in.length]].map(function (x) {
       return '<button class="chip' + (t === x[0] ? ' on' : '') + '" data-a="soc-tab" data-v="' + x[0] + '">' + x[1] + (x[2] != null ? ' <span class="muted">' + x[2] + '</span>' : '') + (x[3] ? ' <span class="badge-in">' + x[3] + '</span>' : '') + '</button>';
@@ -962,7 +992,7 @@
     if (!c.friends.length) h += '<div class="empty">Ainda não tens amigos no Sistema. Procura alguém pelo ID ou pelo nome.</div>';
     else h += '<div class="stack" style="gap:8px">' + c.friends.map(function (f) {
       return '<div class="card soc-row' + (f.online ? ' online' : '') + '"><div class="card-h">' + socAvatar(f) + '<div class="grow"><div class="card-t">' + esc(f.name) + (f.unread ? ' <span class="badge-in">' + f.unread + '</span>' : '') + '</div>' +
-        '<div class="small muted">' + clsName(f.cls) + ' · Nv ' + f.level + ' · <span class="' + (f.online ? 'on-txt' : '') + '">' + seenText(f) + '</span></div></div></div>' +
+        '<div class="small muted">' + clsName(f.cls) + ' · Nv ' + f.level + ' · <span class="' + (f.online ? 'on-txt' : '') + '">' + seenText(f) + '</span></div>' + ptChip(f.points) + '</div></div>' +
         '<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm grow" data-a="chat-open" data-id="' + esc(f.id) + '">' + uiIcon('ui_chat', '💬', 'btn-ico') + ' Conversar</button><button class="btn sm grow bad" data-a="duel-invite" data-id="' + esc(f.id) + '">' + uiIcon('ui_duel', '⚔', 'btn-ico') + ' Desafiar</button><button class="btn sm ghost" data-a="soc-remove" data-id="' + esc(f.id) + '" aria-label="Remover amigo">✕</button></div></div>';
     }).join('') + '</div>';
     return h + '</section>';
@@ -982,15 +1012,15 @@
   function duelsTab(st, c) {
     var so = SO.ensure(st), today = E.dateKey(), left = Math.max(0, SO.DAILY - (so.day === today ? so.count : 0));
     var h = '<section class="win duel-win"><div class="win-h">Arena de Duelos</div>' +
-      '<p class="small muted" style="margin:0 0 10px">Combate 1 contra 1, por turnos, contra jogadores reais. Cada um usa os seus atributos e a habilidade da sua classe. Perder não tira nada. Recompensas hoje: <b>' + left + '/' + SO.DAILY + '</b> duelos.</p>' +
+      '<p class="small muted" style="margin:0 0 10px">Combate 1 contra 1, por turnos, contra jogadores reais. Cada um usa os seus atributos e a habilidade da sua classe. Cada vitória dá +1 ponto de patente e cada derrota tira 1. Recompensas hoje: <b>' + left + '/' + SO.DAILY + '</b> duelos.</p>' +
       '<div class="row" style="gap:6px"><button class="btn bad grow" data-a="duel-create" data-p="1">' + uiIcon('ui_duel', '⚔', 'btn-ico') + ' Criar sala pública</button><button class="btn grow" data-a="duel-create" data-p="0">Sala privada</button></div>' +
       '<div class="row" style="margin-top:8px"><input class="in grow mono" id="duel-code" data-keep maxlength="6" placeholder="Código da sala" autocomplete="off" style="text-transform:uppercase"><button class="btn" data-a="duel-join-code">Entrar</button></div></section>';
     if (c.invites.length) h += '<section class="win gold"><div class="win-h">Desafios recebidos <small>' + c.invites.length + '</small></div><div class="stack" style="gap:8px">' + c.invites.map(function (d) {
-      return '<div class="card soc-row"><div class="card-h">' + socAvatar(d) + '<div class="grow"><div class="card-t">' + esc(d.name) + ' desafia-te</div><div class="small muted">' + clsName(d.cls) + ' · Nv ' + d.level + ' · sala ' + esc(d.code) + '</div></div><button class="btn sm bad" data-a="duel-join" data-id="' + esc(d.id) + '">Aceitar</button></div></div>';
+      return '<div class="card soc-row"><div class="card-h">' + socAvatar(d) + '<div class="grow"><div class="card-t">' + esc(d.name) + ' desafia-te</div><div class="small muted">' + clsName(d.cls) + ' · Nv ' + d.level + ' · sala ' + esc(d.code) + '</div>' + ptChip(d.points) + '</div><button class="btn sm bad" data-a="duel-join" data-id="' + esc(d.id) + '">Aceitar</button></div></div>';
     }).join('') + '</div></section>';
     h += '<section class="win"><div class="win-h">Salas abertas <small>' + c.open.length + '</small></div>' + (c.open.length ? '<div class="stack" style="gap:8px">' + c.open.map(function (d) {
       var gap = d.level - st.level;
-      return '<div class="card soc-row"><div class="card-h">' + socAvatar(d) + '<div class="grow"><div class="card-t">' + esc(d.name) + '</div><div class="small muted">' + clsName(d.cls) + ' · Nv ' + d.level + ' · ' + d.rating + ' pontos' + (Math.abs(gap) >= 10 ? ' · <span style="color:' + (gap > 0 ? 'var(--danger)' : 'var(--good)') + '">' + (gap > 0 ? '+' : '') + gap + ' níveis</span>' : '') + '</div></div><button class="btn sm bad" data-a="duel-join" data-id="' + esc(d.id) + '">Lutar</button></div></div>';
+      return '<div class="card soc-row"><div class="card-h">' + socAvatar(d) + '<div class="grow"><div class="card-t">' + esc(d.name) + '</div><div class="small muted">' + clsName(d.cls) + ' · Nv ' + d.level + ' · ' + (d.points || 0) + ' pontos' + (Math.abs(gap) >= 10 ? ' · <span style="color:' + (gap > 0 ? 'var(--danger)' : 'var(--good)') + '">' + (gap > 0 ? '+' : '') + gap + ' níveis</span>' : '') + '</div></div><button class="btn sm bad" data-a="duel-join" data-id="' + esc(d.id) + '">Lutar</button></div></div>';
     }).join('') + '</div>' : '<div class="empty">Nenhuma sala aberta agora. Cria a tua e espera por um adversário.</div>') + '</section>';
     h += '<section class="win"><div class="win-h">Últimos duelos</div>' + (ui.duelHist ? (ui.duelHist.length ? '<div class="stack" style="gap:6px">' + ui.duelHist.map(function (x) {
       return '<div class="row between small"><span>' + (x.won ? '<b style="color:var(--good)">Vitória</b>' : '<b style="color:var(--danger)">Derrota</b>') + ' contra ' + esc(x.opponent || '?') + '</span><span class="muted">' + timeStr(x.at) + '</span></div>';
@@ -1066,7 +1096,9 @@
       var isFriend = ((SO.cache && SO.cache.friends) || []).some(function (f) { return f.id === opId; });
       h += '<div class="card duel-end ' + (won ? 'win' : 'lose') + '" style="margin-top:10px;text-align:center"><h3 style="color:' + (won ? 'var(--gold)' : 'var(--danger)') + '">' + (won ? 'Vitória' : 'Derrota') + '</h3>' +
         '<div class="small">' + (d.reason === 'forfeit' ? (won ? 'O adversário desistiu.' : 'Desististe do duelo.') : d.reason === 'timeout' ? (won ? 'O adversário deixou passar o tempo duas vezes.' : 'Deixaste passar o tempo duas vezes.') : d.reason === 'turns' ? 'Limite de turnos: venceu quem tinha mais vida.' : (won ? 'Derrubaste ' + esc(B.name) + '.' : esc(B.name) + ' derrubou-te.')) + '</div>' +
-        (rt ? '<div class="small mono" style="margin-top:6px">Pontos de duelo: ' + rt[0] + ' → <b>' + rt[1] + '</b> (' + (rt[1] >= rt[0] ? '+' : '') + (rt[1] - rt[0]) + ')</div>' : '') +
+        (d.result && d.result.points && d.result.points[me] ? (function (pp) { var a = S.duelRank(pp[0]).rank, b = S.duelRank(pp[1]).rank;
+          return '<div class="pt-end' + (b.i > a.i ? ' up' : b.i < a.i ? ' down' : '') + '" style="--pc:' + b.color + '">' + ptIcon(b.i, 'pt-end-img') + '<div><div class="small muted">' + (b.i > a.i ? 'Subiste de patente' : b.i < a.i ? 'Desceste de patente' : 'Patente') + '</div><b>' + esc(b.name) + '</b>' +
+            '<div class="small mono">Pontos: ' + pp[0] + ' → <b>' + pp[1] + '</b> (' + (pp[1] >= pp[0] ? '+' : '') + (pp[1] - pp[0]) + ')</div></div></div>'; })(d.result.points[me]) : '') +
         (rw ? (rw.capped ? '<div class="small muted" style="margin-top:6px">Já recebeste as recompensas de duelo de hoje (' + SO.DAILY + ').</div>' : '<div class="reward">+' + fmt(rw.xp) + ' XP · +' + fmt(rw.coins) + ' moedas</div>') +
           (rw.used && rw.used.length ? '<div class="small muted" style="margin-top:4px">Gastaste: ' + esc(rw.used.join(', ')) + '</div>' : '') : '') +
         '<div class="row" style="gap:6px;margin-top:10px"><button class="btn grow" data-a="soc-back">Sair do duelo</button>' + (isFriend ? '<button class="btn bad grow" data-a="duel-invite" data-id="' + esc(opId) + '">Revanche</button>' : '<button class="btn bad grow" data-a="duel-create" data-p="1">Nova sala</button>') + '</div></div>';
@@ -1994,6 +2026,7 @@
     else if (m.type === 'daily') inner = dailyForm();
     else if (m.type === 'boss') inner = bossModal(m.id);
     else if (m.type === 'item') inner = itemModal(m.id);
+    else if (m.type === 'ptinfo') inner = ptModal();
     else if (m.type === 'info') inner = m.k === 'skill' ? skillInfoModal(m) : (m.k === 'trophy' ? trophyInfoModal(m) : itemModal(m.id));
     else if (m.type === 'slot') inner = slotModal(m.slot);
     else if (m.type === 'bsheet') inner = battleSheet();
@@ -2049,6 +2082,11 @@
     var lines = (ev.lines || []).map(function (l, i) { return li(esc(l), i); }).join('');
     var nLines = (ev.lines || []).length;
     if (ev.type === 'first') return firstHtml(ev, fresh);
+    if (ev.type === 'rank') {
+      var pr = S.DUEL_RANKS[ev.rank];
+      cls = 'rank-pop' + (ev.up ? ' up' : ' down'); tag = 'DUELOS'; extra = ev.up ? '<div class="rays"></div>' : '<div class="watch-veil"></div>';
+      body = '<div class="pt-pop" style="--pc:' + pr.color + '">' + ptIcon(pr.i, 'pt-pop-img') + '</div><h2>' + esc(ev.title) + '</h2><div class="pt-pop-name" style="color:' + pr.color + '">' + esc(pr.name) + '</div><ul class="sys-lines">' + lines + '</ul>';
+    } else
     if (ev.type === 'levelup') {
       cls = 'gold lvl'; extra = '<div class="rays"></div>';
       var ls = ['+' + S.POINTS_PER_LEVEL + ' pontos de atributo'].concat((ev.skills || []).map(function (s) { return 'Nova habilidade: ' + s; }));
@@ -2311,7 +2349,7 @@
       if (!ui.holdTimer) ui.holdTimer = setTimeout(function () { ui.holdTimer = null; render(); }, ui.holdUntil - Date.now() + 20);
     } else if (pop && pop._id !== ui.shownPop) {
       ui.shownPop = pop._id;
-      sfx({ loot: 'chest', levelup: 'levelup', victory: 'quest', mission: 'quest', crystals: 'gain', gift: 'gain', defeat: 'death', emergency: 'emergency', penalty: 'penalty', zone: 'penalty' }[pop.type] || 'system');
+      sfx(pop.type === 'rank' ? (pop.up ? 'levelup' : 'penalty') : { loot: 'chest', levelup: 'levelup', victory: 'quest', mission: 'quest', crystals: 'gain', gift: 'gain', defeat: 'death', emergency: 'emergency', penalty: 'penalty', zone: 'penalty' }[pop.type] || 'system');
       popupFx(pop);
     }
     ui.fxMission = null; ui.fxDaily = false; ui.spawn = false;
@@ -2636,6 +2674,7 @@
     'duel-reinvite': function (d) { if (ui.duel) SO.invite(ui.duel.id, d.id).then(function (j) { act(j, j.ok ? 'Convite enviado.' : null); if (j.ok) { ui.duel = j.duel; render(); } }); },
     'duel-join': function (d) { duelStart(SO.join({ id: d.id })); },
     'duel-join-code': function () { var v = ((document.getElementById('duel-code') || {}).value || '').trim(); if (v.length < 6) return toast('Escreve o código da sala (6 letras).', true); duelStart(SO.join({ code: v })); },
+    'pt-info': function () { ui.modal = { type: 'ptinfo' }; render(); },
     'duel-open': function (d) { ui.page = 'duel'; ui.duelId = d.id; ui.duel = null; render(); window.scrollTo(0, 0); duelPoll(); },
     'duel-copy': function () { if (ui.duel) copyText(ui.duel.code, 'Código ' + ui.duel.code + ' copiado.'); },
     'duel-act': function (d) { duelMove(d.v); },

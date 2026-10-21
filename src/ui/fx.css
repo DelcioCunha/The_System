@@ -469,3 +469,11 @@ body::after {
 .boss-tile .bt-tl { position: absolute; top: 5px; left: 5px; z-index: 2; display: flex; align-items: center; gap: 4px; }
 .boss-tile .bt-tl .bt-lv { position: static; }
 .boss-tile .bt-rk { font-size: 8px; padding: 2px 5px; letter-spacing: .05em; background: rgba(6, 10, 20, .88); }
+
+/* patentes: tamanhos das insígnias (acima da regra geral .ui-ico) */
+.ui-ico.pt-big-img { width: 56px; height: 56px; margin: 0; border-radius: 0; }
+.ui-ico.pt-now-img { width: 64px; height: 64px; margin: 0; border-radius: 0; }
+.ui-ico.pt-end-img { width: 48px; height: 48px; margin: 0; border-radius: 0; }
+.ui-ico.pt-cell-img { width: 48px; height: 48px; margin: 0; border-radius: 0; }
+.ui-ico.pt-pop-img { width: 140px; height: 140px; margin: 0; border-radius: 0; }
+.ui-ico.pt-chip-img { width: 18px; height: 18px; margin: 0; border-radius: 0; }

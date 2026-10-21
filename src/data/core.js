@@ -6,7 +6,7 @@
 
   S.VERSION = '1.0.0';
   S.SAVE_SCHEMA = 1;
-  S.MAX_LEVEL = 100;
+  S.MAX_LEVEL = 100; // teto do conteúdo (títulos, formas, chefes). O nível continua a subir para lá dos 100.
   S.POINTS_PER_LEVEL = 3;
 
   S.STATS = ['str', 'agi', 'vit', 'int', 'per'];
@@ -61,7 +61,6 @@
 
   /* XP necessário para passar do nível L para L+1 */
   S.xpToNext = function (L) {
-    if (L >= S.MAX_LEVEL) return 0;
     return Math.round(50 + 25 * L + 1.5 * L * L);
   };
   S.totalXpForLevel = function (L) {

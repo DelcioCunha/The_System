@@ -134,6 +134,21 @@
     if (won && d.reason === 'ko' && d.fighters && d.fighters[d.me] && d.fighters[d.me].hp === d.fighters[d.me].maxHp) E.bump(st, 'duelFlawless');
     var opp = d.fighters ? d.fighters[d.me === d.host ? d.guest : d.host] : null;
     E.history(st, '⚔️', 'Duelo contra ' + (opp ? opp.name : 'outro jogador') + ': ' + (won ? 'vitória' : 'derrota') + (res.xp ? ' (+' + res.xp + ' XP, +' + res.coins + ' moedas)' : '') + '.');
+    // patente: +1 ponto por vitória, -1 por derrota (o servidor decide; aqui só se mostra)
+    var pts = d.result && d.result.points && d.result.points[d.me];
+    if (pts && S.duelRank) {
+      var r0 = S.duelRank(pts[0]).rank, r1 = S.duelRank(pts[1]).rank;
+      so.points = pts[1]; so.best = Math.max(so.best || 0, pts[1]);
+      res.points = pts; res.rankFrom = r0.i; res.rankTo = r1.i;
+      if (r1.i !== r0.i) {
+        var up = r1.i > r0.i;
+        if (up) so.bestRank = Math.max(so.bestRank || 0, r1.i);
+        E.emit({ type: 'rank', up: up, rank: r1.i, from: r0.i, title: up ? 'NOVA PATENTE' : 'PATENTE PERDIDA', name: r1.name,
+          lines: up ? [(r1.i === 40 ? 'A patente máxima dos duelos. Acima disto já não há nome, só pontos.' : 'Próxima patente aos ' + S.DUEL_RANKS[r1.i + 1].min + ' pontos.'), 'Pontos de patente: ' + pts[1]]
+            : ['Desceste de ' + r0.name + '.', 'Vence ' + (r0.min - pts[1]) + (r0.min - pts[1] === 1 ? ' duelo' : ' duelos') + ' para a recuperar.'] });
+        E.history(st, up ? '🎖️' : '⬇️', (up ? 'Nova patente: ' : 'Patente perdida. Voltaste a ') + r1.name + '.');
+      }
+    }
     so.rewarded[d.id] = res;
     // guarda só os últimos 200 duelos
     var ks = Object.keys(so.rewarded); if (ks.length > 200) ks.slice(0, ks.length - 200).forEach(function (k) { delete so.rewarded[k]; });

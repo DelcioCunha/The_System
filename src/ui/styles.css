@@ -1056,3 +1056,35 @@ button.trophy { font: inherit; color: inherit; padding: 0; cursor: pointer; appe
 .btn.coin-btn .coin-ico { width: 10px; height: 10px; }
 .prem-head > .row { grid-column: 1 / -1; }
 .prem-head > .row .btn { flex: 1 1 0; min-width: 0; padding-left: 8px; padding-right: 8px; justify-content: center; }
+
+/* patentes dos duelos */
+.pt-fb { display: inline-grid; place-items: center; width: 100%; height: 100%; color: var(--pc); font-size: 1.1em; text-shadow: 0 0 8px var(--pc); }
+.pt-card { display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 12px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--pc) 55%, transparent); border-radius: 10px; background: linear-gradient(90deg, color-mix(in srgb, var(--pc) 14%, transparent), transparent); color: inherit; text-align: left; }
+.pt-card .grow { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pt-big { width: 56px; height: 56px; flex: none; display: grid; place-items: center; font-size: 28px; }
+.pt-big-img, .pt-now-img, .pt-end-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--pc) 60%, transparent)); }
+.pt-name { color: var(--pc); font-size: 15px; }
+.pt-bar { display: block; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .08); overflow: hidden; }
+.pt-bar i { display: block; height: 100%; background: var(--pc); box-shadow: 0 0 8px var(--pc); }
+.pt-chip { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; padding: 1px 7px 1px 2px; border-radius: 10px; font-size: 11px; font-weight: 700; color: var(--pc); border: 1px solid color-mix(in srgb, var(--pc) 45%, transparent); background: color-mix(in srgb, var(--pc) 10%, transparent); }
+.pt-chip-img, .pt-chip .pt-fb { width: 16px; height: 16px; object-fit: contain; font-size: 10px; }
+.pt-now { display: flex; align-items: center; gap: 12px; padding: 10px; margin: 10px 0 4px; border-radius: 10px; border: 1px solid var(--pc); background: color-mix(in srgb, var(--pc) 12%, transparent); }
+.pt-now > :first-child { width: 64px; height: 64px; font-size: 30px; }
+.pt-now b { color: var(--pc); }
+.pt-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 8px; }
+.pt-cell { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border-radius: 8px; border: 1px solid var(--line); opacity: .38; filter: grayscale(.8); }
+.pt-cell.got { opacity: 1; filter: none; border-color: color-mix(in srgb, var(--pc) 45%, transparent); }
+.pt-cell.cur { box-shadow: 0 0 0 2px var(--pc), 0 0 14px color-mix(in srgb, var(--pc) 50%, transparent); }
+.pt-cell-img, .pt-cell .pt-fb { width: 44px; height: 44px; object-fit: contain; font-size: 22px; }
+.pt-cell-n { font-size: 11px; font-weight: 800; color: var(--pc); }
+.pt-cell-p { font-size: 9px; color: var(--muted); }
+.pt-end { display: flex; align-items: center; gap: 10px; text-align: left; margin: 10px auto 0; padding: 8px 10px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--pc) 50%, transparent); max-width: 320px; }
+.pt-end > :first-child { width: 48px; height: 48px; flex: none; font-size: 24px; }
+.pt-end b { color: var(--pc); }
+.pt-end.up { box-shadow: 0 0 16px color-mix(in srgb, var(--pc) 45%, transparent); }
+.pt-end.down { opacity: .9; border-style: dashed; }
+.pt-pop { width: 140px; height: 140px; margin: 4px auto 8px; display: grid; place-items: center; font-size: 64px; }
+.pt-pop-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 18px var(--pc)); animation: ptIn .9s cubic-bezier(.2, .9, .3, 1.2) both; }
+.rank-pop.down .pt-pop-img { filter: grayscale(.5) drop-shadow(0 0 8px var(--pc)); }
+.pt-pop-name { font-weight: 800; font-size: 17px; text-align: center; margin: -4px 0 8px; }
+@keyframes ptIn { from { transform: scale(.4) rotate(-12deg); opacity: 0; } to { transform: none; opacity: 1; } }

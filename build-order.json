@@ -18,6 +18,7 @@
  "src/data/talk-life.js",
  "src/data/talk-random.js",
  "src/data/talk-first.js",
+ "src/data/duel-ranks.js",
  "src/data/achievements.js",
  "src/data/achievements-2.js",
  "src/data/arena-story.js",

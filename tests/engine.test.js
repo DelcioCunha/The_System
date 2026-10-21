@@ -44,8 +44,23 @@ test('100 títulos, 100 chefes, níveis 1–100', () => {
   assert.strictEqual(S.BOSSES.length, 100);
   assert.strictEqual(new Set(S.BOSSES.map((b) => b.name)).size, 100);
   S.BOSSES.forEach((b, i) => { assert.strictEqual(b.level, i + 1); b.skills.forEach((k) => assert.ok(S.BOSS_SKILLS[k], b.name + ' habilidade ' + k)); });
-  assert.strictEqual(S.xpToNext(100), 0);
+  assert.ok(S.xpToNext(100) > S.xpToNext(99), 'depois do 100 o nível continua a subir');
   for (let L = 1; L < 100; L++) assert.ok(S.xpToNext(L) > 0);
+});
+test('patentes dos duelos: 5 pontos por patente, 40 patentes até 199, Monarca aos 200 e não passa daí', () => {
+  const { S } = boot();
+  assert.strictEqual(S.DUEL_RANKS.length, 41);
+  assert.strictEqual(new Set(S.DUEL_RANKS.map((r) => r.name)).size, 41);
+  assert.strictEqual(S.duelRank(0).rank.i, 0);
+  assert.strictEqual(S.duelRank(4).rank.i, 0);
+  assert.strictEqual(S.duelRank(5).rank.i, 1);
+  assert.strictEqual(S.duelRank(9).toNext, 1);
+  assert.strictEqual(S.duelRank(199).rank.i, 39);
+  assert.strictEqual(S.duelRank(199).rank.name, 'Soberano das Sombras V');
+  assert.strictEqual(S.duelRank(200).rank.name, 'Monarca dos Duelos');
+  assert.strictEqual(S.duelRank(560).rank.i, 40, 'os pontos continuam, a patente não');
+  assert.ok(S.duelRank(560).max);
+  assert.strictEqual(S.duelRank(-3).points, 0);
 });
 test('todas as referências de itens existem', () => {
   const { S } = boot();
@@ -190,7 +205,7 @@ test('não deixa criar missão única no passado', () => {
 });
 
 console.log('Progressão, loja e baús');
-test('subir de nível dá pontos e muda título; nunca passa de 100', () => {
+test('subir de nível dá pontos e muda título; depois do 100 o nível continua a subir (o título fica O Absoluto)', () => {
   const { S } = boot();
   at(S, 2026, 10, 14, 9);
   const E = S.engine;
@@ -198,10 +213,12 @@ test('subir de nível dá pontos e muda título; nunca passa de 100', () => {
   E.gainXp(E.state, S.xpToNext(1) + S.xpToNext(2), false);
   assert.strictEqual(E.state.level, 3);
   assert.strictEqual(E.state.freePoints, 6);
-  E.gainXp(E.state, 1e9, false);
+  E.gainXp(E.state, S.totalXpForLevel(100) - S.totalXpForLevel(3) - E.state.xp, false);
   assert.strictEqual(E.state.level, 100);
-  assert.strictEqual(E.state.xp, 0);
+  E.gainXp(E.state, S.xpToNext(100) + S.xpToNext(101), false);
+  assert.strictEqual(E.state.level, 102, 'passa do 100');
   assert.strictEqual(S.titleFor(100), 'O Absoluto');
+  assert.strictEqual(S.titleFor(E.state.level), 'O Absoluto');
 });
 test('perder XP nunca desce de nível', () => {
   const { S } = boot();
@@ -366,7 +383,8 @@ test('Selo de Ascensão: sobe 1 nível, guarda o XP, exige Varyss e fica mais ca
   assert.strictEqual(st.xp, 30);
   assert.ok(E.takeEvents().some((e) => e.type === 'levelup'));
   st.level = 100; st.xp = 0; E.addItem(st, 'el_selo');
-  assert.ok(!E.useItem('el_selo').ok, 'nível máximo');
+  assert.ok(E.useItem('el_selo').ok, 'depois do 100 continua a subir');
+  assert.strictEqual(st.level, 101);
 });
 test('todos os chefes têm provocação e últimas palavras', () => {
   const { S } = boot();

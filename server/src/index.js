@@ -555,7 +555,7 @@ async function sync(env, body, ip) {
   if (await limited(env, 'sync:' + pid, 60, HOUR)) throw new HttpError(429, 'Demasiadas sincronizações. Tenta mais tarde.');
   const st = {}; const raw = body.stats && typeof body.stats === 'object' ? body.stats : {};
   STAT_KEYS.forEach((k) => { if (raw[k] !== undefined) st[k] = int(raw[k], 0, 1e9); });
-  const snap = { name: clean(body.name, 24) || 'Jogador', cls: clean(body.cls, 16), level: int(body.level, 1, 1000), crystals: int(body.crystals, 0, 1e9),
+  const snap = { name: clean(body.name, 24) || 'Jogador', cls: clean(body.cls, 16), level: int(body.level, 1, 100000), crystals: int(body.crystals, 0, 1e9),
     coins: int(body.coins, 0, 1e12), stats: JSON.stringify(st), app_version: clean(body.app_version, 16), platform: clean(body.platform, 16) };
   const t = now(), th = await tokenHash(env, tok);
   const del = await deletedRow(env, pid);
@@ -712,7 +712,7 @@ function playerAdmin(p) {
   let stats = {}; try { stats = JSON.parse(p.stats || '{}'); } catch (e) { stats = {}; }
   return { id: p.id, name: p.name, cls: p.cls, level: p.level, crystals: p.crystals, coins: p.coins, stats, app_version: p.app_version, platform: p.platform,
     created_at: p.created_at, last_seen: p.last_seen, syncs: p.syncs, status: p.status, ban_reason: p.ban_reason, ban_until: p.ban_until, banned_at: p.banned_at,
-    banned_by: p.banned_by, note: p.note, spent_kz: p.spent_kz || 0, paid_orders: p.paid_orders || 0,
+    banned_by: p.banned_by, note: p.note, duel_wins: p.duel_wins || 0, duel_losses: p.duel_losses || 0, duel_points: p.duel_points || 0, spent_kz: p.spent_kz || 0, paid_orders: p.paid_orders || 0,
     role: p.role_eff || p.role || 'usuario', role_name: ROLES[p.role_eff || p.role || 'usuario'], role_auto: !p.role, role_by: p.role_by || null };
 }
 function grantAdmin(g) {
@@ -894,7 +894,7 @@ async function socialAuth(env, body, touch) {
 }
 function pub(p, extra) {
   return Object.assign({ id: p.id, name: p.name, cls: p.cls || null, level: p.level, online: isOnline(p), seen: seenOf(p),
-    wins: p.duel_wins || 0, losses: p.duel_losses || 0, rating: p.duel_rating || 1000 }, extra || {});
+    wins: p.duel_wins || 0, losses: p.duel_losses || 0, rating: p.duel_rating || 1000, points: p.duel_points || 0, best: p.duel_best || 0 }, extra || {});
 }
 async function friendRow(env, x, y) { const k = pairKey(x, y); return one(env, 'SELECT * FROM friends WHERE a = ? AND b = ?', k[0], k[1]); }
 async function areFriends(env, x, y) { const f = await friendRow(env, x, y); return !!(f && f.status === 'accepted'); }
@@ -912,8 +912,8 @@ async function socialState(env, body) {
   });
   friends.sort((x, y) => (y.online - x.online) || (y.unread - x.unread) || x.name.localeCompare(y.name));
   await expireDuels(env);
-  const invites = await all(env, "SELECT d.id, d.code, d.created_at, pl.name, pl.level, pl.cls, pl.id AS host FROM duels d JOIN players pl ON pl.id = d.host WHERE d.invited = ? AND d.status = 'waiting' ORDER BY d.created_at DESC LIMIT 10", p.id);
-  const open = await all(env, "SELECT d.id, d.code, d.created_at, pl.name, pl.level, pl.cls, pl.id AS host, pl.duel_rating AS rating FROM duels d JOIN players pl ON pl.id = d.host WHERE d.status = 'waiting' AND d.public = 1 AND d.host != ? ORDER BY d.created_at DESC LIMIT 20", p.id);
+  const invites = await all(env, "SELECT d.id, d.code, d.created_at, pl.name, pl.level, pl.cls, pl.id AS host, pl.duel_points AS points FROM duels d JOIN players pl ON pl.id = d.host WHERE d.invited = ? AND d.status = 'waiting' ORDER BY d.created_at DESC LIMIT 10", p.id);
+  const open = await all(env, "SELECT d.id, d.code, d.created_at, pl.name, pl.level, pl.cls, pl.id AS host, pl.duel_rating AS rating, pl.duel_points AS points FROM duels d JOIN players pl ON pl.id = d.host WHERE d.status = 'waiting' AND d.public = 1 AND d.host != ? ORDER BY d.created_at DESC LIMIT 20", p.id);
   const mine = await one(env, "SELECT id, code, status, host, guest FROM duels WHERE (host = ? OR guest = ?) AND status IN ('waiting','active') ORDER BY created_at DESC LIMIT 1", p.id, p.id);
   return json({ ok: true, me: pub(p, { online: true }), friends, requests_in: inc, requests_out: out, invites, open, duel: mine,
     unread: unread.reduce((s, u) => s + u.n, 0), server_time: now() });
@@ -1049,7 +1049,7 @@ function fighter(p, f) {
   const M = Object.assign({}, CLASS_PVP[cls] ? CLASS_PVP[cls](L) : {}), CK = classK(cls, L); M.hp = (M.hp || 1) * Math.sqrt(CK); M.atk = (M.atk || 1) * Math.sqrt(CK); const B0 = baseAt(L), mainPow = Math.max(stats.atk, stats.matk), kPow = (BLEND * mainPow + (1 - BLEND) * B0[1]) / mainPow;
   stats.atk = Math.round(stats.atk * kPow * (M.atk || 1)); stats.matk = Math.round(stats.matk * kPow * (M.atk || 1)); stats.def = Math.round((BLEND * stats.def + (1 - BLEND) * B0[2]) * (M.def || 1)); stats.summonK = M.summon || 1;
   const maxHp = Math.round((BLEND * hp + (1 - BLEND) * B0[0]) * PVP_HP(L) * (M.hp || 1));
-  return { id: p.id, name: p.name, cls, level: L, maxHp, hp: maxHp, maxMp: mp, mp, shield: 0, st: [], cds: {}, stunned: 0, stunImmune: 0,
+  return { id: p.id, name: p.name, cls, level: L, points: p.duel_points || 0, maxHp, hp: maxHp, maxMp: mp, mp, shield: 0, st: [], cds: {}, stunned: 0, stunImmune: 0,
     summons: [], squad, cmd: Math.min(15, squad.filter((x) => x.role === 'comandante').length * 5), stats, skills, items, used: {}, heals: 0, premUsed: 0,
     struck: false, lastStandUsed: false, reviveUsed: false, miss: 0 };
 }
@@ -1251,14 +1251,16 @@ function opening(st, a, b) {
 
 async function finishDuel(env, d, st, winner, reason) {
   const loser = winner === d.host ? d.guest : d.host, t = now();
-  const W = await one(env, 'SELECT duel_rating AS r FROM players WHERE id = ?', winner), L = await one(env, 'SELECT duel_rating AS r FROM players WHERE id = ?', loser);
+  const W = await one(env, 'SELECT duel_rating AS r, duel_points AS p FROM players WHERE id = ?', winner), L = await one(env, 'SELECT duel_rating AS r, duel_points AS p FROM players WHERE id = ?', loser);
   const rw = (W && W.r) || 1000, rl = (L && L.r) || 1000, exp = 1 / (1 + Math.pow(10, (rl - rw) / 400)), k = Math.max(1, Math.round(24 * (1 - exp)));
-  st.result = { winner, loser, reason, rating: { [winner]: [rw, rw + k], [loser]: [rl, Math.max(100, rl - k)] } };
+  // patentes: +1 ponto por vitória, -1 por derrota (nunca abaixo de 0)
+  const pw = (W && W.p) || 0, pl = (L && L.p) || 0;
+  st.result = { winner, loser, reason, rating: { [winner]: [rw, rw + k], [loser]: [rl, Math.max(100, rl - k)] }, points: { [winner]: [pw, pw + 1], [loser]: [pl, Math.max(0, pl - 1)] } };
   addLog(st, st.f[winner].name + ' venceu o duelo!' + (reason === 'forfeit' ? ' (o adversário desistiu)' : reason === 'timeout' ? ' (o adversário deixou passar o tempo)' : reason === 'turns' ? ' (mais vida no fim do limite de turnos)' : ''), 'win', winner);
   return [
     q(env, "UPDATE duels SET status = 'done', winner = ?, end_reason = ?, state = ?, turn_player = NULL, turn_deadline = NULL, version = version + 1, updated_at = ? WHERE id = ? AND version = ?", winner, reason, JSON.stringify(st), t, d.id, d.version),
-    q(env, 'UPDATE players SET duel_wins = duel_wins + 1, duel_rating = ? WHERE id = ? AND EXISTS (SELECT 1 FROM duels WHERE id = ? AND status = ? AND winner = ?)', rw + k, winner, d.id, 'done', winner),
-    q(env, 'UPDATE players SET duel_losses = duel_losses + 1, duel_rating = ? WHERE id = ? AND EXISTS (SELECT 1 FROM duels WHERE id = ? AND status = ? AND winner = ?)', Math.max(100, rl - k), loser, d.id, 'done', winner)
+    q(env, 'UPDATE players SET duel_wins = duel_wins + 1, duel_rating = ?, duel_points = duel_points + 1, duel_best = MAX(duel_best, duel_points + 1) WHERE id = ? AND EXISTS (SELECT 1 FROM duels WHERE id = ? AND status = ? AND winner = ?)', rw + k, winner, d.id, 'done', winner),
+    q(env, 'UPDATE players SET duel_losses = duel_losses + 1, duel_rating = ?, duel_points = MAX(0, duel_points - 1) WHERE id = ? AND EXISTS (SELECT 1 FROM duels WHERE id = ? AND status = ? AND winner = ?)', Math.max(100, rl - k), loser, d.id, 'done', winner)
   ];
 }
 /* salas esquecidas fecham; turnos sem resposta passam (2 seguidos = derrota) */

@@ -402,10 +402,9 @@
 
   E.gainXp = function (st, base, useMult) {
     var amount = Math.max(0, Math.round(base * (useMult === false ? 1 : E.xpMultiplier(st))));
-    if (st.level >= S.MAX_LEVEL) return 0;
     st.xp += amount;
     st.c.xpEarned = (st.c.xpEarned || 0) + amount;
-    while (st.level < S.MAX_LEVEL && st.xp >= S.xpToNext(st.level)) {
+    while (st.xp >= S.xpToNext(st.level)) {
       st.xp -= S.xpToNext(st.level);
       st.level += 1;
       st.freePoints += S.POINTS_PER_LEVEL;
@@ -414,7 +413,6 @@
       E.history(st, '⬆️', 'Subiu para o nível ' + st.level + ' — ' + S.titleFor(st.level) + '.');
       if (S.live) S.live.react(st, 'level', { level: st.level });
     }
-    if (st.level >= S.MAX_LEVEL) st.xp = 0;
     return amount;
   };
   /* Perde XP só dentro do nível atual (nunca desce de nível) */
@@ -671,13 +669,11 @@
     var res = { ok: true, msg: '' };
     switch (u.type) {
       case 'levelUp':
-        if (st.level >= S.MAX_LEVEL) return { ok: false, msg: 'Já estás no nível máximo.' };
         E.removeItem(st, id);
         var keep = st.xp, before = st.level;
         st.xp = 0;
         E.gainXp(st, S.xpToNext(st.level), false);
         st.xp = Math.min(keep, Math.max(0, S.xpToNext(st.level) - 1));
-        if (st.level >= S.MAX_LEVEL) st.xp = 0;
         res.msg = 'Ascensão! Nível ' + before + ' → ' + st.level + '.';
         res.levelUp = true;
         E.history(st, it.icon, 'Usou ' + it.name + ': subiu para o nível ' + st.level + '.');

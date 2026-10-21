@@ -698,6 +698,9 @@ await test('duelo: sala, convite, entrar por código, turnos decididos pelo serv
   assert.equal((await C('/api/duel/act', Object.assign(as(d.winner, turnOf[d.winner]), { id: d.id, action: 'attack' }))).status, 409);
   const sw = await C('/api/social/state', as(d.winner, turnOf[d.winner])), sl = await C('/api/social/state', as(loser, turnOf[loser]));
   assert.equal(sw.me.wins, 1); assert.equal(sl.me.losses, 1); assert.ok(sw.me.rating > 1000 && sl.me.rating < 1000);
+  // patentes: +1 ponto ao vencedor, o vencido fica em 0 (nunca abaixo)
+  assert.equal(sw.me.points, 1); assert.equal(sl.me.points, 0);
+  assert.deepEqual(d.result.points[d.winner], [0, 1]); assert.deepEqual(d.result.points[loser], [0, 0]);
   assert.equal((await C('/api/duel/history', as(P1, TOK1))).duels.length, 1);
 });
 
@@ -746,6 +749,16 @@ await test('duelo: salas públicas, tempo esgotado (2 vezes = derrota), desistir
   await C('/api/duel/join', Object.assign(as(P2, TOK2), { code: c2.duel.code, fighter: FIGHT }));
   const l = await C('/api/duel/leave', Object.assign(as(P1, TOK1), { id: c2.duel.id }));
   assert.equal(l.duel.winner, P2); assert.equal(l.duel.reason, 'forfeit');
+  { // patente: P2 venceu duas vezes (+2), P1 tem 0; perder volta a tirar 1 ponto ao vencedor de antes
+    const s2 = await C('/api/social/state', as(P2, TOK2));
+    assert.ok(s2.me.points >= 1);
+    const before = s2.me.points;
+    const c6 = await C('/api/duel/create', Object.assign(as(P2, TOK2), { fighter: FIGHT }));
+    await C('/api/duel/join', Object.assign(as(P1, TOK1), { code: c6.duel.code, fighter: FIGHT }));
+    await C('/api/duel/leave', Object.assign(as(P2, TOK2), { id: c6.duel.id }));
+    assert.equal((await C('/api/social/state', as(P2, TOK2))).me.points, before - 1, 'derrota tira 1 ponto');
+    assert.equal((await C('/api/social/state', as(P1, TOK1))).me.points, 1);
+  }
   // convidar um amigo para uma sala já aberta
   await C('/api/social/friend/request', Object.assign(as(P1, TOK1), { to: P2 }));
   await C('/api/social/friend/respond', Object.assign(as(P2, TOK2), { from: P1, accept: true }));
