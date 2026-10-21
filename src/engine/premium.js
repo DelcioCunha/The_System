@@ -66,6 +66,11 @@
     if (it.perma && E.count(st, id) > 0) return { ok: false, msg: 'Esta relíquia já é tua para sempre.' };
     if (it.perk && ((st.perks && st.perks[it.perk]) || E.count(st, id) > 0)) return { ok: false, msg: 'Este bónus já é teu.' };
     if (it.equip && (E.count(st, id) > 0 || Object.keys(st.equip).some(function (k) { return st.equip[k] === id; }))) return { ok: false, msg: 'Já tens este equipamento.' };
+    if (it.use && it.use.type === 'shadowSlot') {
+      var room = S.SHADOW_RULES.maxExtraSlots - S.shadows.extraSlots(st) - E.count(st, id);
+      if (room < 1) return { ok: false, msg: 'Já tens as 3 insígnias (6 lugares de servos).' };
+      qty = Math.min(qty, room);
+    }
     var total = price * qty;
     if (st.crystals < total) return { ok: false, msg: 'Faltam ' + (total - st.crystals) + ' Cristais.', need: total - st.crystals };
     st.crystals -= total;

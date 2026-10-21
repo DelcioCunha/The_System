@@ -38,9 +38,38 @@
 
   /* atributos de combate enviados para o duelo (o servidor limita-os ao nível) */
   SO.fighter = function (st) {
-    var c = E.combatStats(st), t = E.totalStats(st);
-    return { cls: st.cls, hp: c.maxHp, mp: c.maxMp, atk: c.atk, matk: c.matk, def: c.def, crit: c.crit, critDmg: c.critDmg, eva: c.eva, lifesteal: c.lifesteal || 0, agi: t.agi, avatar: String(st.level) };
+    var c = E.combatStats(st), t = E.totalStats(st), keys = ['atk', 'matk', 'def', 'crit', 'critDmg', 'eva', 'lifesteal', 'regenHp', 'regenMp', 'summonPct', 'dotPct', 'potionPct', 'lowHpAtk', 'execute', 'firstStrike', 'manaOnHit', 'thorns', 'openShield', 'stunRes', 'lastStand', 'revive'];
+    var f = { cls: st.cls, hp: c.maxHp, mp: c.maxMp, agi: t.agi, avatar: String(st.level) };
+    keys.forEach(function (k) { f[k] = c[k] || 0; });
+    f.skills = S.combat.unlockedActiveSkills(st).map(function (s) { return s.id; });
+    // itens de combate da Bolsa (as relíquias premium só se estiverem prontas)
+    f.items = {};
+    Object.keys(st.inv || {}).forEach(function (id) {
+      var it = S.ITEMS[id];
+      if (!it || !(st.inv[id] > 0)) return;
+      if ((it.battle && it.use && it.use.type !== 'smoke') || id === 'sx_fenix' || id === 'pr_fenix') {
+        if (it.perma && S.premium && !S.premium.relicReady(st, id)) return;
+        f.items[id] = it.perma ? 1 : st.inv[id];
+      }
+    });
+    // servos convocados
+    f.squad = S.shadows ? S.shadows.active(st).map(function (b) { return { name: S.shadows.name(st, b.id), level: b.level, king: !!b.king, role: S.shadows.role(b) }; }) : [];
+    return f;
   };
+  /* depois do duelo: os itens usados saem da Bolsa (como num combate contra um chefe) */
+  SO.consume = function (st, d) {
+    var F = d.fighters && d.fighters[d.me];
+    if (!F || !F.used) return [];
+    var out = [];
+    Object.keys(F.used).forEach(function (id) {
+      var n = F.used[id], it = S.ITEMS[id];
+      if (!it || !n) return;
+      if (it.perma && S.premium) S.premium.relicSpend(st, id); else E.removeItem(st, id, Math.min(n, E.count(st, id)));
+      out.push((n > 1 ? n + '× ' : '') + it.name);
+    });
+    return out;
+  };
+
 
   SO.state = function () {
     return post('/api/social/state').then(function (j) {
@@ -80,7 +109,7 @@
   SO.create = function (opts) { opts = opts || {}; return post('/api/duel/create', { fighter: SO.fighter(E.state), public: opts.public !== false, invite: opts.invite || null }); };
   SO.join = function (opts) { return post('/api/duel/join', Object.assign({ fighter: SO.fighter(E.state) }, opts)); };
   SO.duel = function (id) { return post('/api/duel/state', { id: id }); };
-  SO.act = function (id, action, version) { return post('/api/duel/act', { id: id, action: action, version: version }); };
+  SO.act = function (id, action, version, extra) { return post('/api/duel/act', Object.assign({ id: id, action: action, version: version }, extra || {})); };
   SO.invite = function (id, to) { return post('/api/duel/invite', { id: id, to: to }); };
   SO.leave = function (id) { return post('/api/duel/leave', { id: id }); };
   SO.duels = function () { return post('/api/duel/history'); };
@@ -93,7 +122,7 @@
     if (so.rewarded[d.id]) return so.rewarded[d.id] === 1 ? null : so.rewarded[d.id];
     var today = E.dateKey();
     if (so.day !== today) { so.day = today; so.count = 0; }
-    var won = d.winner === d.me, L = st.level, res = { won: won, xp: 0, coins: 0, capped: false };
+    var won = d.winner === d.me, L = st.level, res = { won: won, xp: 0, coins: 0, capped: false, used: SO.consume(st, d) };
     if (so.count < SO.DAILY) {
       so.count++;
       var xp = Math.max(5, Math.round(S.xpToNext(Math.min(L, 99)) * (won ? 0.06 : 0.02)));

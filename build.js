@@ -8,6 +8,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = __dirname;
+require('./tools/export-duel-data.js')(); // habilidades e itens de combate para os duelos (servidor)
 const order = require('./build-order.json').concat(['src/ui/fx.js', 'src/ui/sfx.js', 'src/ui/avatar.js', 'src/ui/app.js']);
 const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
@@ -150,11 +151,13 @@ let previewJs = 'globalThis.SYS = { PREVIEW: true };\n' + safeJs;
 // sombras: as dos portões vão embutidas; as das arenas premium são ficheiros publicados ao lado da página (poupa espaço)
 const shadowPv = {}, shadowFiles = {}; Object.keys(shadowArt).forEach((k) => { if (!/^ar/.test(k)) shadowPv[k] = shadowArt[k]; else shadowFiles[k] = shadowArt[k]; });
 delete INLINE.SHADOW_ART;
+delete INLINE.SKILL_ART; // os ícones das habilidades também vão no pv-extra.js (limite de 16 MB da página)
+previewJs = previewJs.replace('SYS.SKILL_ART = ' + JSON.stringify(skillArt) + ';', 'SYS.SKILL_ART = {};');
 Object.keys(INLINE).forEach((name) => { previewJs = previewJs.replace('SYS.' + name + ' = ' + JSON.stringify(INLINE[name]) + ';', 'SYS.' + name + ' = ' + JSON.stringify(inlineMap(INLINE[name])) + ';'); });
 previewJs = previewJs.replace('SYS.SHADOW_ART = ' + JSON.stringify(shadowArt) + ';', 'SYS.SHADOW_ART = ' + JSON.stringify(inlineMap(shadowPv)) + ';');
 // as sombras das arenas vão num ficheiro à parte (pv-extra.js), carregado depois da página: não pesa no limite de 16 MB da página nem no de ficheiros
 fs.mkdirSync(path.join(ROOT, 'dist'), { recursive: true });
-fs.writeFileSync(path.join(ROOT, 'dist', 'pv-extra.js'), 'Object.assign(SYS.SHADOW_ART, ' + JSON.stringify(inlineMap(shadowFiles)) + ');\nif (SYS.ui && SYS.ui.render) SYS.ui.render();\n');
+fs.writeFileSync(path.join(ROOT, 'dist', 'pv-extra.js'), 'Object.assign(SYS.SHADOW_ART, ' + JSON.stringify(inlineMap(shadowFiles)) + ');\n' + 'SYS.SKILL_ART = ' + JSON.stringify(inlineMap(skillArt)) + ';\nif (SYS.ui && SYS.ui.render) SYS.ui.render();\n');
 // as imagens das classes são iguais ao retrato de nível 1: a pré-visualização usa essas (limite de 512 ficheiros)
 previewJs = previewJs.replace(/"classes\/([a-z]+)\.webp"/g, '"avatars/$1/1.webp"');
 // itens que ainda não estão publicados como ficheiros na pré-visualização (limite de ficheiros): vão embutidos

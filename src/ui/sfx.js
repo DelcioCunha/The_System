@@ -14,12 +14,16 @@
    quest   · missão concluída / chefe vencido   sell · vender um item
    create  · criar missão    death · derrota ou fuga    emergency · missão de emergência
    penalty · penalização     arise · sombra extraída (Tornar Servo)
+   fire / thunder / wind · habilidades de fogo, trovão e vento
+   fury    · fúria (habilidades de fúria e chefe enfurecido)   warcry · grito de guerra, estandartes e exércitos
+   heal    · habilidades de cura      buff · habilidades que melhoram o estado (bónus, escudos, mana)
+   drink   · beber outras poções (bónus, elixires, tónicos)   equip · equipar   chest · abrir um baú
    Web Audio: baixa latência, vários sons ao mesmo tempo, volume por som.
    O áudio só arranca depois do primeiro toque (regra dos telemóveis).
    ========================================================== */
 (function (S) {
   'use strict';
-  var GAIN = { click: 0.5, back: 0.4, buy: 0.85, crystal: 0.8, potion: 0.55, unequip: 0.95, attack: 0.8, skill: 0.75, hurt: 0.75, system: 0.7, notify: 0.7, gain: 0.85, levelup: 0.9, quest: 0.85, sell: 0.75, create: 0.7, death: 0.9, emergency: 0.85, penalty: 0.85, arise: 0.95 };
+  var GAIN = { click: 0.5, back: 0.4, buy: 0.85, crystal: 0.8, potion: 0.55, unequip: 0.95, attack: 0.8, skill: 0.75, hurt: 0.75, system: 0.7, notify: 0.7, gain: 0.85, levelup: 0.9, quest: 0.85, sell: 0.75, create: 0.7, death: 0.9, emergency: 0.85, penalty: 0.85, arise: 0.95, fire: 0.8, thunder: 0.75, wind: 0.8, fury: 0.8, warcry: 0.85, heal: 0.7, buff: 0.7, drink: 0.7, equip: 0.85, chest: 0.85 };
   var ctx = null, bufs = {}, last = {}, failed = false;
 
   function settings() { var st = S.engine && S.engine.state; return (st && st.settings) || {}; }

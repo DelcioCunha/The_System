@@ -135,9 +135,9 @@
     S.premium.ensure(st); SH.ensure(st);
     return call('POST', '/api/orders', { package_id: packageId, player_id: st.playerId, player_name: st.name }).then(function (j) {
       if (!j.ok) { if (j.banned) setBan(st, j.ban); return j; }
-      st.shop.orders.unshift({ id: j.order.id, token: j.token, pkg: j.order.package, crystals: j.order.crystals, price: j.order.price_kz, status: j.order.status, at: j.order.created_at, test: !!j.order.test, wa: j.whatsapp_url || (S.SHOP_WHATSAPP ? 'https://wa.me/' + S.SHOP_WHATSAPP + '?text=' + encodeURIComponent(j.message || ('Pedido ' + j.order.id)) : ''), msg: j.message || '' });
+      st.shop.orders.unshift({ id: j.order.id, token: j.token, pkg: j.order.package, crystals: j.order.crystals, coins: j.order.coins || 0, price: j.order.price_kz, status: j.order.status, at: j.order.created_at, test: !!j.order.test, wa: j.whatsapp_url || (S.SHOP_WHATSAPP ? 'https://wa.me/' + S.SHOP_WHATSAPP + '?text=' + encodeURIComponent(j.message || ('Pedido ' + j.order.id)) : ''), msg: j.message || '' });
       st.shop.orders = st.shop.orders.slice(0, 30);
-      E.history(st, '◆', 'Pedido ' + j.order.id + ': ' + j.order.crystals + ' Cristais (' + j.order.price_kz + ' Kz).');
+      E.history(st, j.order.coins ? '🪙' : '◆', 'Pedido ' + j.order.id + ': ' + (j.order.coins ? j.order.coins + ' moedas' : j.order.crystals + ' Cristais') + ' (' + j.order.price_kz + ' Kz).');
       E.commit('pedido de cristais');
       return { ok: true, order: st.shop.orders[0], whatsapp_url: j.whatsapp_url, message: j.message, payment_info: j.payment_info };
     });
@@ -175,10 +175,10 @@
     SH.ensure(st);
     var rid = String(res.redemption_id || '');
     if (!rid || !(res.crystals > 0 || res.coins > 0)) return { ok: false, msg: 'Resposta inválida do servidor.' };
-    if (st.shop.redeemed[rid]) return { ok: true, already: true, crystals: 0, msg: 'Este código já tinha sido resgatado nesta conta. Os Cristais já estão contigo.' };
+    if (st.shop.redeemed[rid]) return { ok: true, already: true, crystals: 0, msg: 'Este código já tinha sido resgatado nesta conta. O que comprou já está contigo.' };
     st.shop.redeemed[rid] = { at: S.clock.now(), crystals: res.crystals || 0, coins: res.coins || 0, order: res.order_id || '' };
     if (res.crystals > 0) S.premium.grant(st, res.crystals, res.order_id ? 'pedido ' + res.order_id : 'oferta do Sistema');
-    if (res.coins > 0) { st.coins += res.coins; E.bump(st, 'coinsEarned', res.coins); E.history(st, '◆', '+' + res.coins + ' moedas (oferta do Sistema).'); }
+    if (res.coins > 0) { st.coins += res.coins; E.bump(st, 'coinsEarned', res.coins); E.history(st, '🪙', '+' + res.coins + ' moedas (' + (res.order_id ? 'pedido ' + res.order_id : 'oferta do Sistema') + ').'); }
     st.shop.orders.forEach(function (o) { if (o.id === res.order_id) o.status = 'redeemed'; });
     E.checkAchievements(st);
     E.commit('cristais resgatados');
@@ -193,7 +193,7 @@
     return call('POST', '/api/redeem', { code: code, player_id: st.playerId, player_name: st.name }).then(function (j) {
       if (!j.ok) { if (j.banned) setBan(st, j.ban); return j; }
       var r = SH.apply(st, j);
-      if (r.ok && !r.already) E.emit(j.order_id
+      if (r.ok && !r.already) E.emit(j.order_id && !(j.coins > 0)
         ? { type: 'crystals', title: 'CRISTAIS RECEBIDOS', name: '+' + j.crystals + ' Cristais', lines: ['Pedido ' + j.order_id + ' concluído.', 'Usa-os na Ala Premium: Loja Exclusiva, Arenas e Aparência.'] }
         : giftEvent(j));
       return r;

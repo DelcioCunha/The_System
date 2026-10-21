@@ -17,7 +17,9 @@
      MODE              "production" ou "staging" (staging marca tudo como teste)
    ========================================================== */
 
-const VERSION = '1.2.0';
+import { DUEL_SKILLS, DUEL_ITEMS, CLASS_MAIN, HEAL_LIMIT, DOT_NAMES, BUFF_NAMES } from './duel-data.js';
+
+const VERSION = '1.4.0';
 const MIN = 60 * 1000, HOUR = 60 * MIN, DAY = 24 * HOUR;
 const SESSION_TTL = 12 * HOUR;       // duração máxima de uma sessão
 const SESSION_IDLE = 2 * HOUR;       // sem uso durante 2 horas, a sessão expira
@@ -135,16 +137,16 @@ async function housekeeping(env) {
 
 /* ---------------- formatos públicos ---------------- */
 function orderPublic(o) {
-  return { id: o.id, status: o.status, package: o.package_name, crystals: o.crystals, price_kz: o.price_kz, created_at: o.created_at, test: !!o.test };
+  return { id: o.id, status: o.status, package: o.package_name, crystals: o.crystals, coins: o.coins || 0, price_kz: o.price_kz, created_at: o.created_at, test: !!o.test };
 }
 function orderAdmin(o) {
-  return { id: o.id, seq: o.seq, status: o.status, package_id: o.package_id, package: o.package_name, crystals: o.crystals, price_kz: o.price_kz,
+  return { id: o.id, seq: o.seq, status: o.status, package_id: o.package_id, package: o.package_name, crystals: o.crystals, coins: o.coins || 0, price_kz: o.price_kz,
     player_id: o.player_id, player_name: o.player_name, payment_ref: o.payment_ref, payment_note: o.payment_note,
     created_at: o.created_at, confirmed_at: o.confirmed_at, confirmed_by: o.confirmed_by, code_issued_at: o.code_issued_at,
     redeemed_at: o.redeemed_at, closed_at: o.closed_at, close_reason: o.close_reason, delivery: o.delivery || null, test: !!o.test };
 }
 function codeAdmin(c) {
-  return { id: c.id, order_id: c.order_id, hint: c.hint, crystals: c.crystals, status: c.status, issued_at: c.issued_at, issued_by: c.issued_by,
+  return { id: c.id, order_id: c.order_id, hint: c.hint, crystals: c.crystals, coins: c.coins || 0, status: c.status, issued_at: c.issued_at, issued_by: c.issued_by,
     redeemed_at: c.redeemed_at, redeemed_player: c.redeemed_player, revoked_at: c.revoked_at, revoke_reason: c.revoke_reason };
 }
 function whatsappLink(number, text) {
@@ -156,10 +158,12 @@ function whatsappLink(number, text) {
    ROTAS PÚBLICAS (jogo)
    ========================================================== */
 async function getConfig(env) {
-  const pk = await all(env, 'SELECT id, name, crystals, bonus, price_kz, badge FROM packages WHERE active = 1 AND price_kz IS NOT NULL ORDER BY sort, crystals');
+  const pk = await all(env, 'SELECT id, name, crystals, bonus, price_kz, badge, kind FROM packages WHERE active = 1 AND price_kz IS NOT NULL ORDER BY sort, crystals');
   return json({ ok: true, version: VERSION, test: isTest(env), open: (await setting(env, 'shop_open')) === '1',
     currency: 'Kz', whatsapp: !!(await setting(env, 'whatsapp')), payment_info: await setting(env, 'payment_info'),
-    packages: pk.map((p) => ({ id: p.id, name: p.name, crystals: p.crystals + p.bonus, base: p.crystals, bonus: p.bonus, price_kz: p.price_kz, badge: p.badge || null })) });
+    packages: pk.map((p) => p.kind === 'coins'
+      ? { id: p.id, kind: 'coins', name: p.name, crystals: 0, coins: p.crystals + p.bonus, base: p.crystals, bonus: p.bonus, price_kz: p.price_kz, badge: p.badge || null }
+      : { id: p.id, kind: 'crystals', name: p.name, crystals: p.crystals + p.bonus, coins: 0, base: p.crystals, bonus: p.bonus, price_kz: p.price_kz, badge: p.badge || null }) });
 }
 
 async function createOrder(env, body, ip) {
@@ -172,16 +176,17 @@ async function createOrder(env, body, ip) {
   if (pending.n >= 3) throw new HttpError(409, 'Já tens 3 pedidos à espera de pagamento. Conclui ou cancela um primeiro.');
   const p = await one(env, 'SELECT * FROM packages WHERE id = ? AND active = 1 AND price_kz IS NOT NULL', clean(body.package_id, 32));
   if (!p) throw bad('Pacote indisponível.');
+  const isCoins = p.kind === 'coins', total = p.crystals + p.bonus, oCr = isCoins ? 0 : total, oCo = isCoins ? total : 0;
   const c = await one(env, "UPDATE counters SET value = value + 1 WHERE name = 'order' RETURNING value");
   const seq = c.value, id = 'SIS-' + String(seq).padStart(6, '0');
   const token = randomToken(), t = now();
   await env.DB.batch([
-    q(env, 'INSERT INTO orders (id, seq, package_id, package_name, crystals, price_kz, player_id, player_name, client_token_hash, status, created_at, test) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      id, seq, p.id, p.name, p.crystals + p.bonus, p.price_kz, playerId, name, await tokenHash(env, token), 'pending_payment', t, isTest(env) ? 1 : 0),
+    q(env, 'INSERT INTO orders (id, seq, package_id, package_name, crystals, coins, price_kz, player_id, player_name, client_token_hash, status, created_at, test) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      id, seq, p.id, p.name, oCr, oCo, p.price_kz, playerId, name, await tokenHash(env, token), 'pending_payment', t, isTest(env) ? 1 : 0),
     auditStmt(env, 'player:' + playerId, 'order.create', id, 'ok', { package: p.id, price_kz: p.price_kz, name }, ip)
   ]);
-  const msg = 'Olá! Quero comprar ' + (p.crystals + p.bonus) + ' Cristais no jogo Sistema.\nPedido: ' + id + '\nJogador: ' + name + '\nValor: ' + p.price_kz.toLocaleString('pt-PT') + ' Kz';
-  return json({ ok: true, order: { id, status: 'pending_payment', package: p.name, crystals: p.crystals + p.bonus, price_kz: p.price_kz, created_at: t, test: isTest(env) },
+  const msg = 'Olá! Quero comprar ' + total.toLocaleString('pt-PT') + (isCoins ? ' moedas' : ' Cristais') + ' no jogo Sistema.\nPedido: ' + id + '\nJogador: ' + name + '\nValor: ' + p.price_kz.toLocaleString('pt-PT') + ' Kz';
+  return json({ ok: true, order: { id, status: 'pending_payment', package: p.name, crystals: oCr, coins: oCo, price_kz: p.price_kz, created_at: t, test: isTest(env) },
     token, whatsapp_url: whatsappLink(await setting(env, 'whatsapp'), msg), message: msg, payment_info: await setting(env, 'payment_info') });
 }
 
@@ -230,16 +235,16 @@ async function redeem(env, body, ip) {
       q(env, "UPDATE codes SET status = 'redeemed', redeemed_at = ?, redeemed_player = ?, redemption_id = ? WHERE id = ? AND status = 'active'", t, playerId, rid, c.id),
       q(env, "UPDATE orders SET status = 'redeemed', redeemed_at = ? WHERE id = ? AND status = 'code_issued' AND EXISTS (SELECT 1 FROM codes WHERE id = ? AND redemption_id = ?)", t, c.order_id, c.id, rid),
       q(env, "INSERT INTO audit (at, actor, action, target, result, detail, ip) SELECT ?, ?, 'code.redeem', ?, 'ok', ?, ? WHERE EXISTS (SELECT 1 FROM codes WHERE id = ? AND redemption_id = ?)",
-        t, 'player:' + playerId, c.order_id, JSON.stringify({ crystals: c.crystals, hint: c.hint }), ip, c.id, rid)
+        t, 'player:' + playerId, c.order_id, JSON.stringify({ crystals: c.crystals, coins: c.coins || 0, hint: c.hint }), ip, c.id, rid)
     ]);
     if (changes(r[0]) === 1) {
       await clearHits(env, 'redeem:p:' + playerId);
-      return json({ ok: true, crystals: c.crystals, redemption_id: rid, order_id: c.order_id, repeated: false });
+      return json({ ok: true, crystals: c.crystals, coins: c.coins || 0, redemption_id: rid, order_id: c.order_id, repeated: false });
     }
     c = await one(env, 'SELECT * FROM codes WHERE id = ?', c.id); // outra tentativa ganhou a corrida
   }
   if (c.status === 'redeemed' && c.redeemed_player === playerId) {
-    return json({ ok: true, crystals: c.crystals, redemption_id: c.redemption_id, order_id: c.order_id, repeated: true });
+    return json({ ok: true, crystals: c.crystals, coins: c.coins || 0, redemption_id: c.redemption_id, order_id: c.order_id, repeated: true });
   }
   throw await invalid();
 }
@@ -404,9 +409,9 @@ async function issueCode(env, A, id, request, body, ip, reissue) {
   const stmts = [];
   if (reissue) stmts.push(q(env, "UPDATE codes SET status = 'revoked', revoked_at = ?, revoke_reason = ? WHERE id = ? AND status = 'active'", t, reason, live.id));
   stmts.push(
-    q(env, 'INSERT INTO codes (id, order_id, code_hash, hint, crystals, status, issued_at, issued_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', cid, o.id, await codeHash(env, code), norm.slice(-4), o.crystals, 'active', t, A.admin),
+    q(env, 'INSERT INTO codes (id, order_id, code_hash, hint, crystals, coins, status, issued_at, issued_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', cid, o.id, await codeHash(env, code), norm.slice(-4), o.crystals, o.coins || 0, 'active', t, A.admin),
     q(env, "UPDATE orders SET status = 'code_issued', delivery = 'code', code_issued_at = ? WHERE id = ? AND status = ?", t, o.id, reissue ? 'code_issued' : 'payment_confirmed'),
-    auditStmt(env, A.admin, action, o.id, 'ok', { hint: norm.slice(-4), crystals: o.crystals, reason: reason || undefined }, ip)
+    auditStmt(env, A.admin, action, o.id, 'ok', { hint: norm.slice(-4), crystals: o.crystals, coins: o.coins || 0, reason: reason || undefined }, ip)
   );
   try {
     await env.DB.batch(stmts); // tudo ou nada; o índice único impede dois códigos vivos
@@ -414,7 +419,7 @@ async function issueCode(env, A, id, request, body, ip, reissue) {
     throw new HttpError(409, 'Este pedido já tem um código vivo. Atualiza o pedido.');
   }
   const message = 'Pagamento confirmado. Obrigado!\nPedido: ' + o.id + '\nO teu código: ' + code + '\nNo jogo: toca nos teus Cristais no topo → Obter Cristais → Resgatar código.\nO código só pode ser usado uma vez. Não o partilhes.';
-  const res = { ok: true, code, hint: norm.slice(-4), crystals: o.crystals, order_id: o.id, message,
+  const res = { ok: true, code, hint: norm.slice(-4), crystals: o.crystals, coins: o.coins || 0, order_id: o.id, message,
     whatsapp_url: 'https://wa.me/?text=' + encodeURIComponent(message), note: 'O código só é mostrado agora. Copia-o e envia-o ao jogador.' };
   await run(env, 'INSERT INTO idem (key, actor, action, target, response, expires_at) VALUES (?, ?, ?, ?, ?, ?)', key, A.admin, action, o.id, JSON.stringify(res), t + IDEM_TTL);
   return json(res);
@@ -847,14 +852,14 @@ async function deliverOrder(env, A, id, request, ip) {
   const gid = randomId('g'), t = now();
   try {
     await env.DB.batch([
-      q(env, 'INSERT INTO grants (id, player_id, order_id, crystals, coins, reason, message, mode, status, created_by, created_at, test) VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)',
-        gid, o.player_id, o.id, o.crystals, 'Compra ' + o.id, 'Pagamento confirmado. Obrigado pela tua compra!', 'auto', 'pending', A.admin, t, o.test),
+      q(env, 'INSERT INTO grants (id, player_id, order_id, crystals, coins, reason, message, mode, status, created_by, created_at, test) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        gid, o.player_id, o.id, o.crystals, o.coins || 0, 'Compra ' + o.id, 'Pagamento confirmado. Obrigado pela tua compra!', 'auto', 'pending', A.admin, t, o.test),
       q(env, "UPDATE orders SET status = 'code_issued', delivery = 'auto', code_issued_at = ? WHERE id = ? AND status = 'payment_confirmed'", t, o.id),
-      auditStmt(env, A.admin, 'order.deliver', o.id, 'ok', { crystals: o.crystals, player: o.player_id }, ip)
+      auditStmt(env, A.admin, 'order.deliver', o.id, 'ok', { crystals: o.crystals, coins: o.coins || 0, player: o.player_id }, ip)
     ]);
   } catch (e) { throw new HttpError(409, 'Este pedido já tem uma entrega em curso.'); }
-  const res = { ok: true, order_id: o.id, grant_id: gid, crystals: o.crystals, registered: !!pl,
-    note: pl ? 'Os Cristais chegam ao jogo na próxima vez que o jogador o abrir com internet.' : 'O jogador ainda não sincronizou: recebe quando abrir a versão atual do jogo com internet.' };
+  const res = { ok: true, order_id: o.id, grant_id: gid, crystals: o.crystals, coins: o.coins || 0, registered: !!pl,
+    note: pl ? (o.coins ? 'As moedas chegam' : 'Os Cristais chegam') + ' ao jogo na próxima vez que o jogador o abrir com internet.' : 'O jogador ainda não sincronizou: recebe quando abrir a versão atual do jogo com internet.' };
   await run(env, 'INSERT INTO idem (key, actor, action, target, response, expires_at) VALUES (?, ?, ?, ?, ?, ?)', key, A.admin, 'order.deliver', o.id, JSON.stringify(res), t + IDEM_TTL);
   return json(res);
 }
@@ -985,93 +990,264 @@ async function chatSend(env, body) {
 }
 
 /* ---------------- duelos ---------------- */
-/* o jogo envia os atributos de combate; o servidor limita-os ao que é possível no nível registado */
+/* Mesmas regras do combate contra chefes: habilidades da classe (com efeitos), itens de combate,
+   estados (veneno, queimadura, sangramento, atordoar, bónus e penalizações), escudos, invocações
+   e servos. O jogo envia os atributos, as habilidades e os itens; o servidor limita-os ao nível
+   registado e só aceita habilidades que a classe e o nível permitem. */
+const PVP_HP = (L) => 1.2 + L * 0.016; // vida a crescer com o nível: os duelos duram mais do que um golpe de sorte
+const PVP_DEF = 1;                    // peso da defesa contra o golpe
+/* golpes muito fortes (as habilidades de nível alto chegam a 700%) são comprimidos num duelo */
+/* força de cada classe nos duelos, por nível (10, 30, 60, 100), calibrada automaticamente com torneios simulados
+   (tools/pvp-tune.mjs) para cada classe ganhar perto de metade dos duelos contra as outras no mesmo nível */
+const PVP_K = {"guerreiro":[0.93,1.05,0.99,1.05],"assassino":[1.09,0.91,1.05,1.03],"mago":[0.94,1.07,0.94,0.98],"guardiao":[0.84,1.04,1.07,1.08],"arqueiro":[1.18,0.94,1,0.97],"invocador":[1.06,0.99,0.95,0.9]};
+const PVP_KL = [10, 30, 60, 100];
+function classK(cls, L) {
+  const k = (globalThis.__PVP_K && globalThis.__PVP_K[cls]) || PVP_K[cls] || [1, 1, 1, 1];
+  if (L <= PVP_KL[0]) return k[0];
+  for (let i = 1; i < 4; i++) if (L <= PVP_KL[i]) return k[i - 1] + (k[i] - k[i - 1]) * (L - PVP_KL[i - 1]) / (PVP_KL[i] - PVP_KL[i - 1]);
+  return k[3];
+}
+const CLASS_PVP = { invocador: () => ({ summon: 0.65 }) };
+/* média de vida, força e defesa de cada nível (todas as classes, equipamento normal): os duelos aproximam
+   cada jogador desta média (60% o próprio, 40% a média) para nenhuma classe esmagar as outras */
+const PVP_BASE = [[1, 250, 40, 15], [10, 562, 112, 40], [30, 1387, 311, 92], [60, 2690, 628, 182], [100, 5243, 1044, 381]];
+function baseAt(L) {
+  for (let i = 1; i < PVP_BASE.length; i++) { const a = PVP_BASE[i - 1], b = PVP_BASE[i]; if (L <= b[0]) { const t = (L - a[0]) / (b[0] - a[0]); return [a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, a[3] + (b[3] - a[3]) * t]; } }
+  return PVP_BASE[PVP_BASE.length - 1].slice(1);
+}
+const BLEND = 0.5;
+function pvpMult(mult, hits) { const tot = mult * (hits || 1); const t2 = tot <= 1 ? tot : 1 + (tot - 1) * 0.55; return t2 / (hits || 1); }
+const SUM = (list, kind, key) => list.reduce((s, x) => s + (x.kind === kind && x.key === key ? x.val : 0), 0);
 function fighter(p, f) {
   f = f && typeof f === 'object' ? f : {};
   const L = Math.max(1, Math.min(100, p.level || 1));
-  const cap = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(+v || 0)));
+  const cap = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round((+v || 0) * 100) / 100));
   const cls = CLASSES.includes(f.cls) ? f.cls : (CLASSES.includes(p.cls) ? p.cls : 'guerreiro');
-  const hp = cap(f.hp, 50, 150 * L + 800), mp = cap(f.mp, 20, 40 * L + 300);
-  const fx = {
-    id: p.id, name: p.name, cls, level: L, avatar: clean(f.avatar, 8) || String(L),
-    maxHp: Math.round(hp * 1.5), maxMp: mp,
-    atk: cap(Math.max(+f.atk || 0, +f.matk || 0), 5, 25 * L + 200), def: cap(f.def, 0, 12 * L + 100),
-    crit: cap(f.crit, 0, 50), critDmg: cap(f.critDmg, 150, 300), eva: cap(f.eva, 0, 25), ls: cap(f.lifesteal, 0, 20), agi: cap(f.agi, 0, 400),
-    pots: 2, cds: {}, guard: false, shield: 0, legion: 0, buff: 0, miss: 0
+  const hp = Math.round(cap(f.hp || f.maxHp, 50, 150 * L + 800)), mp = Math.round(cap(f.mp || f.maxMp, 20, 40 * L + 300)), atkCap = 25 * L + 200;
+  const stats = {
+    atk: cap(f.atk, 1, atkCap), matk: cap(f.matk, 1, atkCap), def: cap(f.def, 0, 12 * L + 100),
+    crit: cap(f.crit, 0, 40), critDmg: cap(f.critDmg, 150, 200), eva: cap(f.eva, 0, 15), lifesteal: cap(f.lifesteal, 0, 20),
+    regenHp: cap(f.regenHp, 0, 5), regenMp: cap(f.regenMp, 0, 10), summonPct: cap(f.summonPct, 0, 30), dotPct: cap(f.dotPct, 0, 100),
+    potionPct: cap(f.potionPct, 0, 100), lowHpAtk: cap(f.lowHpAtk, 0, 60), execute: cap(f.execute, 0, 60), firstStrike: cap(f.firstStrike, 0, 60),
+    manaOnHit: cap(f.manaOnHit, 0, 10), thorns: cap(f.thorns, 0, 20), openShield: cap(f.openShield, 0, 30), stunRes: cap(f.stunRes, 0, 60),
+    lastStand: f.lastStand ? 1 : 0, revive: cap(f.revive, 0, 30), main: CLASS_MAIN[cls] === 'mag' ? 'mag' : 'phys', agi: cap(f.agi, 0, 400)
   };
-  fx.hp = fx.maxHp; fx.mp = fx.maxMp;
-  return fx;
+  // habilidades: só as da classe, as comuns e as secretas, até ao nível do jogador
+  const skills = (Array.isArray(f.skills) ? f.skills : []).map((x) => clean(x, 8)).filter((id, i, a) => {
+    const s = DUEL_SKILLS[id]; return s && a.indexOf(id) === i && s.u <= L && (s.c === cls || s.c === '*' || s.c === 'secret');
+  }).slice(0, 40);
+  // itens de combate da Bolsa (no máximo 9 de cada; as relíquias premium contam como 1)
+  const items = {};
+  if (f.items && typeof f.items === 'object') Object.keys(f.items).slice(0, 60).forEach((id) => { const it = DUEL_ITEMS[id]; if (it) { const n = Math.min(it.perma ? 1 : 9, Math.floor(+f.items[id] || 0)); if (n > 0) items[id] = n; } });
+  // servos convocados: força calculada aqui
+  // nos duelos contam só os 3 lugares base (+1 do Invocador): os lugares comprados não dão vantagem contra jogadores
+  const squad = (Array.isArray(f.squad) ? f.squad : []).slice(0, cls === 'invocador' ? 4 : 3).map((x) => {
+    const lv = Math.max(1, Math.min(100, Math.floor(+(x && x.level) || 1))), king = !!(x && x.king), role = ['atacante', 'arcano', 'guarda', 'comandante'].includes(x && x.role) ? x.role : 'atacante';
+    let k = (king ? 0.14 : 0.07) + lv * 0.0006; if (role === 'guarda') k *= 0.6; if (cls === 'invocador') k *= 1.25;
+    return { name: clean(x && x.name, 24) || 'Servo', role, king, power: Math.max(1, Math.round(Math.max(stats.atk, stats.matk) * k)), shieldPct: role === 'guarda' ? 4 + Math.round(lv / 20) : 0 };
+  });
+  const M = Object.assign({}, CLASS_PVP[cls] ? CLASS_PVP[cls](L) : {}), CK = classK(cls, L); M.hp = (M.hp || 1) * Math.sqrt(CK); M.atk = (M.atk || 1) * Math.sqrt(CK); const B0 = baseAt(L), mainPow = Math.max(stats.atk, stats.matk), kPow = (BLEND * mainPow + (1 - BLEND) * B0[1]) / mainPow;
+  stats.atk = Math.round(stats.atk * kPow * (M.atk || 1)); stats.matk = Math.round(stats.matk * kPow * (M.atk || 1)); stats.def = Math.round((BLEND * stats.def + (1 - BLEND) * B0[2]) * (M.def || 1)); stats.summonK = M.summon || 1;
+  const maxHp = Math.round((BLEND * hp + (1 - BLEND) * B0[0]) * PVP_HP(L) * (M.hp || 1));
+  return { id: p.id, name: p.name, cls, level: L, maxHp, hp: maxHp, maxMp: mp, mp, shield: 0, st: [], cds: {}, stunned: 0, stunImmune: 0,
+    summons: [], squad, cmd: Math.min(15, squad.filter((x) => x.role === 'comandante').length * 5), stats, skills, items, used: {}, heals: 0, premUsed: 0,
+    struck: false, lastStandUsed: false, reviveUsed: false, miss: 0 };
 }
-const DUEL_SKILLS = {
-  guerreiro: { name: 'Golpe Devastador', mp: 0.35, cd: 3 },
-  assassino: { name: 'Golpe nas Sombras', mp: 0.35, cd: 3 },
-  mago: { name: 'Explosão Arcana', mp: 0.4, cd: 3 },
-  guardiao: { name: 'Muralha Inquebrável', mp: 0.35, cd: 4 },
-  arqueiro: { name: 'Chuva de Flechas', mp: 0.35, cd: 3 },
-  invocador: { name: 'Legião das Almas', mp: 0.4, cd: 4 }
-};
 function newCodeDuel() { let s = ''; while (s.length < 6) { const b = randomBytes(8); for (let i = 0; i < b.length && s.length < 6; i++) if (b[i] < 248) s += DUEL_CODE[b[i] % 31]; } return s; }
-function addLog(st, txt, c, who) { st.seq = (st.seq || 0) + 1; st.log.push({ n: st.seq, t: txt, c: c || '', w: who || null }); if (st.log.length > 40) st.log.splice(0, st.log.length - 40); }
-
-/* um golpe: dano = força × força/(força+defesa), com crítico, esquiva, guarda e escudo */
-function hit(st, A, D, mult, opts) {
-  opts = opts || {};
-  if (!opts.sure && rnd() * 100 < D.eva) { addLog(st, D.name + ' esquivou-se!', 'miss', D.id); return 0; }
-  const pow = A.atk * (A.buff ? 1.25 : 1), def = opts.pierce ? 0 : D.def * (opts.half ? 0.5 : 1);
-  let dmg = pow * pow / (pow + def + 1) * mult * (0.9 + rnd() * 0.2);
-  const crit = opts.crit || rnd() * 100 < A.crit;
-  if (crit) dmg *= A.critDmg / 100;
-  if (D.guard) dmg *= 0.4;
-  dmg = Math.max(1, Math.round(dmg));
-  if (D.shield > 0) { const s = Math.min(D.shield, dmg); D.shield -= s; dmg -= s; if (s) addLog(st, 'O escudo de ' + D.name + ' absorveu ' + s + '.', 'shield', D.id); }
+function addLog(st, txt, c, who, tg) { st.seq = (st.seq || 0) + 1; st.log.push({ n: st.seq, t: txt, c: c || '', w: who || null, tg: tg || null }); if (st.log.length > 60) st.log.splice(0, st.log.length - 60); }
+const chance = (p) => rnd() < p;
+const rr = (a, b) => a + rnd() * (b - a);
+function base(A, kind) {
+  const s = A.stats;
+  const atk = s.atk * (1 + SUM(A.st, 'buff', 'atk') / 100 - SUM(A.st, 'debuff', 'atk') / 100);
+  const matk = s.matk * (1 + (SUM(A.st, 'buff', 'matk') + SUM(A.st, 'buff', 'atk') * 0.5 - SUM(A.st, 'debuff', 'atk')) / 100);
+  const def = s.def * (1 + SUM(A.st, 'buff', 'def') / 100);
+  let v = kind === 'mag' ? matk : kind === 'def' ? def * 3 : kind === 'best' ? Math.max(atk, matk) : atk;
+  if (s.lowHpAtk && A.hp < A.maxHp * 0.3) v *= 1 + s.lowHpAtk / 100;
+  if (A.cmd) v *= 1 + A.cmd / 100;
+  return Math.max(1, v);
+}
+function effDef(D, pierce) { return Math.max(0, D.stats.def * (1 + SUM(D.st, 'buff', 'def') / 100) * (1 - SUM(D.st, 'debuff', 'def') / 100) * (1 - (pierce || 0))); }
+/* redução proporcional pela defesa (igual para um golpe grande ou vários pequenos) */
+function mitig(raw, def, L) { const P = baseAt(L || 50)[1] * 1.2; return raw * P / (P + def * PVP_DEF); }
+/* dano a um lutador: escudo, espinhos (devolve parte) e reflexão */
+function hurt(st, D, amount, A) {
+  let dmg = Math.max(1, Math.round(amount));
+  if (D.shield > 0) { const ab = Math.min(D.shield, dmg); D.shield -= ab; dmg -= ab; if (ab) addLog(st, '🛡️ O escudo de ' + D.name + ' absorve ' + ab + '.', 'muted', D.id); }
   D.hp = Math.max(0, D.hp - dmg);
-  if (dmg) addLog(st, (crit ? 'CRÍTICO! ' : '') + A.name + ' causou ' + dmg + ' de dano a ' + D.name + '.', crit ? 'crit' : 'hit', A.id);
-  if (A.ls && dmg) { const h = Math.round(dmg * A.ls / 100); if (h) { A.hp = Math.min(A.maxHp, A.hp + h); } }
+  if (A && dmg > 0 && A.hp > 0) {
+    const back = (D.stats.thorns || 0) + SUM(D.st, 'buff', 'reflect');
+    if (back > 0) { const r = Math.max(1, Math.round(dmg * back / 100)); A.hp = Math.max(1, A.hp - r); addLog(st, '🌵 ' + D.name + ' devolve ' + r + ' de dano.', 'hit', D.id, A.id); }
+  }
   return dmg;
 }
-/* aplica a ação do jogador da vez; devolve uma mensagem de erro ou null */
-function duelAct(st, me, op, action) {
-  const A = st.f[me], D = st.f[op];
-  if (action === 'skill') {
-    const sk = DUEL_SKILLS[A.cls], cost = Math.round(A.maxMp * sk.mp);
-    if ((A.cds.skill || 0) > 0) return 'A habilidade ainda está a recarregar (' + A.cds.skill + ' turnos).';
-    if (A.mp < cost) return 'Mana insuficiente.';
-    A.mp -= cost; A.cds.skill = sk.cd;
-    addLog(st, A.name + ' usou ' + sk.name + '!', 'skill', me);
-    if (A.cls === 'guerreiro') hit(st, A, D, 2.2);
-    else if (A.cls === 'assassino') hit(st, A, D, 1.7, { crit: true, sure: true });
-    else if (A.cls === 'mago') hit(st, A, D, 1.9, { pierce: true });
-    else if (A.cls === 'guardiao') { A.shield += Math.round(A.maxHp * 0.3); A.buff = 2; addLog(st, A.name + ' ergueu um escudo de ' + Math.round(A.maxHp * 0.3) + ' e fica mais forte.', 'shield', me); }
-    else if (A.cls === 'arqueiro') { for (let i = 0; i < 3 && D.hp > 0; i++) hit(st, A, D, 0.75); }
-    else if (A.cls === 'invocador') { A.legion = 3; addLog(st, 'Três almas erguem-se ao lado de ' + A.name + '.', 'skill', me); hit(st, A, D, 0.8); }
-  } else if (action === 'heavy') {
-    const cost = Math.round(A.maxMp * 0.2);
-    if (A.mp < cost) return 'Mana insuficiente.';
-    A.mp -= cost; addLog(st, A.name + ' carregou um Golpe Poderoso.', 'skill', me);
-    hit(st, A, D, 1.5, { half: true });
+function heal(F, amount) { const h = Math.max(0, Math.min(F.maxHp - F.hp, Math.round(amount))); F.hp += h; return h; }
+function revive(st, F) {
+  if (F.hp > 0) return;
+  if (F.stats.lastStand && !F.lastStandUsed) { F.lastStandUsed = true; F.hp = 1; addLog(st, '🔥 Vontade Inabalável! ' + F.name + ' aguenta com 1 de vida.', 'warn', F.id); return; }
+  if (F.stats.revive && !F.reviveUsed) { F.reviveUsed = true; F.hp = Math.round(F.maxHp * F.stats.revive / 100); addLog(st, '🔥 ' + F.name + ' renasce das cinzas com ' + F.hp + ' de vida!', 'warn', F.id); return; }
+  for (const id of ['pr_fenix', 'sx_fenix']) {
+    if ((F.items[id] || 0) > (F.used[id] || 0) && !F.revived) {
+      F.revived = true; F.used[id] = (F.used[id] || 0) + 1; F.hp = Math.round(F.maxHp * 0.3);
+      addLog(st, (id === 'pr_fenix' ? '🖤 ' : '🪶 ') + (DUEL_ITEMS[id] ? DUEL_ITEMS[id].n : 'Fénix') + ' devolve ' + F.name + ' à vida (' + F.hp + ').', 'warn', F.id); return;
+    }
+  }
+}
+/* um efeito (as mesmas "ops" das habilidades do jogo) */
+function op(st, A, D, o, src) {
+  const s = A.stats;
+  switch (o.op) {
+    case 'dmg': {
+      const hits = o.hits || 1, b0 = base(A, ['phys', 'mag', 'def', 'best'].includes(o.kind) ? o.kind : s.main);
+      let total = 0, crits = 0, miss = 0;
+      for (let i = 0; i < hits && D.hp > 0; i++) {
+        const eva = Math.min(25, D.stats.eva + SUM(D.st, 'buff', 'eva'));
+        if (!o.alwaysCrit && chance(eva / 100)) { miss++; continue; }
+        let raw = b0 * pvpMult(o.mult, hits) * rr(0.9, 1.1);
+        const isCrit = o.alwaysCrit || chance(Math.min(55, s.crit + SUM(A.st, 'buff', 'crit') + (o.crit || 0)) / 100);
+        if (isCrit) { raw *= s.critDmg / 100; crits++; }
+        if (o.execute && D.hp < D.maxHp * o.execute.below) raw *= o.execute.mult;
+        if (s.execute && D.hp < D.maxHp * 0.3) raw *= 1 + s.execute / 100;
+        if (s.firstStrike && !A.struck) raw *= 1 + s.firstStrike / 100;
+        const dmg = hurt(st, D, mitig(raw, effDef(D, o.pierce), A.level), A);
+        total += dmg;
+        const ls = (s.lifesteal + SUM(A.st, 'buff', 'lifesteal')) / 100 + (o.lifesteal || 0);
+        if (ls > 0) heal(A, dmg * ls);
+      }
+      if (total > 0) A.struck = true;
+      if (s.manaOnHit && total > 0) A.mp = Math.min(A.maxMp, A.mp + Math.round(A.maxMp * s.manaOnHit / 100));
+      if (total > 0 || !miss) addLog(st, '➤ ' + src + ': ' + total + ' de dano' + (hits > 1 ? ' (' + hits + ' golpes)' : '') + (crits ? ' — CRÍTICO' + (crits > 1 ? ' ×' + crits : '') + '!' : '.'), crits ? 'crit' : 'hit', A.id, D.id);
+      if (miss) addLog(st, '💨 ' + D.name + ' esquivou-se' + (hits > 1 ? ' de ' + miss + ' golpe(s)' : '') + '.', 'miss', D.id);
+      break;
+    }
+    case 'dot': {
+      const per = Math.max(1, Math.round(mitig(Math.max(base(A, 'phys'), base(A, 'mag')) * o.mult * 0.42, effDef(D, 0.5), A.level) * (1 + (s.dotPct || 0) / 100)));
+      D.st.push({ kind: 'dot', type: o.type, val: per, turns: o.turns, from: A.id });
+      addLog(st, '☠️ ' + D.name + ' sofre ' + (DOT_NAMES[o.type] || o.type) + ' (' + per + '/turno).', 'status', A.id, D.id);
+      break;
+    }
+    case 'stun': {
+      let ch = o.chance >= 1 ? 0.6 : o.chance * 0.6;
+      if (D.stunImmune > 0) { addLog(st, '🌀 ' + D.name + ' resiste ao atordoamento.', 'muted', D.id); break; }
+      if (D.stats.stunRes) ch *= 1 - D.stats.stunRes / 100;
+      if (chance(ch)) { D.stunned = 1; D.stunImmune = 3; addLog(st, '💫 ' + D.name + ' ficou atordoado!', 'status', A.id, D.id); }
+      else addLog(st, '🌀 O atordoamento falhou.', 'muted', A.id);
+      break;
+    }
+    case 'heal': { const h = heal(A, A.maxHp * o.pct / 100 * 0.6); addLog(st, h ? '💚 ' + A.name + ' recupera ' + h + ' de vida.' : '💚 A vida de ' + A.name + ' já estava cheia.', 'heal', A.id); break; }
+    case 'shield': { const v = Math.round(A.maxHp * o.pct / 100 * 0.6); A.shield += v; addLog(st, '🛡️ ' + A.name + ' ergue um escudo de ' + v + '.', 'buff', A.id); break; }
+    case 'mp': { const m = Math.min(A.maxMp - A.mp, Math.round(A.maxMp * o.pct / 100)); A.mp += m; addLog(st, m ? '💧 ' + A.name + ' recupera ' + m + ' de mana.' : '💧 A mana de ' + A.name + ' já estava cheia.', 'buff', A.id); break; }
+    case 'buff': { const v = Math.round(o.val * 0.6); A.st.push({ kind: 'buff', key: o.key, val: v, turns: o.turns }); addLog(st, '⬆️ ' + A.name + ': ' + (BUFF_NAMES[o.key] || o.key) + ' +' + v + '% (' + o.turns + ' turnos).', 'buff', A.id); break; }
+    case 'debuff': { const v = Math.round(o.val * 0.6); D.st.push({ kind: 'debuff', key: o.key, val: v, turns: o.turns }); addLog(st, '⬇️ ' + D.name + ': ' + (BUFF_NAMES[o.key] || o.key) + ' -' + v + '%.', 'status', A.id, D.id); break; }
+    case 'summon': {
+      const power = Math.round(Math.max(s.matk, s.atk) * o.mult * (1 + (s.summonPct || 0) / 100) * (s.summonK || 1));
+      A.summons = A.summons.filter((x) => x.name !== o.name);
+      if (A.summons.length >= 2) A.summons.shift(); // num duelo, no máximo 2 invocações ao mesmo tempo
+      A.summons.push({ name: o.name, power, turns: o.turns });
+      addLog(st, '💀 ' + A.name + ' invoca ' + o.name + ' (' + o.turns + ' turnos).', 'buff', A.id);
+      break;
+    }
+    case 'resetCd': A.cds = {}; addLog(st, '⏳ As recargas de ' + A.name + ' foram reiniciadas.', 'buff', A.id); break;
+  }
+}
+/* a ação do jogador da vez; devolve uma mensagem de erro ou null */
+function duelAct(st, me, oppId, action, id) {
+  const A = st.f[me], D = st.f[oppId];
+  if (A.stunned > 0 && action !== 'pass') return 'Estás atordoado.';
+  if (action === 'attack') op(st, A, D, { op: 'dmg', kind: A.stats.main, mult: 1 }, A.name + ' ataca');
+  else if (action === 'skill') {
+    const sk = DUEL_SKILLS[id];
+    if (!sk || !A.skills.includes(id)) return 'Habilidade indisponível.';
+    if ((A.cds[id] || 0) > 0) return 'Em recarga (' + A.cds[id] + ' turnos).';
+    if (A.mp < sk.mp) return 'Mana insuficiente.';
+    A.mp -= sk.mp; if (sk.cd) A.cds[id] = sk.cd + 1;
+    addLog(st, '✦ ' + A.name + ' usou ' + sk.n + '.', 'skill', me);
+    sk.ops.forEach((o) => { if (D.hp > 0 || o.op !== 'dmg') op(st, A, D, o, sk.n); });
+  } else if (action === 'item') {
+    const it = DUEL_ITEMS[id];
+    if (!it || (A.items[id] || 0) <= (A.used[id] || 0)) return 'Não tens este item.';
+    const u = it.use, isHeal = u.type === 'heal' || u.type === 'restore';
+    if (isHeal && A.heals >= HEAL_LIMIT) return 'Já usaste ' + HEAL_LIMIT + ' poções de cura neste duelo.';
+    if (it.prem && A.premUsed >= 1) return 'Só podes usar 1 relíquia premium por duelo.';
+    if (isHeal) A.heals++;
+    if (it.prem) A.premUsed++;
+    A.used[id] = (A.used[id] || 0) + 1;
+    addLog(st, '🎒 ' + A.name + ' usou ' + it.n + '.', 'skill', me);
+    const potK = 1 + (A.stats.potionPct || 0) / 100;
+    const self = (o) => op(st, A, D, o, it.n);
+    if (u.type === 'heal') self({ op: 'heal', pct: u.pct * potK });
+    else if (u.type === 'mana') self({ op: 'mp', pct: u.pct });
+    else if (u.type === 'buffs') u.list.forEach((bf) => self({ op: 'buff', key: bf.key, val: bf.val, turns: bf.turns }));
+    else if (u.type === 'cleanse') { A.st = A.st.filter((x) => x.kind === 'buff'); addLog(st, '🌿 ' + A.name + ' remove os efeitos negativos.', 'heal', me); }
+    else if (u.type === 'bomb') {
+      const dd = hurt(st, D, mitig(A.level * (u.perLevel || 10), effDef(D, 0.5), A.level), A); addLog(st, '💥 A bomba causa ' + dd + ' de dano a ' + D.name + '!', 'hit', me, oppId);
+      if (u.dot && D.hp > 0) self(Object.assign({ op: 'dot' }, u.dot));
+      if (u.stun && D.hp > 0) self({ op: 'stun', chance: u.stun, turns: 1 });
+    } else if (u.type === 'restore') {
+      self({ op: 'heal', pct: (u.hp || 0) * potK }); self({ op: 'mp', pct: u.mp || 0 });
+      if (u.cleanse) A.st = A.st.filter((x) => x.kind === 'buff');
+    } else if (u.type === 'judgment') {
+      const jd = hurt(st, D, D.maxHp * 0.1, A); addLog(st, '💥 O Juízo Final corta ' + jd + ' de vida a ' + D.name + ' (10% num duelo)!', 'crit', me, oppId);
+    } else if (u.type === 'monarch') {
+      self({ op: 'heal', pct: 50 }); self({ op: 'mp', pct: 100 }); A.st = A.st.filter((x) => x.kind === 'buff');
+      self({ op: 'buff', key: 'atk', val: 30, turns: 3 }); self({ op: 'buff', key: 'matk', val: 30, turns: 3 });
+    } else if (u.type === 'ops') u.ops.forEach((o) => { if (D.hp > 0 || o.op !== 'dmg') self(o); });
   } else if (action === 'defend') {
-    A.guard = true; const g = Math.round(A.maxMp * 0.15); A.mp = Math.min(A.maxMp, A.mp + g);
-    addLog(st, A.name + ' defende-se (dano recebido -60%) e recupera ' + g + ' de mana.', 'guard', me);
-  } else if (action === 'potion') {
-    if (A.pots < 1) return 'Já usaste as 2 poções deste duelo.';
-    if (A.hp >= A.maxHp) return 'A tua vida já está cheia.';
-    A.pots--; const h = Math.min(A.maxHp - A.hp, Math.round(A.maxHp * 0.3)); A.hp += h;
-    addLog(st, A.name + ' bebeu uma poção: +' + h + ' de vida.', 'heal', me);
-  } else if (action === 'attack') {
-    hit(st, A, D, 1);
+    A.st.push({ kind: 'buff', key: 'def', val: 60, turns: 1 });
+    const g = Math.min(A.maxMp - A.mp, Math.round(A.maxMp * 0.1)); A.mp += g;
+    addLog(st, '🛡️ ' + A.name + ' defende-se (+60% defesa, +' + g + ' mana).', 'buff', me);
+  } else if (action === 'pass') {
+    if (!(A.stunned > 0)) return 'Ação inválida.';
   } else return 'Ação desconhecida.';
   return null;
 }
-/* fim do turno de "me": almas do invocador, recargas e passagem de vez */
-function endTurn(st, me, op) {
-  const A = st.f[me], D = st.f[op];
-  if (A.legion > 0 && D.hp > 0) { A.legion--; addLog(st, 'As almas de ' + A.name + ' atacam.', 'skill', me); hit(st, A, D, 0.45, { sure: true }); }
-  if (A.buff > 0) A.buff--;
-  Object.keys(A.cds).forEach((k) => { if (A.cds[k] > 0) A.cds[k]--; });
-  D.guard = false; // a guarda dura até ao fim do turno seguinte do adversário
-  A.mp = Math.min(A.maxMp, A.mp + Math.round(A.maxMp * 0.05));
+/* depois da ação: invocações e servos atacam, regeneração */
+function afterAction(st, me, oppId) {
+  const A = st.f[me], D = st.f[oppId];
+  A.summons.forEach((x) => { if (D.hp <= 0) return; const d = hurt(st, D, mitig(x.power * rr(0.9, 1.1), effDef(D), A.level), null); addLog(st, '💀 ' + x.name + ' ataca ' + D.name + ': ' + d + '.', 'hit', me, oppId); });
+  A.squad.forEach((x) => { if (D.hp <= 0) return; const d = hurt(st, D, mitig(x.power * rr(0.9, 1.1), effDef(D), A.level), null); addLog(st, '🌑 ' + x.name + ' ataca ' + D.name + ': ' + d + '.', 'hit', me, oppId); });
+  if (A.hp > 0) {
+    A.mp = Math.min(A.maxMp, A.mp + Math.round(A.maxMp * (A.stats.regenMp || 0) / 100) + Math.round(A.maxMp * 0.03));
+    if (A.stats.regenHp) heal(A, A.maxHp * A.stats.regenHp / 100);
+  }
+  revive(st, D);
+}
+/* início do turno de "who": venenos e queimaduras, recargas e estados a contar. Devolve 'dead', 'stunned' ou null */
+function startTurn(st, who, other) {
+  const F = st.f[who];
+  const dot = F.st.reduce((s, x) => s + (x.kind === 'dot' ? x.val : 0), 0);
+  if (dot > 0) { const d = hurt(st, F, dot, null); addLog(st, '☠️ Os efeitos causam ' + d + ' de dano a ' + F.name + '.', 'hit', other, who); revive(st, F); }
+  for (let i = F.st.length - 1; i >= 0; i--) { F.st[i].turns--; if (F.st[i].turns <= 0) F.st.splice(i, 1); }
+  Object.keys(F.cds).forEach((k) => { F.cds[k]--; if (F.cds[k] <= 0) delete F.cds[k]; });
+  if (F.stunImmune > 0) F.stunImmune--;
+  F.summons = F.summons.filter((x) => { x.turns--; return x.turns > 0; });
+  if (F.hp <= 0) return 'dead';
+  if (F.stunned > 0) { F.stunned--; addLog(st, '💫 ' + F.name + ' está atordoado e perde o turno.', 'status', null, who); afterAction(st, who, other); return 'stunned'; }
+  return null;
+}
+/* passa a vez: aplica o início do turno do outro (e salta turnos de quem está atordoado). Devolve { turn } ou { winner } */
+function passTurn(st, from, to) {
+  let cur = to, prev = from;
+  for (let i = 0; i < 4; i++) {
+    if (st.f[prev].hp <= 0) return { winner: cur };
+    const r = startTurn(st, cur, prev);
+    if (r === 'dead') return { winner: prev };
+    if (st.f[prev].hp <= 0) return { winner: cur };
+    if (r !== 'stunned') return { turn: cur };
+    const t = cur; cur = prev; prev = t;
+  }
+  return { turn: cur };
 }
 function winnerByHp(st, a, b) { const ra = st.f[a].hp / st.f[a].maxHp, rb = st.f[b].hp / st.f[b].maxHp; return ra === rb ? (rnd() < 0.5 ? a : b) : (ra > rb ? a : b); }
+/* entrada dos lutadores: escudos iniciais e servos */
+function opening(st, a, b) {
+  [[a, b], [b, a]].forEach(([x, y]) => {
+    const F = st.f[x], O = st.f[y];
+    if (F.stats.openShield) F.shield += Math.round(F.maxHp * F.stats.openShield / 100);
+    F.squad.forEach((s) => { if (s.shieldPct) F.shield += Math.round(F.maxHp * s.shieldPct / 100); if (s.role === 'arcano') O.st.push({ kind: 'debuff', key: 'def', val: 8, turns: 3 }); });
+    if (F.squad.length) addLog(st, '🌑 ' + F.squad.map((s) => s.name).join(', ') + (F.squad.length > 1 ? ' erguem-se' : ' ergue-se') + ' ao lado de ' + F.name + '.', 'buff', x);
+  });
+}
 
 async function finishDuel(env, d, st, winner, reason) {
   const loser = winner === d.host ? d.guest : d.host, t = now();
@@ -1089,17 +1265,28 @@ async function finishDuel(env, d, st, winner, reason) {
 async function expireDuels(env) {
   await run(env, "UPDATE duels SET status = 'cancelled', end_reason = 'expired', updated_at = ? WHERE status = 'waiting' AND created_at < ?", now(), now() - DUEL_WAIT_MS);
 }
+/* depois da ação de "me": servos, invocações, regeneração e passagem de vez (ou fim do duelo) */
+async function advance(env, d, st, me) {
+  const opp = me === d.host ? d.guest : d.host;
+  afterAction(st, me, opp);
+  if (st.f[opp].hp <= 0) return finishDuel(env, d, st, me, 'ko');
+  if (st.f[me].hp <= 0) return finishDuel(env, d, st, opp, 'ko');
+  if (d.turn_no >= DUEL_MAX_TURNS) return finishDuel(env, d, st, winnerByHp(st, me, opp), 'turns');
+  const r = passTurn(st, me, opp);
+  if (r.winner) return finishDuel(env, d, st, r.winner, 'ko');
+  return [q(env, 'UPDATE duels SET state = ?, turn_player = ?, turn_no = turn_no + 1, turn_deadline = ?, version = version + 1, updated_at = ? WHERE id = ? AND version = ?',
+    JSON.stringify(st), r.turn, now() + DUEL_TURN_MS, now(), d.id, d.version)];
+}
 async function duelTimeout(env, d) {
   if (d.status !== 'active' || !d.turn_deadline || d.turn_deadline > now()) return d;
-  const st = JSON.parse(d.state), me = d.turn_player, op = me === d.host ? d.guest : d.host;
+  const st = JSON.parse(d.state), me = d.turn_player, opp = me === d.host ? d.guest : d.host;
   st.f[me].miss = (st.f[me].miss || 0) + 1;
   let stmts;
-  if (st.f[me].miss >= 2) { addLog(st, st.f[me].name + ' não respondeu duas vezes seguidas.', 'sys'); stmts = await finishDuel(env, d, st, op, 'timeout'); }
+  if (st.f[me].miss >= 2) { addLog(st, st.f[me].name + ' não respondeu duas vezes seguidas.', 'sys'); stmts = await finishDuel(env, d, st, opp, 'timeout'); }
   else {
     addLog(st, st.f[me].name + ' deixou passar o tempo e defende-se automaticamente.', 'sys', me);
-    st.f[me].guard = true; endTurn(st, me, op);
-    stmts = [q(env, 'UPDATE duels SET state = ?, turn_player = ?, turn_no = turn_no + 1, turn_deadline = ?, version = version + 1, updated_at = ? WHERE id = ? AND version = ?',
-      JSON.stringify(st), op, now() + DUEL_TURN_MS, now(), d.id, d.version)];
+    if (st.f[me].stunned > 0) duelAct(st, me, opp, 'pass'); else duelAct(st, me, opp, 'defend');
+    stmts = await advance(env, d, st, me);
   }
   await env.DB.batch(stmts);
   return one(env, 'SELECT * FROM duels WHERE id = ?', d.id);
@@ -1107,8 +1294,8 @@ async function duelTimeout(env, d) {
 function duelOut(d, me) {
   const st = d.state ? JSON.parse(d.state) : null;
   return { id: d.id, code: d.code, status: d.status, host: d.host, guest: d.guest, invited: d.invited, public: !!d.public, turn: d.turn_player, turn_no: d.turn_no,
-    deadline: d.turn_deadline, winner: d.winner, reason: d.end_reason, version: d.version, me,
-    fighters: st ? st.f : null, log: st ? st.log : [], result: st ? st.result || null : null, skills: DUEL_SKILLS, server_time: now(), created_at: d.created_at };
+    deadline: d.turn_deadline, winner: d.winner, reason: d.end_reason, version: d.version, me, heal_limit: HEAL_LIMIT,
+    fighters: st ? st.f : null, log: st ? st.log : [], result: st ? st.result || null : null, server_time: now(), created_at: d.created_at };
 }
 async function myOpenDuel(env, pid) { return one(env, "SELECT * FROM duels WHERE (host = ? OR guest = ?) AND status IN ('waiting','active') ORDER BY created_at DESC LIMIT 1", pid, pid); }
 
@@ -1144,8 +1331,9 @@ async function duelJoin(env, body) {
   st.f[p.id] = fighter(p, body.fighter);
   // começa quem tem mais agilidade (empate: à sorte)
   const a = st.f[d.host], b = st.f[p.id];
-  const first = a.agi === b.agi ? (rnd() < 0.5 ? d.host : p.id) : (a.agi > b.agi ? d.host : p.id);
+  const first = a.stats.agi === b.stats.agi ? (rnd() < 0.5 ? d.host : p.id) : (a.stats.agi > b.stats.agi ? d.host : p.id);
   addLog(st, p.name + ' entrou na sala. O duelo começa!', 'sys');
+  opening(st, d.host, p.id);
   addLog(st, st.f[first].name + ' é mais rápido e ataca primeiro.', 'sys');
   const t = now();
   const r = await run(env, "UPDATE duels SET guest = ?, status = 'active', state = ?, turn_player = ?, turn_no = 1, turn_deadline = ?, version = version + 1, updated_at = ? WHERE id = ? AND status = 'waiting' AND version = ?",
@@ -1168,19 +1356,11 @@ async function duelMove(env, body) {
   if (body.version != null && +body.version !== d.version) return json({ ok: true, stale: true, duel: duelOut(d, p.id) });
   if (d.status !== 'active') throw new HttpError(409, 'O duelo já terminou.');
   if (d.turn_player !== p.id) throw new HttpError(409, 'Ainda não é a tua vez.');
-  const st = JSON.parse(d.state), me = p.id, op = me === d.host ? d.guest : d.host;
-  const err = duelAct(st, me, op, clean(body.action, 12));
+  const st = JSON.parse(d.state), me = p.id, opp = me === d.host ? d.guest : d.host;
+  const err = duelAct(st, me, opp, clean(body.action, 12), clean(body.skill || body.item, 24));
   if (err) throw bad(err);
   st.f[me].miss = 0;
-  let stmts;
-  if (st.f[op].hp <= 0) stmts = await finishDuel(env, d, st, me, 'ko');
-  else {
-    endTurn(st, me, op);
-    if (st.f[op].hp <= 0) stmts = await finishDuel(env, d, st, me, 'ko');
-    else if (d.turn_no >= DUEL_MAX_TURNS) stmts = await finishDuel(env, d, st, winnerByHp(st, me, op), 'turns');
-    else stmts = [q(env, 'UPDATE duels SET state = ?, turn_player = ?, turn_no = turn_no + 1, turn_deadline = ?, version = version + 1, updated_at = ? WHERE id = ? AND version = ?',
-      JSON.stringify(st), op, now() + DUEL_TURN_MS, now(), d.id, d.version)];
-  }
+  const stmts = await advance(env, d, st, me);
   const r = await env.DB.batch(stmts);
   if (changes(r[0]) !== 1) return json({ ok: true, stale: true, duel: duelOut(await one(env, 'SELECT * FROM duels WHERE id = ?', d.id), p.id) });
   return json({ ok: true, duel: duelOut(await one(env, 'SELECT * FROM duels WHERE id = ?', d.id), p.id) });

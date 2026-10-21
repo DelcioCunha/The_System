@@ -353,5 +353,79 @@
    "ach_spch10",
    "ach_spchm"
   ]
+ },
+ {
+  "title": "Conquistas novas 6",
+  "cols": 3,
+  "rows": 2,
+  "ids": [
+   "ach_duel1",
+   "ach_duel10",
+   "ach_duel50",
+   "ach_duelperf",
+   "ach_friend5",
+   "ach_friend20"
+  ]
+ },
+ {
+  "title": "Ícones em falta 1",
+  "cols": 6,
+  "rows": 3,
+  "ids": [
+   "log_shadow",
+   "log_king",
+   "log_storm",
+   "log_petals",
+   "log_mirror",
+   "log_execute",
+   "log_tide",
+   "log_garden",
+   "log_first",
+   "log_stone",
+   "log_blackphoenix",
+   "log_restore",
+   "log_ticket",
+   "log_thorns",
+   "h_bell",
+   "h_blood",
+   "h_scroll",
+   "h_fade"
+  ]
+ },
+ {
+  "title": "Ícones em falta 2",
+  "cols": 6,
+  "rows": 3,
+  "ids": [
+   "h_key",
+   "h_compass",
+   "h_chains",
+   "h_stats",
+   "achcat_missoes",
+   "achcat_progresso",
+   "achcat_combate",
+   "achcat_sombras",
+   "achcat_coliseu",
+   "achcat_trofeus",
+   "achcat_riqueza",
+   "achcat_exclusiva",
+   "achcat_corpo",
+   "achcat_outras",
+   "ui_social",
+   "ui_duel",
+   "ui_chat",
+   "ui_mail"
+  ]
+ },
+ {
+  "title": "Ícones em falta 3",
+  "cols": 2,
+  "rows": 2,
+  "ids": [
+   "notice_info",
+   "notice_importante",
+   "notice_evento",
+   "notice_manutencao"
+  ]
  }
 ]

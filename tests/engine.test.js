@@ -1553,7 +1553,7 @@ test('Artefatos: o Sistema comenta as compras (com moderação) e a Trégua bloq
   assert.ok(seen, 'sem trégua voltam as emergências');
 });
 
-test('Sombras: vitória abre a extração; 3 tentativas; falhar 3 vezes perde a sombra para sempre', () => {
+test('Sombras: vitória abre a extração; 3 tentativas; falhar 3 vezes sela a sombra (obtém-se com Cristais: 50/150/300 nos portões)', () => {
   const { S } = boot();
   at(S, 2026, 10, 19, 9);
   const E = S.engine, C = S.combat, Sh = S.shadows;
@@ -1565,26 +1565,39 @@ test('Sombras: vitória abre a extração; 3 tentativas; falhar 3 vezes perde a 
   assert.strictEqual(Sh.status(st, 'b1'), 'pending'); assert.strictEqual(Sh.triesLeft(st, 'b1'), 3);
   // chance: chefe normal acima do nível do chefe
   assert.ok(Math.abs(Sh.chance(st, S.BOSS_BY_ID.b1) - Math.min(0.9, 0.55 + 14 * 0.025)) < 1e-9);
-  // falha 3 vezes: perdida para sempre
+  // falha 3 vezes: fica selada (já não se perde para sempre)
   S.rng.random = () => 0.99;
   let r = Sh.extract('b1'); assert.ok(r.ok && !r.success && r.left === 2);
   r = Sh.extract('b1'); assert.ok(!r.success && r.left === 1);
-  r = Sh.extract('b1'); assert.ok(!r.success && r.lost);
-  assert.strictEqual(Sh.status(st, 'b1'), 'lost');
+  r = Sh.extract('b1'); assert.ok(!r.success && r.sealed && !r.lost);
+  assert.strictEqual(Sh.status(st, 'b1'), 'sealed');
   assert.strictEqual(Sh.extract('b1').ok, false, 'não há 4ª tentativa');
-  // sucesso: torna-se servo e é convocado (1 lugar no início)
+  assert.ok(st.achievements.shlost, 'conquista da primeira sombra selada');
+  // preços: portões 50 / 150 / 300 e arenas 100 / 300 / 500
+  assert.deepStrictEqual(['b1', 'b9', 'b10', 'b100', 'ar1g1', 'ar1g9', 'ar1'].map((id) => Sh.buyPrice(S.BOSS_BY_ID[id])), [50, 150, 300, 300, 100, 300, 500]);
+  st.crystals = 49; assert.strictEqual(Sh.buy('b1').ok, false);
+  st.crystals = 60; assert.ok(Sh.buy('b1').ok); assert.strictEqual(st.crystals, 10); assert.strictEqual(Sh.status(st, 'b1'), 'owned');
+  // sucesso: torna-se servo e é convocado (3 lugares para todos)
   win('b2'); S.rng.random = () => 0.01;
   r = Sh.extract('b2'); assert.ok(r.success && r.auto);
-  assert.strictEqual(Sh.status(st, 'b2'), 'owned'); assert.strictEqual(JSON.stringify(st.shadows.active), '["b2"]');
-  // segundo servo: sem lugar livre, fica no exército
-  win('b3'); r = Sh.extract('b3'); assert.ok(r.success && !r.auto);
-  assert.strictEqual(Sh.toggle('b3').ok, false, 'lugares cheios');
-  st.level = 25; assert.strictEqual(Sh.slots(st), 2); assert.ok(Sh.toggle('b3').ok);
+  assert.strictEqual(Sh.status(st, 'b2'), 'owned'); assert.strictEqual(Sh.slots(st), 3);
+  win('b3'); r = Sh.extract('b3'); assert.ok(r.success && r.auto, 'terceiro lugar');
+  win('b5'); r = Sh.extract('b5'); assert.ok(r.success && !r.auto, 'lugares cheios: fica no exército');
+  assert.strictEqual(Sh.toggle('b5').ok, false, 'lugares cheios');
+  // Insígnia do General das Sombras: +1 lugar cada, no máximo 3
+  st.crystals = 1000;
+  assert.ok(S.premium.buy('pr_general', 5).ok); assert.strictEqual(E.count(st, 'pr_general'), 3, 'só se compram 3');
+  assert.strictEqual(S.premium.buy('pr_general', 1).ok, false);
+  assert.ok(E.useItem('pr_general').ok); assert.strictEqual(Sh.slots(st), 4); assert.ok(Sh.toggle('b5').ok);
+  E.useItem('pr_general'); E.useItem('pr_general'); assert.strictEqual(Sh.slots(st), 6);
   // nome próprio
   assert.ok(Sh.rename('b2', '  Igris  ').ok); assert.strictEqual(Sh.name(st, 'b2'), 'Igris');
   // prazo: sem extrair, desvanece ao fim de 24 h
   win('b4'); assert.strictEqual(Sh.status(st, 'b4'), 'pending');
-  at(S, 2026, 10, 20, 10); Sh.expire(st); assert.strictEqual(Sh.status(st, 'b4'), 'lost');
+  at(S, 2026, 10, 20, 10); Sh.expire(st); assert.strictEqual(Sh.status(st, 'b4'), 'sealed', 'desvaneceu: fica selada');
+  // jogos antigos: sombras perdidas passam a seladas
+  const st3 = { c: {}, shadows: { owned: {}, tries: {}, lost: { b7: 1, b8: 1 }, pending: {}, active: [], names: {} } }; Sh.ensure(st3);
+  assert.strictEqual(Sh.status(st3, 'b7'), 'sealed'); assert.strictEqual(st3.c.shadowsLost, 2);
   // chefes secretos não têm sombra; os das arenas premium têm
   assert.ok(!Sh.eligible(S.BOSS_BY_ID.secret_1)); assert.ok(Sh.eligible(S.BOSS_BY_ID.ar1)); assert.ok(Sh.eligible(S.BOSS_BY_ID.ar1g3));
 });

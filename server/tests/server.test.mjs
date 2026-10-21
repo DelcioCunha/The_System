@@ -80,6 +80,10 @@ console.log('API da Loja de Cristais');
 await test('loja: tabela de preços inicial (6 pacotes, bónus crescente); pacote sem preço não se ativa', async () => {
   const S = await setup();
   let c = await S.call('GET', '/api/config');
+  const coinPk = c.packages.filter((p) => p.kind === 'coins');
+  assert.deepEqual(coinPk.map((p) => [p.id, p.coins, p.price_kz]), [['m_punhado', 1000, 500], ['m_bolsa', 2200, 1000], ['m_saco', 6000, 2500], ['m_cofre', 13000, 5000], ['m_tesouro', 28000, 10000], ['m_monarca', 60000, 20000]]);
+  coinPk.forEach((p) => assert.equal(p.crystals, 0, 'pacote de moedas não dá Cristais'));
+  c.packages = c.packages.filter((p) => p.kind !== 'coins');
   assert.deepEqual(c.packages.map((p) => [p.id, p.crystals, p.price_kz]), [['p_punhado', 60, 600], ['p_bolsa', 130, 1200], ['p_saco', 280, 2500], ['p_cofre', 600, 5000], ['p_tesouro', 1300, 10000], ['p_monarca', 2800, 20000]]);
   const per = c.packages.map((p) => p.price_kz / p.crystals);
   per.slice(1).forEach((v, i) => assert.ok(v < per[i], 'quanto maior o pacote, mais barato o Cristal'));
@@ -474,6 +478,28 @@ await test('ofertas por código: presas a um jogador ou para qualquer um; uso ú
   assert.ok(!JSON.stringify(S.DB.raw.prepare('SELECT * FROM grants').all()).includes(g.code.slice(4)), 'código nunca guardado em claro');
 });
 
+await test('moedas com dinheiro real: pedido, código e entrega automática dão moedas e não Cristais', async () => {
+  const S = await setup();
+  const A = S.admin(await S.login());
+  await syncP(S, P1, TOK1);
+  const o = await S.call('POST', '/api/orders', { package_id: 'm_saco', player_id: P1, player_name: 'Delcio' });
+  assert.equal(o.status, 200, o.error); assert.equal(o.order.coins, 6000); assert.equal(o.order.crystals, 0);
+  assert.ok(/6\.?000 moedas/.test(o.message), o.message);
+  await A.post('/api/admin/orders/' + o.order.id + '/confirm-payment', { verified: true, payment_ref: 'REF-M-1' });
+  const { code } = await A.post('/api/admin/orders/' + o.order.id + '/issue-code', {}, key(31));
+  const r = await S.call('POST', '/api/redeem', { code, player_id: P1 });
+  assert.equal(r.status, 200, r.error); assert.equal(r.coins, 6000); assert.equal(r.crystals, 0);
+  // entrega automática
+  const o2 = await S.call('POST', '/api/orders', { package_id: 'm_punhado', player_id: P1, player_name: 'Delcio' });
+  await A.post('/api/admin/orders/' + o2.order.id + '/confirm-payment', { verified: true, payment_ref: 'REF-M-2' });
+  const d = await A.post('/api/admin/orders/' + o2.order.id + '/deliver', {}, key(32));
+  assert.equal(d.status, 200, d.error); assert.equal(d.coins, 1000);
+  const sy = await syncP(S, P1, TOK1);
+  const g = await S.call('POST', '/api/player/claim', { player_id: P1, token: TOK1, grant_id: sy.inbox[0].id });
+  assert.equal(g.coins, 1000); assert.equal(g.crystals, 0);
+  assert.equal((await A.get('/api/admin/orders/' + o2.order.id)).order.coins, 1000);
+});
+
 await test('entrega automática de uma compra: sem código, o pedido fica resgatado quando o jogo recebe', async () => {
   const S = await setup();
   const A = S.admin(await S.login());
@@ -574,7 +600,7 @@ async function trio(S) {
   await syncP(S, P2, TOK2, { name: 'Ana', cls: 'mago', level: 30 });
   await syncP(S, P3, TOK3, { name: 'Rui', cls: 'assassino', level: 5 });
 }
-const FIGHT = { hp: 1400, mp: 170, atk: 330, matk: 17, def: 108, crit: 10, critDmg: 150, eva: 3, lifesteal: 0, agi: 12 };
+const FIGHT = { cls: 'guerreiro', hp: 1400, mp: 170, atk: 330, matk: 17, def: 108, crit: 10, critDmg: 150, eva: 3, lifesteal: 0, agi: 12, skills: ['g1', 'g3', 'g11', 'g9', 'm1'], items: { po_vida1: 5, po_bomba: 1, nada: 3 } };
 
 await test('amigos: pedido, aceitar, lista com online/offline, recusar e remover; só jogadores reais', async () => {
   const S = await setup('production'); await trio(S);
@@ -633,7 +659,10 @@ await test('duelo: sala, convite, entrar por código, turnos decididos pelo serv
   assert.equal((await C('/api/duel/create', Object.assign(as(P1, TOK1), { fighter: FIGHT, invite: P3 }))).status, 400, 'só convida amigos');
   const c = await C('/api/duel/create', Object.assign(as(P1, TOK1), { fighter: Object.assign({}, FIGHT, { hp: 1e9, atk: 1e9, crit: 100 }), invite: P2, public: false }));
   assert.equal(c.status, 200, c.error); assert.match(c.duel.code, /^[A-Z2-9]{6}$/);
-  assert.ok(c.duel.fighters[P1].maxHp <= (150 * 30 + 800) * 1.5 && c.duel.fighters[P1].atk <= 25 * 30 + 200 && c.duel.fighters[P1].crit <= 50, 'atributos limitados ao nível registado');
+  const F1 = c.duel.fighters[P1];
+  assert.ok(F1.maxHp <= (150 * 30 + 800) * 2 && F1.stats.atk <= 25 * 30 + 200 && F1.stats.crit <= 40, 'atributos limitados ao nível registado');
+  assert.deepEqual(F1.skills, ['g1', 'g3', 'g11'], 'só habilidades da classe até ao nível (g9 é do nível 100; m1 é de outra classe)');
+  assert.deepEqual(Object.keys(F1.items).sort(), ['po_bomba', 'po_vida1'], 'só itens de combate que existem');
   assert.equal((await C('/api/duel/create', Object.assign(as(P1, TOK1), { fighter: FIGHT }))).status, 409, 'só uma sala de cada vez');
   let s2 = await C('/api/social/state', as(P2, TOK2));
   assert.equal(s2.invites.length, 1); assert.equal(s2.open.length, 0, 'sala privada não aparece na lista');
@@ -648,25 +677,54 @@ await test('duelo: sala, convite, entrar por código, turnos decididos pelo serv
   assert.equal(a1.duel.turn, P1);
   const a2 = await C('/api/duel/act', Object.assign(as(P2, TOK2), { id: c.duel.id, action: 'attack', version: v }));
   assert.ok(a2.stale); assert.equal(a2.duel.version, a1.duel.version);
-  // poções: só 2; habilidade com recarga
-  let d = a1.duel, turnOf = { [P1]: TOK1, [P2]: TOK2 }, used = 0, guard = 0;
+  // combate com habilidades, recargas, mana e itens (limite de poções de cura)
+  let d = a1.duel, turnOf = { [P1]: TOK1, [P2]: TOK2 }, used = { [P1]: 0, [P2]: 0 }, guard = 0, sawSkill = false, sawCd = false;
   while (d.status === 'active' && guard++ < 400) {
     const who = d.turn, tok = turnOf[who], F = d.fighters[who];
-    let action = 'attack';
-    if (F.hp < F.maxHp * 0.5 && F.pots > 0) action = 'potion';
-    else if (!F.cds.skill && F.mp >= F.maxMp * 0.4) action = 'skill';
-    const r = await C('/api/duel/act', Object.assign(as(who, tok), { id: d.id, action, version: d.version }));
+    let body = { action: 'attack' };
+    if (F.hp < F.maxHp * 0.5 && used[who] < 3) body = { action: 'item', item: 'po_vida1' };
+    else { const ready = F.skills.filter((id) => !(F.cds[id] > 0)); const busy = F.skills.filter((id) => F.cds[id] > 0); if (busy.length && !sawCd) { sawCd = true; const rb = await C('/api/duel/act', Object.assign(as(who, tok), { id: d.id, action: 'skill', skill: busy[0] })); assert.equal(rb.status, 400, 'em recarga'); } if (ready.length) body = { action: 'skill', skill: ready[ready.length - 1] }; }
+    const r = await C('/api/duel/act', Object.assign(as(who, tok), { id: d.id, version: d.version }, body));
     assert.equal(r.status, 200, r.error);
-    if (action === 'potion') used++;
+    if (body.action === 'item') used[who]++;
+    if (body.action === 'skill') sawSkill = true;
     d = r.duel;
+    if (body.action === 'item') assert.equal(d.fighters[who].used.po_vida1, used[who]);
   }
+  assert.ok(sawSkill && sawCd);
   assert.equal(d.status, 'done'); assert.ok(d.winner === P1 || d.winner === P2);
-  assert.ok(used <= 4); assert.ok(d.log.some((l) => /venceu o duelo/.test(l.t)));
+  assert.ok(d.log.some((l) => /venceu o duelo/.test(l.t)));
   const loser = d.winner === P1 ? P2 : P1;
   assert.equal((await C('/api/duel/act', Object.assign(as(d.winner, turnOf[d.winner]), { id: d.id, action: 'attack' }))).status, 409);
   const sw = await C('/api/social/state', as(d.winner, turnOf[d.winner])), sl = await C('/api/social/state', as(loser, turnOf[loser]));
   assert.equal(sw.me.wins, 1); assert.equal(sl.me.losses, 1); assert.ok(sw.me.rating > 1000 && sl.me.rating < 1000);
   assert.equal((await C('/api/duel/history', as(P1, TOK1))).duels.length, 1);
+});
+
+await test('duelo: limite de 3 poções, estados (atordoar, veneno, bónus), servos e item que não se tem', async () => {
+  const S = await setup('production'); await trio(S);
+  const C = (u, b) => S.call('POST', u, b);
+  const F2 = Object.assign({}, FIGHT, { cls: 'assassino', skills: ['a3', 'a2', 'a10'], items: {}, squad: [{ name: 'Sombra de Igris', level: 30, king: true, role: 'comandante' }, { name: 'Guarda', level: 20, role: 'guarda' }, { name: 'x', level: 999, role: 'hack' }], agi: 99 });
+  const c = await C('/api/duel/create', Object.assign(as(P1, TOK1), { fighter: FIGHT }));
+  const j = await C('/api/duel/join', Object.assign(as(P2, TOK2), { code: c.duel.code, fighter: F2 }));
+  let d = j.duel; const B = d.fighters[P2];
+  assert.equal(d.turn, P2); assert.equal(B.squad.length, 3); assert.equal(B.cmd, 5); assert.ok(B.shield > 0, 'o servo guarda dá escudo inicial');
+  assert.ok(B.squad.every((x) => x.power > 0 && x.power < 1000));
+  assert.equal((await C('/api/duel/act', Object.assign(as(P2, TOK2), { id: d.id, action: 'item', item: 'po_vida1' }))).status, 400, 'não tem esse item');
+  let r = await C('/api/duel/act', Object.assign(as(P2, TOK2), { id: d.id, action: 'skill', skill: 'a3' }));
+  assert.equal(r.status, 200, r.error); d = r.duel;
+  assert.ok(d.fighters[P1].st.some((x) => x.kind === 'dot' && x.type === 'poison') || d.status === 'done', 'veneno aplicado');
+  assert.ok(d.log.some((l) => /Sombra de Igris ataca/.test(l.t)), 'os servos atacam');
+  // P1: 3 poções de cura no máximo
+  let n = 0;
+  while (d.status === 'active' && n < 3) {
+    if (d.turn === P1) { r = await C('/api/duel/act', Object.assign(as(P1, TOK1), { id: d.id, action: 'item', item: 'po_vida1' })); assert.equal(r.status, 200, r.error); n++; }
+    else r = await C('/api/duel/act', Object.assign(as(P2, TOK2), { id: d.id, action: 'defend' }));
+    d = r.duel;
+  }
+  while (d.status === 'active' && d.turn !== P1) d = (await C('/api/duel/act', Object.assign(as(P2, TOK2), { id: d.id, action: 'defend' }))).duel;
+  if (d.status === 'active') { const x = await C('/api/duel/act', Object.assign(as(P1, TOK1), { id: d.id, action: 'item', item: 'po_vida1' })); assert.equal(x.status, 400); assert.match(x.error, /3 poções/); }
+  assert.ok(d.log.some((l) => /defende-se/.test(l.t)));
 });
 
 await test('duelo: salas públicas, tempo esgotado (2 vezes = derrota), desistir e salas esquecidas', async () => {

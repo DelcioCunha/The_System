@@ -278,6 +278,12 @@
 
   /* ---------- Narrativa dos troféus ---------- */
   S.TROPHY_LORE = function (b) {
+    if (b.premium) {
+      var an = b.arenaName || 'Coliseu dos Condenados';
+      return 'Retirado de ' + b.name + ', na ' + an + ' do Coliseu dos Condenados. ' + (b.guardian
+        ? 'Cada sub-chefe que cai deixa a sua marca. O Sistema guarda-a como prova de que subiste mais um degrau da arena.'
+        : 'O troféu de um campeão acorrentado. Só quem atravessa a arena inteira e derruba o seu senhor o pode segurar.');
+    }
     var g = S.GATES.filter(function (x) { return x.id === b.gate; })[0];
     var where = g ? 'no portão ' + g.name : 'num portão que não consta de nenhum registo';
     var kinds = b.secret

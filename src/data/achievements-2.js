@@ -11,7 +11,7 @@
     return { owned: own.length, kings: own.filter(function (id) { var b = S.BOSS_BY_ID[id]; return b && b.king && !b.premium; }).length,
       arena: own.filter(function (id) { var b = S.BOSS_BY_ID[id]; return b && b.premium; }).length,
       champs: own.filter(function (id) { var b = S.BOSS_BY_ID[id]; return b && b.champion; }).length,
-      lost: Object.keys(x.lost || {}).length, named: Object.keys(x.names || {}).length, active: (x.active || []).length };
+      lost: Math.max((st.c && st.c.shadowsLost) || 0, Object.keys(x.lost || {}).length), named: Object.keys(x.names || {}).length, active: (x.active || []).length };
   }
   function arena(st) {
     var w = (st.arena && st.arena.wins) || {}, ids = Object.keys(w);
@@ -35,8 +35,8 @@
     { id: 'shking10', icon: "🏰", name: "Corte dos Reis", desc: "Torna servos os 10 reis dos portões.", check: function (s) { return sh(s).kings>=10; }, reward: {chest:'secreto'} },
     { id: 'shfirst', icon: "🎯", name: "À Primeira", desc: "Extrai uma sombra logo na primeira tentativa.", check: function (s) { return c(s,'shadowFirstTry')>=1; }, reward: {chest:'raro'} },
     { id: 'shlast', icon: "🕯️", name: '???', realName: "Última Chama", secret: true, desc: "Extrai uma sombra na última tentativa.", check: function (s) { return c(s,'shadowLastTry')>=1; }, reward: {chest:'epico'} },
-    { id: 'shlost', icon: "🌫️", name: '???', realName: "A Sombra Que Fugiu", secret: true, desc: "Perde uma sombra para sempre.", check: function (s) { return sh(s).lost>=1; }, reward: {item:'po_sorte'} },
-    { id: 'shlost10', icon: "🌪️", name: '???', realName: "Sombras ao Vento", secret: true, desc: "Perde 10 sombras para sempre.", check: function (s) { return sh(s).lost>=10; }, reward: {chest:'raro'} },
+    { id: 'shlost', icon: "🌫️", name: '???', realName: "A Sombra Que Fugiu", secret: true, desc: "Deixa uma sombra ficar selada.", check: function (s) { return sh(s).lost>=1; }, reward: {item:'po_sorte'} },
+    { id: 'shlost10', icon: "🌪️", name: '???', realName: "Sombras ao Vento", secret: true, desc: "Deixa 10 sombras ficarem seladas.", check: function (s) { return sh(s).lost>=10; }, reward: {chest:'raro'} },
     { id: 'shname', icon: "🏷️", name: "Nome Próprio", desc: "Dá um nome a um servo.", check: function (s) { return sh(s).named>=1; }, reward: {coins:500} },
     { id: 'shfull', icon: "⚜️", name: "Todos a Postos", desc: "Tem todos os lugares de servos ocupados.", check: function (s) { return sh(s).active>=S.shadows.slots(s)&&sh(s).active>=2; }, reward: {chest:'raro'} },
     { id: 'spar1', icon: "🥋", name: "Treino nas Sombras", desc: "Vence um treino contra um servo.", check: function (s) { return c(s,'sparWins')>=1; }, reward: {coins:300} },

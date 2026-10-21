@@ -125,6 +125,7 @@
       case 'monarch': rows.push(['Efeito', 'Vida e mana a 100%, remove efeitos negativos e +40% de ataque e ataque mágico durante 3 turnos'], ['Limite', S.PREMIUM_RULES.perBattle + ' relíquia premium por batalha (não conta para o limite de poções)']); break;
       case 'monarchChest': rows.push(['Contém', 'Baú Lendário + Baú Secreto + moedas que acompanham o teu nível + recarga de todas as relíquias']); break;
       case 'perk': rows.push(['Duração', 'Para sempre (usa-se uma vez)']); break;
+      case 'shadowSlot': rows.push(['Efeito', '+1 lugar de servo convocado, para sempre'], ['Limite', 'Até 3 insígnias (de 3 para 6 lugares; o Invocador tem mais 1)']); break;
       case 'revealBoss': rows.push(['Efeito', 'Revela um portão escondido']); break;
       case 'system': rows.push(['Efeito', it.desc], ['Tipo', 'Artefato do Sistema (usa-se na Bolsa)']); break;
       case 'fragment': rows.push(['Efeito', 'Junta ' + u.need + ' para formar o ' + S.ITEMS[u.result].name]); break;

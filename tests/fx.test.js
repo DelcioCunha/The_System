@@ -13,7 +13,7 @@ const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true
 const w = dom.window, $ = (s) => w.document.querySelector(s);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const click = (s) => { const el = typeof s === 'string' ? $(s) : s; assert.ok(el, 'falta ' + s); el.dispatchEvent(new w.MouseEvent('click', { bubbles: true, clientX: 100, clientY: 200 })); };
-async function pops() { for (let g = 0; g < 30; g++) { await sleep(60); if ($('[data-a="pop-ok"]')) click('[data-a="pop-ok"]'); else if (Date.now() > w.SYS.ui.state.holdUntil && !w.SYS.ui.state.popups.length) return; } }
+async function pops() { for (let g = 0; g < 60; g++) { await sleep(60); if ($('[data-a="first-pick"]')) click('[data-a="first-pick"]'); else if ($('[data-a="first-next"]')) click('[data-a="first-next"]'); else if ($('[data-a="pop-ok"]')) click('[data-a="pop-ok"]'); else if (Date.now() > w.SYS.ui.state.holdUntil && !w.SYS.ui.state.popups.length) return; } }
 (async () => {
   assert.ok(w.document.documentElement.classList.contains('fx-full'), 'modo completo');
   click('[data-a="intro-yes"]');

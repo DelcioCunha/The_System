@@ -118,6 +118,9 @@
   prem({ id: 'pr_trevo', name: 'Trevo de Cristal', icon: '🍀', cat: 'premium', crystals: 80, rarity: 'lendario', lvl: 1, field: true,
     desc: 'Durante 3 dias, cada baú que abrires dá um item extra. Se já estiver ativo, soma mais 3 dias.', use: { type: 'timed', effect: 'sorte', hours: 72 } });
 
+  prem({ id: 'pr_general', name: 'Insígnia do General das Sombras', icon: '🎖️', cat: 'premium', crystals: 150, rarity: 'mitico', lvl: 1, field: true,
+    desc: '+1 lugar de servo convocado, para sempre. Podes usar até 3 insígnias (de 3 para 6 lugares).', use: { type: 'shadowSlot' } });
+
   /* Conjunto do Monarca: bónus por peças soberanas equipadas ao mesmo tempo */
   S.MONARCH_SET = [
     { n: 2, desc: '+4% em todos os atributos', bonus: { allStatsPct: 4 } },
@@ -128,7 +131,7 @@
   S.PREMIUM_SHOP = [
     { title: 'Equipamento soberano', ids: ['pr_lamina', 'pr_armadura', 'pr_coroa', 'pr_olho', 'pr_coracao', 'pr_ampulheta', 'pr_espinho', 'pr_executor', 'pr_egide'] },
     { title: 'Relíquias permanentes', note: 'Compras uma vez e ficam tuas para sempre. Depois de usada, cada relíquia recarrega sozinha. Só podes usar 1 relíquia premium por batalha.', ids: ['pr_juizo', 'pr_tempo', 'pr_legiao', 'pr_elixir', 'pr_fenix', 'pr_ruptura', 'pr_eco'] },
-    { title: 'Tesouros', ids: ['pr_bau', 'pr_selo', 'pr_foco', 'pr_trevo'] }
+    { title: 'Tesouros', ids: ['pr_general', 'pr_bau', 'pr_selo', 'pr_foco', 'pr_trevo'] }
   ];
   S.PREMIUM_RELICS = ['pr_juizo', 'pr_tempo', 'pr_elixir', 'pr_legiao', 'pr_fenix', 'pr_ruptura', 'pr_eco'];
   S.PREMIUM_CONSUMABLES = ['pr_juizo', 'pr_tempo', 'pr_elixir', 'pr_legiao', 'pr_fenix', 'pr_ruptura', 'pr_eco'];
@@ -310,6 +313,7 @@
     pr_elixir: 'O mesmo elixir que os Monarcas bebiam antes das batalhas que decidiam reinos. Fecha todas as feridas, enche a mana até transbordar e acende uma fúria fria durante três turnos. Tem sabor a metal e a vitória. Não conta como poção: o corpo aceita-o como se fosse seu.',
     pr_legiao: 'Um estandarte negro rasgado por mil batalhas. Quando o levantas, a sombra de um exército inteiro ergue-se atrás de ti e ataca a cada ronda durante cinco turnos. Não falam, não sangram, não recuam. Lutam por ti até o estandarte se calar.',
     pr_fenix: 'Uma única lágrima de uma fénix que ardeu negra. Não se usa: guarda-se. No momento em que a tua vida chega a zero, ela arde por ti e devolve-te inteiro ao combate. É mais forte do que a Pena da Fénix, e por isso arde primeiro.',
+    pr_general: 'Uma insígnia de metal negro, fria ao toque, com uma coroa partida gravada. Quem a usa é reconhecido pelas sombras como general, e mais servos atendem ao chamado.',
     pr_bau: 'Um baú forrado a veludo negro com o selo do Monarca na tampa. Dentro há sempre um Baú Lendário, uma relíquia de combate escolhida pelo acaso e uma soma de moedas que cresce com o teu nível. O Sistema não abre baús destes para qualquer um.',
     pr_ampulheta: 'Uma ampulheta do tamanho de um polegar, presa a uma corrente de ouro negro. A areia cai para cima no primeiro instante de cada batalha, e é nesse instante que o golpe do Monarca pesa mais. Depois, cada ferida que causas devolve-te um fio de mana.',
     pr_espinho: 'Uma coroa feita de espinhos de rosa negra que nunca secam. Não se põe na cabeça: segura-se ao peito. Quem te fere sente a mesma ferida, e uma parte dela volta para ti como vida.',
@@ -347,5 +351,15 @@
     { id: 'p_cofre', name: 'Cofre de Cristais', base: 500, bonus: 100, crystals: 600, price_kz: 5000 },
     { id: 'p_tesouro', name: 'Tesouro de Cristais', base: 1000, bonus: 300, crystals: 1300, price_kz: 10000 },
     { id: 'p_monarca', name: 'Tesouro do Monarca', base: 2000, bonus: 800, crystals: 2800, price_kz: 20000, badge: 'Melhor valor' }
+  ];
+  /* Pacotes de moedas compradas com dinheiro real (igual à migração 0007 do servidor).
+     Para quem só quer moedas para a Loja e não precisa de Cristais. */
+  S.COIN_PACKS = [
+    { id: 'm_punhado', kind: 'coins', name: 'Punhado de Moedas', base: 1000, bonus: 0, coins: 1000, crystals: 0, price_kz: 500 },
+    { id: 'm_bolsa', kind: 'coins', name: 'Bolsa de Moedas', base: 2000, bonus: 200, coins: 2200, crystals: 0, price_kz: 1000 },
+    { id: 'm_saco', kind: 'coins', name: 'Saco de Moedas', base: 5000, bonus: 1000, coins: 6000, crystals: 0, price_kz: 2500, badge: 'Mais popular' },
+    { id: 'm_cofre', kind: 'coins', name: 'Cofre de Moedas', base: 10000, bonus: 3000, coins: 13000, crystals: 0, price_kz: 5000 },
+    { id: 'm_tesouro', kind: 'coins', name: 'Tesouro de Moedas', base: 20000, bonus: 8000, coins: 28000, crystals: 0, price_kz: 10000 },
+    { id: 'm_monarca', kind: 'coins', name: 'Fortuna do Monarca', base: 40000, bonus: 20000, coins: 60000, crystals: 0, price_kz: 20000, badge: 'Melhor valor' }
   ];
 })(globalThis.SYS = globalThis.SYS || {});

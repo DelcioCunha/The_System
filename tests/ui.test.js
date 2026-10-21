@@ -34,7 +34,15 @@ function type(w, sel, val) {
   el.value = val;
   el.dispatchEvent(new w.Event('input', { bubbles: true }));
 }
-function popAll(w) { let g = 0; while ($(w, '[data-a="pop-ok"]') && g++ < 50) click(w, '[data-a="pop-ok"]'); }
+function popAll(w) {
+  let g = 0;
+  while (g++ < 80) {
+    if ($(w, '[data-a="first-pick"]')) click(w, '[data-a="first-pick"]');
+    else if ($(w, '[data-a="first-next"]')) click(w, '[data-a="first-next"]');
+    else if ($(w, '[data-a="pop-ok"]')) click(w, '[data-a="pop-ok"]');
+    else break;
+  }
+}
 let steps = 0;
 function step(name, fn) { fn(); steps++; console.log('  ✓ ' + name); }
 
@@ -45,7 +53,16 @@ step('intro e criação de personagem', () => {
   type(w, '#in-name', 'Natanael');
   click(w, '[data-a="intro-cls"][data-v="assassino"]');
   click(w, '[data-a="intro-go"]');
+  // primeira conversa com o Sistema: pelo menos 6 falas seguidas antes da primeira pergunta ou do fim
+  assert.ok($(w, '.first-talk'), 'primeira conversa do Sistema');
+  let falas = 0;
+  while ($(w, '[data-a="first-next"]') && falas < 20) { falas++; click(w, '[data-a="first-next"]'); }
+  assert.ok(falas >= 5, 'falas antes da pergunta: ' + falas);
+  assert.ok($(w, '[data-a="first-pick"]'), 'pergunta pessoal do Sistema');
+  click(w, '[data-a="first-pick"]');
+  assert.ok($(w, '.first-talk .talk-me'), 'resposta do Jogador registada');
   popAll(w);
+  assert.ok(!$(w, '.first-talk'), 'a conversa termina');
   assert.ok(w.document.body.textContent.includes('Natanael'));
   assert.ok($(w, '.avatar img, .avatar svg'));
 });

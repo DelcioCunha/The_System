@@ -5,9 +5,13 @@
    dissipa-se e esse chefe nunca poderá ser servo.
    A sombra fica à espera 24 horas; depois desvanece (perdida).
    Servos convocados lutam ao teu lado em todos os combates.
-   Arenas premium (sub-chefes e Campeões): também 3 tentativas, mas a
-   sombra nunca desvanece. Se as 3 falharem, fica selada e pode ser
-   obtida com Cristais (100 por sub-chefe, 500 por Campeão).
+   Se as 3 tentativas falharem (ou a sombra de um portão desvanecer ao fim
+   de 24 h), a sombra fica SELADA e pode ser obtida com Cristais:
+     portões:  normal 50 · comandante (rei do portão) 150 · chefe final 300
+     arenas:   normal 100 · comandante (penúltimo) 300 · chefe final (último) 500
+   Nas arenas premium a sombra nunca desvanece.
+   Lugares de servos convocados: 3 (+1 do Invocador) e até +3 com a
+   Insígnia do General das Sombras (Loja Exclusiva).
    ========================================================== */
 (function (S) {
   'use strict';
@@ -23,10 +27,13 @@
     levelStep: 0.025,          // por nível de diferença (jogador acima = mais fácil)
     minChance: 0.08, maxChance: 0.9,
     summonerBonus: 0.12,       // Invocador: caminho das almas
-    slotLevels: [1, 25, 50, 75], // níveis em que se ganha um lugar de servo convocado
+    baseSlots: 3,              // lugares de servos convocados para todos
     summonerExtraSlot: 1,
-    buyGuardian: 100,          // Cristais: sombra selada de um sub-chefe da arena
-    buyChampion: 500           // Cristais: sombra selada de um Campeão da arena
+    maxExtraSlots: 3,          // +3 com a Insígnia do General das Sombras
+    prices: {                  // Cristais para quebrar o selo de uma sombra
+      gate: { normal: 50, commander: 150, final: 300 },
+      arena: { normal: 100, commander: 300, final: 500 }
+    }
   };
 
   /* papel do servo pelo arquétipo do chefe */
@@ -38,7 +45,7 @@
     atacante: { name: 'Atacante', desc: 'Ataca o inimigo em todos os turnos.' },
     arcano: { name: 'Arcano', desc: 'Ataca com magia e enfraquece a defesa do inimigo no primeiro turno.' },
     guarda: { name: 'Guarda', desc: 'Ataca com menos força, mas dá-te um escudo no início do combate.' },
-    comandante: { name: 'Comandante', desc: 'Rei de um portão: ataque mais forte e +5% ao teu dano enquanto estiver convocado.' }
+    comandante: { name: 'Comandante', desc: 'Rei de um portão, Tenente ou Campeão de uma arena: ataque mais forte e +5% ao teu dano enquanto estiver convocado.' }
   };
 
   var Sh = S.shadows = {};
@@ -55,7 +62,17 @@
   Sh.spar = function (id) { return S.combat.start(id, { spar: true }); };
   Sh.isArena = function (b) { return !!b && !!b.premium && (!!b.guardian || !!b.champion) && /^ar\d+(g\d+)?$/.test(b.id); };
   Sh.eligible = function (b) { return !!b && !b.secret && (/^b\d+$/.test(b.id) && !b.premium || Sh.isArena(b)); };
-  Sh.buyPrice = function (b) { return b.champion ? R.buyChampion : R.buyGuardian; };
+  /* normal, comandante (o penúltimo de cada arena) ou chefe final (o último de cada arena) */
+  /* em todas as arenas (portões gratuitos e arenas exclusivas): o último chefe é o Chefe final e o penúltimo é o Comandante */
+  Sh.rank = function (b) {
+    if (!b) return 'normal';
+    if (Sh.isArena(b)) return b.champion ? 'final' : b.lieutenant ? 'commander' : 'normal';
+    if (b.secret || !b.gate) return 'normal';
+    var list = S.BOSSES.filter(function (x) { return x.gate === b.gate; }), i = list.indexOf(b);
+    return i === list.length - 1 ? 'final' : i === list.length - 2 ? 'commander' : 'normal';
+  };
+  Sh.RANK_NAME = { normal: 'Normal', commander: 'Comandante', final: 'Chefe da arena' };
+  Sh.buyPrice = function (b) { return R.prices[Sh.isArena(b) ? 'arena' : 'gate'][Sh.rank(b)]; };
 
   Sh.ensure = function (st) {
     if (!st.shadows) {
@@ -66,6 +83,15 @@
     var s = st.shadows;
     ['owned', 'tries', 'lost', 'pending', 'names', 'spar', 'sealed'].forEach(function (k) { if (!s[k]) s[k] = {}; });
     if (!Array.isArray(s.active)) s.active = [];
+    if (!(s.extra >= 0)) s.extra = 0;
+    // versão nova: as sombras dos portões que se tinham perdido ficam seladas (podem obter-se com Cristais)
+    if (!s.sealV) {
+      s.sealV = 1;
+      var lostN = Object.keys(s.lost).length;
+      if (lostN && st.c) st.c.shadowsLost = Math.max(st.c.shadowsLost || 0, lostN);
+      Object.keys(s.lost).forEach(function (id) { if (Sh.eligible(S.BOSS_BY_ID[id]) && !s.owned[id]) s.sealed[id] = s.lost[id]; });
+      s.lost = {};
+    }
     // arenas premium: os sub-chefes e Campeões já vencidos antes desta versão deixam a sombra à espera (sem prazo)
     if (!s.premV) {
       s.premV = 1;
@@ -83,8 +109,8 @@
     Object.keys(s.pending).forEach(function (id) {
       var p = s.pending[id];
       if (p.exp && p.exp <= t) {
-        delete s.pending[id]; s.lost[id] = t; changed = true;
-        E.history(st, '🌫️', 'A sombra de ' + S.BOSS_BY_ID[id].name + ' desvaneceu sem ser extraída.');
+        delete s.pending[id]; s.sealed[id] = t; changed = true; if (st.c) E.bump(st, 'shadowsLost');
+        E.history(st, '🌫️', 'A sombra de ' + S.BOSS_BY_ID[id].name + ' desvaneceu e ficou selada. Pode ser obtida por ' + Sh.buyPrice(S.BOSS_BY_ID[id]) + ' Cristais.');
       }
     });
     return changed;
@@ -150,13 +176,8 @@
     var sealed = false;
     if (left < 1) {
       delete s.pending[id];
-      if (Sh.isArena(b)) {
-        s.sealed[id] = now(); sealed = true;
-        E.history(st, '🔒', 'A sombra de ' + b.name + ' resistiu 3 vezes e ficou selada. Pode ser obtida por ' + Sh.buyPrice(b) + ' Cristais.');
-      } else {
-        s.lost[id] = now();
-        E.history(st, '🌫️', 'A sombra de ' + b.name + ' resistiu 3 vezes e dissipou-se para sempre.');
-      }
+      s.sealed[id] = now(); sealed = true; E.bump(st, 'shadowsLost');
+      E.history(st, '🔒', 'A sombra de ' + b.name + ' resistiu 3 vezes e ficou selada. Pode ser obtida por ' + Sh.buyPrice(b) + ' Cristais.');
     }
     E.commit('extração falhada');
     return { ok: true, success: false, left: left, lost: left < 1 && !sealed, sealed: sealed, chance: ch };
@@ -165,9 +186,9 @@
   /* sombra selada de uma arena premium: obtém-se com Cristais */
   Sh.buy = function (id) {
     var st = E.state, s = Sh.ensure(st), b = S.BOSS_BY_ID[id];
-    if (!b || !Sh.isArena(b)) return { ok: false, msg: 'Esta sombra não se pode comprar.' };
+    if (!b || !Sh.eligible(b)) return { ok: false, msg: 'Esta sombra não se pode comprar.' };
     if (s.owned[id]) return { ok: false, msg: 'Esta sombra já é tua.' };
-    if (!s.sealed[id]) return { ok: false, msg: 'Primeiro tenta extrair a sombra (3 tentativas).' };
+    if (!s.sealed[id]) return { ok: false, msg: s.pending[id] ? 'Primeiro tenta extrair a sombra (3 tentativas).' : 'Primeiro derrota este inimigo.' };
     var price = Sh.buyPrice(b);
     if ((st.crystals || 0) < price) return { ok: false, msg: 'Faltam ' + (price - (st.crystals || 0)) + ' Cristais.', need: price - (st.crystals || 0) };
     st.crystals -= price;
@@ -189,25 +210,29 @@
     var st = E.state, s = Sh.ensure(st);
     if (!s.pending[id]) return { ok: false, msg: 'Não há sombra à espera.' };
     if (Sh.isArena(S.BOSS_BY_ID[id])) return { ok: false, msg: 'As sombras das arenas não se dissipam.' };
-    delete s.pending[id]; s.lost[id] = now();
+    delete s.pending[id]; s.sealed[id] = now(); E.bump(st, 'shadowsLost');
     E.history(st, '🌫️', 'Deixou a sombra de ' + S.BOSS_BY_ID[id].name + ' dissipar-se.');
     E.commit('sombra libertada');
     return { ok: true };
   };
 
   /* lugares de servos convocados */
-  Sh.slots = function (st) {
-    var n = R.slotLevels.filter(function (l) { return st.level >= l; }).length;
-    return n + (st.cls === 'invocador' ? R.summonerExtraSlot : 0);
+  Sh.extraSlots = function (st) { return Math.min(R.maxExtraSlots, Sh.ensure(st).extra || 0); };
+  Sh.slots = function (st) { return R.baseSlots + (st.cls === 'invocador' ? R.summonerExtraSlot : 0) + Sh.extraSlots(st); };
+  Sh.nextSlotLevel = function () { return null; };
+  /* Insígnia do General das Sombras: +1 lugar para sempre (máx. 3) */
+  Sh.addSlot = function (st) {
+    var s = Sh.ensure(st);
+    if (s.extra >= R.maxExtraSlots) return false;
+    s.extra++; return true;
   };
-  Sh.nextSlotLevel = function (st) { return R.slotLevels.filter(function (l) { return st.level < l; })[0] || null; };
 
   Sh.toggle = function (id) {
     var st = E.state, s = Sh.ensure(st);
     if (!s.owned[id]) return { ok: false, msg: 'Este servo não é teu.' };
     var i = s.active.indexOf(id);
     if (i >= 0) { s.active.splice(i, 1); E.commit('servo dispensado'); return { ok: true, msg: Sh.name(st, id) + ' regressa às sombras.' }; }
-    if (s.active.length >= Sh.slots(st)) return { ok: false, msg: 'Todos os lugares estão ocupados (' + Sh.slots(st) + '). Dispensa um servo primeiro.' };
+    if (s.active.length >= Sh.slots(st)) return { ok: false, msg: 'Todos os lugares estão ocupados (' + Sh.slots(st) + '). Dispensa um servo primeiro' + (Sh.extraSlots(st) < R.maxExtraSlots ? ' ou ganha mais lugares com a Insígnia do General das Sombras (Loja Exclusiva).' : '.') };
     s.active.push(id);
     E.commit('servo convocado');
     return { ok: true, msg: Sh.name(st, id) + ' está convocado.' };

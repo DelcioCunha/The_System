@@ -52,10 +52,14 @@
   var LOG_ICON = { '⚔️': 'log_appear', '🌙': 'phase_noite', '☀️': 'phase_dia', '✨': 'log_advantage', '⚠️': 'log_pressure', '🛡️': 'st_shield', '➤': 'log_hit',
     '☠️': 'log_dot', '🌀': 'st_resist', '💫': 'st_stun', '💚': 'st_heal', '💧': 'st_mana', '⬆️': 'st_buff', '⬇️': 'st_debuff', '💀': 'st_summon', '⏳': 'log_reset',
     '🧠': 'st_resist', '🔥': 'log_enrage', '🪶': 'log_revive', '🏆': 'log_victory', '✦': 'log_skill', '🎒': 'log_item', '🌿': 'log_cleanse', '💥': 'log_bomb',
-    '💨': 'log_smoke', '🏃': 'log_flee', '↩️': 'st_reflect', '◀': 'log_hurt' };
+    '💨': 'log_smoke', '🏃': 'log_flee', '↩️': 'st_reflect', '◀': 'log_hurt',
+    '🌑': 'log_shadow', '👑': 'log_king', '⚡': 'log_storm', '🌸': 'log_petals', '🪞': 'log_mirror', '🪓': 'log_execute', '🌊': 'log_tide', '🥀': 'log_garden',
+    '👤': 'log_first', '🪨': 'log_stone', '🖤': 'log_blackphoenix', '✚': 'log_restore', '🎫': 'log_ticket', '🌵': 'log_thorns' };
   var HIST_ICON = { '⏱️': 'h_time', '✅': 'h_mission_done', '✨': 'h_awaken', '❌': 'h_mission_fail', '⬆️': 'h_levelup', '🌀': 'h_secret_skill', '🌅': 'h_newday',
     '🏃': 'log_flee', '🏅': 'h_achievement', '🏆': 'log_victory', '💀': 'log_defeat', '💠': 'h_core', '💨': 'log_smoke', '💱': 'h_sell', '📝': 'h_mission_new',
-    '📲': 'h_transfer', '🔰': 'h_shield', '🗺️': 'h_map', '🛒': 'h_buy', '👁️': 'ui_eye', '◆': 'ui_crystal' };
+    '📲': 'h_transfer', '🔰': 'h_shield', '🗺️': 'h_map', '🛒': 'h_buy', '👁️': 'ui_eye', '◆': 'ui_crystal',
+    '🔔': 'h_bell', '🩸': 'h_blood', '📜': 'h_scroll', '🌑': 'log_shadow', '🌫️': 'h_fade', '🔒': 'ic_lock', '⚔️': 'log_appear', '⚡': 'log_storm',
+    '🗝️': 'h_key', '🧭': 'h_compass', '⛓️': 'h_chains', '📊': 'h_stats' };
   var LZ_CUSTOM = { '🎁': 'lz_c_gift', '🍕': 'lz_c_food', '🎮': 'lz_c_game', '🎬': 'lz_c_movie', '🛍️': 'lz_c_shop', '🏖️': 'lz_c_beach', '🍦': 'lz_c_sweet', '📱': 'lz_c_phone' };
   function hasArt(key) { return !!(S.UI_ART && S.UI_ART[key]); }
   /* texto que começa por emoji (registo de batalha) → ícone + texto */
@@ -317,14 +321,14 @@
 
     var achDone = Object.keys(st.achievements).length;
     var unr = S.shop.unread(st);
-    if (unr) h += '<button class="notice-banner" data-a="page" data-p="avisos"><span class="nb-ico">✉</span><span class="grow"><b>' + (unr === 1 ? '1 aviso novo' : unr + ' avisos novos') + '</b><span class="small muted">da administração do Sistema</span></span><span class="nb-go">Ler ›</span></button>';
+    if (unr) h += '<button class="notice-banner" data-a="page" data-p="avisos"><span class="nb-ico">' + uiIcon('ui_mail', '✉', 'nb-img') + '</span><span class="grow"><b>' + (unr === 1 ? '1 aviso novo' : unr + ' avisos novos') + '</b><span class="small muted">da administração do Sistema</span></span><span class="nb-go">Ler ›</span></button>';
     h += '<section class="win"><div class="win-h">Registos</div><div class="menu-grid">' +
       '<button class="btn prem menu-prem" data-a="prem-open" data-t="loja"><i class="crys-ico"></i> Loja Premium <span class="muted">' + fmt(st.crystals || 0) + '</span></button>' +
       '<button class="btn" data-a="page" data-p="skills">Habilidades <span class="muted">' + E.unlockedSkills(st).length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="ach">Conquistas <span class="muted">' + achDone + '/' + S.ACHIEVEMENTS.length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="trophies">Troféus <span class="muted">' + E.trophyCount(st) + '/' + Object.keys(S.TROPHIES).length + '</span></button>' +
       '<button class="btn notice-menu' + (S.shop.unread(st) ? ' has-new' : '') + '" data-a="page" data-p="avisos">Avisos ' + (S.shop.unread(st) ? '<span class="badge-in">' + S.shop.unread(st) + '</span>' : '<span class="muted">' + S.shop.notices(st).list.length + '</span>') + '</button>' +
-      '<button class="btn soc-menu' + (SO.badge() ? ' has-new' : '') + '" data-a="page" data-p="social">Duelos e Amigos ' + (SO.badge() ? '<span class="badge-in">' + SO.badge() + '</span>' : (SO.cache && SO.cache.ok ? '<span class="muted">' + SO.cache.friends.filter(function (f) { return f.online; }).length + ' online</span>' : '')) + '</button>' +
+      '<button class="btn soc-menu' + (SO.badge() ? ' has-new' : '') + '" data-a="page" data-p="social">' + 'Duelos e Amigos ' + (SO.badge() ? '<span class="badge-in">' + SO.badge() + '</span>' : (SO.cache && SO.cache.ok ? '<span class="muted">' + SO.cache.friends.filter(function (f) { return f.online; }).length + ' online</span>' : '')) + '</button>' +
       '<button class="btn sh-menu" data-a="page" data-p="servos">Servos <span class="muted">' + Sh.owned(st).length + '</span></button>' +
       '<button class="btn" data-a="page" data-p="collection">Coleção</button>' +
       '<button class="btn" data-a="page" data-p="history">Histórico</button>' +
@@ -362,7 +366,7 @@
   }
   function effectsHtml(st) {
     E.cleanEffects(st);
-    var perk = st.perks && st.perks.monarca ? '<span class="tag prem-perm">🔱 Selo do Monarca Eterno · +15% XP e moedas</span>' : '';
+    var perk = st.perks && st.perks.monarca ? '<span class="tag prem-perm">' + (artId('pr_selo') ? '<img class="chip-img" src="' + artId('pr_selo') + '" alt="">' : '🔱 ') + 'Selo do Monarca Eterno · +15% XP e moedas</span>' : '';
     if (!st.effects.length && !perk) return '';
     return '<div class="row wrap" style="margin-top:10px">' + perk + st.effects.map(function (e) {
       var d = S.TIMED_EFFECTS[e.id];
@@ -408,6 +412,13 @@
     var src = S.SKILL_ART && S.SKILL_ART[s.id];
     return src ? '<div class="ico has-img skill-ico' + (cls ? ' ' + cls : '') + '"><img src="' + src + '" alt="" loading="lazy"></div>' : '';
   }
+  /* identificador do Comandante (penúltimo) e do Chefe da arena (último) */
+  function rankBadge(b, cls) {
+    var r = S.shadows && S.shadows.rank(b);
+    if (r === 'commander') return '<span class="rk-badge rk-c' + (cls ? ' ' + cls : '') + '">Comandante</span>';
+    if (r === 'final') return '<span class="rk-badge rk-f' + (cls ? ' ' + cls : '') + '">' + (cls === 'bt-rk' ? 'Chefe' : 'Chefe da arena') + '</span>';
+    return '';
+  }
   function trophyArt(b) { return (S.TROPHY_ART && S.TROPHY_ART[b.id]) || null; }
   /* imagem que abre a ficha detalhada ao tocar */
   function tapInfo(html, k, id) { return '<span class="info-tap" data-a="info" data-k="' + k + '" data-id="' + id + '" role="button" aria-label="Ver detalhes">' + html + '</span>'; }
@@ -432,8 +443,20 @@
   }
   function trophyInfoModal(m) {
     var st = E.state, b = S.BOSS_BY_ID[m.id], tr = S.TROPHIES[m.id];
-    if (b && b.premium && tr && st.trophies[b.id]) return '<div class="sheet-h"><h2 style="color:' + b.color + '">' + esc(tr.name) + '</h2>' + backOrClose(m) + '</div>' +
-      loreHtml(S.lore.bossText(b)) + infoSecs([{ title: 'Registo', rows: [['Campeão', b.name + ' (Nv ' + b.level + ')'], ['Arena', b.arenaName], ['Vitórias', String(st.arena.wins[b.id] || 0)]] }]);
+    if (b && b.premium && tr && st.trophies[b.id]) {
+      /* troféus das arenas exclusivas: mesma ficha dos troféus comuns, com o troféu em grande */
+      var part = trophyArt(b) || (S.BOSS_ART && S.BOSS_ART[b.id]), champ = S.ARENA_BOSSES.filter(function (c) { return c.arena === b.arena; })[0];
+      var gs = S.ARENA_LADDER[b.arena] ? S.ARENA_LADDER[b.arena].filter(function (x) { return x.guardian; }) : [], gh = gs.filter(function (x) { return st.trophies[x.id]; }).length;
+      var pw = typeof st.defeated[b.id] === 'number' && st.defeated[b.id] > 1e9 ? timeStr(st.defeated[b.id]) : '';
+      var prow = [['Raridade', S.RARITY[tr.rarity].name], [b.guardian ? 'Sub-chefe' : 'Campeão', b.name + ' (Nv ' + b.level + ')'], ['Arena', b.arenaName || (champ && champ.arenaName) || 'Coliseu dos Condenados'], ['Vitórias', String((st.arena && st.arena.wins && st.arena.wins[b.id]) || 0)]];
+      if (pw) prow.push(['Conquistado', pw]);
+      return '<div class="sheet-h"><h2 style="color:' + rc(tr.rarity) + '">' + esc(tr.name) + '</h2>' + backOrClose(m) + '</div>' +
+        (part ? '<div class="info-img trophy-big" style="--rc:' + rc(tr.rarity) + '"><img src="' + part + '" alt=""></div>' : '<div class="nc-big">' + b.icon + '</div>') +
+        loreHtml(S.lore.trophyText(b) || S.lore.bossText(b)) +
+        infoSecs([{ title: 'Registo', rows: prow }, b.guardian ?
+          { title: 'Sub-chefes desta arena', rows: [['Troféus', gh + ' / ' + gs.length]] } :
+          { title: 'Coliseu dos Condenados', rows: [['Campeões vencidos', S.ARENA_BOSSES.filter(function (c) { return st.trophies[c.id]; }).length + ' / ' + S.ARENA_BOSSES.length]] }]);
+    }
     if (!b || !tr || !st.trophies[b.id]) return '<div class="sheet-h"><h2>Troféu bloqueado</h2>' + backOrClose(m) + '</div><div class="empty">🔒</div>';
     var art = trophyArt(b) || (S.BOSS_ART && S.BOSS_ART[b.id]);
     var g = S.GATES.filter(function (x) { return x.id === b.gate; })[0];
@@ -515,7 +538,7 @@
       var list = g.list.filter(function (a) { var d = !!st.achievements[a.id]; return f === 'todas' || (f === 'feitas' ? d : !d); });
       if (!list.length) return;
       any = true;
-      h += '<section class="win ach-sec"><div class="win-h">' + g.icon + ' ' + esc(g.name) + ' <small>' + n + '/' + g.list.length + '</small></div>' +
+      h += '<section class="win ach-sec"><div class="win-h">' + uiIcon('achcat_' + g.id, g.icon, 'tag-ico') + ' ' + esc(g.name) + ' <small>' + n + '/' + g.list.length + '</small></div>' +
         '<div class="ach-bar thin"><i style="width:' + (n / g.list.length * 100).toFixed(1) + '%"></i></div>' +
         '<div class="ach-grid">' + list.map(function (a) { return achTile(st, a); }).join('') + '</div></section>';
     });
@@ -575,7 +598,7 @@
     } else {
       var ch = S.BOSS_BY_ID[b.arenaKey];
       h = '<div class="card prem-card" style="margin-top:12px;--ac:' + b.color + '"><div class="small muted">' + esc(b.arenaName) + ' · combate ' + b.slot + ' de 10</div>' +
-        '<div class="small" style="margin-top:4px">' + (b.lieutenant ? 'O Tenente guarda a porta de ' : 'Ao fundo da escada espera ') + '<b style="color:' + b.color + '">' + esc(ch.name) + '</b>.</div></div>';
+        '<div class="small" style="margin-top:4px">' + (b.lieutenant ? 'O Comandante guarda a porta de ' : 'Ao fundo da escada espera ') + '<b style="color:' + b.color + '">' + esc(ch.name) + '</b>.</div></div>';
     }
     h += rules;
     if (!ps.unlocked) h += '<button class="btn prem block" data-a="arena-unlock" data-id="' + b.arenaKey + '"><i class="crys-ico"></i> Desbloquear a arena por ' + S.BOSS_BY_ID[b.arenaKey].cost + ' Cristais</button>';
@@ -635,7 +658,7 @@
       var cls = !pg.unlocked ? 'sealed' : ps.wins ? 'won' : ps.open ? 'next' : 'locked';
       var lock = uiIcon('ic_lock', '🔒', 'lad-img');
       var tag = !pg.unlocked ? lock : ps.wins ? (ps.readyAt ? '<span class="mono">' + cd(ps.readyAt) + '</span>' : uiIcon('h_mission_done', '✓', 'lad-img')) : ps.open ? (ps.readyAt ? '<span class="mono">' + cd(ps.readyAt) + '</span>' : '<b>Lutar</b>') : lock;
-      var role = b.champion ? 'Campeão' : b.lieutenant ? 'Tenente' : 'Guardião ' + b.slot;
+      var role = b.champion ? 'Campeão' : b.lieutenant ? 'Comandante' : 'Guardião ' + b.slot;
       var hide = !b.champion && (!pg.unlocked || (!ps.wins && !ps.open && b.slot > pg.won + 2));
       return '<li><button class="lad ' + cls + (b.champion ? ' champ' : '') + '"' + (hide ? ' disabled' : ' data-a="boss" data-id="' + b.id + '"') + '>' +
         '<span class="lad-n mono">' + b.slot + '</span>' +
@@ -657,7 +680,7 @@
     if (!list.length) h += '<section class="win"><div class="empty">Ainda não há avisos.' + (S.shop.ready() ? '' : ' Liga-te à internet para os receber.') + '</div></section>';
     list.forEach(function (n) {
       var isNew = !N.read[n.id];
-      h += '<section class="win notice-card k-' + n.kind + (isNew ? ' new' : '') + '"><div class="nc-h"><span class="nc-ico">' + (NOTICE_ICO[n.kind] || 'ℹ') + '</span>' +
+      h += '<section class="win notice-card k-' + n.kind + (isNew ? ' new' : '') + '"><div class="nc-h"><span class="nc-ico">' + uiIcon('notice_' + n.kind, NOTICE_ICO[n.kind] || 'ℹ', 'nc-img') + '</span>' +
         '<div class="grow"><div class="nc-t">' + esc(n.title) + '</div><div class="nc-meta">' + esc(S.shop.NOTICE_KINDS[n.kind] || 'Informação') + (n.personal ? ' · <b>só para ti</b>' : '') + ' · ' + noticeDate(n.at) + '</div></div>' +
         (isNew ? '<span class="tag good">Novo</span>' : '') + '</div><div class="nc-body">' + esc(n.body).replace(/\n/g, '<br>') + '</div></section>';
     });
@@ -713,6 +736,51 @@
     if (c >= 120) return 'A 1.ª arena inteira: 10 combates';
     return 'Uma moldura ou proteções';
   }
+  function coinHint(c) {
+    if (c >= 50000) return 'Um Baú do Dragão e ainda sobra para armas de topo';
+    if (c >= 25000) return 'Um Arsenal de Ouro e uma Armaria de Ouro';
+    if (c >= 12000) return 'Um Arsenal de Ouro, ou várias armaduras de Prata';
+    if (c >= 5000) return 'Um Baú de Prata e poções para muitas lutas';
+    if (c >= 2000) return 'Dois Baús de Ferro ou um bom acessório';
+    return 'Poções e um Baú de Ferro';
+  }
+  /* comprar só moedas com dinheiro real (para quem não quer Cristais) */
+  function moedasHtml(st) {
+    var cfg = S.shop.cached(), ready = S.shop.ready(), orders = ((st.shop && st.shop.orders) || []).filter(function (o) { return o.coins > 0; });
+    var live = ready && cfg && cfg.open && cfg.packages && cfg.packages.some(function (p) { return p.kind === 'coins'; });
+    var packs = live ? cfg.packages.filter(function (p) { return p.kind === 'coins'; }) : S.COIN_PACKS;
+    var sel = packs.filter(function (p) { return p.id === ui.pack; })[0];
+    var h = '<section class="win prem-win coin-shop"><div class="win-h"><span class="prem-t coin-t">Comprar Moedas</span><small>Tens ' + coins(st.coins || 0) + '</small></div>' +
+      '<p class="small" style="margin-top:0">Só queres moedas para a Loja (baús, armas, poções) e não precisas de Cristais? Compra-as aqui diretamente. Quanto maior o pacote, mais moedas de bónus.</p>' +
+      (ready && cfg && !cfg.open ? '<p class="small" style="color:var(--warn)">A loja está fechada de momento. Volta mais tarde.</p>' : '') +
+      '<div class="pkg-grid">' + packs.map(function (p) {
+        var pct = p.bonus && p.base ? Math.round(p.bonus / p.base * 100) : 0;
+        return '<button class="pkg coin-pkg' + (p.badge ? ' hot' : '') + (sel && sel.id === p.id ? ' sel' : '') + '" data-a="pack-pick" data-id="' + p.id + '">' + (p.badge ? '<span class="pkg-badge">' + esc(p.badge) + '</span>' : '') +
+          '<span class="pkg-cr">' + coins(p.coins) + '</span>' + (p.bonus ? '<span class="pkg-bonus">' + fmt(p.base) + ' + ' + fmt(p.bonus) + ' de bónus (+' + pct + '%)</span>' : '<span class="pkg-bonus muted">sem bónus</span>') +
+          '<span class="pkg-name">' + esc(p.name) + '</span><span class="pkg-price mono">' + kz(p.price_kz) + '</span><span class="pkg-hint">' + esc(coinHint(p.coins)) + '</span>' +
+          '<span class="pkg-buy">' + (sel && sel.id === p.id ? '✓ Escolhido' : 'Comprar') + '</span></button>';
+      }).join('') + '</div>' +
+      '<div class="buy-box' + (sel ? ' on' : '') + '" id="buy-box">' + (sel
+        ? '<div class="row between"><span>' + coins(sel.coins) + ' <span class="small muted">' + esc(sel.name) + '</span></span><b class="mono" style="color:var(--gold)">' + kz(sel.price_kz) + '</b></div>' +
+          '<button class="btn wa block" data-a="buy-wa" data-id="' + sel.id + '" style="margin-top:10px">Comprar pelo WhatsApp</button>' +
+          '<p class="small muted" style="margin:8px 0 0;text-align:center">Atendimento: <span class="mono">' + esc(S.SHOP_WHATSAPP_SHOW) + '</span></p>'
+        : '<p class="small muted" style="margin:0;text-align:center">Toca num pacote para o comprar.</p>') + '</div>' +
+      '<ol class="small prem-steps"><li>Escolhe o pacote e toca em <b>Comprar pelo WhatsApp</b>: abre a conversa com o administrador, com a mensagem já escrita.</li><li>Faz a transferência por <b>MULTICAIXA Express</b>, com os dados que o administrador te envia.</li><li>Depois de confirmada, as moedas entram sozinhas na tua conta, ou recebes um <b>código de resgate</b> para escreveres aqui em baixo.</li></ol>' +
+      '<p class="hint">Fala só com o número oficial ' + esc(S.SHOP_WHATSAPP_SHOW) + '. Nunca te pediremos o PIN nem códigos de confirmação do banco.</p>' +
+      '<label class="f" style="margin-top:10px">Código de resgate<input class="in mono" id="redeem-code" placeholder="SIS-XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>' +
+      '<button class="btn prem block" data-a="redeem"' + (ready ? '' : ' disabled') + '>Resgatar código</button></section>';
+    if (orders.length) {
+      h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">Os meus pedidos de moedas</span><button class="btn sm ghost" data-a="ord-refresh">Atualizar</button></div><div class="list">' +
+        orders.slice(0, 10).map(function (o) {
+          var stt = S.shop.STATUS[o.status] || { name: o.status, tone: '' };
+          return '<div class="card ord-card"><div class="row between"><b class="mono">' + esc(o.id) + '</b><span class="ord-st ' + stt.tone + '">' + esc(stt.name) + '</span></div>' +
+            '<div class="meta">' + coins(o.coins) + '<span class="mono">' + kz(o.price) + '</span><span>' + timeStr(o.at) + '</span></div>' +
+            (o.status === 'pending_payment' ? '<div class="row" style="margin-top:8px"><button class="btn sm pri grow" data-a="ord-open" data-id="' + o.id + '">Instruções / WhatsApp</button><button class="btn sm ghost" data-a="ord-cancel" data-id="' + o.id + '">Cancelar</button></div>' : '') +
+            (o.status === 'code_issued' ? '<p class="hint" style="margin:6px 0 0">O código foi-te enviado no WhatsApp. Escreve-o acima.</p>' : '') + '</div>';
+        }).join('') + '</div></section>';
+    }
+    return h;
+  }
   function obterHtml(st) {
     var cfg = S.shop.cached(), ready = S.shop.ready(), orders = (st.shop && st.shop.orders) || [];
     var h = '<section class="win prem-win"><div class="win-h"><span class="prem-t">Obter Cristais</span></div>' +
@@ -724,7 +792,7 @@
     else if (!cfg.open) note = 'A loja de Cristais está fechada de momento. Volta mais tarde.';
     else if (!cfg.packages.length) note = 'Ainda não há pacotes à venda.';
     if (note) h += '<p class="small" style="margin-top:0">' + note + '</p>';
-    var packs = live ? cfg.packages : S.CRYSTAL_PACKS;
+    var packs = live ? cfg.packages.filter(function (p) { return p.kind !== 'coins'; }) : S.CRYSTAL_PACKS;
     var sel = packs.filter(function (p) { return p.id === ui.pack; })[0];
     h += '<div class="win-h" style="margin:4px 0 6px"><span class="prem-t" style="font-size:13px">Tabela de preços</span></div>' +
       '<p class="small muted" style="margin:0 0 8px">Escolhe o pacote. Quanto maior, mais Cristais de bónus.</p><div class="pkg-grid">' + packs.map(function (p) {
@@ -749,7 +817,7 @@
         orders.slice(0, 10).map(function (o) {
           var stt = S.shop.STATUS[o.status] || { name: o.status, tone: '' };
           return '<div class="card ord-card"><div class="row between"><b class="mono">' + esc(o.id) + '</b><span class="ord-st ' + stt.tone + '">' + esc(stt.name) + '</span></div>' +
-            '<div class="meta">' + crys(o.crystals) + '<span class="mono">' + kz(o.price) + '</span><span>' + timeStr(o.at) + '</span>' + '</div>' +
+            '<div class="meta">' + (o.coins ? coins(o.coins) : crys(o.crystals)) + '<span class="mono">' + kz(o.price) + '</span><span>' + timeStr(o.at) + '</span>' + '</div>' +
             (o.status === 'pending_payment' ? '<div class="row" style="margin-top:8px"><button class="btn sm pri grow" data-a="ord-open" data-id="' + o.id + '">Instruções / WhatsApp</button><button class="btn sm ghost" data-a="ord-cancel" data-id="' + o.id + '">Cancelar</button></div>' : '') +
             (o.status === 'code_issued' ? '<p class="hint" style="margin:6px 0 0">O código foi-te enviado no WhatsApp. Escreve-o acima.</p>' : '') + '</div>';
         }).join('') + '</div></section>';
@@ -764,8 +832,8 @@
     var cfg = S.shop.cached();
     return '<div class="sheet-h"><h2>Pedido ' + esc(o.id) + '</h2><button class="btn sm ghost" data-a="close">Fechar</button></div>' +
       (o.test ? '<p class="hint test-note">Modo de teste: não faças pagamentos reais.</p>' : '') +
-      '<div class="ord-sum"><div>' + crys(o.crystals) + '<div class="small muted">' + esc(o.pkg) + '</div></div><div class="ord-price mono">' + kz(o.price) + '</div></div>' +
-      '<ol class="small prem-steps"><li>Toca em <b>Abrir WhatsApp</b>: a mensagem com o número do pedido já vai escrita.</li><li>Segue as instruções de pagamento por MULTICAIXA Express que vais receber.</li><li>Depois de confirmado, recebes um código. Resgata-o em Ala Premium → Obter Cristais.</li></ol>' +
+      '<div class="ord-sum"><div>' + (o.coins ? coins(o.coins) : crys(o.crystals)) + '<div class="small muted">' + esc(o.pkg) + '</div></div><div class="ord-price mono">' + kz(o.price) + '</div></div>' +
+      '<ol class="small prem-steps"><li>Toca em <b>Abrir WhatsApp</b>: a mensagem com o número do pedido já vai escrita.</li><li>Segue as instruções de pagamento por MULTICAIXA Express que vais receber.</li><li>Depois de confirmado, ' + (o.coins ? 'as moedas entram sozinhas ou ' : '') + 'recebes um código. Resgata-o em Ala Premium → ' + (o.coins ? 'Comprar Moedas' : 'Obter Cristais') + '.</li></ol>' +
       (cfg && cfg.payment_info ? '<p class="hint">' + esc(cfg.payment_info) + '</p>' : '') +
       (o.wa ? '<button class="btn wa block" data-a="ext" data-url="' + esc(o.wa) + '">Abrir WhatsApp</button>' : '<p class="small" style="color:var(--warn)">O número de atendimento ainda não está configurado. Copia a mensagem e envia-a ao atendimento.</p>') +
       '<button class="btn ghost block" data-a="ord-copy" data-id="' + o.id + '" style="margin-top:8px">Copiar mensagem</button>';
@@ -797,8 +865,8 @@
     h += '<section class="win prem-win prem-head"><div class="prem-bal"><span class="small muted">Os teus Cristais</span><span class="prem-big">' + crys(st.crystals || 0) + '</span></div>' +
       '<div class="prem-id"><span class="small muted">ID de Jogador</span><button class="mono id-chip" data-a="id-copy">' + esc(st.playerId) + '</button></div>' +
       (st.shop && st.shop.role ? '<div class="prem-id"><span class="small muted">Tipo de conta</span><span class="role-chip r-' + esc(st.shop.role.id) + '">' + esc(st.shop.role.name) + '</span></div>' : '') +
-      '<div class="row" style="margin-top:10px;gap:8px"><button class="btn prem grow" data-a="prem-tab" data-t="obter"><i class="crys-ico"></i> Obter Cristais</button><button class="btn don-btn" data-a="prem-tab" data-t="loja">\u2665 Doar</button></div></section>';
-    h += '<div class="chips" style="margin-top:12px">' + [['arenas', 'Arenas'], ['loja', 'Loja Exclusiva'], ['aparencia', 'Aparência'], ['obter', 'Obter Cristais']].map(function (x) {
+      '<div class="row" style="margin-top:10px;gap:8px"><button class="btn prem grow" data-a="prem-tab" data-t="obter"><i class="crys-ico"></i> Obter Cristais</button><button class="btn coin-btn" data-a="prem-tab" data-t="moedas"><i class="coin-ico"></i> Moedas</button><button class="btn don-btn" data-a="prem-tab" data-t="loja">\u2665 Doar</button></div></section>';
+    h += '<div class="chips" style="margin-top:12px">' + [['arenas', 'Arenas'], ['loja', 'Loja Exclusiva'], ['aparencia', 'Aparência'], ['obter', 'Obter Cristais'], ['moedas', 'Comprar Moedas']].map(function (x) {
       return '<button class="chip' + (t === x[0] ? ' on' : '') + '" data-a="prem-tab" data-t="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
     if (t === 'arenas') {
       h += coliseuHtml(st);
@@ -839,6 +907,8 @@
             (own ? '<button class="btn sm ' + (on ? 'ghost' : 'pri') + ' block" data-a="cos-wear" data-id="' + c.id + '">' + (on ? 'Tirar' : 'Usar') + '</button>'
               : '<div class="row between">' + crys(c.crystals) + '<button class="btn sm prem" data-a="cos-buy" data-id="' + c.id + '"' + (can ? '' : ' disabled') + '>' + (can ? 'Comprar' : 'Faltam ' + (c.crystals - (st.crystals || 0))) + '</button></div>') + '</div>';
         }).join('') + '</div></section>';
+    } else if (t === 'moedas') {
+      h += moedasHtml(st);
     } else {
       h += obterHtml(st);
     }
@@ -872,7 +942,7 @@
     h += '<div class="chips" style="margin-top:12px">' + [['amigos', 'Amigos', c.friends.length, c.unread], ['duelos', 'Duelos', null, c.invites.length], ['pedidos', 'Pedidos', null, c.requests_in.length]].map(function (x) {
       return '<button class="chip' + (t === x[0] ? ' on' : '') + '" data-a="soc-tab" data-v="' + x[0] + '">' + x[1] + (x[2] != null ? ' <span class="muted">' + x[2] + '</span>' : '') + (x[3] ? ' <span class="badge-in">' + x[3] + '</span>' : '') + '</button>';
     }).join('') + '</div>';
-    if (c.duel) h += '<button class="notice-banner duel-banner" data-a="duel-open" data-id="' + c.duel.id + '"><span class="nb-ico">⚔</span><span class="grow"><b>' + (c.duel.status === 'active' ? 'Duelo em curso' : 'A tua sala de duelo está aberta') + '</b><span class="small muted">Sala ' + esc(c.duel.code) + '</span></span><span class="nb-go">Abrir ›</span></button>';
+    if (c.duel) h += '<button class="notice-banner duel-banner" data-a="duel-open" data-id="' + c.duel.id + '"><span class="nb-ico">' + uiIcon('ui_duel', '⚔', 'nb-img') + '</span><span class="grow"><b>' + (c.duel.status === 'active' ? 'Duelo em curso' : 'A tua sala de duelo está aberta') + '</b><span class="small muted">Sala ' + esc(c.duel.code) + '</span></span><span class="nb-go">Abrir ›</span></button>';
     if (t === 'amigos') h += friendsTab(st, c);
     else if (t === 'duelos') h += duelsTab(st, c);
     else h += requestsTab(st, c);
@@ -893,7 +963,7 @@
     else h += '<div class="stack" style="gap:8px">' + c.friends.map(function (f) {
       return '<div class="card soc-row' + (f.online ? ' online' : '') + '"><div class="card-h">' + socAvatar(f) + '<div class="grow"><div class="card-t">' + esc(f.name) + (f.unread ? ' <span class="badge-in">' + f.unread + '</span>' : '') + '</div>' +
         '<div class="small muted">' + clsName(f.cls) + ' · Nv ' + f.level + ' · <span class="' + (f.online ? 'on-txt' : '') + '">' + seenText(f) + '</span></div></div></div>' +
-        '<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm grow" data-a="chat-open" data-id="' + esc(f.id) + '">💬 Conversar</button><button class="btn sm grow bad" data-a="duel-invite" data-id="' + esc(f.id) + '">⚔ Desafiar</button><button class="btn sm ghost" data-a="soc-remove" data-id="' + esc(f.id) + '" aria-label="Remover amigo">✕</button></div></div>';
+        '<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm grow" data-a="chat-open" data-id="' + esc(f.id) + '">' + uiIcon('ui_chat', '💬', 'btn-ico') + ' Conversar</button><button class="btn sm grow bad" data-a="duel-invite" data-id="' + esc(f.id) + '">' + uiIcon('ui_duel', '⚔', 'btn-ico') + ' Desafiar</button><button class="btn sm ghost" data-a="soc-remove" data-id="' + esc(f.id) + '" aria-label="Remover amigo">✕</button></div></div>';
     }).join('') + '</div>';
     return h + '</section>';
   }
@@ -913,7 +983,7 @@
     var so = SO.ensure(st), today = E.dateKey(), left = Math.max(0, SO.DAILY - (so.day === today ? so.count : 0));
     var h = '<section class="win duel-win"><div class="win-h">Arena de Duelos</div>' +
       '<p class="small muted" style="margin:0 0 10px">Combate 1 contra 1, por turnos, contra jogadores reais. Cada um usa os seus atributos e a habilidade da sua classe. Perder não tira nada. Recompensas hoje: <b>' + left + '/' + SO.DAILY + '</b> duelos.</p>' +
-      '<div class="row" style="gap:6px"><button class="btn bad grow" data-a="duel-create" data-p="1">⚔ Criar sala pública</button><button class="btn grow" data-a="duel-create" data-p="0">Sala privada</button></div>' +
+      '<div class="row" style="gap:6px"><button class="btn bad grow" data-a="duel-create" data-p="1">' + uiIcon('ui_duel', '⚔', 'btn-ico') + ' Criar sala pública</button><button class="btn grow" data-a="duel-create" data-p="0">Sala privada</button></div>' +
       '<div class="row" style="margin-top:8px"><input class="in grow mono" id="duel-code" data-keep maxlength="6" placeholder="Código da sala" autocomplete="off" style="text-transform:uppercase"><button class="btn" data-a="duel-join-code">Entrar</button></div></section>';
     if (c.invites.length) h += '<section class="win gold"><div class="win-h">Desafios recebidos <small>' + c.invites.length + '</small></div><div class="stack" style="gap:8px">' + c.invites.map(function (d) {
       return '<div class="card soc-row"><div class="card-h">' + socAvatar(d) + '<div class="grow"><div class="card-t">' + esc(d.name) + ' desafia-te</div><div class="small muted">' + clsName(d.cls) + ' · Nv ' + d.level + ' · sala ' + esc(d.code) + '</div></div><button class="btn sm bad" data-a="duel-join" data-id="' + esc(d.id) + '">Aceitar</button></div></div>';
@@ -931,7 +1001,7 @@
     var c = SO.cache, fid = ui.chatWith, f = (c && c.friends || []).filter(function (x) { return x.id === fid; })[0] || ui.chatFriend || { id: fid, name: 'Amigo' };
     var msgs = ui.chatMsgs || [];
     var h = '<div class="row" style="margin-top:14px"><button class="btn sm ghost" data-a="soc-back">‹ Voltar</button>' + socAvatar(f) + '<div class="grow"><h2 style="font-size:17px;margin:0">' + esc(f.name) + '</h2><div class="small muted">' + (f.level ? clsName(f.cls) + ' · Nv ' + f.level + ' · ' : '') + seenText(f) + '</div></div>' +
-      '<button class="btn sm bad" data-a="duel-invite" data-id="' + esc(fid) + '">⚔</button></div>';
+      '<button class="btn sm bad" data-a="duel-invite" data-id="' + esc(fid) + '">' + uiIcon('ui_duel', '⚔', 'btn-ico') + '</button></div>';
     h += '<section class="win chat-win"><div class="chat-list" id="chat-list">' + (ui.chatLoading && !msgs.length ? '<div class="empty">A carregar…</div>' : msgs.length ? msgs.map(function (m, i) {
       var mine = m.from === st.playerId, prev = msgs[i - 1], day = new Date(m.at).toDateString(), sep = !prev || new Date(prev.at).toDateString() !== day;
       return (sep ? '<div class="chat-day">' + new Date(m.at).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' }) + '</div>' : '') +
@@ -940,14 +1010,20 @@
       '<div class="chat-in"><input class="in grow" id="chat-text" data-keep maxlength="500" placeholder="Escreve uma mensagem…" autocomplete="off"><button class="btn pri" data-a="chat-send">Enviar</button></div></section>';
     return h;
   }
-  /* ---------- duelo ---------- */
-  function duelFighter(F, me, turn, side) {
-    var hpP = Math.max(0, F.hp / F.maxHp * 100), mpP = Math.max(0, F.mp / F.maxMp * 100);
-    return '<div class="df ' + side + (turn ? ' turn' : '') + (F.hp <= 0 ? ' dead' : '') + '">' +
-      '<div class="df-av">' + (S.CLASSES[F.cls] ? S.avatar.html(F.cls, F.level, 'duel') : '') + (F.guard ? '<span class="df-st">🛡</span>' : '') + (F.shield > 0 ? '<span class="df-st sh">◈ ' + F.shield + '</span>' : '') + (F.legion > 0 ? '<span class="df-st lg">👻 ' + F.legion + '</span>' : '') + '</div>' +
-      '<div class="df-name">' + esc(F.name) + (me ? ' <span class="muted">(tu)</span>' : '') + '</div><div class="small muted">' + clsName(F.cls) + ' · Nv ' + F.level + '</div>' +
-      '<div class="bar hp"><i style="width:' + hpP.toFixed(1) + '%"></i></div><div class="small mono">' + fmt(F.hp) + ' / ' + fmt(F.maxHp) + '</div>' +
-      '<div class="bar mp"><i style="width:' + mpP.toFixed(1) + '%"></i></div><div class="small mono muted">' + fmt(F.mp) + ' / ' + fmt(F.maxMp) + ' MP</div></div>';
+  /* ---------- duelo (mesma disposição do combate contra chefes) ---------- */
+  function duelLogCls(l, me) {
+    var c = l.c || '';
+    if (c === 'hit' || c === 'crit') return l.tg === me ? 'hurt' : (c === 'crit' ? 'crit' : 'dmg');
+    if (c === 'heal' || c === 'buff') return l.w === me ? 'good' : 'muted';
+    if (c === 'status') return l.tg === me ? 'hurt' : 'good';
+    if (c === 'skill') return l.w === me ? 'skill' : 'warn';
+    if (c === 'win') return l.w === me ? 'win' : 'lose';
+    if (c === 'miss') return 'muted';
+    return c === 'warn' ? 'warn' : 'sys';
+  }
+  function duelAvatar(F, cls, id) {
+    var img = S.CLASSES[F.cls] ? S.avatar.imageFor(F.cls, F.level) : null;
+    return '<div class="' + cls + ' has-art duel-av"' + (id ? ' id="' + id + '"' : '') + '>' + (img ? '<img src="' + img + '" alt="">' : S.avatar.html(F.cls, F.level)) + '</div>';
   }
   function duelPage(st) {
     var d = ui.duel;
@@ -966,32 +1042,113 @@
       h += '<button class="btn block ghost" style="margin-top:12px" data-a="duel-leave">Fechar a sala</button></section>';
       return h;
     }
-    if (d.status === 'cancelled') return h + '<section class="win"><div class="empty">Esta sala foi fechada.</div><button class="btn block" data-a="soc-back">Voltar</button></section>';
-    var myTurn = d.status === 'active' && d.turn === me;
-    h += '<section class="win duel-win duel-arena' + (myTurn ? ' my-turn' : '') + '"><div class="win-h">' + (d.status === 'done' ? 'Duelo terminado' : 'Turno ' + d.turn_no) + (d.status === 'active' ? '<small class="duel-timer" data-until="' + d.deadline + '">' + Math.max(0, Math.ceil((d.deadline - SO.serverNow()) / 1000)) + 's</small>' : '') + '</div>' +
-      '<div class="duel-stage">' + (A ? duelFighter(A, true, d.turn === me, 'l') : '') + '<div class="duel-vs">VS</div>' + (B ? duelFighter(B, false, d.turn === opId, 'r') : '') + '</div>';
-    if (d.status === 'active') {
-      if (myTurn) {
-        var sk = d.skills[A.cls] || { name: 'Habilidade', mp: 0.35 }, skCost = Math.round(A.maxMp * sk.mp), hvCost = Math.round(A.maxMp * 0.2), cd = (A.cds && A.cds.skill) || 0;
-        h += '<div class="duel-turn">É A TUA VEZ</div><div class="duel-acts">' +
-          '<button class="btn" data-a="duel-act" data-v="attack">⚔ Atacar</button>' +
-          '<button class="btn" data-a="duel-act" data-v="heavy"' + (A.mp < hvCost ? ' disabled' : '') + '>💥 Golpe Poderoso <small>' + hvCost + ' MP</small></button>' +
-          '<button class="btn pri" data-a="duel-act" data-v="skill"' + (cd || A.mp < skCost ? ' disabled' : '') + '>✦ ' + esc(sk.name) + ' <small>' + (cd ? 'recarga ' + cd : skCost + ' MP') + '</small></button>' +
-          '<button class="btn" data-a="duel-act" data-v="defend">🛡 Defender</button>' +
-          '<button class="btn" data-a="duel-act" data-v="potion"' + (A.pots < 1 ? ' disabled' : '') + '>🧪 Poção <small>' + A.pots + '/2</small></button></div>';
-      } else h += '<div class="duel-turn wait">Vez de ' + esc(B ? B.name : 'adversário') + '…</div>';
-    } else if (d.status === 'done') {
+    if (d.status === 'cancelled' || !A || !B) return h + '<section class="win"><div class="empty">Esta sala foi fechada.</div><button class="btn block" data-a="soc-back">Voltar</button></section>';
+    var myTurn = d.status === 'active' && d.turn === me, secs = Math.max(0, Math.ceil((d.deadline - SO.serverNow()) / 1000));
+    var opDead = d.status === 'done' && d.winner === me;
+    h += '<div class="battle duel-battle">';
+    // adversário: em cima, como um chefe
+    h += '<section class="win danger boss-panel duel-op' + (d.turn === opId ? ' op-turn' : '') + '"><div class="win-h"><span>' + esc(B.name) + '</span><small>' + clsName(B.cls) + ' · Nv ' + B.level + ' · turno ' + d.turn_no +
+      (d.status === 'active' ? ' · <span class="duel-timer' + (secs <= 10 ? ' urgent' : '') + '" data-until="' + d.deadline + '">' + secs + 's</span>' : '') + '</small></div>' +
+      '<div class="boss-wrap"><div class="boss-aura" style="--c:' + (d.turn === opId ? 'rgba(255,60,90,.65)' : 'rgba(255,60,90,.35)') + '"></div>' + duelAvatar(B, 'boss-ico' + (opDead ? ' dead' : ''), 'boss-ico') + '</div>' +
+      (d.status === 'active' && d.turn === opId ? '<div class="speech duel-thinking"><span class="speech-name">' + esc(B.name) + '</span><span class="speech-txt">está a escolher a jogada<i class="dots"><b>.</b><b>.</b><b>.</b></i></span></div>' : '') +
+      '<div style="margin-top:8px">' + bar('boss', B.hp, B.maxHp, 'Vida' + (B.shield ? ' · escudo ' + fmt(B.shield) : ''), 'dop-' + d.id) + '</div>' +
+      '<div style="margin-top:6px">' + bar('mp', B.mp, B.maxMp, 'Mana', 'dopm-' + d.id) + '</div>' +
+      '<div class="statuses" style="margin-top:6px">' + statusTags(B.st, true) + (B.stunned ? '<span class="tag good">atordoado</span>' : '') +
+      (B.summons.length ? '<span class="tag">' + B.summons.map(function (s) { return esc(s.name) + ' ' + s.turns + 't'; }).join(' · ') + '</span>' : '') + (B.squad && B.squad.length ? '<span class="tag">🌑 ' + B.squad.length + ' servo' + (B.squad.length > 1 ? 's' : '') + '</span>' : '') + '</div></section>';
+    // registo
+    h += '<div class="log" id="blog" aria-live="polite">' + (d.log || []).map(function (l) { return '<div class="' + duelLogCls(l, me) + '">' + logLine(l.t) + '</div>'; }).join('') + '</div>';
+    // o teu painel
+    h += '<section class="win ppanel' + (myTurn ? ' my-turn' : '') + '" id="ppanel" style="margin-top:10px"><div class="win-h"><span>' + esc(st.name) + '</span><small>' + (A.summons.length ? A.summons.map(function (s) { return esc(s.name) + ' ' + s.turns + 't'; }).join(' · ') : (A.squad && A.squad.length ? '🌑 ' + A.squad.map(function (s) { return esc(s.name); }).join(', ') : 'sem invocações')) + '</small></div>' +
+      '<div class="stack" style="gap:6px">' + bar('hp', A.hp, A.maxHp, 'Vida' + (A.shield ? ' · escudo ' + fmt(A.shield) : ''), 'dme-' + d.id, true) + bar('mp', A.mp, A.maxMp, 'Mana', 'dmem-' + d.id, true) + '</div>' +
+      '<div class="statuses" style="margin-top:6px;justify-content:flex-start">' + statusTags(A.st, false) + (A.stunned ? '<span class="tag bad">atordoado</span>' : '') + '</div>';
+    if (d.status === 'done') {
       var won = d.winner === me, rw = SO.reward(d), rt = d.result && d.result.rating && d.result.rating[me];
-      h += '<div class="duel-end ' + (won ? 'win' : 'lose') + '"><div class="duel-end-t">' + (won ? 'VITÓRIA' : 'DERROTA') + '</div>' +
-        '<div class="small">' + (d.reason === 'forfeit' ? (won ? 'O adversário desistiu.' : 'Desististe do duelo.') : d.reason === 'timeout' ? (won ? 'O adversário deixou passar o tempo duas vezes.' : 'Deixaste passar o tempo duas vezes.') : d.reason === 'turns' ? 'Limite de turnos: venceu quem tinha mais vida.' : (won ? 'Derrubaste ' + esc(B ? B.name : 'o adversário') + '.' : esc(B ? B.name : 'O adversário') + ' derrubou-te.')) + '</div>' +
-        (rt ? '<div class="small mono" style="margin-top:6px">Pontos: ' + rt[0] + ' → <b>' + rt[1] + '</b> (' + (rt[1] >= rt[0] ? '+' : '') + (rt[1] - rt[0]) + ')</div>' : '') +
-        (rw ? (rw.capped ? '<div class="small muted" style="margin-top:6px">Já recebeste as recompensas de duelo de hoje (' + SO.DAILY + ').</div>' : '<div class="small" style="margin-top:6px;color:var(--gold)">+' + fmt(rw.xp) + ' XP · +' + fmt(rw.coins) + ' moedas</div>') : '') +
-        '<div class="row" style="gap:6px;margin-top:12px"><button class="btn grow" data-a="soc-back">Voltar</button>' + (B && ((SO.cache && SO.cache.friends) || []).some(function (f) { return f.id === opId; }) ? '<button class="btn bad grow" data-a="duel-invite" data-id="' + esc(opId) + '">Revanche</button>' : '<button class="btn bad grow" data-a="duel-create" data-p="1">Nova sala</button>') + '</div></div>';
+      var isFriend = ((SO.cache && SO.cache.friends) || []).some(function (f) { return f.id === opId; });
+      h += '<div class="card duel-end ' + (won ? 'win' : 'lose') + '" style="margin-top:10px;text-align:center"><h3 style="color:' + (won ? 'var(--gold)' : 'var(--danger)') + '">' + (won ? 'Vitória' : 'Derrota') + '</h3>' +
+        '<div class="small">' + (d.reason === 'forfeit' ? (won ? 'O adversário desistiu.' : 'Desististe do duelo.') : d.reason === 'timeout' ? (won ? 'O adversário deixou passar o tempo duas vezes.' : 'Deixaste passar o tempo duas vezes.') : d.reason === 'turns' ? 'Limite de turnos: venceu quem tinha mais vida.' : (won ? 'Derrubaste ' + esc(B.name) + '.' : esc(B.name) + ' derrubou-te.')) + '</div>' +
+        (rt ? '<div class="small mono" style="margin-top:6px">Pontos de duelo: ' + rt[0] + ' → <b>' + rt[1] + '</b> (' + (rt[1] >= rt[0] ? '+' : '') + (rt[1] - rt[0]) + ')</div>' : '') +
+        (rw ? (rw.capped ? '<div class="small muted" style="margin-top:6px">Já recebeste as recompensas de duelo de hoje (' + SO.DAILY + ').</div>' : '<div class="reward">+' + fmt(rw.xp) + ' XP · +' + fmt(rw.coins) + ' moedas</div>') +
+          (rw.used && rw.used.length ? '<div class="small muted" style="margin-top:4px">Gastaste: ' + esc(rw.used.join(', ')) + '</div>' : '') : '') +
+        '<div class="row" style="gap:6px;margin-top:10px"><button class="btn grow" data-a="soc-back">Sair do duelo</button>' + (isFriend ? '<button class="btn bad grow" data-a="duel-invite" data-id="' + esc(opId) + '">Revanche</button>' : '<button class="btn bad grow" data-a="duel-create" data-p="1">Nova sala</button>') + '</div></div>';
+    } else if (!myTurn) {
+      h += '<div class="actions busy duel-wait-acts" style="margin-top:10px"><button class="btn pri" disabled>Atacar</button><button class="btn" disabled>Habilidades</button><button class="btn" disabled>Itens</button><button class="btn" disabled>Defender</button>' +
+        '<div class="duel-turn wait" style="grid-column:1/-1">Vez de ' + esc(B.name) + '…</div><button class="btn bad" style="grid-column:1/-1" data-a="duel-leave">Desistir</button></div>';
+    } else if (A.stunned > 0) {
+      h += '<div class="actions" style="margin-top:10px"><button class="btn pri" style="grid-column:1/-1" data-a="duel-act" data-v="pass">Atordoado: passar o turno</button><button class="btn bad" style="grid-column:1/-1" data-a="duel-leave">Desistir</button></div>';
+    } else {
+      h += '<div class="duel-turn">É A TUA VEZ</div><div class="actions' + (ui.duelBusy ? ' busy' : '') + '" style="margin-top:6px">' +
+        '<button class="btn pri" data-a="duel-act" data-v="attack">Atacar</button>' +
+        '<button class="btn" data-a="d-sheet" data-v="skills">Habilidades</button>' +
+        '<button class="btn" data-a="d-sheet" data-v="items">Itens</button>' +
+        '<button class="btn" data-a="duel-act" data-v="defend">Defender</button>' +
+        '<button class="btn bad" style="grid-column:1/-1" data-a="duel-leave">Desistir</button></div>';
     }
-    h += '</section><section class="win"><div class="win-h">Registo</div><div class="log duel-log">' + (d.log || []).slice().reverse().slice(0, 25).map(function (l) {
-      return '<div class="ln k-' + esc(l.c || 'x') + (l.w === me ? ' mine' : l.w ? ' theirs' : '') + '">' + esc(l.t) + '</div>';
-    }).join('') + '</div>' + (d.status === 'active' ? '<button class="btn block ghost sm" style="margin-top:10px" data-a="duel-leave">Desistir</button>' : '') + '</section>';
+    h += '</section></div>';
     return h;
+  }
+  /* habilidades e itens do duelo (como no combate contra chefes) */
+  function duelSheet() {
+    var d = ui.duel, A = d && d.fighters && d.fighters[d.me];
+    if (!A) return '';
+    if (ui.modal.v === 'skills') {
+      var list = A.skills.map(function (id) { return S.ALL_SKILLS[id]; }).filter(Boolean);
+      return '<div class="sheet-h"><h2>Habilidades</h2><button class="btn sm ghost" data-a="close">Fechar</button></div><p class="hint" style="margin:-4px 0 10px">Num duelo, os golpes muito fortes, as curas, os escudos e os bónus têm a força reduzida.</p><div class="skill-grid">' +
+        (list.length ? list.map(function (s) {
+          var cdv = A.cds[s.id] || 0, dis = cdv > 0 || A.mp < s.mp;
+          return '<button class="skill-btn' + (S.SKILL_ART && S.SKILL_ART[s.id] ? ' has-ico' : '') + '" data-a="duel-skill" data-id="' + s.id + '"' + (dis ? ' disabled' : '') + '>' + skillIco(s, 'sk-b') + '<b>' + esc(s.name) + '</b>' +
+            '<span class="mono small" style="color:var(--glow)">' + (cdv > 0 ? 'recarga ' + cdv : s.mp + ' MP') + '</span><small>' + esc(s.desc) + '</small></button>';
+        }).join('') : '<div class="empty">Ainda não tens habilidades ativas.</div>') + '</div>';
+    }
+    var ids = Object.keys(A.items || {}).filter(function (id) { return (A.items[id] || 0) > (A.used[id] || 0) && S.ITEMS[id] && S.ITEMS[id].battle; });
+    var lim = d.heal_limit || 3;
+    return '<div class="sheet-h"><h2>Itens</h2><button class="btn sm ghost" data-a="close">Fechar</button></div>' +
+      '<p class="hint" style="margin:-4px 0 10px">Poções de cura neste duelo: <b class="mono">' + (A.heals || 0) + ' / ' + lim + '</b>. Só 1 relíquia premium por duelo. Os itens usados saem da Bolsa no fim.</p><div class="skill-grid">' +
+      (ids.length ? ids.map(function (id) {
+        var it = S.ITEMS[id], heal = it.use && (it.use.type === 'heal' || it.use.type === 'restore'), dis = (heal && (A.heals || 0) >= lim) || (it.premium && (A.premUsed || 0) >= 1);
+        return '<button class="skill-btn" data-a="duel-item" data-id="' + id + '"' + (dis ? ' disabled' : '') + '><b>' + itemTiny(it) + ' ' + esc(it.name) + '</b><span class="mono small">×' + ((A.items[id] || 0) - (A.used[id] || 0)) + '</span><small>' + esc(it.desc) + '</small></button>';
+      }).join('') : '<div class="empty">Sem itens de combate. Compra poções na Loja.</div>') + '</div>';
+  }
+  /* animações das jogadas novas (as tuas e as do adversário) */
+  function duelFx(fresh, d) {
+    var me = d.me, bossEl = document.getElementById('boss-ico'), pp = document.getElementById('ppanel');
+    if (!fresh.length || !FX.full()) return 0;
+    var bc = FX.center(bossEl), pc = FX.center(pp), style = STYLE[E.state.cls], color = S.CLASSES[E.state.cls].color;
+    var t = 0, at = function (ms, fn) { setTimeout(fn, ms); };
+    var hitBoss = function () { if (!bossEl || !bossEl.isConnected) return; bossEl.classList.remove('hit'); void bossEl.offsetWidth; bossEl.classList.add('hit'); setTimeout(function () { bossEl.classList.remove('hit'); }, 420); };
+    var panel = function (c) { if (!pp || !pp.isConnected) return; pp.classList.remove('hit', 'healed'); void pp.offsetWidth; pp.classList.add(c); };
+    fresh.forEach(function (e) {
+      var txt = e.t, v = num(/(\d+) de (dano|vida)/, txt) || num(/: (\d+)\./, txt);
+      if (e.c === 'skill') {
+        var nm = txt.replace(/^.*? usou /, '').replace(/[.!]$/, '');
+        var skn = Object.keys(S.ALL_SKILLS).map(function (k) { return S.ALL_SKILLS[k]; }).filter(function (x) { return x.name === nm; })[0], itn = !skn && Object.keys(S.ITEMS).map(function (k) { return S.ITEMS[k]; }).filter(function (x) { return x.name === nm; })[0];
+        var snd = skn ? skillSound(skn) : itn && drinkable(itn) ? drinkSound(itn) : null;
+        (function (t0, mine, snd) { at(t0, function () { if (snd && !(mine && snd !== 'skill' && /potion|drink/.test(snd))) sfx(snd); FX.text(nm, mine ? pc.x : bc.x, (mine ? pc.y : bc.y) - 40, mine ? color : '#ff7a8a'); }); })(t, e.w === me, snd);
+        t += 140;
+      } else if (e.c === 'hit' || e.c === 'crit') {
+        var crit = e.c === 'crit', hits = num(/\((\d+) golpes\)/, txt) || 1;
+        if (e.tg !== me) {
+          (function (t0, v, hits, crit, summon) { at(t0, function () { sfx('attack', crit ? 1.15 : 1); var dd = FX.attack(summon ? 'spirit' : style, bc.x, bc.y, summon ? '#a184ff' : color, hits, crit); setTimeout(function () { hitBoss(); FX.number(fmt(v || 0), bc.x, bc.y - 30, crit ? 'crit' : (summon ? 'small' : '')); if (crit) { FX.shake(1); FX.vibrate(40); } }, Math.min(dd, 400) + 120); }); })(t, v, hits, crit, /^(💀|🌑|☠️)/.test(txt));
+          t += Math.min(hits * (hits > 4 ? 70 : 110), 700) + 250;
+        } else {
+          (function (t0, v, crit) { at(t0, function () { sfx('hurt', crit ? 1.1 : 1); panel('hit'); FX.number('-' + fmt(v || 0), pc.x, pc.y - 20, crit ? 'crit' : 'hurt'); FX.shake(crit ? 2 : 1); FX.vibrate(crit ? 80 : 40); }); })(t, v, crit);
+          t += 320;
+        }
+      } else if (e.c === 'heal') {
+        (function (t0, mine, v) { at(t0, function () { if (mine) { panel('healed'); FX.number('+' + fmt(v || 0), pc.x, pc.y - 20, 'heal'); FX.rise(pc.x, pc.y + 30, pc.w || 200, '#5be08a', 30); } else FX.number('+' + fmt(v || 0), bc.x, bc.y - 30, 'heal'); }); })(t, e.w === me, v);
+        t += 200;
+      } else if (e.c === 'buff') {
+        (function (t0, mine) { at(t0, function () { if (mine) FX.buff(pc.x, pc.y, '#6fd6ff'); else FX.buff(bc.x, bc.y, '#ff8a9a'); }); })(t, e.w === me);
+        t += 150;
+      } else if (e.c === 'status') {
+        var onOp = e.tg !== me, x = onOp ? bc : pc;
+        (function (t0, x) { at(t0, function () { if (/atordoado/.test(txt)) { FX.stars(x.x, x.y); FX.text('ATORDOADO', x.x, x.y - 60, '#ffd24a'); } else if (/sofre/.test(txt)) FX.burst(x.x, x.y, '#ff8a3d', 20, { speed: 4, gravity: -.05 }); else FX.chains(x.x, x.y); }); })(t, x);
+        t += 150;
+      } else if (e.c === 'miss') {
+        (function (t0, onOp) { at(t0, function () { FX.text('ESQUIVA', onOp ? bc.x : pc.x, (onOp ? bc.y : pc.y) - 50, '#dce8ff'); }); })(t, e.w !== me);
+        t += 150;
+      }
+    });
+    return t + 300;
   }
 
   /* ================= SOMBRAS: Tornar Servo e menu Servos ================= */
@@ -1025,7 +1182,7 @@
       var price = Sh.buyPrice(b), have = st.crystals || 0;
       h += '<h2 class="arise-name">' + esc(b.name) + '</h2>' +
         '<p class="arise-txt bad">A sombra resistiu ' + S.SHADOW_RULES.tries + ' vezes e ficou <b>selada</b>.</p>' +
-        '<p class="arise-txt"><span class="muted">As sombras das arenas não se perdem. O Sistema aceita quebrar o selo em troca de Cristais, e a sombra torna-se tua serva na hora.</span></p>' +
+        '<p class="arise-txt"><span class="muted">' + Sh.RANK_NAME[Sh.rank(b)] + (b.premium ? ' da arena' : ' dos portões') + '. O Sistema aceita quebrar o selo em troca de Cristais, e a sombra torna-se tua serva na hora.</span></p>' +
         triesDots(0) +
         '<button class="btn prem block" style="margin-top:14px" data-a="sh-buy" data-id="' + b.id + '"><i class="crys-ico"></i> Quebrar o selo · ' + price + ' Cristais</button>' +
         (have < price ? '<p class="hint" style="text-align:center;margin:6px 0 0">Tens ' + have + ' Cristais.</p>' : '') +
@@ -1041,7 +1198,7 @@
         '<div class="arise-info">' + triesDots(left) +
         '<div><span class="muted small">Hipótese por tentativa</span><b class="mono">' + ch + '%</b></div>' +
         '<div><span class="muted small">' + (pend.exp ? 'A sombra desvanece em' : 'Sombra adormecida') + '</span><b class="mono">' + (pend.exp ? '<span data-cd="' + pend.exp + '">' + cdText(pend.exp) + '</span>' : 'sem prazo') + '</b></div></div>' +
-        '<p class="hint" style="text-align:center;margin:6px 0 0">' + (Sh.isArena(b) ? 'Sombra da arena: nunca desvanece. Se falhares as ' + S.SHADOW_RULES.tries + ' tentativas, fica selada e podes obtê-la por ' + Sh.buyPrice(b) + ' Cristais.' : 'Se falhares as ' + S.SHADOW_RULES.tries + ' tentativas, a sombra perde-se para sempre.') + (st.cls === 'invocador' ? ' Como Invocador, as almas ouvem-te melhor (+12%).' : '') + '</p>' +
+        '<p class="hint" style="text-align:center;margin:6px 0 0">' + (Sh.isArena(b) ? 'Sombra da arena: nunca desvanece. ' : '') + 'Se falhares as ' + S.SHADOW_RULES.tries + ' tentativas' + (Sh.isArena(b) ? '' : ' ou ela desvanecer') + ', fica selada e podes obtê-la por ' + Sh.buyPrice(b) + ' Cristais (' + Sh.RANK_NAME[Sh.rank(b)].toLowerCase() + ').' + (st.cls === 'invocador' ? ' Como Invocador, as almas ouvem-te melhor (+12%).' : '') + '</p>' +
         '<button class="btn arise-btn block" data-a="arise-try" data-id="' + b.id + '">EXTRAIR SOMBRA</button>' +
         '<button class="btn ghost block sm" style="margin-top:8px" data-a="close">' + (pend.exp ? 'Deixar para depois' : 'Fechar') + '</button>';
     } else {
@@ -1057,7 +1214,7 @@
     return '<div class="sheet-h"><h2>' + esc(Sh.name(st, b.id)) + '</h2><button class="btn sm ghost" data-a="close">Fechar</button></div>' +
       '<button class="sh-say" data-a="sh-talk" data-id="' + b.id + '"><span class="sh-say-t">«' + esc(m.line || Sh.line(st, b.id)) + '»</span><span class="sh-say-h">toca para ouvir outra vez</span></button>' +
       '<div class="sh-detail">' + shadowArt(b, 'big') + '<div class="stack" style="gap:6px;min-width:0">' +
-      '<div class="small muted">Sombra de ' + esc(b.name) + '<br>' + (b.premium ? esc(b.arenaName) + ' · Nv ' + b.level + (b.champion ? ' · Campeão da Arena' : b.lieutenant ? ' · Tenente' : ' · Sub-chefe') : esc(g ? g.name : '') + ' · Nv ' + b.level + (b.king ? ' · Rei do Portão' : '')) + '</div>' +
+      '<div class="small muted">Sombra de ' + esc(b.name) + '<br>' + (b.premium ? esc(b.arenaName) + ' · Nv ' + b.level + (b.champion ? ' · Campeão da Arena' : b.lieutenant ? ' · Comandante' : ' · Sub-chefe') : esc(g ? g.name : '') + ' · Nv ' + b.level + (b.king ? ' · Rei do Portão' : '')) + '</div>' +
       '<div><span class="tag sh-role ' + role + '">' + ri.name + '</span> ' + (on ? '<span class="tag good">Convocado</span>' : '') + '</div>' +
       '<div class="small">' + esc(ri.desc) + '</div>' +
       '<ul class="sh-stats"><li>Ataca em cada turno com <b>' + f + '%</b> do teu ataque</li>' + (fx ? '<li>' + fx + '</li>' : '') + '</ul>' +
@@ -1080,16 +1237,18 @@
   function servantsPage(st) {
     var h = backBtn('Servos');
     Sh.expire(st);
-    var owned = Sh.owned(st), active = Sh.active(st), pend = Sh.pendingList(st), slots = Sh.slots(st), next = Sh.nextSlotLevel(st);
-    var lost = Object.keys(st.shadows.lost).length, total = S.BOSSES.length + (S.ARENA_GUARDIANS || []).length + (S.ARENA_BOSSES || []).length;
+    var owned = Sh.owned(st), active = Sh.active(st), pend = Sh.pendingList(st), slots = Sh.slots(st), extra = Sh.extraSlots(st);
+    var total = S.BOSSES.length + (S.ARENA_GUARDIANS || []).length + (S.ARENA_BOSSES || []).length;
     var sealed = Object.keys(st.shadows.sealed).map(function (id) { return S.BOSS_BY_ID[id]; }).filter(Boolean).sort(function (a, c) { return a.level - c.level; });
     h += '<section class="win sh-win"><div class="win-h">Exército das Sombras <small>' + owned.length + '/' + total + '</small></div>' +
-      '<p class="small muted" style="margin:0">Quando derrotas um chefe, a sua sombra fica para trás. Tens 3 tentativas para a extrair e torná-la tua serva; se falharem todas, perde-se para sempre. Os servos convocados lutam ao teu lado em todos os combates.</p>' +
-      '<p class="small muted" style="margin:6px 0 0">Nas arenas premium a sombra nunca desvanece. Se as 3 tentativas falharem, fica selada e podes obtê-la com Cristais: ' + S.SHADOW_RULES.buyGuardian + ' por sub-chefe e ' + S.SHADOW_RULES.buyChampion + ' por Campeão.</p>' +
+      '<p class="small muted" style="margin:0">Quando derrotas um chefe, a sua sombra fica para trás. Tens 3 tentativas para a extrair e torná-la tua serva. Os servos convocados lutam ao teu lado em todos os combates.</p>' +
+      '<p class="small muted" style="margin:6px 0 0">Se as tentativas falharem (ou a sombra de um portão desvanecer ao fim de 24 h), fica selada e podes obtê-la com Cristais. Nas arenas premium a sombra nunca desvanece.</p>' +
+      '<div class="sh-prices"><div><b>Portões</b><span>Normal ' + S.SHADOW_RULES.prices.gate.normal + '</span><span>Comandante ' + S.SHADOW_RULES.prices.gate.commander + '</span><span>Chefe final ' + S.SHADOW_RULES.prices.gate.final + '</span></div>' +
+      '<div><b>Arenas</b><span>Normal ' + S.SHADOW_RULES.prices.arena.normal + '</span><span>Comandante ' + S.SHADOW_RULES.prices.arena.commander + '</span><span>Chefe final ' + S.SHADOW_RULES.prices.arena.final + '</span></div></div>' +
       '<div class="kv" style="margin-top:10px"><div><span class="muted">Convocados</span><b>' + active.length + '/' + slots + '</b></div>' +
-      '<div><span class="muted">Próximo lugar</span><b>' + (next ? 'Nível ' + next : 'Todos') + '</b></div>' +
-      '<div><span class="muted">À espera</span><b>' + pend.length + '</b></div><div><span class="muted">Perdidas</span><b>' + lost + '</b></div>' +
-      (sealed.length ? '<div><span class="muted">Seladas</span><b>' + sealed.length + '</b></div>' : '') + '</div>' +
+      '<div><span class="muted">Lugares extra</span><b>' + extra + '/' + S.SHADOW_RULES.maxExtraSlots + '</b></div>' +
+      '<div><span class="muted">À espera</span><b>' + pend.length + '</b></div><div><span class="muted">Seladas</span><b>' + sealed.length + '</b></div></div>' +
+      (extra < S.SHADOW_RULES.maxExtraSlots ? '<button class="btn sm prem block" style="margin-top:10px" data-a="prem-open" data-t="loja"><i class="crys-ico"></i> Mais lugares: Insígnia do General das Sombras</button>' : '') +
       (st.cls === 'invocador' ? '<p class="hint" style="margin:8px 0 0">Invocador: +1 lugar, servos 25% mais fortes e +12% na extração.</p>' : '') + '</section>';
     if (pend.length) {
       h += '<section class="win sh-win"><div class="win-h">Sombras por extrair <small>' + pend.length + '</small></div><div class="stack" style="gap:8px">' + pend.map(function (p) {
@@ -1099,9 +1258,10 @@
       }).join('') + '</div></section>';
     }
     if (sealed.length) {
-      h += '<section class="win sh-win"><div class="win-h">Sombras seladas <small>arenas</small></div><div class="stack" style="gap:8px">' + sealed.map(function (b) {
+      h += '<section class="win sh-win"><div class="win-h">Sombras seladas <small>' + sealed.length + '</small></div><div class="stack" style="gap:8px">' + sealed.map(function (b) {
+        var g = S.GATES[b.gate - 1];
         return '<div class="card sh-pend"><div class="card-h">' + preShadowArt(b, 'sm dead') + '<div class="grow"><div class="card-t">' + esc(b.name) + '</div>' +
-          '<div class="meta"><span>' + esc(b.arenaName) + '</span><span>' + (b.champion ? 'Campeão' : 'Sub-chefe') + '</span></div></div>' +
+          '<div class="meta"><span>' + esc(b.premium ? b.arenaName : (g ? g.name : '')) + '</span><span>' + Sh.RANK_NAME[Sh.rank(b)] + '</span></div></div>' +
           '<button class="btn sm prem" data-a="arise-open" data-id="' + b.id + '"><i class="crys-ico"></i> ' + Sh.buyPrice(b) + '</button></div></div>';
       }).join('') + '</div></section>';
     }
@@ -1128,7 +1288,7 @@
         S.ARENA_BOSSES.map(function (b) {
           var tr = S.TROPHIES[b.id], art = trophyArt(b) || (S.BOSS_ART && S.BOSS_ART[b.id]);
           if (!st.trophies[b.id]) return '<div class="trophy locked"><span class="tr-seal"></span><span class="tr-lock">' + uiIcon('ic_lock', '🔒', 'lock-img') + '</span></div>';
-          return '<button class="trophy got" style="--rc:' + b.color + '" data-a="boss" data-id="' + b.id + '">' + (art ? '<img src="' + art + '" alt="" loading="lazy">' : '<span class="tr-ico">' + b.icon + '</span>') + '<span class="tr-name">' + esc(tr.name) + '</span></button>';
+          return '<button class="trophy got' + (trophyArt(b) ? ' t-art' : '') + '" style="--rc:' + rc(tr.rarity) + '" title="' + esc(tr.name) + '" data-a="info" data-k="trophy" data-id="' + b.id + '">' + (art ? '<img src="' + art + '" alt="" loading="lazy">' : '<span class="tr-ico">' + b.icon + '</span>') + '<span class="tr-name">' + esc(tr.name) + '</span></button>';
         }).join('') + '</div></section>';
       S.ARENA_BOSSES.forEach(function (c) {
         if (!(st.arena && st.arena.unlocked[c.id])) return;
@@ -1511,9 +1671,9 @@
       return '<button class="boss-tile card' + (ps.wins ? ' done' : '') + (b.champion || b.lieutenant ? ' king' : '') + (locked ? ' locked' : '') + '"' + (hide ? ' disabled' : ' data-a="boss" data-id="' + b.id + '"') +
         ' style="--dg:' + (ps.wins ? 'var(--good)' : locked ? 'var(--muted)' : dg.color) + '">' +
         (hide ? '<span class="bt-ico">' + uiIcon('ui_unknown', '❔', 'bt-unk') + '</span>' : bart ? '<img src="' + bart + '" alt="" loading="lazy">' : '<span class="bt-ico">' + b.icon + '</span>') +
-        '<span class="bt-lv mono">' + b.level + '</span>' + (b.champion ? '<span class="bt-crown">' + uiIcon('ui_king', '♛', 'crown-img') + '</span>' : '') +
+        '<span class="bt-tl"><span class="bt-lv mono">' + b.level + '</span>' + rankBadge(b, 'bt-rk') + '</span>' + (b.champion ? '<span class="bt-crown">' + uiIcon('ui_king', '♛', 'crown-img') + '</span>' : '') +
         (locked && !ps.wins ? '<span class="bt-lock">' + uiIcon('ic_lock', '🔒', 'bt-lock-img') + '</span>' : '') +
-        '<span class="bt-info"><span class="bt-name">' + (hide ? '???' : esc(b.name.split(',')[0])) + '</span><span class="bt-dg">' + (b.champion ? 'Campeão · ' : b.lieutenant ? 'Tenente · ' : '') + label + '</span></span></button>';
+        '<span class="bt-info"><span class="bt-name">' + (hide ? '???' : esc(b.name.split(',')[0])) + '</span><span class="bt-dg">' + label + '</span></span></button>';
     }).join('') + '</div></section>';
     return h;
   }
@@ -1538,9 +1698,9 @@
         var dead = st.defeated[b.id];
         var dg = C.danger(st, b);
         var art = S.BOSS_ART && S.BOSS_ART[b.id];
-        return '<button class="boss-tile card' + (dead ? ' done' : '') + (b.king ? ' king' : '') + '" data-a="boss" data-id="' + b.id + '" style="--dg:' + (dead ? 'var(--good)' : dg.color) + '">' +
+        return '<button class="boss-tile card' + (dead ? ' done' : '') + (S.shadows.rank(b) !== 'normal' ? ' king' : '') + '" data-a="boss" data-id="' + b.id + '" style="--dg:' + (dead ? 'var(--good)' : dg.color) + '">' +
           (art ? '<img src="' + art + '" alt="" loading="lazy">' : '<span class="bt-ico">' + b.icon + '</span>') +
-          '<span class="bt-lv mono">' + b.level + '</span>' + (b.king ? '<span class="bt-crown">' + uiIcon('ui_king', '♛', 'crown-img') + '</span>' : '') +
+          '<span class="bt-tl"><span class="bt-lv mono">' + b.level + '</span>' + rankBadge(b, 'bt-rk') + '</span>' + (b.king ? '<span class="bt-crown">' + uiIcon('ui_king', '♛', 'crown-img') + '</span>' : '') +
           '<span class="bt-info"><span class="bt-name">' + esc(b.name) + '</span><span class="bt-dg">' + (dead ? 'Derrotado' : dg.label) + '</span></span></button>';
       }).join('') + '</div></section>';
     return h;
@@ -1562,7 +1722,7 @@
     return '<div class="sheet-h"><h2>' + esc(b.name) + '</h2><button class="btn sm ghost" data-a="close">Fechar</button></div>' +
       (S.BOSS_ART && S.BOSS_ART[b.id] ? '<div class="boss-hero">' + bossArt(b, 'boss-hero-img') + '</div>' : '') +
       '<div class="row" style="align-items:flex-start">' + (S.BOSS_ART && S.BOSS_ART[b.id] ? '' : '<div class="ico big">' + b.icon + '</div>') + '<div class="grow"><div class="meta"><span class="mono">Nível ' + b.level + '</span><span>' + S.ARCHETYPES[b.arch].name + '</span>' +
-      (b.champion ? '<span class="tag prem-tag">Campeão da Arena: 3 fases</span>' : b.lieutenant ? '<span class="tag prem-tag">Tenente da Arena: 2 fases</span>' : b.guardian ? '<span class="tag prem-tag">Guardião ' + b.slot + ' de 9</span>' : (b.king ? '<span class="tag" style="color:var(--gold)">Rei do portão: 2 fases</span>' : '')) + '</div>' +
+      rankBadge(b) + (b.champion ? '<span class="tag prem-tag">Campeão da Arena: 3 fases</span>' : b.lieutenant ? '<span class="tag prem-tag">2 fases</span>' : b.guardian ? '<span class="tag prem-tag">Guardião ' + b.slot + ' de 9</span>' : (b.king ? '<span class="tag" style="color:var(--gold)">Rei do portão: 2 fases</span>' : '')) + '</div>' +
       (b.lore ? '<p class="small muted" style="font-style:italic;margin:6px 0 0">«' + esc(b.lore) + '»</p>' : '') + '</div></div>' +
       '<div class="chronicle"><div class="info-h">Crónica</div>' + loreHtml(S.lore.bossText(b), 'boss-lore') +
       (S.lore.gateText(b) ? '<details class="gate-lore"><summary>' + (b.premium ? 'Sobre o Coliseu dos Condenados' : b.gate ? 'Sobre o portão: ' + esc((S.GATES[b.gate - 1] || {}).name || '') : 'Sobre os portões ocultos') + '</summary>' + loreHtml(S.lore.gateText(b)) + '</details>' : '') + '</div>' +
@@ -1615,7 +1775,7 @@
     var h = '<div class="battle">';
     if (bt.spar) auraC = 'rgba(123,77,255,.6)';
     var shSrc = bt.spar && S.SHADOW_ART && S.SHADOW_ART[b.id];
-    h += '<section class="win danger boss-panel phase-' + bt.phase + (bt.spar ? ' spar-panel' : '') + '"><div class="win-h"><span>' + esc(bt.spar ? S.shadows.name(st, b.id) : b.name) + '</span><small>' + (bt.spar ? 'Treino · ' : '') + 'Nv ' + b.level + ' · turno ' + bt.turn + (bt.phase > 1 ? ' · fase ' + bt.phase : '') + '</small></div>' +
+    h += '<section class="win danger boss-panel phase-' + bt.phase + (bt.spar ? ' spar-panel' : '') + '"><div class="win-h"><span>' + esc(bt.spar ? S.shadows.name(st, b.id) : b.name) + (bt.spar ? '' : ' ' + rankBadge(b, 'rk-sm')) + '</span><small>' + (bt.spar ? 'Treino · ' : '') + 'Nv ' + b.level + ' · turno ' + bt.turn + (bt.phase > 1 ? ' · fase ' + bt.phase : '') + '</small></div>' +
       '<div class="boss-wrap"><div class="boss-aura" style="--c:' + auraC + '"></div>' + (bt.spar ? (shSrc ? '<div class="boss-ico' + bossCls + ' has-art sh-boss" id="boss-ico"><img src="' + shSrc + '" alt=""></div>' : '<div class="boss-ico' + bossCls + ' has-art sh-boss shade-boss" id="boss-ico">' + (S.BOSS_ART && S.BOSS_ART[b.id] ? '<img src="' + S.BOSS_ART[b.id] + '" alt="">' : b.icon) + '</div>') : bossArt(b, 'boss-ico' + bossCls, 'boss-ico')) + '</div>' + bossSpeech(bt, b) +
       '<div style="margin-top:8px">' + bar('boss', bt.b.hp, bt.b.maxHp, 'Vida' + (bt.b.shield ? ' · escudo ' + fmt(bt.b.shield) : ''), 'boss-' + bt.bossId + '-' + bt.started) + '</div>' +
       '<div class="statuses" style="margin-top:6px">' + statusTags(bt.b.st, true) + (bt.b.stunned ? '<span class="tag good">atordoado</span>' : '') + '</div></section>';
@@ -1695,8 +1855,9 @@
     if (ui.shopTab === 'bau') {
       var cf = ui.chestFam || 'todos';
       h += '<p class="hint" style="margin-top:0">Os baús especializados só dão um tipo de item. Quanto melhor o grau (Ferro, Prata, Ouro, Dragão, Monarca), mais alto o nível e melhor a versão do que sai. Os graus Ouro, Dragão e Monarca também estão na Loja Exclusiva, em Cristais.</p>' +
-        '<div class="chips" style="margin-bottom:10px">' + [['todos', 'Todos', '📦'], ['gerais', 'Gerais', '🎁']].concat(S.CHEST_FAMS.map(function (f) { return [f.id, f.name, f.icon]; })).map(function (x) {
-          return '<button class="chip' + (cf === x[0] ? ' on' : '') + '" data-a="chest-fam" data-v="' + x[0] + '">' + x[2] + ' ' + esc(x[1]) + '</button>'; }).join('') + '</div>';
+        '<div class="chips" style="margin-bottom:10px">' + [['todos', 'Todos', 'bau_lendario'], ['gerais', 'Gerais', 'bau_comum']].concat(S.CHEST_FAMS.map(function (f) { return [f.id, f.name, 'bau_' + f.id + '_3']; })).map(function (x) {
+          var src = artId(x[2]);
+          return '<button class="chip' + (cf === x[0] ? ' on' : '') + '" data-a="chest-fam" data-v="' + x[0] + '">' + (src ? '<img class="chip-img" src="' + src + '" alt="">' : '') + esc(x[1]) + '</button>'; }).join('') + '</div>';
       if (cf !== 'todos') list = list.filter(function (it) { return cf === 'gerais' ? !it.chestFam : it.chestFam === cf; });
       list = list.slice().sort(function (a, b) { var fa = a.chestFam ? S.CHEST_FAMS.map(function (f) { return f.id; }).indexOf(a.chestFam) + 1 : 0, fb = b.chestFam ? S.CHEST_FAMS.map(function (f) { return f.id; }).indexOf(b.chestFam) + 1 : 0; return fa - fb || (a.chestGrade || 0) - (b.chestGrade || 0) || a.price - b.price; });
     }
@@ -1836,6 +1997,7 @@
     else if (m.type === 'info') inner = m.k === 'skill' ? skillInfoModal(m) : (m.k === 'trophy' ? trophyInfoModal(m) : itemModal(m.id));
     else if (m.type === 'slot') inner = slotModal(m.slot);
     else if (m.type === 'bsheet') inner = battleSheet();
+    else if (m.type === 'dsheet') inner = duelSheet();
     else if (m.type === 'leisure') inner = leisureForm();
     else if (m.type === 'order') inner = orderModal(m);
     else if (m.type === 'arise') inner = ariseModal(m);
@@ -1849,6 +2011,35 @@
     (ids || []).forEach(function (id) { var it = S.ITEMS[id]; if (it && S.RARITY[it.rarity].order > S.RARITY[best].order) best = it.rarity; });
     return best;
   }
+  /* ---------- primeira conversa com o Sistema (só ao criar o Jogador) ---------- */
+  function firstScript(st) {
+    var F = S.FIRST_TALK, pick = function (a) { return a[Math.floor(Math.random() * a.length)]; };
+    var fill = function (t) { return t.replace(/\{nome\}/g, st.name).replace(/\{classe\}/g, S.CLASSES[st.cls].name); };
+    var cl = F.cls[st.cls] || F.cls.guerreiro, q = pick(F.ask), out = [];
+    pick(F.open).concat(pick(cl)).forEach(function (t) { out.push({ s: fill(t) }); });
+    out.push({ ask: fill(q.q), opts: q.a.map(function (o) { return { t: fill(o[0]), tag: o[1], r: fill(o[2]) }; }) });
+    pick(F.close).forEach(function (t) { out.push({ s: fill(t) }); });
+    return out;
+  }
+  function firstHtml(ev, fresh) {
+    var step = ev.script[ev.i], typed = ev.typed === ev.i || !FX.full(), last = ev.i === ev.script.length - 1;
+    var hist = ev.log.slice(-3).map(function (h) { return h.me ? '<p class="talk-me">' + esc(E.state.name) + ': «' + esc(h.me) + '»</p>' : '<p class="ft-old">' + esc(h.s) + '</p>'; }).join('');
+    var txt = step.ask || step.s;
+    var body = '<div class="talk-eye">' + uiIcon('ui_eye', '<span class="eye-fallback big"></span>', 'eye-big') + '</div>' +
+      '<div class="ft-hist">' + hist + '</div>' +
+      '<p class="talk-line" id="talk-line" data-full="' + esc(txt) + '">' + (typed ? esc(txt) : '') + '</p>';
+    if (step.ask) body += '<div class="talk-ch' + (typed ? '' : ' wait') + '" id="talk-ch">' + step.opts.map(function (c, i) { return '<button class="btn talk-opt" data-a="first-pick" data-i="' + i + '" style="--k:' + i + '"><span class="talk-n">' + (i + 1) + '</span>' + esc(c.t) + '</button>'; }).join('') + '</div>';
+    else body += '<div class="talk-ch' + (typed ? '' : ' wait') + '" id="talk-ch"><button class="btn pri block talk-opt ft-next" data-a="first-next" style="--k:0">' + (last ? 'Começar' : 'Continuar') + '</button></div>';
+    body += '<div class="ft-foot"><span class="ft-dots">' + ev.script.map(function (x, i) { return '<i class="' + (i < ev.i ? 'on' : i === ev.i ? 'cur' : '') + '"></i>'; }).join('') + '</span>' +
+      (last ? '' : '<button class="talk-skip" data-a="first-skip">Saltar</button>') + '</div>';
+    return '<div class="overlay sys-pop' + (fresh ? ' fresh' : '') + '"><div class="rays blue"></div><div class="sys-box talk first-talk' + (fresh ? ' fresh' : '') + '" id="sys-box" role="alertdialog" data-type="first"><span class="sys-tag">SISTEMA</span>' + body + '</div></div>';
+  }
+  function firstType() {
+    var ev = ui.popups[0];
+    if (!ev || ev.type !== 'first' || ev.typed === ev.i) return;
+    ev.typed = ev.i;
+    talkType();
+  }
   function popupHtml() {
     var ev = ui.popups[0];
     if (!ev || Date.now() < ui.holdUntil) return '';
@@ -1857,6 +2048,7 @@
     var li = function (l, i, style) { return '<li style="--k:' + i + (style ? ';' + style : '') + '">' + l + '</li>'; };
     var lines = (ev.lines || []).map(function (l, i) { return li(esc(l), i); }).join('');
     var nLines = (ev.lines || []).length;
+    if (ev.type === 'first') return firstHtml(ev, fresh);
     if (ev.type === 'levelup') {
       cls = 'gold lvl'; extra = '<div class="rays"></div>';
       var ls = ['+' + S.POINTS_PER_LEVEL + ' pontos de atributo'].concat((ev.skills || []).map(function (s) { return 'Nova habilidade: ' + s; }));
@@ -1925,7 +2117,7 @@
     } else if (ev.type === 'notice') {
       var nt = ev.notice;
       cls = 'watch good notice-pop k-' + nt.kind; tag = 'ADMINISTRAÇÃO'; extra = '<div class="rays blue"></div>';
-      body = '<div class="nc-big">' + (NOTICE_ICO[nt.kind] || 'ℹ') + '</div><h2>' + esc(nt.title) + '</h2><div class="muted small">' + esc(S.shop.NOTICE_KINDS[nt.kind] || 'Informação') + (nt.personal ? ' · só para ti' : '') + '</div>' +
+      body = '<div class="nc-big">' + uiIcon('notice_' + nt.kind, NOTICE_ICO[nt.kind] || 'ℹ', 'nc-big-img') + '</div><h2>' + esc(nt.title) + '</h2><div class="muted small">' + esc(S.shop.NOTICE_KINDS[nt.kind] || 'Informação') + (nt.personal ? ' · só para ti' : '') + '</div>' +
         '<div class="nc-body pop">' + esc(nt.body).replace(/\n/g, '<br>') + '</div>';
       nLines = 2;
     } else if (ev.type === 'mission') {
@@ -1943,6 +2135,7 @@
   function popupFx(ev) {
     var c = FX.center(document.getElementById('sys-box'));
     if (ev.type === 'talk') { talkType(); FX.vibrate(20); return; }
+    if (ev.type === 'first') { firstType(); FX.vibrate(20); return; }
     if (ev.type === 'levelup') {
       FX.vibrate([60, 40, 60, 40, 200]);
       setTimeout(function () { FX.flash('#ffe7a8', .55); FX.shock(c.x, c.y, '#ffc85a'); FX.burst(c.x, c.y, '#ffc85a', 90, { speed: 12 }); }, 500);
@@ -2118,7 +2311,7 @@
       if (!ui.holdTimer) ui.holdTimer = setTimeout(function () { ui.holdTimer = null; render(); }, ui.holdUntil - Date.now() + 20);
     } else if (pop && pop._id !== ui.shownPop) {
       ui.shownPop = pop._id;
-      sfx({ levelup: 'levelup', victory: 'quest', mission: 'quest', crystals: 'gain', gift: 'gain', defeat: 'death', emergency: 'emergency', penalty: 'penalty', zone: 'penalty' }[pop.type] || 'system');
+      sfx({ loot: 'chest', levelup: 'levelup', victory: 'quest', mission: 'quest', crystals: 'gain', gift: 'gain', defeat: 'death', emergency: 'emergency', penalty: 'penalty', zone: 'penalty' }[pop.type] || 'system');
       popupFx(pop);
     }
     ui.fxMission = null; ui.fxDaily = false; ui.spawn = false;
@@ -2161,11 +2354,11 @@
         var hits = num(/\((\d+) golpes\)/, txt) || 1, crit = e.c === 'crit';
         (function (t0, v, hits, crit, col, sk) {
           at(t0, function () {
-            sfx(sk ? 'skill' : 'attack', crit ? 1.15 : 1);
+            sfx(sk || 'attack', crit ? 1.15 : 1);
             var d = FX.attack(style, bc.x, bc.y, col, hits, crit);
             setTimeout(function () { hitBoss(); FX.number(fmt(v), bc.x, bc.y - 30, crit ? 'crit' : ''); if (crit) { FX.shake(1); FX.vibrate(40); } }, Math.min(d, 400) + 120);
           });
-        })(t, v, hits, crit, skillColor, usedSkill);
+        })(t, v, hits, crit, skillColor, usedSkill ? (ui.skillSnd || 'skill') : null);
         usedSkill = false;
         t += Math.min(hits * (hits > 4 ? 70 : 110), 700) + 250;
         skillColor = color;
@@ -2221,7 +2414,7 @@
         (function (t0) { at(t0, function () { FX.shock(bc.x, bc.y, '#dce8ff'); }); })(t);
         t += 300;
       } else if (txt.indexOf('enfurecido') >= 0) {
-        (function (t0) { at(t0, function () { FX.burst(bc.x, bc.y, '#ff3d3d', 40, { speed: 6, gravity: -.05 }); FX.text('FÚRIA', bc.x, bc.y - 60, '#ff5a6e'); FX.shake(1); }); })(t);
+        (function (t0) { at(t0, function () { FX.burst(bc.x, bc.y, '#ff3d3d', 40, { speed: 6, gravity: -.05 }); FX.text('FÚRIA', bc.x, bc.y - 60, '#ff5a6e'); FX.shake(1); sfx('fury'); }); })(t);
         t += 300;
       } else if (txt.indexOf('Ficaste atordoado') >= 0) {
         (function (t0) { at(t0, function () { FX.stars(pc.x, pc.y + 40); }); })(t);
@@ -2265,7 +2458,8 @@
     var prevN = bt.logN || 0;
     var res = C.act(type, id);
     if (res && res.ok === false) { toast(res.msg, true); return; }
-    if (type === 'item') sfx(drinkable(E.item(id)) ? 'potion' : 'click');
+    if (type === 'item') sfx(drinkable(E.item(id)) ? drinkSound(E.item(id)) : 'click');
+    if (type === 'skill') { var skx = S.ALL_SKILLS[id]; ui.skillSnd = skillSound(skx); if (!(skx && skx.ops || []).some(function (o) { return o.op === 'dmg'; })) sfx(ui.skillSnd); }
     var over = E.state.battle && E.state.battle.over;
     if (over === 'win') ui.victoryAnim = true;
     if (over === 'win' && E.state.battle.result && E.state.battle.result.shadow) ui.ariseId = E.state.battle.result.shadow;
@@ -2295,6 +2489,7 @@
     'intro-go': function () {
       var r = E.start(ui.intro.name, ui.intro.cls);
       if (!r.ok) return toast(r.msg, true);
+      ui.popups.push({ _id: ++ui.popSeq, type: 'first', script: firstScript(E.state), i: 0, log: [], typed: -1 });
       ui.popups.push({ _id: ++ui.popSeq, type: 'info', title: 'BEM-VINDO, JOGADOR', name: E.state.name, lines: ['Classe: ' + S.CLASSES[E.state.cls].name, 'Começas com 100 moedas, poções e um Baú Comum.', 'Cria as tuas missões no separador Missões.'] });
       ui.tab = 'status';
       setTimeout(function () { shopSync(true); }, 5000);
@@ -2390,7 +2585,7 @@
     'sh-talk': function (d) { ui.modal.line = S.shadows.line(E.state, d.id, true); S.storage.write(E.state); render(); },
     'sh-toggle': function (d) { var r = S.shadows.toggle(d.id); act(r); },
     'sh-rename': function (d) { var el = document.getElementById('sh-name'); act(S.shadows.rename(d.id, el ? el.value : '')); },
-    'prem-open': function (d) { ui.tab = 'status'; ui.page = 'premium'; ui.premTab = d.t || ui.premTab || 'arenas'; ui.modal = null; render(); window.scrollTo(0, 0); if (ui.premTab === 'obter') loadShop(); },
+    'prem-open': function (d) { ui.tab = 'status'; ui.page = 'premium'; ui.premTab = d.t || ui.premTab || 'arenas'; ui.modal = null; render(); window.scrollTo(0, 0); if (ui.premTab === 'obter' || ui.premTab === 'moedas') loadShop(); },
     'ach-filter': function (d) { ui.achFilter = d.f; render(); },
     'ach-info': function (d) { ui.modal = { type: 'ach', id: d.id }; render(); },
     'del-restart': function () {
@@ -2443,24 +2638,17 @@
     'duel-join-code': function () { var v = ((document.getElementById('duel-code') || {}).value || '').trim(); if (v.length < 6) return toast('Escreve o código da sala (6 letras).', true); duelStart(SO.join({ code: v })); },
     'duel-open': function (d) { ui.page = 'duel'; ui.duelId = d.id; ui.duel = null; render(); window.scrollTo(0, 0); duelPoll(); },
     'duel-copy': function () { if (ui.duel) copyText(ui.duel.code, 'Código ' + ui.duel.code + ' copiado.'); },
-    'duel-act': function (d) {
-      if (!ui.duel || ui.duelBusy) return;
-      ui.duelBusy = true;
-      document.querySelectorAll('.duel-acts .btn').forEach(function (b) { b.disabled = true; });
-      sfx(d.v === 'potion' ? 'potion' : d.v === 'defend' ? 'click' : d.v === 'skill' ? 'skill' : 'attack');
-      SO.act(ui.duel.id, d.v, ui.duel.version).then(function (j) {
-        ui.duelBusy = false;
-        if (!j.ok) { toast(j.msg, true); render(); return; }
-        duelShow(j.duel);
-      });
-    },
+    'duel-act': function (d) { duelMove(d.v); },
+    'd-sheet': function (d) { if (!ui.duel || ui.duel.turn !== ui.duel.me) return; ui.modal = { type: 'dsheet', v: d.v }; render(); },
+    'duel-skill': function (d) { ui.modal = null; duelMove('skill', { skill: d.id }); },
+    'duel-item': function (d) { ui.modal = null; var it = S.ITEMS[d.id]; sfx(it && drinkable(it) ? drinkSound(it) : 'click'); duelMove('item', { item: d.id }); },
     'duel-leave': function () {
       var d = ui.duel; if (!d) return;
       var go = function () { SO.leave(d.id).then(function (j) { if (!j.ok) return toast(j.msg, true); duelShow(j.duel); if (j.duel.status === 'cancelled') H['soc-back'](); }); };
       if (d.status === 'active') confirmBox('Desistir do duelo', 'Se desistires, o adversário ganha e perdes pontos de duelo.', 'Desistir', go, true); else go();
     },
     'chest-fam': function (d) { ui.chestFam = d.v; render(); },
-    'prem-tab': function (d) { ui.premTab = d.t; render(); if (d.t === 'obter') loadShop(); },
+    'prem-tab': function (d) { ui.premTab = d.t; render(); if (d.t === 'obter' || d.t === 'moedas') loadShop(); },
     'prem-buy': function (d) {
       var it = S.ITEMS[d.id], p = { x: ui.pt.x, y: ui.pt.y };
       confirmBox('Loja Exclusiva', 'Comprar ' + it.name + ' por ' + S.premium.price(d.id) + ' Cristais?', 'Comprar', function () {
@@ -2529,11 +2717,12 @@
     },
     'buy-wa': function (d) {
       var cfg = S.shop.cached(), live = S.shop.ready() && cfg && cfg.open && cfg.packages && cfg.packages.length;
-      if (live) return H['prem-order'](d);
-      var p = S.CRYSTAL_PACKS.filter(function (x) { return x.id === d.id; })[0], st = E.state;
+      if (live && cfg.packages.some(function (x) { return x.id === d.id; })) return H['prem-order'](d);
+      var p = S.CRYSTAL_PACKS.concat(S.COIN_PACKS).filter(function (x) { return x.id === d.id; })[0], st = E.state;
       if (!p) return;
-      var msg = 'Olá! Quero comprar Cristais no Sistema.\n\n' +
-        'Pacote: ' + p.name + '\nCristais: ' + p.crystals + (p.bonus ? ' (' + p.base + ' + ' + p.bonus + ' de bónus)' : '') + '\nValor: ' + kz(p.price_kz) +
+      var isC = p.kind === 'coins', what = isC ? 'Moedas' : 'Cristais';
+      var msg = 'Olá! Quero comprar ' + what.toLowerCase() + ' no Sistema.\n\n' +
+        'Pacote: ' + p.name + '\n' + what + ': ' + (isC ? p.coins : p.crystals) + (p.bonus ? ' (' + p.base + ' + ' + p.bonus + ' de bónus)' : '') + '\nValor: ' + kz(p.price_kz) +
         '\n\nJogador: ' + st.name + '\nID de Jogador: ' + st.playerId +
         '\n\nVou pagar por MULTICAIXA Express. Fico à espera dos dados para a transferência.';
       H.ext({ url: 'https://wa.me/' + S.SHOP_WHATSAPP + '?text=' + encodeURIComponent(msg) });
@@ -2541,7 +2730,7 @@
     'prem-order': function (d) {
       var p = (S.shop.cached().packages || []).filter(function (x) { return x.id === d.id; })[0];
       if (!p) return;
-      confirmBox('Pedir Cristais', p.crystals + ' Cristais por ' + kz(p.price_kz) + '.\n\nO pedido fica registado e abre-se o WhatsApp com a mensagem pronta. Só pagas depois de receberes as instruções.', 'Fazer pedido', function () {
+      confirmBox(p.kind === 'coins' ? 'Pedir moedas' : 'Pedir Cristais', (p.kind === 'coins' ? fmt(p.coins) + ' moedas' : p.crystals + ' Cristais') + ' por ' + kz(p.price_kz) + '.\n\nO pedido fica registado e abre-se o WhatsApp com a mensagem pronta. Só pagas depois de receberes as instruções.', 'Fazer pedido', function () {
         toast('A registar o pedido…');
         S.shop.order(p.id).then(function (r) {
           if (!r.ok) return toast(r.msg, true);
@@ -2568,6 +2757,30 @@
       if (ev.res.tag === 'd' && FX.full()) { if (b) b.classList.add('glitching'); FX.shake(1); FX.vibrate([30, 30, 60]); }
       else FX.vibrate(15);
       if (ev.res.fx.length) { var cc = FX.center(b); FX.burst(cc.x, cc.y, /^\+/.test(ev.res.fx[0]) ? '#ffc85a' : '#ff5a6e', 26, { speed: 6 }); }
+    },
+    'first-next': function () {
+      var ev = ui.popups[0];
+      if (!ev || ev.type !== 'first') return;
+      if (ev.i >= ev.script.length - 1) { ui.popups.shift(); render(); return; }
+      ev.log.push({ s: ev.script[ev.i].s }); ev.i++;
+      render(); firstType();
+    },
+    'first-pick': function (d) {
+      var ev = ui.popups[0];
+      if (!ev || ev.type !== 'first') return;
+      var st = ev.script[ev.i], o = st.opts[+d.i];
+      E.state.firstTalk = { q: st.ask, a: o.t, tag: o.tag };
+      S.storage.write(E.state);
+      ev.log.push({ s: st.ask }); ev.log.push({ me: o.t });
+      ev.script.splice(ev.i + 1, 0, { s: o.r }); ev.i++;
+      render(); firstType();
+      if (o.tag === 'd' && FX.full()) { var b = document.getElementById('sys-box'); if (b) b.classList.add('glitching'); FX.shake(1); }
+    },
+    'first-skip': function () {
+      var ev = ui.popups[0];
+      if (!ev || ev.type !== 'first') return;
+      ev.log = []; ev.i = ev.script.length - 1; ev.typed = -1;
+      render(); firstType();
     },
     'talk-skip': function () {
       var ev = ui.popups[0];
@@ -2736,7 +2949,7 @@
       var go = function () {
         var p = { x: ui.pt.x, y: ui.pt.y };
         var r = E.useItem(d.id);
-        if (drinkable(it)) sfx(r.ok ? 'potion' : 'click');
+        if (drinkable(it)) sfx(r.ok ? drinkSound(it) : 'click');
         if (r.ok && E.count(E.state, d.id) < 1) ui.modal = null;
         act(r, r.ok && it.cat !== 'bau' ? r.msg : null);
         if (!r.ok || it.cat === 'bau') return;
@@ -2757,7 +2970,7 @@
     },
     equip: function (d) {
       var it = E.item(d.id);
-      var r = E.equip(d.id, d.s); if (r.ok) ui.modal = null; act(r, r.ok ? 'Equipado.' : null);
+      var r = E.equip(d.id, d.s); if (r.ok) ui.modal = null; sfx(r.ok ? 'equip' : 'click'); act(r, r.ok ? 'Equipado.' : null);
       if (r.ok) { FX.rise(window.innerWidth / 2, window.innerHeight * .6, 200, rc(it.rarity), 40); FX.flash(rc(it.rarity), .2); FX.vibrate(40); talkTry('equip', { item: it.name, rarity: it.rarity, slot: d.s === 'weapon' ? 'weapon' : d.s === 'armor' ? 'armor' : 'acc' }, 1200); }
     },
     unequip: function (d) { var r = E.unequip(d.s); if (r.ok) { ui.modal = null; sfx('unequip'); } else sfx('click'); act(r, r.ok ? 'Item guardado na bolsa.' : null); },
@@ -2856,10 +3069,29 @@
   };
 
   /* sons: estes botões tocam o seu próprio som quando a ação resulta */
-  var SFX_SELF = { buy: 1, use: 1, 'b-item': 1, unequip: 1, 'b-attack': 1, 'b-skill': 1, 'arise-try': 1 };
+  var SFX_SELF = { buy: 1, use: 1, equip: 1, 'b-item': 1, 'duel-act': 1, 'duel-skill': 1, 'duel-item': 1, unequip: 1, 'b-attack': 1, 'b-skill': 1, 'arise-try': 1 };
   var SFX_BACK = { back: 1, close: 1, 'info-back': 1, 'tr-back': 1, 'pop-ok': 1, overlay: 1 };
   function sfx(n, g) { if (S.sfx) S.sfx.play(n, g); }
   /* poções e elixires que se bebem (bombas e fumo não) */
+  /* som de uma poção: vida e mana soam a poção; bónus, elixires e tónicos soam a "beber" */
+  function drinkSound(it) { var t = (it && it.use || {}).type; return t === 'heal' || t === 'restore' || t === 'mana' ? 'potion' : 'drink'; }
+  /* som de uma habilidade pelo elemento ou pelo efeito */
+  var SKILL_SND = {};
+  function skillSound(sk) {
+    if (!sk) return 'skill';
+    if (SKILL_SND[sk.id]) return SKILL_SND[sk.id];
+    var t = (sk.name + ' ' + (sk.desc || '')).toLowerCase(), ops = sk.ops || [], has = function (o) { return ops.some(function (x) { return x.op === o; }); };
+    var dmg = has('dmg'), r = 'skill';
+    if (has('heal') && !dmg) r = 'heal';
+    else if (/fogo|chama|flamej|brasa|incênd|queimad|infern|magma|lava|fénix|ígne|solar|sol /.test(t) || ops.some(function (x) { return x.type === 'burn'; })) r = 'fire';
+    else if (/trov|raio|relâmp|elétric|tempest|descarga|faísca/.test(t)) r = 'thunder';
+    else if (/fúria|(^|\s)ira(\s|$)|frenesi|raiva|berserk|sanguinária/.test(t)) r = 'fury';
+    else if (/grito|rugido|estandarte|legião|exército|clone|guerra|comando|horda/.test(t) || has('summon')) r = 'warcry';
+    else if (/vento|vendaval|furacão|tornado|rajada|ciclone|tufão|furtivo|fumo/.test(t) || ops.some(function (x) { return x.key === 'eva'; })) r = 'wind';
+    else if (!dmg && (has('buff') || has('shield') || has('mp') || has('debuff'))) r = 'buff';
+    SKILL_SND[sk.id] = r;
+    return r;
+  }
   function drinkable(it) { var t = (it.use || {}).type; return !!it && ((/^(po|el|elg)_/.test(it.id) && t !== 'bomb' && t !== 'smoke' && t !== 'chest') || it.id === 'pr_elixir'); }
   function onClick(ev) {
     var el = ev.target.closest('[data-a]');
@@ -2958,23 +3190,34 @@
       ui.page = 'duel'; ui.tab = 'status'; ui.duelId = j.duel.id; ui.duel = null; duelShow(j.duel); window.scrollTo(0, 0); socLoad(true);
     });
   }
-  function duelShow(d) {
+  function duelMove(action, extra) {
+    if (!ui.duel || ui.duelBusy) return;
+    ui.duelBusy = true;
+    document.querySelectorAll('.duel-battle .actions .btn').forEach(function (b) { b.disabled = true; });
+    if (action === 'defend' || action === 'pass') sfx('click');
+    SO.act(ui.duel.id, action, ui.duel.version, extra).then(function (j) {
+      if (!j.ok) { ui.duelBusy = false; toast(j.msg, true); render(); return; }
+      duelShow(j.duel, true);
+    });
+  }
+  function duelShow(d, mine) {
     var prev = ui.duel;
     ui.duel = d; ui.duelId = d.id;
     var me = d.me, last = prev && prev.log && prev.log.length ? prev.log[prev.log.length - 1].n : 0;
-    var fresh = (d.log || []).filter(function (l) { return l.n > last; });
-    if (prev && prev.status === 'waiting' && d.status === 'active') { sfx('emergency'); FX.flash('#ff2a48', .35); FX.vibrate([120, 60, 120]); }
-    if (prev && fresh.length) {
-      fresh.forEach(function (l) {
-        if (l.w && l.w !== me && (l.c === 'hit' || l.c === 'crit')) { sfx('hurt'); FX.shake(l.c === 'crit' ? 2 : 1); }
-      });
-    }
-    if (prev && prev.status === 'active' && d.status === 'done') {
-      var won = d.winner === me;
-      sfx(won ? 'levelup' : 'death'); FX.flash(won ? '#ffc85a' : '#ff1f3d', .5); FX.vibrate(won ? [80, 40, 200] : [300, 80, 300]);
-    }
-    if (prev && prev.status === 'active' && d.status === 'active' && prev.turn !== me && d.turn === me) { sfx('notify'); FX.vibrate(50); }
+    var fresh = prev ? (d.log || []).filter(function (l) { return l.n > last; }) : [];
+    if (prev && prev.status === 'waiting' && d.status === 'active') { sfx('emergency'); FX.flash('#ff2a48', .35); FX.vibrate([120, 60, 120]); FX.portal('#ff3d5a', 'DUELO', 'CONTRA ' + ((d.fighters[d.host === me ? d.guest : d.host] || {}).name || '').toUpperCase()); }
     render(); pullEvents();
+    var dur = duelFx(fresh, d);
+    var endFx = function () {
+      ui.duelBusy = false;
+      if (prev && prev.status === 'active' && d.status === 'done') {
+        var won = d.winner === me;
+        sfx(won ? 'levelup' : 'death'); FX.flash(won ? '#ffc85a' : '#ff1f3d', .5); FX.vibrate(won ? [80, 40, 200] : [300, 80, 300]);
+      } else if (d.status === 'active' && d.turn === me && (!prev || prev.turn !== me)) { sfx('notify'); FX.vibrate(50); }
+      var a = document.querySelector('.duel-battle .actions'); if (a && !(d.status === 'active' && d.turn !== me)) a.classList.remove('busy');
+      render();
+    };
+    if (dur) { if (mine) ui.duelBusy = true; setTimeout(endFx, Math.min(dur, 2500)); } else endFx();
   }
   function duelPoll() {
     if (ui.page !== 'duel' || !ui.duelId || duelBusy || ui.duelBusy) return;
@@ -3260,7 +3503,7 @@
     try {
       var App = globalThis.Capacitor && globalThis.Capacitor.Plugins && globalThis.Capacitor.Plugins.App;
       if (App && App.addListener) App.addListener('backButton', function () {
-        if (ui.popups.length) { if (ui.popups[0].type === 'talk' && !ui.popups[0].res) H['talk-skip'](); else { ui.popups.shift(); render(); } }
+        if (ui.popups.length) { if (ui.popups[0].type === 'talk' && !ui.popups[0].res) H['talk-skip'](); else if (ui.popups[0].type === 'first') H['first-skip'](); else { ui.popups.shift(); render(); } }
         else if (ui.modal) H.close();
         else if (ui.page) H.back();
         else if (ui.tab !== 'status') H.tab({ t: 'status' });

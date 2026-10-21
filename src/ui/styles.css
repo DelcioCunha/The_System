@@ -1013,3 +1013,46 @@ button.trophy { font: inherit; color: inherit; padding: 0; cursor: pointer; appe
 .duel-log .ln.mine { color: #bfe9ff; } .duel-log .ln.theirs { color: #ffc2c9; }
 .duel-log .ln.k-crit { color: var(--gold); font-weight: 600; } .duel-log .ln.k-win { color: var(--gold); font-weight: 700; }
 .duel-log .ln.k-sys, .duel-log .ln.k-miss { color: var(--muted); } .duel-log .ln.k-heal { color: var(--good); } .duel-log .ln.k-skill { font-weight: 600; }
+.ban-screen ~ .overlay { z-index: 130; }
+/* duelo com a disposição do combate contra chefes */
+.duel-battle .boss-ico.duel-av img { object-fit: cover; object-position: top; }
+.duel-battle .duel-op .win-h small { display: inline-flex; gap: 4px; align-items: center; }
+.duel-op.op-turn { box-shadow: 0 0 22px rgba(255, 60, 90, .35); }
+.duel-battle .ppanel.my-turn { border-color: var(--gold); box-shadow: 0 0 18px rgba(255, 200, 90, .3); }
+.duel-thinking .dots b { display: inline-block; animation: dotUp 1.2s infinite; margin-left: 1px; }
+.duel-thinking .dots b:nth-child(2) { animation-delay: .2s; } .duel-thinking .dots b:nth-child(3) { animation-delay: .4s; }
+@keyframes dotUp { 0%, 60%, 100% { transform: none; opacity: .5; } 30% { transform: translateY(-3px); opacity: 1; } }
+.duel-wait-acts .duel-turn { margin: 4px 0; }
+.duel-end h3 { font-family: var(--f-display); letter-spacing: .2em; font-size: 24px; margin: 0 0 4px; }
+.sh-prices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.sh-prices > div { display: flex; flex-direction: column; gap: 2px; padding: 8px; border: 1px solid rgba(139, 107, 255, .35); border-radius: 8px; font-size: 12px; color: var(--muted); }
+.sh-prices b { color: #c8b5ff; font-size: 13px; }
+/* sombras: alinhadas pelo topo (as figuras altas mostram sempre a cabeça e o tronco) */
+.sh-art.own img { object-fit: cover; object-position: 50% 0 !important; }
+.sh-boss img, .boss-ico.has-art.sh-boss img { object-fit: cover !important; object-position: 50% 0 !important; }
+.sh-art.own.big { aspect-ratio: 3 / 5; }
+.chip-img { width: 20px; height: 20px; object-fit: contain; vertical-align: -5px; margin-right: 5px; border-radius: 4px; }
+.btn .ui-ico.btn-ico, .ui-ico.btn-ico { width: 18px; height: 18px; vertical-align: -4px; margin-right: 4px; }
+.nb-ico .ui-ico.nb-img { width: 26px; height: 26px; }
+.nc-ico .ui-ico.nc-img { width: 22px; height: 22px; } .nc-big .ui-ico.nc-big-img { width: 64px; height: 64px; }
+
+/* primeira conversa com o Sistema */
+.first-talk .ft-hist { max-height: 9.5em; overflow: hidden; margin: 0 0 6px; -webkit-mask-image: linear-gradient(to bottom, transparent, #000 45%); mask-image: linear-gradient(to bottom, transparent, #000 45%); }
+.first-talk .ft-old { margin: 0 0 6px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.first-talk .talk-me { font-size: 12.5px; }
+.first-talk .ft-next { justify-content: center; text-align: center; text-transform: uppercase; letter-spacing: .12em; }
+.first-talk .ft-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; min-height: 22px; }
+.first-talk .ft-dots { display: flex; gap: 5px; flex-wrap: wrap; }
+.first-talk .ft-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line-hi); opacity: .5; }
+.first-talk .ft-dots i.on { background: var(--glow); opacity: .7; }
+.first-talk .ft-dots i.cur { background: var(--glow); opacity: 1; box-shadow: 0 0 6px var(--glow); }
+.first-talk .talk-skip { margin: 0; }
+
+/* Comprar Moedas (dinheiro real) */
+.coin-shop .coin-t { color: var(--gold); }
+.pkg-cr .coins { font-size: 20px; font-weight: 700; color: var(--gold); display: inline-flex; align-items: center; gap: 6px; }
+.coin-pkg.sel { border-color: var(--gold); box-shadow: 0 0 14px rgba(255, 200, 90, .35); }
+.btn.coin-btn { color: var(--gold); border-color: rgba(255, 200, 90, .55); background: rgba(255, 200, 90, .08); display: inline-flex; align-items: center; gap: 8px; }
+.btn.coin-btn .coin-ico { width: 10px; height: 10px; }
+.prem-head > .row { grid-column: 1 / -1; }
+.prem-head > .row .btn { flex: 1 1 0; min-width: 0; padding-left: 8px; padding-right: 8px; justify-content: center; }

@@ -700,6 +700,12 @@
         res.msg = 'Aproveita! "' + it.name + '" foi usado. Bom descanso, caçador.';
         E.history(st, it.icon, 'Usou a recompensa: ' + it.name + '.');
         break;
+      case 'shadowSlot':
+        if (!S.shadows.addSlot(st)) return { ok: false, msg: 'Já tens os 3 lugares extra de servos.' };
+        E.removeItem(st, id);
+        res.msg = 'Mais um lugar de servo convocado: agora tens ' + S.shadows.slots(st) + ' lugares.';
+        E.history(st, it.icon, 'Usou ' + it.name + ': ' + S.shadows.slots(st) + ' lugares de servos convocados.');
+        break;
       case 'perk':
         st.perks = st.perks || {};
         if (st.perks[u.perk]) return { ok: false, msg: 'Este bónus já é teu para sempre.' };
