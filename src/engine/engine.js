@@ -69,16 +69,16 @@
   /* ---------------- novo jogo ---------------- */
   function zeroStats() { var o = {}; S.STATS.forEach(function (k) { o[k] = 0; }); return o; }
 
-  E.newState = function (name, cls) {
+  E.newState = function (name, cls, gender) {
     var now = S.clock.now();
     var today = E.dateKey(now);
     var st = {
       schema: S.SAVE_SCHEMA, appVersion: S.VERSION, created: now, lastRestore: today, watch: { trust: 100, text: [], quick: [], lastDay: today, total: 0 }, live: { hidden: {}, reports: [], reacted: {}, emDay: '', emCount: 0, emNext: 0, lastSeen: now }, talk: { seen: {}, last: 0, day: '', count: 0, att: { o: 0, d: 0, q: 0 }, skips: 0, damp: 1, talks: 0, done: {} }, crystals: 0, arena: { unlocked: {}, wins: {}, last: {} }, cosmetics: { owned: {}, moldura: null, nome: null }, shop: { orders: [], redeemed: {} }, playerId: S.premium ? S.premium.newId() : '',
-      name: String(name).trim().slice(0, 24), cls: cls,
+      name: String(name).trim().slice(0, 24), cls: cls, gender: gender === 'f' ? 'f' : 'm',
       level: 1, xp: 0, coins: 100, freePoints: 0,
       alloc: zeroStats(), trained: zeroStats(), bonus: zeroStats(),
       inv: {}, equip: { weapon: null, armor: null, acc1: null, acc2: null },
-      seen: {}, bought: {}, effects: [], secretSkills: [], customLeisure: [],
+      seen: {}, bought: {}, effects: [], secretSkills: [],
       missions: [], missionLog: {},
       daily: {
         enabled: true, deadline: '23:00', startDate: today,
@@ -128,6 +128,16 @@
     if (S.shadows) S.shadows.ensure(st);
     if (S.body) S.body.ensure(st);
     if (st.hp === undefined) st.hp = null;
+    // a Loja de lazer foi removida: as recompensas que ainda estavam na Bolsa voltam a moedas
+    var lzBack = 0, lzN = 0;
+    Object.keys(st.inv || {}).forEach(function (id) {
+      if (!/^(lz_|cl_)/.test(id) || S.ITEMS[id]) return;
+      var n = st.inv[id] || 0, cl = (st.customLeisure || []).filter(function (c) { return c.id === id; })[0];
+      var p = (S.LEISURE_REFUND || {})[id] || (cl && cl.price) || 0;
+      lzBack += p * n; lzN += n; delete st.inv[id];
+    });
+    if (st.customLeisure && st.customLeisure.length) st.customLeisure = [];
+    if (lzN) { st.coins += lzBack; st.leisureRefund = { coins: lzBack, n: lzN }; E.history(st, '🪙', 'A Loja de lazer fechou: ' + lzN + ' recompensa(s) devolvida(s), +' + lzBack + ' moedas.'); }
     // troféus de chefes derrotados antes desta versão
     Object.keys(st.defeated || {}).forEach(function (id) { if (S.TROPHIES[id] && !st.trophies[id]) st.trophies[id] = st.defeated[id]; });
     // itens que deixaram de existir são convertidos em moedas
@@ -142,12 +152,6 @@
   E.item = function (id, st) {
     st = st || E.state;
     if (S.ITEMS[id]) return S.ITEMS[id];
-    if (st && st.customLeisure) {
-      for (var i = 0; i < st.customLeisure.length; i++) {
-        var c = st.customLeisure[i];
-        if (c.id === id) return { id: c.id, name: c.name, icon: c.icon || '🎁', price: c.price, rarity: 'incomum', cat: 'lazer', lvl: 1, desc: c.desc || 'Recompensa criada por ti.', use: { type: 'leisure' }, field: true, custom: true };
-      }
-    }
     return null;
   };
   E.count = function (st, id) { return st.inv[id] || 0; };
@@ -445,7 +449,7 @@
     if (it.priceScale) base = it.priceScale * S.levelMult(st.level) * (1 + st.level / 25);
     var p = base * Math.pow(1 + (it.priceStep || 0), n);
     if (it.priceScale) return Math.round(p / 100) * 100;
-    // consumíveis, baús e lazer acompanham o nível, para nunca ficarem baratos
+    // consumíveis e baús acompanham o nível, para nunca ficarem baratos
     var f = E.priceFactor(st, it);
     if (f !== 1) return Math.max(10, Math.round(it.price * f / 10) * 10);
     return it.priceStep ? Math.round(p / 10) * 10 : it.price;
@@ -455,7 +459,7 @@
     var lm = S.levelMult(st.level);
     if (it.cat === 'consumivel') return lm * (1 + st.level / 40);
     if (it.fixedPrice) return 1;
-    if (it.cat === 'bau' || it.cat === 'lazer') return lm;
+    if (it.cat === 'bau') return lm;
     return 1;
   };
   E.canEquipClass = function (st, it) { return !it.cls || it.cls.indexOf(st.cls) >= 0; };
@@ -463,7 +467,6 @@
     var list = Object.keys(S.ITEMS).map(function (k) { return S.ITEMS[k]; })
       .filter(function (it) { return it.cat === tab && it.price && !it.secret; });
     if (tab === 'arma') list = list.filter(function (it) { return E.canEquipClass(st, it); });
-    if (tab === 'lazer') list = list.concat(st.customLeisure.map(function (c) { return E.item(c.id, st); }));
     return list.sort(function (a, b) { return (a.lvl - b.lvl) || (a.price - b.price); });
   };
   E.buy = function (id, qty) {
@@ -493,7 +496,7 @@
   };
   E.sellValue = function (st, id) {
     var it = E.item(id, st);
-    if (!it || it.custom || it.cat === 'lazer' || it.premium) return 0;
+    if (!it || it.custom || it.premium) return 0;
     if (it.price) return Math.max(1, Math.floor(it.price * 0.35));
     var byR = { comum: 20, incomum: 60, raro: 250, epico: 900, lendario: 3000, mitico: 6000, secreto: 4000 };
     return byR[it.rarity] || 10;
@@ -510,24 +513,6 @@
     E.commit('venda');
     return { ok: true, coins: got };
   };
-  E.addCustomLeisure = function (name, price, icon) {
-    var st = E.state;
-    name = String(name || '').trim();
-    price = Math.round(+price);
-    if (!name) return { ok: false, msg: 'Dá um nome à recompensa.' };
-    if (!(price >= 10 && price <= 100000)) return { ok: false, msg: 'Preço entre 10 e 100 000 moedas.' };
-    var c = { id: uid('cl_'), name: name.slice(0, 40), price: price, icon: icon || '🎁' };
-    st.customLeisure.push(c);
-    E.commit('recompensa criada');
-    return { ok: true, item: c };
-  };
-  E.removeCustomLeisure = function (id) {
-    var st = E.state;
-    st.customLeisure = st.customLeisure.filter(function (c) { return c.id !== id; });
-    E.commit('recompensa removida');
-    return { ok: true };
-  };
-
   /* ---------------- equipamento ---------------- */
   E.equip = function (id, slotHint) {
     var st = E.state;
@@ -690,12 +675,8 @@
         res.healed = hh;
         E.history(st, it.icon, 'Bebeu ' + it.name + ': +' + hh + ' de vida.');
         break;
-      case 'leisure':
-        E.removeItem(st, id);
-        E.bump(st, 'leisureUsed');
-        res.msg = 'Aproveita! "' + it.name + '" foi usado. Bom descanso, caçador.';
-        E.history(st, it.icon, 'Usou a recompensa: ' + it.name + '.');
-        break;
+      case 'rename':
+        return { ok: false, rename: true, msg: 'Escolhe o novo nome.' };
       case 'shadowSlot':
         if (!S.shadows.addSlot(st)) return { ok: false, msg: 'Já tens os 3 lugares extra de servos.' };
         E.removeItem(st, id);
@@ -959,17 +940,40 @@
     E.state = null;
     return false;
   };
-  E.start = function (name, cls) {
+  E.start = function (name, cls, gender) {
     if (!S.CLASSES[cls]) return { ok: false, msg: 'Escolhe uma classe.' };
     name = String(name || '').trim();
     if (name.length < 2) return { ok: false, msg: 'O nome precisa de pelo menos 2 letras.' };
     S.storage.clearMoved();
-    E.state = E.newState(name, cls);
+    E.state = E.newState(name, cls, gender);
     if (S.shadows) S.shadows.ensure(E.state);
     if (S.premium) S.premium.ensure(E.state);
     if (S.body) S.body.ensure(E.state);
     E.commit('novo jogo');
     return { ok: true };
+  };
+  /* aparência do avatar (masculina ou feminina): só muda o desenho, nunca a progressão */
+  E.setGender = function (g) {
+    var st = E.state; if (!st) return { ok: false };
+    g = g === 'f' ? 'f' : 'm';
+    if (st.gender === g) return { ok: true, same: true };
+    st.gender = g; E.commit('aparência');
+    return { ok: true, msg: g === 'f' ? 'Aparência feminina escolhida.' : 'Aparência masculina escolhida.' };
+  };
+  /* Pergaminho do Novo Nome (Loja Exclusiva): troca o nome e gasta o pergaminho */
+  E.rename = function (name) {
+    var st = E.state; if (!st) return { ok: false };
+    if (E.count(st, 'pr_nome') < 1) return { ok: false, msg: 'Precisas do Pergaminho do Novo Nome (Loja Exclusiva).' };
+    name = String(name || '').replace(/\s+/g, ' ').trim().slice(0, 24);
+    if (name.length < 2) return { ok: false, msg: 'O nome precisa de pelo menos 2 letras.' };
+    if (name === st.name) return { ok: false, msg: 'Esse já é o teu nome.' };
+    var old = st.name;
+    E.removeItem(st, 'pr_nome');
+    st.name = name;
+    E.bump(st, 'consumablesUsed');
+    E.history(st, '✒️', 'Mudou o nome de «' + old + '» para «' + name + '».');
+    E.commit('novo nome');
+    return { ok: true, msg: 'A partir de agora, o Sistema chama-te ' + name + '.', old: old };
   };
   E.importState = function (st) {
     E.state = E.migrate(st);

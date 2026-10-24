@@ -65,7 +65,7 @@
     { id: 'champ5', icon: "👑", name: "Cinco Coroas", desc: "Vence 5 Campeões do Coliseu.", check: function (s) { return arena(s).champs>=5; }, reward: {chest:'secreto'} },
     { id: 'champ10', icon: "💎", name: "Rei do Coliseu", desc: "Vence os 10 Campeões do Coliseu.", check: function (s) { return arena(s).champs>=10; }, reward: {chest:'secreto',coins:50000} },
     { id: 'firstp', icon: "🕳️", name: '???', realName: "O Primeiro Jogador", secret: true, desc: "Vence O Primeiro Jogador.", check: function (s) { return !!((s.arena||{}).wins||{}).ar10; }, reward: {chest:'secreto'} },
-    { id: 'rematch', icon: "🔁", name: "Revanche", desc: "Vence 20 revanches no Coliseu.", check: function (s) { return arena(s).rematches>=20; }, reward: {chest:'epico'} },
+    { id: 'rematch', icon: "🔁", name: "Revisitação", desc: "Vence 20 revisitações no Coliseu (honra, sem prémio).", check: function (s) { return arena(s).rematches>=20; }, reward: {} },
     { id: 'tr100', icon: "🏛️", name: "Museu de Troféus", desc: "Junta 100 troféus.", check: function (s) { return Object.keys(s.trophies||{}).length>=100; }, reward: {chest:'lendario'} },
     { id: 'tr202', icon: "🗿", name: "Coleção Completa", desc: "Junta todos os troféus do jogo.", check: function (s) { return Object.keys(s.trophies||{}).length>=Object.keys(S.TROPHIES).length; }, reward: {chest:'secreto',coins:100000} },
     { id: 'set10', icon: "🥇", name: "Todos os Portões", desc: "Completa os troféus dos 10 portões.", check: function (s) { return S.engine.completedSets(s).filter(function(g){return g>0}).length>=10; }, reward: {chest:'secreto'} },

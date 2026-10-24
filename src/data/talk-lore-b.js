@@ -185,7 +185,7 @@
         ['Não vou acabar assim.', 'o', 'Não. Tens {coins} moedas, não um oceano. Ainda.'],
         ['É exagero.', 'd', 'É escala. Não exagero. Não sei.']]],
       ['As moedas são esforço convertido. Esforço parado apodrece.', [
-        ['Então em que gasto?', 'q', 'No que te mantém vivo nos portões. E numa recompensa real na Loja de lazer.'],
+        ['Então em que gasto?', 'q', 'No que te mantém vivo nos portões. O resto não se compra.'],
         ['As moedas são minhas.', 'd', 'São. Faz o que quiseres. Eu só registo.'],
         ['Vou usar algumas.', 'o', 'Bom. Começa por algo que te dê prazer de verdade.']]],
       ['Uma vez alguém gastou tudo numa noite, pelos outros. Achei um desperdício. Enganei-me. Não te conto a noite.', [

@@ -571,6 +571,8 @@ async function sync(env, body, ip) {
   STAT_KEYS.forEach((k) => { if (raw[k] !== undefined) st[k] = int(raw[k], 0, 1e9); });
   const snap = { name: clean(body.name, 24) || 'Jogador', cls: clean(body.cls, 16), level: int(body.level, 1, 100000), crystals: int(body.crystals, 0, 1e9),
     coins: int(body.coins, 0, 1e12), stats: JSON.stringify(st), app_version: clean(body.app_version, 16), platform: clean(body.platform, 16) };
+  const gender = body.gender === 'f' ? 'f' : body.gender === 'm' ? 'm' : null;
+  const profile = cleanProfile(body.profile);
   const t = now(), th = await tokenHash(env, tok);
   const del = await deletedRow(env, pid);
   if (del) return json({ ok: true, account: 'deleted', reason: del.reason || null, deleted_at: del.deleted_at, inbox: [], notices: [] });
@@ -587,6 +589,7 @@ async function sync(env, body, ip) {
     await run(env, 'UPDATE players SET name = ?, cls = ?, level = ?, crystals = ?, coins = ?, stats = ?, app_version = ?, platform = ?, last_seen = ?, syncs = syncs + 1 WHERE id = ?',
       snap.name, snap.cls, snap.level, snap.crystals, snap.coins, snap.stats, snap.app_version, snap.platform, t, pid);
   }
+  if (gender || profile) await run(env, 'UPDATE players SET gender = COALESCE(?, gender), profile = COALESCE(?, profile) WHERE id = ?', gender, profile, pid);
   const notices = await playerNotices(env, p);
   const role = await playerRole(env, p);
   // aparelho: bloqueado ou (em modo privado) ainda sem autorização → sem presentes nem avisos
@@ -1046,6 +1049,7 @@ function playerAdmin(p) {
   return { id: p.id, name: p.name, cls: p.cls, level: p.level, crystals: p.crystals, coins: p.coins, stats, app_version: p.app_version, platform: p.platform,
     created_at: p.created_at, last_seen: p.last_seen, syncs: p.syncs, status: p.status, ban_reason: p.ban_reason, ban_until: p.ban_until, banned_at: p.banned_at,
     banned_by: p.banned_by, note: p.note, duel_wins: p.duel_wins || 0, duel_losses: p.duel_losses || 0, duel_points: p.duel_points || 0, duel_best: p.duel_best || 0, spent_kz: p.spent_kz || 0, paid_orders: p.paid_orders || 0,
+    gender: p.gender || 'm', has_photo: !!p.photo, profile: profOf(p),
     role: p.role_eff || p.role || 'usuario', role_name: ROLES[p.role_eff || p.role || 'usuario'], role_auto: !p.role, role_by: p.role_by || null };
 }
 function grantAdmin(g) {
@@ -1081,7 +1085,7 @@ async function playerDetail(env, id) {
   const grants = await all(env, 'SELECT * FROM grants WHERE player_id = ? OR claimed_player = ? ORDER BY created_at DESC LIMIT 30', pid, pid);
   const log = await all(env, "SELECT at, actor, action, target, result, detail FROM audit WHERE target = ? OR actor = ? ORDER BY id DESC LIMIT 40", pid, 'player:' + pid);
   const notices = await all(env, 'SELECT * FROM notices WHERE player_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 20', pid);
-  return json({ ok: true, player: p ? playerAdmin(p) : null, orders: orders.map(orderAdmin), grants: grants.map(grantAdmin), audit: log, notices: notices.map(noticeOut), role_names: ROLES, devices: await playerDevices(env, pid) });
+  return json({ ok: true, player: p ? playerAdmin(p) : null, orders: orders.map(orderAdmin), grants: grants.map(grantAdmin), audit: log, notices: notices.map(noticeOut), role_names: ROLES, devices: await playerDevices(env, pid), photo: p ? p.photo || null : null });
 }
 async function banPlayer(env, A, id, body, ip) {
   const p = await playerRow(env, clean(id, 64));
@@ -1103,6 +1107,12 @@ async function unbanPlayer(env, A, id, body, ip) {
     q(env, "UPDATE players SET status = 'active', ban_reason = NULL, ban_until = NULL WHERE id = ?", p.id),
     auditStmt(env, A.admin, 'player.unban', p.id, 'ok', { note: clean(body.reason, 200) || undefined }, ip)
   ]);
+  return playerDetail(env, p.id);
+}
+async function deletePhoto(env, A, id, ip) {
+  const p = await playerRow(env, clean(id, 64));
+  if (!p) throw new HttpError(404, 'Jogador não encontrado.');
+  await env.DB.batch([q(env, 'UPDATE players SET photo = NULL, photo_at = ? WHERE id = ?', now(), p.id), auditStmt(env, A.admin, 'player.photo_delete', p.id, 'ok', null, ip)]);
   return playerDetail(env, p.id);
 }
 async function notePlayer(env, A, id, body, ip) {
@@ -1225,8 +1235,10 @@ async function socialAuth(env, body, touch) {
   if (touch !== false) await run(env, 'UPDATE players SET social_seen = ? WHERE id = ?', now(), p.id);
   return p;
 }
+function profOf(p) { try { return JSON.parse(p.profile || '{}') || {}; } catch (e) { return {}; } }
 function pub(p, extra) {
-  return Object.assign({ id: p.id, name: p.name, cls: p.cls || null, level: p.level, online: isOnline(p), seen: seenOf(p),
+  const pf = profOf(p);
+  return Object.assign({ id: p.id, name: p.name, cls: p.cls || null, level: p.level, gender: p.gender === 'f' ? 'f' : 'm', photo_ver: p.photo ? (p.photo_ver || 1) : 0, title: pf.title || null, frame: pf.frame || null, online: isOnline(p), seen: seenOf(p),
     wins: p.duel_wins || 0, losses: p.duel_losses || 0, rating: p.duel_rating || 1000, points: p.duel_points || 0, best: p.duel_best || 0 }, extra || {});
 }
 async function friendRow(env, x, y) { const k = pairKey(x, y); return one(env, 'SELECT * FROM friends WHERE a = ? AND b = ?', k[0], k[1]); }
@@ -1252,6 +1264,65 @@ async function socialState(env, body) {
     unread: unread.reduce((s, u) => s + u.n, 0), server_time: now() });
 }
 
+/* resumo do perfil enviado pelo jogo (só campos conhecidos, tamanhos limitados) */
+function cleanProfile(o) {
+  if (!o || typeof o !== 'object') return null;
+  const out = {};
+  if (o.title) out.title = clean(o.title, 40);
+  if (o.frame) out.frame = clean(o.frame, 24).replace(/[^a-z0-9_]/gi, '');
+  if (o.color) { const c = String(o.color); if (/^#[0-9a-f]{6}$/i.test(c)) out.color = c; }
+  ['ach', 'achTotal', 'bosses', 'shadows', 'arenas', 'streak', 'best', 'trust', 'day', 'kings', 'trophies'].forEach((k) => { if (o[k] != null) out[k] = int(o[k], 0, 1e7); });
+  return JSON.stringify(out);
+}
+/* foto de perfil: imagem pequena (JPEG/WebP/PNG), validada pelos primeiros bytes */
+const PHOTO_MAX = 90000; // caracteres do data URL (~65 KB)
+function checkPhoto(s) {
+  const m = /^data:image\/(jpeg|webp|png);base64,([A-Za-z0-9+/=]+)$/.exec(String(s || ''));
+  if (!m || s.length > PHOTO_MAX) return null;
+  let head; try { head = atob(m[2].slice(0, 24)); } catch (e) { return null; }
+  const b = (i) => head.charCodeAt(i);
+  const ok = m[1] === 'jpeg' ? b(0) === 0xff && b(1) === 0xd8 : m[1] === 'png' ? b(1) === 0x50 && b(2) === 0x4e && b(3) === 0x47 : head.slice(0, 4) === 'RIFF' && head.slice(8, 12) === 'WEBP';
+  return ok ? s : null;
+}
+async function photoSet(env, body) {
+  const p = await socialAuth(env, body, false);
+  if (body.photo == null || body.photo === '') {
+    await run(env, 'UPDATE players SET photo = NULL, photo_at = ? WHERE id = ?', now(), p.id);
+    return json({ ok: true, photo_ver: 0 });
+  }
+  if (await limited(env, 'photo:' + p.id, 12, DAY)) throw new HttpError(429, 'Já mudaste a foto muitas vezes hoje. Tenta amanhã.');
+  const ph = checkPhoto(body.photo);
+  if (!ph) throw bad('Foto inválida. Usa uma imagem JPEG, PNG ou WebP pequena.');
+  const v = (p.photo_ver || 0) + 1;
+  await run(env, 'UPDATE players SET photo = ?, photo_ver = ?, photo_at = ? WHERE id = ?', ph, v, now(), p.id);
+  return json({ ok: true, photo_ver: v });
+}
+/* fotos de amigos (e a própria): o jogo guarda-as em cache pela versão */
+async function photosGet(env, body) {
+  const p = await socialAuth(env, body, false);
+  const ids = (Array.isArray(body.ids) ? body.ids : []).map((x) => clean(x, 64)).filter((x) => PLAYER_RE.test(x)).slice(0, 40);
+  const out = {};
+  for (const id of ids) {
+    if (id !== p.id && !(await areFriends(env, p.id, id))) continue;
+    const r = await one(env, 'SELECT photo, photo_ver FROM players WHERE id = ?', id);
+    if (r) out[id] = r.photo ? { v: r.photo_ver || 1, src: r.photo } : { v: 0, src: null };
+  }
+  return json({ ok: true, photos: out });
+}
+/* perfil de um amigo (visão geral) */
+async function profileGet(env, body) {
+  const p = await socialAuth(env, body, false);
+  const id = clean(body.id, 64);
+  const f = id === p.id ? null : await friendRow(env, p.id, id);
+  if (id !== p.id && !(f && f.status === 'accepted')) throw new HttpError(403, 'Só podes ver o perfil dos teus amigos.');
+  const o = await one(env, 'SELECT * FROM players WHERE id = ?', id);
+  if (!o) throw new HttpError(404, 'Jogador não encontrado.');
+  let stats = {}; try { stats = JSON.parse(o.stats || '{}'); } catch (e) { stats = {}; }
+  const pf = profOf(o);
+  return json({ ok: true, profile: pub(o, { since: f ? (f.accepted_at || f.created_at) : null, joined: o.created_at, photo: o.photo || null, banned: o.status === 'banned',
+    stats: { missions: stats.missions || 0, bosses: stats.bosses || 0, streak: stats.streak || 0, best: stats.best || 0, arenas: stats.arenas || 0, day: stats.day || 0 },
+    extra: pf }), server_time: now() });
+}
 async function socialFind(env, body) {
   const p = await socialAuth(env, body, false);
   if (await limited(env, 'find:' + p.id, 30, MIN)) throw new HttpError(429, 'Muitas pesquisas seguidas. Espera um minuto.');
@@ -1382,7 +1453,7 @@ function fighter(p, f) {
   const M = Object.assign({}, CLASS_PVP[cls] ? CLASS_PVP[cls](L) : {}), CK = classK(cls, L); M.hp = (M.hp || 1) * Math.sqrt(CK); M.atk = (M.atk || 1) * Math.sqrt(CK); const B0 = baseAt(L), mainPow = Math.max(stats.atk, stats.matk), kPow = (BLEND * mainPow + (1 - BLEND) * B0[1]) / mainPow;
   stats.atk = Math.round(stats.atk * kPow * (M.atk || 1)); stats.matk = Math.round(stats.matk * kPow * (M.atk || 1)); stats.def = Math.round((BLEND * stats.def + (1 - BLEND) * B0[2]) * (M.def || 1)); stats.summonK = M.summon || 1;
   const maxHp = Math.round((BLEND * hp + (1 - BLEND) * B0[0]) * PVP_HP(L) * (M.hp || 1));
-  return { id: p.id, name: p.name, cls, level: L, points: p.duel_points || 0, maxHp, hp: maxHp, maxMp: mp, mp, shield: 0, st: [], cds: {}, stunned: 0, stunImmune: 0,
+  return { id: p.id, name: p.name, cls, gender: (f.gender || p.gender) === 'f' ? 'f' : 'm', level: L, points: p.duel_points || 0, maxHp, hp: maxHp, maxMp: mp, mp, shield: 0, st: [], cds: {}, stunned: 0, stunImmune: 0,
     summons: [], squad, cmd: Math.min(15, squad.filter((x) => x.role === 'comandante').length * 5), stats, skills, items, used: {}, heals: 0, premUsed: 0,
     struck: false, lastStandUsed: false, reviveUsed: false, miss: 0 };
 }
@@ -1728,10 +1799,10 @@ async function duelHistory(env, body) {
   return json({ ok: true, duels: rows.map((r) => ({ id: r.id, won: r.winner === p.id, reason: r.end_reason, at: r.updated_at, opponent: r.host === p.id ? r.gname : r.hname })) });
 }
 
-async function readJson(request) {
+async function readJson(request, max) {
   if (request.method === 'GET') return {};
   const t = await request.text();
-  if (t.length > 8000) throw bad('Pedido demasiado grande.');
+  if (t.length > (max || 8000)) throw bad('Pedido demasiado grande.');
   if (!t) return {};
   try { return JSON.parse(t); } catch (e) { throw bad('JSON inválido.'); }
 }
@@ -1745,7 +1816,7 @@ export async function handle(request, env, ctx) {
   if (path === '/' || path === '/api') return json({ ok: true, service: 'Sistema · Loja de Cristais', version: VERSION, test: isTest(env) });
   try {
     if (Math.random() < 0.05) { const h = housekeeping(env); if (ctx && ctx.waitUntil) ctx.waitUntil(h); else await h; }
-    const body = await readJson(request);
+    const body = await readJson(request, path === '/api/social/photo' ? PHOTO_MAX + 2000 : 8000);
     let r;
     // ---- jogo ----
     if (m === 'GET' && path === '/api/config') return await getConfig(env);
@@ -1762,6 +1833,9 @@ export async function handle(request, env, ctx) {
     // ---- social e duelos ----
     if (m === 'POST' && path === '/api/social/state') return await socialState(env, body);
     if (m === 'POST' && path === '/api/social/find') return await socialFind(env, body);
+    if (m === 'POST' && path === '/api/social/photo') return await photoSet(env, body);
+    if (m === 'POST' && path === '/api/social/photos') return await photosGet(env, body);
+    if (m === 'POST' && path === '/api/social/profile') return await profileGet(env, body);
     if (m === 'POST' && path === '/api/social/friend/request') return await friendRequest(env, body);
     if (m === 'POST' && path === '/api/social/friend/respond') return await friendRespond(env, body);
     if (m === 'POST' && path === '/api/social/friend/remove') return await friendRemove(env, body);
@@ -1800,6 +1874,7 @@ export async function handle(request, env, ctx) {
       if ((r = path.match(/^\/api\/admin\/players\/([A-Za-z0-9_-]{8,64})\/ban$/)) && m === 'POST') return await banPlayer(env, A, r[1], body, ip);
       if ((r = path.match(/^\/api\/admin\/players\/([A-Za-z0-9_-]{8,64})\/unban$/)) && m === 'POST') return await unbanPlayer(env, A, r[1], body, ip);
       if ((r = path.match(/^\/api\/admin\/players\/([A-Za-z0-9_-]{8,64})\/note$/)) && m === 'PUT') return await notePlayer(env, A, r[1], body, ip);
+      if ((r = path.match(/^\/api\/admin\/players\/([A-Za-z0-9_-]{8,64})\/photo\/delete$/)) && m === 'POST') return await deletePhoto(env, A, r[1], ip);
       if (m === 'POST' && path === '/api/admin/grants') return await createGrant(env, A, request, body, ip);
       if (m === 'GET' && path === '/api/admin/grants') return await listGrants(env, url);
       if ((r = path.match(/^\/api\/admin\/grants\/(g[0-9a-f]{18})\/revoke$/)) && m === 'POST') return await revokeGrant(env, A, r[1], body, ip);

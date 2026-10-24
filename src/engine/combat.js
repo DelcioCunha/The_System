@@ -50,8 +50,11 @@
 
   C.HEAL_LIMIT = 3; // poções de cura por batalha
 
+  /* adversário da arena já vencido: o combate é só uma revisitação (sem recompensas nem castigo) */
+  C.isRevisit = function (st, b) { return !!(b && b.premium && st.arena && st.arena.wins[b.id]); };
   C.rewards = function (st, b) {
     var L = b.level;
+    if (C.isRevisit(st, b)) return { xp: 0, coins: 0, chest: null, special: null, first: false, revisit: true };
     if (b.guardian) {
       // Guardiões: acima dos chefes normais do mesmo nível; o Tenente vale como um rei
       var gf = !(st.arena && st.arena.wins[b.id]);
@@ -577,11 +580,26 @@
     E.bump(st, won ? 'sparWins' : 'sparLosses');
     E.history(st, '🌑', 'Treino com ' + sn + ': ' + (won ? 'vitória' : 'derrota') + (xp ? ' (+' + xp + ' XP, +' + coins + ' moedas)' : '') + '.');
   }
+  /* revisitação de um adversário da arena: nada se ganha, nada se perde */
+  function finishRevisit(st, bt, def, won) {
+    if (won) st.arena.wins[def.id] = (st.arena.wins[def.id] || 0) + 1;
+    st.arena.last[def.id] = now();
+    E.setHp(st, won ? st.hp : E.combatStats(st).maxHp * C.REVIVE_PCT / 100);
+    bt.result = won ? { xp: 0, coins: 0, items: [], trophy: null, revisit: true } : { level: st.level, levelFrom: st.level, xpLost: 0, revisit: true };
+    var say = won ? (def.story ? def.story.rematchLast : null) : (def.story ? def.story.taunt[Math.floor(S.rng.random() * def.story.taunt.length)] : null);
+    if (say) { log(bt, def.name + ': «' + say + '»', 'say'); if (won) bt.result.lastWords = say; }
+    log(bt, won ? '🏛️ Revisitação vencida. A arena não dá nada a quem já venceu.' : '🏛️ Revisitação perdida. Sem castigo: o Coliseu só se lembra da primeira vez.', won ? 'win' : 'lose');
+    E.emit({ type: won ? 'victory' : 'defeat', title: won ? 'REVISITAÇÃO' : 'CAÍSTE NA REVISITAÇÃO', name: def.name, lastWords: won ? say : null,
+      lines: (say && !won ? ['«' + say + '»'] : []).concat([won ? 'Já tinhas vencido este adversário: a revisitação não dá recompensas.' : 'Revisitação: não perdeste XP.', won ? 'Só a memória da luta fica.' : 'O Sistema reanimou-te com ' + C.REVIVE_PCT + '% da vida.']) });
+    E.bump(st, won ? 'battlesWon' : 'battlesLost');
+    E.history(st, '🏛️', 'Revisitou ' + def.name + ' na arena: ' + (won ? 'vitória' : 'derrota') + ' (sem recompensas).');
+  }
   function finishWin(st, bt) {
     if (bt.spar) return finishSpar(st, bt, true);
     var def = S.BOSS_BY_ID[bt.bossId];
     var r = C.rewards(st, def);
     bt.over = 'win';
+    if (r.revisit) return finishRevisit(st, bt, def, true);
     if (def.premium) {
       st.arena.wins[def.id] = (st.arena.wins[def.id] || 0) + 1;
       (S.COSMETICS || []).forEach(function (c) { if (c.reward === def.id) S.premium.award(st, c.id); });
@@ -628,6 +646,7 @@
     if (bt.spar) return finishSpar(st, bt, false);
     var def = S.BOSS_BY_ID[bt.bossId];
     bt.over = 'lose';
+    if (C.isRevisit(st, def)) return finishRevisit(st, bt, def, false);
     E.bump(st, 'battlesLost');
     if (def.premium) {
       // na arena não se perde nível: o Coliseu humilha, não mata

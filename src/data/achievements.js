@@ -53,7 +53,7 @@
     { id: 'rich', icon: '💰', name: 'Bolso Cheio', desc: 'Ganha 10 000 moedas no total.', check: function (s) { return c(s, 'coinsEarned') >= 10000; }, reward: { chest: 'raro' } },
     { id: 'rich2', icon: '🏦', name: 'Magnata', desc: 'Ganha 100 000 moedas no total.', check: function (s) { return c(s, 'coinsEarned') >= 100000; }, reward: { chest: 'lendario' } },
     { id: 'spend', icon: '🛒', name: 'Bom Cliente', desc: 'Gasta 5 000 moedas.', check: function (s) { return c(s, 'coinsSpent') >= 5000; }, reward: { chest: 'raro' } },
-    { id: 'leisure', icon: '🎉', name: 'Equilíbrio', desc: 'Usa 10 recompensas de lazer.', check: function (s) { return c(s, 'leisureUsed') >= 10; }, reward: { chest: 'raro' } },
+    { id: 'leisure', icon: '🎉', name: 'Equilíbrio', desc: 'Usa 25 consumíveis.', check: function (s) { return c(s, 'consumablesUsed') >= 25; }, reward: { chest: 'raro' } },
     { id: 'collector', icon: '🗃️', name: 'Colecionador', desc: 'Obtém 25 itens diferentes.', check: function (s) { return Object.keys(s.seen || {}).length >= 25; }, reward: { chest: 'epico' } },
     { id: 'arsenal', icon: '🗡️', name: 'Arsenal', desc: 'Obtém 6 armas diferentes.', check: function (s) { return Object.keys(s.seen || {}).filter(function (id) { return S.ITEMS[id] && S.ITEMS[id].cat === 'arma'; }).length >= 6; }, reward: { chest: 'raro' } },
     { id: 'chest25', icon: '📦', name: 'Caçador de Tesouros', desc: 'Abre 25 baús.', check: function (s) { return c(s, 'chestsOpened') >= 25; }, reward: { chest: 'epico' } },

@@ -18,7 +18,7 @@ async function pops() { for (let g = 0; g < 60; g++) { await sleep(60); if ($('[
   assert.ok(w.document.documentElement.classList.contains('fx-full'), 'modo completo');
   click('[data-a="intro-yes"]');
   const i = $('#in-name'); i.value = 'Natan'; i.dispatchEvent(new w.Event('input', { bubbles: true }));
-  click('[data-a="intro-cls"][data-v="mago"]'); click('[data-a="intro-go"]');
+  click('[data-a="intro-cls"][data-v="mago"]'); click('[data-a="intro-g"][data-v="m"]'); click('[data-a="intro-go"]');
   assert.ok($('.awaken'), 'animação de despertar');
   await sleep(2400); await pops();
   assert.ok($('main.enter') || true);

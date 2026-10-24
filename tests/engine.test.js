@@ -318,7 +318,7 @@ test('loja: cada categoria tem muitos itens', () => {
   const counts = {};
   S.SHOP_TABS.forEach((t) => { counts[t.id] = E.shopList(E.state, t.id).length; });
   console.log('    ' + JSON.stringify(counts));
-  assert.ok(counts.lazer >= 20 && counts.arma >= 20 && counts.armadura >= 12 && counts.acessorio >= 30 && counts.consumivel >= 30 && counts.atributo >= 12);
+  assert.ok(counts.lazer === undefined && counts.arma >= 20 && counts.armadura >= 12 && counts.acessorio >= 30 && counts.consumivel >= 30 && counts.atributo >= 12);
 });
 test('troféus: vitória dá troféu, conjunto completo dá bónus', () => {
   const { S } = boot();
@@ -440,7 +440,7 @@ test('itens de horário só funcionam na sua fase', () => {
   at(S, 2026, 10, 16, 1);
   assert.ok(E.useItem('po_horamorta').ok);
 });
-test('preços de poções, baús e lazer acompanham o nível', () => {
+test('preços de poções e baús acompanham o nível', () => {
   const { S } = boot();
   const E = S.engine;
   at(S, 2026, 10, 14, 9);
@@ -636,7 +636,7 @@ test('todos os chefes, habilidades, itens e troféus têm narrativa e ficha comp
     const sec = L.itemSections(it, st);
     assert.ok(!bad(sec), 'ficha inválida: ' + id + ' ' + JSON.stringify(sec));
     if (it.equip) assert.ok(sec.some((x) => x.title === 'Bónus ao equipar' && x.rows.length), 'sem bónus: ' + id);
-    if (it.use && it.use.type !== 'leisure') assert.ok(sec.some((x) => x.title === 'Ao usar'), 'sem efeito: ' + id);
+    if (it.use) assert.ok(sec.some((x) => x.title === 'Ao usar'), 'sem efeito: ' + id);
   });
 });
 
@@ -1235,7 +1235,7 @@ test('Cristais: só entram por grant; Loja Exclusiva compra, não vende, equipam
   for (let i = 0; i < 400; i++) { st.level = 60; const r = E.openChest(st, 'lendario'); assert.ok(!r.items.some((id) => S.ITEMS[id].relic || S.ITEMS[id].premium), 'relíquia num baú'); }
 });
 
-test('Arenas: desbloqueio com Cristais, Campeão volta, 1.ª vitória dá relíquia e troféu, revanche dá menos', () => {
+test('Arenas: desbloqueio com Cristais, 1.ª vitória dá relíquia e troféu, revisitar não dá nem tira nada', () => {
   const { S } = boot();
   let t = at(S, 2026, 10, 14, 10);
   const E = S.engine, P = S.premium, C = S.combat;
@@ -1260,13 +1260,27 @@ test('Arenas: desbloqueio com Cristais, Campeão volta, 1.ª vitória dá relíq
   assert.strictEqual(st.battle.over, 'win');
   assert.ok(E.count(st, 'rl_eclipse') === 1 && st.trophies.ar1 && !st.defeated.ar1 && st.arena.wins.ar1 === 1);
   C.close();
-  assert.strictEqual(C.start(b.id).ok, false, 'Campeão a recuperar');
-  at(S, 2026, 10, 15, 7);
-  assert.ok(C.start(b.id).ok, 'volta 20 horas depois');
+  assert.ok(C.start(b.id).ok, 'pode revisitar logo');
   const rep = C.rewards(st, b);
-  assert.ok(!rep.first && rep.xp < first.xp * 0.4 && !rep.special, 'revanche dá menos e sem relíquia');
-  // derrota na arena: não perde nível
-  const lv = st.level; st.xp = 1000;
+  assert.ok(rep.revisit && rep.xp === 0 && rep.coins === 0 && !rep.chest && !rep.special, 'revisitar não dá recompensas');
+  E.takeEvents();
+  const xp0 = st.xp, coins0 = st.coins, inv0 = JSON.stringify(st.inv);
+  st.battle.b.hp = 1; C.act('attack');
+  assert.strictEqual(st.battle.over, 'win');
+  assert.ok(st.xp === xp0 && st.coins === coins0 && JSON.stringify(st.inv) === inv0, 'vitória na revisitação: nada muda');
+  assert.ok(E.takeEvents().some((e) => e.title === 'REVISITAÇÃO'));
+  C.close();
+  // derrota numa revisitação: não perde nada
+  assert.ok(C.start(b.id).ok);
+  st.xp = 1000; st.battle.p.hp = 1; st.battle.b.atk = 1e9;
+  C.act('attack');
+  assert.strictEqual(st.battle.over, 'lose');
+  assert.strictEqual(st.xp, 1000, 'revisitação perdida: sem castigo');
+  C.close();
+  // derrota na primeira vez: não perde nível, perde 25% do XP do nível
+  const g9 = S.ARENA_LADDER[2][0]; P.grant(st, P.arenaBoss(2).cost); P.unlock(P.arenaBoss(2).id);
+  assert.ok(C.start(g9.id).ok);
+  const lv = st.level;
   st.battle.p.hp = 1; st.battle.b.atk = 1e9;
   C.act('attack');
   assert.strictEqual(st.battle.over, 'lose');
@@ -1448,7 +1462,7 @@ test('Arenas premium: cada arena tem 10 combates em escada (9 Guardiões + Campe
   st.battle.b.hp = 1; C.act('attack');
   assert.strictEqual(st.battle.over, 'win'); C.close();
   assert.strictEqual(st.arena.wins[g1.id], 1);
-  assert.strictEqual(C.start(g1.id).ok, false, 'Guardião vencido volta 20 horas depois');
+  assert.ok(C.start(g1.id).ok, 'Guardião vencido pode ser revisitado logo'); st.battle = null;
   assert.ok(C.start(g2.id).ok, 'o 2.º abre-se'); st.battle.b.hp = 1; C.act('attack'); C.close();
   const pg = P.arenaProgress(st, 3);
   assert.ok(pg.won === 2 && pg.next === S.ARENA_LADDER[3][2]);
@@ -1940,6 +1954,39 @@ test('Lembretes novos: prazos aos 30, 20 e 10 minutos, resumo da manhã, missõe
   E.state.watch.banUntil = S.clock.now() + 2 * 3600000;
   assert.ok(L.plan(E.state).some((n) => n.key.indexOf('ban:') === 0), 'fim do bloqueio');
   assert.strictEqual(L.noteTab('ws:1'), 'status');
+});
+
+test('Pergaminho do Novo Nome (30 Cristais) e aparência feminina', () => {
+  const { S } = boot();
+  const E = S.engine, P = S.premium;
+  E.start('Ana', 'mago', 'f');
+  const st = E.state;
+  assert.strictEqual(st.gender, 'f', 'aparência escolhida no início');
+  assert.strictEqual(P.price('pr_nome'), 30);
+  assert.ok(S.PREMIUM_SHOP.some((g) => g.ids.includes('pr_nome')), 'está na Loja Exclusiva');
+  assert.strictEqual(E.rename('Outra').ok, false, 'sem pergaminho não muda');
+  P.grant(st, 30);
+  assert.ok(P.buy('pr_nome').ok && st.crystals === 0);
+  assert.strictEqual(E.useItem('pr_nome').rename, true, 'usar abre a troca de nome');
+  assert.strictEqual(E.rename('a').ok, false, 'nome curto');
+  const r = E.rename('  Ana   Sombra ');
+  assert.ok(r.ok && st.name === 'Ana Sombra' && E.count(st, 'pr_nome') === 0, 'nome mudado e pergaminho gasto');
+  const lv = st.level, xp = st.xp;
+  assert.ok(E.setGender('m').ok && st.gender === 'm' && st.level === lv && st.xp === xp, 'mudar a aparência não mexe na progressão');
+});
+
+test('Loja de lazer removida: recompensas antigas voltam a moedas', () => {
+  const { S } = boot();
+  const E = S.engine;
+  E.start('Ana', 'mago', 'f');
+  const st = E.state;
+  assert.ok(!S.SHOP_TABS.some((t) => t.id === 'lazer') && !Object.keys(S.ITEMS).some((id) => /^lz_/.test(id)), 'sem itens de lazer');
+  const old = JSON.parse(JSON.stringify(st));
+  old.inv.lz_cafe = 2; old.inv.cl_abc = 1; old.customLeisure = [{ id: 'cl_abc', name: 'Pizza', price: 150, icon: '🍕' }];
+  const c0 = old.coins;
+  const m = E.migrate(old) || old;
+  assert.strictEqual(m.coins, c0 + 2 * S.LEISURE_REFUND.lz_cafe + 150, 'devolve o preço base');
+  assert.ok(!m.inv.lz_cafe && !m.inv.cl_abc && m.customLeisure.length === 0 && m.leisureRefund.n === 3);
 });
 
 console.log('\n' + passed + ' testes passaram' + (process.exitCode ? ' (com falhas)' : ''));

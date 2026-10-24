@@ -15,30 +15,6 @@
 
   S.ITEM_LORE = {
     /* ---------- Lazer ---------- */
-    lz_sesta: 'Até os caçadores de rank S fecham os olhos de vez em quando. Vinte minutos de descanso podem valer mais do que uma poção.',
-    lz_cafe: 'O Sistema reconhece que ninguém aguenta o dia inteiro sem uma pausa. Este vale autoriza meia hora de café, conversa ou simplesmente de nada.',
-    lz_snack: 'Um prémio pequeno para uma conquista pequena. O teu lanche favorito, sem culpa e sem contar calorias.',
-    lz_livro: 'Um capítulo lido só porque sim, sem objetivo nem pressa. Ler por prazer também treina a mente.',
-    lz_episodio: 'Um episódio da série de que gostas, ganho com esforço. Saber parar no fim do episódio também faz parte do treino.',
-    lz_redes: 'Meia hora de redes sociais com a consciência tranquila. Ganhaste-a.',
-    lz_doce: 'Uma sobremesa à tua escolha. Os grandes guerreiros também precisam de açúcar.',
-    lz_banho: 'Água quente, tempo e silêncio. O corpo recupera melhor quando a mente descansa.',
-    lz_musica: 'Uma hora inteira só tua. Música, um passeio, um hobby: o Sistema não pergunta.',
-    lz_jogo: 'Uma hora de videojogo merecida. Desta vez, quem sobe de nível é a personagem do jogo.',
-    lz_refeicao: 'Uma refeição fora do plano, sem remorsos. O equilíbrio também se treina.',
-    lz_preguica: 'Desligar o despertador num dia à tua escolha. Uma recompensa rara e preciosa.',
-    lz_cinema: 'Uma noite de filmes, no cinema ou no sofá. Escolhe bem o filme: foi caro.',
-    lz_amigos: 'Uma saída com quem te faz bem. Os caçadores mais fortes nunca caçam sozinhos.',
-    lz_maratona: 'Uma tarde inteira dedicada a uma série. Mereceste esta preguiça.',
-    lz_restaurante: 'Um jantar num restaurante de que gostes. Celebrar as vitórias faz parte do caminho.',
-    lz_passeio: 'Uma saída especial: praia, montanha, outra cidade. O mundo real também tem portões que vale a pena atravessar.',
-    lz_descanso: 'Um dia inteiro sem obrigações. As missões do Sistema continuam a contar, mas tu podes respirar.',
-    lz_roupa: 'Uma peça de roupa nova, ganha com suor. Até o equipamento do mundo real merece melhorias.',
-    lz_spa: 'Uma massagem ou um dia de spa. O corpo que trabalhou tanto merece ser tratado como um tesouro.',
-    lz_desejo: 'Aquela coisa pequena que queres há muito tempo e nunca compraste. Agora tens autorização do Sistema.',
-    lz_gadget: 'Um gadget novo para o teu arsenal do mundo real. É uma recompensa lendária: escolhe bem.',
-    lz_viagem: 'Um fim de semana longe da rotina. Até os caçadores precisam de ver outros horizontes.',
-    lz_dourado: 'O prémio máximo da loja. Uma grande recompensa à tua escolha, porque chegaste muito longe para a ganhar.',
 
     /* ---------- Armas: Guerreiro ---------- */
     w_guerreiro_1: 'Uma espada de ferro simples, forjada em série para os recrutas. Não é bonita, mas não parte.',

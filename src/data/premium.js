@@ -14,8 +14,8 @@
   S.CRYSTAL = { name: 'Cristais', one: 'Cristal', icon: '◆', color: '#67D5FF' };
   S.PREMIUM_RULES = {
     perBattle: 1,            // consumíveis premium por batalha
-    arenaCooldownH: 20,      // horas até poder repetir um Campeão já vencido
-    repeatPct: 0.35,         // recompensas nas revanches
+    arenaCooldownH: 0,       // um adversário já vencido pode ser revisitado logo
+    repeatPct: 0,            // revisitar não dá recompensas: é só voltar a enfrentar o chefe
     judgmentPct: 20,         // Lâmina do Juízo: % da vida máxima do chefe
     judgmentPctPremium: 8,   // ... contra Campeões, reis ocultos e o chefe final
     loseXpPct: 0.25          // derrota na arena: perde 25% do XP do nível (sem perder nível)
@@ -121,6 +121,9 @@
   prem({ id: 'pr_general', name: 'Insígnia do General das Sombras', icon: '🎖️', cat: 'premium', crystals: 150, rarity: 'mitico', lvl: 1, field: true,
     desc: '+1 lugar de servo convocado, para sempre. Podes usar até 3 insígnias (de 3 para 6 lugares).', use: { type: 'shadowSlot' } });
 
+  prem({ id: 'pr_nome', name: 'Pergaminho do Novo Nome', icon: '✒️', cat: 'premium', crystals: 30, rarity: 'lendario', lvl: 1, field: true,
+    desc: 'Muda o teu nome de jogador. O progresso, o ID e os amigos ficam iguais.', use: { type: 'rename' } });
+
   /* Conjunto do Monarca: bónus por peças soberanas equipadas ao mesmo tempo */
   S.MONARCH_SET = [
     { n: 2, desc: '+4% em todos os atributos', bonus: { allStatsPct: 4 } },
@@ -131,7 +134,7 @@
   S.PREMIUM_SHOP = [
     { title: 'Equipamento soberano', ids: ['pr_lamina', 'pr_armadura', 'pr_coroa', 'pr_olho', 'pr_coracao', 'pr_ampulheta', 'pr_espinho', 'pr_executor', 'pr_egide'] },
     { title: 'Relíquias permanentes', note: 'Compras uma vez e ficam tuas para sempre. Depois de usada, cada relíquia recarrega sozinha. Só podes usar 1 relíquia premium por batalha.', ids: ['pr_juizo', 'pr_tempo', 'pr_legiao', 'pr_elixir', 'pr_fenix', 'pr_ruptura', 'pr_eco'] },
-    { title: 'Tesouros', ids: ['pr_general', 'pr_bau', 'pr_selo', 'pr_foco', 'pr_trevo'] }
+    { title: 'Tesouros', ids: ['pr_general', 'pr_nome', 'pr_bau', 'pr_selo', 'pr_foco', 'pr_trevo'] }
   ];
   S.PREMIUM_RELICS = ['pr_juizo', 'pr_tempo', 'pr_elixir', 'pr_legiao', 'pr_fenix', 'pr_ruptura', 'pr_eco'];
   S.PREMIUM_CONSUMABLES = ['pr_juizo', 'pr_tempo', 'pr_elixir', 'pr_legiao', 'pr_fenix', 'pr_ruptura', 'pr_eco'];
@@ -205,7 +208,7 @@
       lore: 'Seraphine era a Jogadora mais rápida que o Sistema já registou. Criava uma missão e concluía-a no mesmo instante, cem vezes por dia. O Sistema percebeu tarde demais que nenhuma delas tinha acontecido. Como castigo, condenou-a a ser rápida para sempre: uma dança sem fim, mil lâminas sem descanso, numa arena onde cada segundo é real.',
       lines: ['És lento. Eu já te cortei três vezes antes de piscares.', 'Pela primeira vez... alguém foi mais rápido... do que a minha mentira.'],
       relic: ['rl_laminas', 'Fita das Mil Lâminas', '🎀', { slot: 'acc', eva: 8, crit: 5, stats: { agi: 6 } }] },
-    { n: 3, arena: 'Arena Abissal das Marés', boss: 'Leviarch, Devorador das Marés Negras', lvl: 35, cost: 280, color: '#2fd0c9', icon: '🐙', arch: 'tanque',
+    { n: 3, arena: 'Arena Abissal das Marés', boss: 'Leviarch, o que Tudo Guardava', lvl: 35, cost: 280, color: '#2fd0c9', icon: '🗝️', arch: 'tanque',
       skills: ['strike', 'pr_tide', 'drain', 'shield'], crime: 'Acumulou tudo o que o Sistema dava. Nunca usou nada.',
       lore: 'Leviarch guardava. Moedas, poções, baús fechados, recompensas que nunca gozou. Dizia que um dia ia precisar. Esse dia nunca chegou, e a avareza cresceu até ocupar o lugar do homem. O Sistema afundou-o numa arena inundada, onde ele continua a devorar tudo o que lá entra: vida, mana, esperança.',
       lines: ['Tudo o que trouxeste... é meu. Até o fôlego.', 'Tanto... guardado... e nada... para levar.'],
@@ -313,6 +316,7 @@
     pr_elixir: 'O mesmo elixir que os Monarcas bebiam antes das batalhas que decidiam reinos. Fecha todas as feridas, enche a mana até transbordar e acende uma fúria fria durante três turnos. Tem sabor a metal e a vitória. Não conta como poção: o corpo aceita-o como se fosse seu.',
     pr_legiao: 'Um estandarte negro rasgado por mil batalhas. Quando o levantas, a sombra de um exército inteiro ergue-se atrás de ti e ataca a cada ronda durante cinco turnos. Não falam, não sangram, não recuam. Lutam por ti até o estandarte se calar.',
     pr_fenix: 'Uma única lágrima de uma fénix que ardeu negra. Não se usa: guarda-se. No momento em que a tua vida chega a zero, ela arde por ti e devolve-te inteiro ao combate. É mais forte do que a Pena da Fénix, e por isso arde primeiro.',
+    pr_nome: 'Um pergaminho em branco com o selo do Sistema. O nome que escreveres nele passa a ser o teu em todos os registos. O que fizeste com o nome antigo, esse, o Sistema não esquece.',
     pr_general: 'Uma insígnia de metal negro, fria ao toque, com uma coroa partida gravada. Quem a usa é reconhecido pelas sombras como general, e mais servos atendem ao chamado.',
     pr_bau: 'Um baú forrado a veludo negro com o selo do Monarca na tampa. Dentro há sempre um Baú Lendário, uma relíquia de combate escolhida pelo acaso e uma soma de moedas que cresce com o teu nível. O Sistema não abre baús destes para qualquer um.',
     pr_ampulheta: 'Uma ampulheta do tamanho de um polegar, presa a uma corrente de ouro negro. A areia cai para cima no primeiro instante de cada batalha, e é nesse instante que o golpe do Monarca pesa mais. Depois, cada ferida que causas devolve-te um fio de mana.',

@@ -122,8 +122,8 @@
       ['Kaelthar cobrou-te. Ele gosta de cobrar.', 'Perdeste para o homem mais justo que conheci. A justiça dele já não é justa.', 'O Carrasco do Eclipse ganhou. Paga e volta.']],
     ar2: [['Seraphine parou de dançar. Por um instante.', 'Venceste a mais rápida. Rápida por fingimento, no início. Agora por condenação.', 'As mil lâminas caíram. Ela volta a dançar amanhã.'],
       ['Seraphine foi mais rápida. Sempre foi.', 'Perdeste para a velocidade. A dela é real agora.', 'Ela dançou à tua volta até caíres.']],
-    ar3: [['Leviarch largou o que guardava. Por pouco tempo.', 'Venceste quem guardava tudo e não usava nada.', 'As marés negras recuaram.'],
-      ['Leviarch guardou-te também.', 'Perdeste para a posse. Ela afoga.', 'O Devorador das Marés ganhou. Usa o que tens antes de voltar.']],
+    ar3: [['Leviarch largou o cofre. Por pouco tempo.', 'Venceste quem guardava tudo e não usava nada. Usa o que ganhaste.', 'A água negra recuou. O ouro continua fechado.'],
+      ['Leviarch guardou-te também.', 'Perdeste para a posse. Ela afoga devagar.', 'O avarento ganhou. Abre os teus baús antes de voltar.']],
     ar4: [['Chronos-9 parou. Não voltou atrás desta vez.', 'Venceste quem desfazia os erros. Tu tens de viver com os teus.', 'O Executor Temporal caiu. A ampulheta é tua.'],
       ['Chronos-9 voltou atrás e acertou.', 'Perdeste para quem repete até acertar. Aprende com ele.', 'O tempo dele ganhou. O teu ainda corre.']],
     ar5: [['Ignivar caiu. Vai renascer. É a condenação dele.', 'Venceste o imperador que recomeçava. Ele vai recomeçar outra vez.', 'A fénix apagou-se. Por agora.'],
@@ -134,8 +134,8 @@
       ['Gorrath treinou mais do que tu.', 'Perdeste para a constância. A constância ganha quase sempre.', 'O Colosso ganhou. Ele nunca falha uma manhã.']],
     ar8: [['Valkyra caiu em silêncio.', 'Venceste a última silenciosa. Ela desafiou-me mil vezes.', 'A Arauto da Tempestade calou-se.'],
       ['Valkyra desafiou-te e ganhou.', 'Perdeste para a rebeldia. Ela tinha razões. Tu?', 'A tempestade ganhou esta.']],
-    ar9: [['Morthis largou o jardim.', 'Venceste o jardineiro dos mortos. As flores murcharam.', 'O jardim necrótico ficou sem dono.'],
-      ['Morthis plantou-te no jardim.', 'Perdeste para quem cuida do que já morreu.', 'O Jardineiro ganhou. Volta antes de criares raízes.']],
+    ar9: [['Morthis pousou o regador. Ainda sorri.', 'Venceste o jardineiro. Não ouviste os conselhos dele. Bem.', 'O jardim ficou sem quem o regue. Algumas flores lembraram-se dos nomes.'],
+      ['Morthis plantou-te no jardim. Com muito cuidado.', 'Perdeste para a gentileza errada.', 'O Jardineiro ganhou. Não descanses só porque ele te disse.']],
     ar10: [['Ele aprendeu contigo. E tu venceste-o. Ouviste o que ele disse?', 'Venceste o primeiro. Ele continua sentado. Mas talvez tenha olhado para ti.', 'A sala branca ficou em silêncio outra vez. Diz-me depois o que ele te disse.'],
       ['Ele usou os teus golpes contra ti. Perdeste para ti próprio, mais calmo.', 'O primeiro ganhou. Ele ganhava sempre.', 'Perdeste na sala branca. Ele nem se levantou da cadeira. Volta.']]
   });

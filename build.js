@@ -13,10 +13,12 @@ const order = require('./build-order.json').concat(['src/ui/fx.js', 'src/ui/sfx.
 const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
 /* --- avatares: assets/avatars/<classe>/<nivel>.(png|jpg|jpeg|webp) --- */
-const AV_SRC = path.join(ROOT, 'assets', 'avatars');
+// aparência feminina: assets/avatars_f/<classe>/<nivel> (no mapa fica como <classe>_f)
 const manifest = {};
 const copies = [];
-if (fs.existsSync(AV_SRC)) {
+[['avatars', ''], ['avatars_f', '_f']].forEach(([base, suf]) => {
+  const AV_SRC = path.join(ROOT, 'assets', base);
+  if (!fs.existsSync(AV_SRC)) return;
   fs.readdirSync(AV_SRC).forEach((cls) => {
     const dir = path.join(AV_SRC, cls);
     if (!fs.statSync(dir).isDirectory()) return;
@@ -25,19 +27,19 @@ if (fs.existsSync(AV_SRC)) {
       if (!m) return;
       const lv = +m[1];
       if (lv < 1 || lv > 100) return;
-      manifest[cls] = manifest[cls] || {};
-      manifest[cls][lv] = 'avatars/' + cls + '/' + file;
-      copies.push([path.join(dir, file), path.join(ROOT, 'www', 'avatars', cls, file)]);
+      manifest[cls + suf] = manifest[cls + suf] || {};
+      manifest[cls + suf][lv] = base + '/' + cls + '/' + file;
+      copies.push([path.join(dir, file), path.join(ROOT, 'www', base, cls, file)]);
     });
   });
-}
+});
 
 /* --- arte das classes: assets/classes/<classe>.(png|jpg|webp) --- */
 const CL_SRC = path.join(ROOT, 'assets', 'classes');
 const classArt = {};
 if (fs.existsSync(CL_SRC)) {
   fs.readdirSync(CL_SRC).forEach((file) => {
-    const m = file.match(/^([a-z]+)\.(png|jpe?g|webp)$/i);
+    const m = file.match(/^([a-z]+(?:_f)?)\.(png|jpe?g|webp)$/i);
     if (!m) return;
     classArt[m[1]] = 'classes/' + file;
     copies.push([path.join(CL_SRC, file), path.join(ROOT, 'www', 'classes', file)]);
@@ -150,7 +152,8 @@ const INLINE = { TROPHY_ART: trophyArt, UI_ART: uiArt, SKILL_ART: skillArt, FRAM
 const inlineMap = (m) => { const o = {}; Object.keys(m).forEach((k) => { const pv = path.join(ROOT, 'dist', 'pv', m[k]); const f = fs.existsSync(pv) ? pv : path.join(ROOT, 'assets', m[k]); const ext = path.extname(f).slice(1).replace('jpg', 'jpeg'); o[k] = 'data:image/' + ext + ';base64,' + fs.readFileSync(f).toString('base64'); }); return o; };
 let previewJs = 'globalThis.SYS = { PREVIEW: true };\n' + safeJs;
 // sombras: as dos portões vão embutidas; as das arenas premium são ficheiros publicados ao lado da página (poupa espaço)
-const shadowPv = {}, shadowFiles = {}; Object.keys(shadowArt).forEach((k) => { if (!/^ar/.test(k)) shadowPv[k] = shadowArt[k]; else shadowFiles[k] = shadowArt[k]; });
+// todas as sombras vão no pv-extra.js: a página fica com folga no limite de 16 MB
+const shadowPv = {}, shadowFiles = Object.assign({}, shadowArt);
 delete INLINE.SHADOW_ART;
 delete INLINE.SKILL_ART; // os ícones das habilidades também vão no pv-extra.js (limite de 16 MB da página)
 previewJs = previewJs.replace('SYS.SKILL_ART = ' + JSON.stringify(skillArt) + ';', 'SYS.SKILL_ART = {};');
@@ -169,14 +172,23 @@ if (fs.existsSync(PUB_LIST)) {
   const embed = (rel) => { previewJs = previewJs.split('"' + rel + '"').join('"data:image/webp;base64,' + fs.readFileSync(light(rel)).toString('base64') + '"'); };
   Object.keys(itemArt).forEach((id) => { if (!pub.has(itemArt[id])) embed(itemArt[id]); });
   // avatares das fases novas (a cada 3 níveis) que não estão publicados como ficheiros
-  Object.keys(manifest).forEach((cls) => Object.keys(manifest[cls]).forEach((lv) => { const rel = manifest[cls][lv]; if (!pub.has(rel)) embed(rel); }));
+  Object.keys(manifest).filter((cls) => !/_f$/.test(cls)).forEach((cls) => Object.keys(manifest[cls]).forEach((lv) => { const rel = manifest[cls][lv]; if (!pub.has(rel)) embed(rel); }));
 }
 // fases finais dos chefes: vão num ficheiro à parte (pv-bosses.js) — a pré-visualização já está no limite de 512 ficheiros
 const f2 = {}; Object.keys(bossArt).forEach((k) => { if (/_f2$/.test(k)) f2[k] = bossArt[k]; });
 fs.writeFileSync(path.join(ROOT, 'dist', 'pv-bosses.js'), 'Object.assign(SYS.BOSS_ART, ' + JSON.stringify(inlineMap(f2)) + ');\nif (SYS.ui && SYS.ui.render) SYS.ui.render();\n');
+// aparência feminina: vai no fim do pv-bosses.js, carregado depois da página
+{
+  const fem = {}, femCls = {};
+  Object.keys(manifest).filter((k) => /_f$/.test(k)).forEach((k) => { fem[k] = inlineMap(manifest[k]); });
+  Object.keys(classArt).filter((k) => /_f$/.test(k)).forEach((k) => { femCls[k] = classArt[k]; });
+  // vai no fim do pv-bosses.js (a pré-visualização está no limite de 512 ficheiros)
+  fs.appendFileSync(path.join(ROOT, 'dist', 'pv-bosses.js'), 'Object.assign(SYS.AVATARS, ' + JSON.stringify(fem) + ');\nObject.assign(SYS.CLASS_ART, ' + JSON.stringify(inlineMap(femCls)) + ');\nif (SYS.ui && SYS.ui.render) SYS.ui.render();\n');
+}
 const preview = '<title>Sistema do Caçador</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n' + fonts + '\n<style>\n' + css + '\n</style>\n<div id="app"></div>\n<script>\n' + previewJs + '</script>\n' + '<script src="pv-extra.js"></script>\n<script src="pv-bosses.js"></script>\n';
 
 fs.rmSync(path.join(ROOT, 'www', 'avatars'), { recursive: true, force: true });
+fs.rmSync(path.join(ROOT, 'www', 'avatars_f'), { recursive: true, force: true });
 fs.rmSync(path.join(ROOT, 'www', 'classes'), { recursive: true, force: true });
 fs.rmSync(path.join(ROOT, 'www', 'bosses'), { recursive: true, force: true });
 fs.rmSync(path.join(ROOT, 'www', 'items'), { recursive: true, force: true });

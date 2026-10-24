@@ -10,7 +10,7 @@
 
   function pct(x) { return Math.round(x * 100) + '%'; }
   function fmt(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
-  var CAT_NAMES = { lazer: 'Recompensa de lazer', arma: 'Arma', armadura: 'Armadura', acessorio: 'Acessório', consumivel: 'Consumível',
+  var CAT_NAMES = { arma: 'Arma', armadura: 'Armadura', acessorio: 'Acessório', consumivel: 'Consumível',
     atributo: 'Melhoria permanente', bau: 'Baú', secreto: 'Item secreto' };
   var DOT = { burn: 'Queimadura', poison: 'Veneno', bleed: 'Sangramento' };
   var BUFF = { atk: 'ataque', matk: 'ataque mágico', def: 'defesa', crit: 'hipótese de crítico', eva: 'esquiva', lifesteal: 'roubo de vida', reflect: 'reflexão de dano' };
@@ -125,12 +125,12 @@
       case 'monarch': rows.push(['Efeito', 'Vida e mana a 100%, remove efeitos negativos e +40% de ataque e ataque mágico durante 3 turnos'], ['Limite', S.PREMIUM_RULES.perBattle + ' relíquia premium por batalha (não conta para o limite de poções)']); break;
       case 'monarchChest': rows.push(['Contém', 'Baú Lendário + Baú Secreto + moedas que acompanham o teu nível + recarga de todas as relíquias']); break;
       case 'perk': rows.push(['Duração', 'Para sempre (usa-se uma vez)']); break;
+      case 'rename': rows.push(['Efeito', 'Muda o nome do jogador'], ['Fica igual', 'Progresso, ID de Jogador e amigos']); break;
       case 'shadowSlot': rows.push(['Efeito', '+1 lugar de servo convocado, para sempre'], ['Limite', 'Até 3 insígnias (de 3 para 6 lugares; o Invocador tem mais 1)']); break;
       case 'revealBoss': rows.push(['Efeito', 'Revela um portão escondido']); break;
       case 'system': rows.push(['Efeito', it.desc], ['Tipo', 'Artefato do Sistema (usa-se na Bolsa)']); break;
       case 'fragment': rows.push(['Efeito', 'Junta ' + u.need + ' para formar o ' + S.ITEMS[u.result].name]); break;
       case 'core': rows.push(['Efeito', '+' + u.points + ' pontos livres e a habilidade ' + S.ALL_SKILLS[u.skill].name]); break;
-      case 'leisure': rows.push(['Efeito', 'Ao usar, fica registado que gozaste esta recompensa na vida real']); break;
     }
     return rows;
   };

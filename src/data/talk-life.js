@@ -210,7 +210,7 @@
       ['Vou gastar bem.', 'o', 'Gasta no que te mantém vivo. O resto é decoração.'],
       ['Vou guardar.', 'q', 'Guardar também é estratégia. Até um chefe te tirar 5% por fugires.'],
       ['Que sorria.', 'd', 'Sorri. A Loja não tem pressa. Tu é que vais ter, num portão.']], { w: 2 }],
-    ['tab', 'tab=loja', 'Na Loja de lazer estão as tuas recompensas reais. Mereceste alguma hoje?', [
+    ['tab', 'tab=loja', 'Na Loja, cada moeda é um passo a mais nos portões. Gasta no que te mantém de pé.', [
       ['Mereci.', 'o', 'Então compra. E aproveita. É para isso que existe.'],
       ['Ainda não.', 'q', 'Então vai merecer primeiro. A recompensa sabe melhor assim.'],
       ['Compro na mesma.', 'd', 'Podes. Mas as recompensas sem esforço sabem a nada.']]],

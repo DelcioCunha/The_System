@@ -221,6 +221,13 @@
       trust: S.watch ? S.watch.trust(st) : 100, day: S.time && S.time.systemDay ? S.time.systemDay(st) : 0,
       arenas: st.arena ? Object.keys(st.arena.wins || {}).length : 0, spentCrystals: c.crystalsSpent || 0 };
   }
+  /* resumo do perfil que os amigos veem (Social → perfil do amigo) */
+  function profileOf(st) {
+    var fr = S.premium && S.premium.cosmeticOn ? S.premium.cosmeticOn(st, 'moldura') : null, nm = S.premium && S.premium.cosmeticOn ? S.premium.cosmeticOn(st, 'nome') : null;
+    var sh = st.shadows && st.shadows.owned ? Object.keys(st.shadows.owned).length : 0;
+    return { title: S.titleFor ? S.titleFor(st.level) : '', ach: Object.keys(st.achievements || {}).length, achTotal: (S.ACHIEVEMENTS || []).length, shadows: sh,
+      trophies: Object.keys(st.trophies || {}).length, frame: fr ? fr.id : null, color: nm && nm.color ? nm.color : null };
+  }
   /* avisos da administração: guardados no jogo; os novos aparecem uma vez e ficam na área de Avisos */
   SH.NOTICE_KINDS = { info: 'Informação', importante: 'Importante', evento: 'Evento', manutencao: 'Manutenção' };
   SH.notices = function (st) {
@@ -256,7 +263,7 @@
     lastSync = Date.now();
     var C = globalThis.Capacitor, platform = C && C.isNativePlatform && C.isNativePlatform() ? 'android' : 'web';
     syncing = call('POST', '/api/player/sync', { player_id: st.playerId, token: st.shop.secret, name: st.name, cls: st.cls, level: st.level, crystals: st.crystals, coins: st.coins,
-      stats: stats(st), app_version: S.VERSION, platform: platform, device: S.gate ? S.gate.idsForSync() : null }).then(function (j) {
+      stats: stats(st), app_version: S.VERSION, platform: platform, device: S.gate ? S.gate.idsForSync() : null, gender: st.gender === 'f' ? 'f' : 'm', profile: profileOf(st) }).then(function (j) {
       if (!j.ok) {
         if (j.conflict && !st.shop.conflict) { st.shop.conflict = true; E.commit('conta noutro aparelho'); }
         return j;

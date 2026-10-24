@@ -6,7 +6,7 @@
   var E = S.engine, M = S.missions, C = S.combat, FX = S.fx;
   var root;
   var ui = {
-    tab: 'status', page: null, shopTab: 'lazer', gate: 1, bag: 'tudo',
+    tab: 'status', page: null, shopTab: 'arma', gate: 1, bag: 'tudo',
     modal: null, popups: [], form: null, sheet: null, toast: null,
     intro: { step: 0, name: '', cls: null }, histLimit: 40, notes: [],
     pt: { x: 0, y: 0 }, popSeq: 0, shownPop: null, shownModal: null, lastView: null, holdUntil: 0, holdTimer: null,
@@ -31,7 +31,6 @@
     var src = it && artId(it.id);
     var c = 'ico' + (cls ? ' ' + cls : '');
     if (!it) return '<div class="' + c + '">·</div>';
-    if (!src && it.custom && LZ_CUSTOM[it.icon] && hasArt(LZ_CUSTOM[it.icon])) return '<div class="' + c + ' has-img"><img src="' + S.UI_ART[LZ_CUSTOM[it.icon]] + '" alt=""></div>';
     if (!src) return '<div class="' + c + '">' + it.icon + '</div>';
     return '<div class="' + c + ' has-img" style="--rc:' + rc(it.rarity) + '"><img src="' + src + '" alt="" loading="lazy"></div>';
   }
@@ -60,7 +59,6 @@
     '📲': 'h_transfer', '🔰': 'h_shield', '🗺️': 'h_map', '🛒': 'h_buy', '👁️': 'ui_eye', '◆': 'ui_crystal',
     '🔔': 'h_bell', '🩸': 'h_blood', '📜': 'h_scroll', '🌑': 'log_shadow', '🌫️': 'h_fade', '🔒': 'ic_lock', '⚔️': 'log_appear', '⚡': 'log_storm',
     '🗝️': 'h_key', '🧭': 'h_compass', '⛓️': 'h_chains', '📊': 'h_stats' };
-  var LZ_CUSTOM = { '🎁': 'lz_c_gift', '🍕': 'lz_c_food', '🎮': 'lz_c_game', '🎬': 'lz_c_movie', '🛍️': 'lz_c_shop', '🏖️': 'lz_c_beach', '🍦': 'lz_c_sweet', '📱': 'lz_c_phone' };
   function hasArt(key) { return !!(S.UI_ART && S.UI_ART[key]); }
   /* texto que começa por emoji (registo de batalha) → ícone + texto */
   function iconText(txt, table, special) {
@@ -83,7 +81,6 @@
   }
   function phaseIcon(k, cls) { return uiIcon('phase_' + k, S.time.PHASES[k].icon, cls || 'phase-img'); }
   function classIcon(id, cls) { return uiIcon('class_' + id, S.CLASSES[id].icon, cls || 'class-img'); }
-  function customIcon(emoji, cls) { return LZ_CUSTOM[emoji] ? uiIcon(LZ_CUSTOM[emoji], emoji, cls) : emoji; }
   function coins(n) { return '<span class="coins"><i class="coin-ico"></i><b class="cn">' + fmt(n) + '</b></span>'; }
   function crys(n) { return '<span class="crys"><i class="crys-ico"></i><b>' + fmt(n) + '</b></span>'; }
   function rc(r) { return (S.RARITY[r] || S.RARITY.comum).color; }
@@ -174,7 +171,7 @@
       '<button class="btn gold block" data-a="tr-read">Verificar código</button>';
     if (P) {
       var c = S.CLASSES[P.cls] || {};
-      h += '<div class="card tr-found"><div class="card-h">' + (S.avatar ? S.avatar.html(P.cls, P.level) : '') + '<div class="grow"><div class="hint">Conta encontrada</div><div class="card-t">' + esc(P.name) + '</div>' +
+      h += '<div class="card tr-found"><div class="card-h">' + (S.avatar ? S.avatar.html(P.cls, P.level, '', P.gender || 'm') : '') + '<div class="grow"><div class="hint">Conta encontrada</div><div class="card-t">' + esc(P.name) + '</div>' +
         '<div class="meta"><span>' + esc(c.name || '') + '</span><span class="mono">Nível ' + P.level + '</span><span class="mono">' + fmt(P.coins) + ' moedas</span></div></div></div>' +
         (inApp ? '<p class="small" style="color:var(--warn)">A conta atual deste aparelho (' + esc(E.state.name) + ', nível ' + E.state.level + ') será substituída e perdida.</p>' : '') +
         '<button class="btn pri block" data-a="tr-accept">Restaurar esta conta aqui</button></div>';
@@ -201,7 +198,7 @@
     var cards = S.CLASS_ORDER.map(function (id) {
       var c = S.CLASSES[id];
       var bars = S.STATS.map(function (k) { return '<div>' + S.STAT_INFO[k].short + '<span><i style="width:' + (c.base[k] / 15 * 100).toFixed(0) + '%"></i></span></div>'; }).join('');
-      var art = S.CLASS_ART[id];
+      var art = I.gender === 'f' ? (S.CLASS_ART[id + '_f'] || (S.AVATARS[id + '_f'] && S.AVATARS[id + '_f'][1]) || null) : S.CLASS_ART[id];
       return '<button class="class-card' + (I.cls === id ? ' on' : '') + '" data-a="intro-cls" data-v="' + id + '">' +
         (art ? '<div class="art"><img src="' + art + '" alt="' + c.name + '" loading="lazy"></div>' : '') +
         '<div class="row"><span style="font-size:22px">' + classIcon(id) + '</span><span class="nm" style="color:' + c.color + '">' + c.name + '</span></div>' +
@@ -210,14 +207,17 @@
     var sel = I.cls ? S.CLASSES[I.cls] : null;
     return '<div class="intro">' +
       '<div class="win"><div class="win-h">Registo do Jogador</div>' +
-      '<label class="f">Nome do jogador<input class="in" id="in-name" maxlength="24" placeholder="Como te chamas?" value="' + esc(I.name) + '" data-f="intro-name" autocomplete="off"></label></div>' +
+      '<label class="f">Nome do jogador<input class="in" id="in-name" maxlength="24" placeholder="Como te chamas?" value="' + esc(I.name) + '" data-f="intro-name" autocomplete="off"></label>' +
+      '<div class="small muted" style="margin-top:10px">Aparência</div><div class="gender-pick">' + [['m', 'Masculina', '♂'], ['f', 'Feminina', '♀']].map(function (g) {
+        return '<button class="gender-opt' + (I.gender === g[0] ? ' on' : '') + '" data-a="intro-g" data-v="' + g[0] + '"><span class="g-ico">' + g[2] + '</span>' + g[1] + '</button>'; }).join('') + '</div>' +
+      '<p class="hint" style="margin:6px 0 0">Muda só o avatar. As classes e a progressão são iguais.</p></div>' +
       '<div class="win"><div class="win-h">Escolhe a tua classe</div><div class="class-grid">' + cards + '</div>' +
-      (sel ? '<div class="card class-detail" style="margin-top:10px">' + S.avatar.html(sel.id, 1) + '<div class="stack" style="gap:6px;min-width:0">' +
+      (sel ? '<div class="card class-detail" style="margin-top:10px">' + S.avatar.html(sel.id, 1, '', I.gender || 'm') + '<div class="stack" style="gap:6px;min-width:0">' +
         '<div><b style="color:' + sel.color + '">' + sel.name + '</b> — ' + esc(sel.desc) + '</div>' +
         '<div class="meta">' + S.STATS.map(function (k) { return S.STAT_INFO[k].short + ' ' + sel.base[k]; }).join(' · ') + '</div>' +
         '<div class="hint">Cresce sozinho em ' + sel.growth.map(function (k) { return S.STAT_INFO[k].name; }).join(' e ') + ' a cada nível.</div></div></div>' : '') +
       '</div>' +
-      '<button class="btn pri block" data-a="intro-go"' + (I.cls ? '' : ' disabled') + '>Despertar</button></div>';
+      '<button class="btn pri block" data-a="intro-go"' + (I.cls && I.gender ? '' : ' disabled') + '>Despertar</button>' + (I.cls && !I.gender ? '<p class="hint" style="text-align:center">Escolhe a aparência do teu avatar.</p>' : '') + '</div>';
   }
   function runTyper() {
     var el = document.getElementById('typer');
@@ -619,7 +619,7 @@
   }
   function arenaFoot(st, b) {
     var ps = S.premium.status(st, b), h = '';
-    var rules = '<p class="hint">Na arena não se perde nível: se caíres, perdes 25% do XP do nível. Cada adversário vencido volta ' + S.PREMIUM_RULES.arenaCooldownH + ' horas depois (revanche: ' + Math.round(S.PREMIUM_RULES.repeatPct * 100) + '% das recompensas). Só podes usar ' + S.PREMIUM_RULES.perBattle + ' relíquia premium por batalha.</p>';
+    var rules = '<p class="hint">Na arena não se perde nível: se caíres, perdes 25% do XP do nível. Um adversário já vencido pode ser revisitado quando quiseres, mas a revisitação não dá recompensas nem tira XP. Só podes usar ' + S.PREMIUM_RULES.perBattle + ' relíquia premium por batalha.</p>';
     if (b.champion) {
       var rl = S.ITEMS[b.relic];
       h = dossierHtml(b) + '<div class="card prem-card" style="margin-top:12px;--ac:' + b.color + '"><div class="small muted">Relíquia da primeira vitória</div><div class="card-h" style="margin-top:6px">' + tapInfo(itemIco(rl), 'item', rl.id) +
@@ -633,7 +633,7 @@
     if (!ps.unlocked) h += '<button class="btn prem block" data-a="arena-unlock" data-id="' + b.arenaKey + '"><i class="crys-ico"></i> Desbloquear a arena por ' + S.BOSS_BY_ID[b.arenaKey].cost + ' Cristais</button>';
     else if (!ps.open) h += '<div class="empty">' + uiIcon('ic_lock', '🔒', 'btn-ico') + ' Vence primeiro ' + esc(ps.prev.name) + '.</div>';
     else if (ps.readyAt) h += '<div class="empty">' + esc(b.champion ? 'O Campeão' : b.name.split(',')[0]) + ' recupera em ' + cd(ps.readyAt) + '.</div>';
-    else h += '<button class="btn pri block" data-a="fight" data-id="' + b.id + '">' + (ps.wins ? 'Revanche na arena' : 'Entrar na arena') + '</button>';
+    else h += '<button class="btn pri block" data-a="fight" data-id="' + b.id + '">' + (ps.wins ? 'Revisitar (sem recompensas)' : 'Entrar na arena') + '</button>';
     return h;
   }
   function premItemCard(st, it) {
@@ -1002,7 +1002,14 @@
   /* ================= SOCIAL: amigos, conversas e duelos ================= */
   var SO = S.social;
   function clsName(c) { return S.CLASSES[c] ? S.CLASSES[c].name : 'Caçador'; }
-  function socAvatar(p, cls) { return '<span class="soc-av ' + (cls || '') + '">' + (p.cls && S.CLASSES[p.cls] ? S.avatar.html(p.cls, p.level || 1, 'mini') : '<span class="soc-av-x">' + esc((p.name || '?')[0]) + '</span>') + (p.online != null ? '<i class="dot ' + (p.online ? 'on' : 'off') + '"></i>' : '') + '</span>'; }
+  /* foto redonda (se o jogador pôs uma) ou o avatar da classe; clicável para abrir o perfil de um amigo */
+  function socAvatar(p, cls, open) {
+    var pic = SO.pic(p);
+    var inner = pic ? '<span class="soc-photo"><img src="' + pic + '" alt=""></span>' : (p.cls && S.CLASSES[p.cls] ? S.avatar.html(p.cls, p.level || 1, 'mini', p.gender || 'm') : '<span class="soc-av-x">' + esc((p.name || '?')[0]) + '</span>');
+    var dot = p.online != null ? '<i class="dot ' + (p.online ? 'on' : 'off') + '"></i>' : '';
+    return open ? '<button class="soc-av soc-av-btn ' + (cls || '') + '" data-a="soc-profile" data-id="' + esc(p.id) + '" aria-label="Ver o perfil de ' + esc(p.name) + '">' + inner + dot + '</button>'
+      : '<span class="soc-av ' + (cls || '') + '">' + inner + dot + '</span>';
+  }
   function seenText(p) {
     if (p.online) return 'Online';
     if (!p.seen) return 'Offline';
@@ -1012,6 +1019,27 @@
   function socNoLink() {
     return '<section class="win"><div class="empty">O Social precisa de ligação ao servidor do Sistema.<br><span class="small muted">Verifica a internet e volta a abrir esta página.</span></div></section>';
   }
+  /* perfil de um amigo: visão geral */
+  function profileModal(m) {
+    var h = '<div class="sheet-h"><h2>Perfil</h2><button class="btn sm ghost" data-a="close" aria-label="Fechar">✕</button></div>';
+    if (m.err) return h + '<div class="empty">' + esc(m.err) + '</div>';
+    var p = m.data;
+    if (!p) return h + '<div class="empty">A abrir o perfil…</div>';
+    var x = p.extra || {}, s = p.stats || {}, self = E.state && p.id === E.state.playerId;
+    var pic = p.photo || SO.pic(p);
+    var face = pic ? '<span class="prof-photo"><img src="' + pic + '" alt=""></span>' : '<span class="prof-photo av">' + (S.CLASSES[p.cls] ? S.avatar.html(p.cls, p.level || 1, '', p.gender || 'm') : '') + '</span>';
+    var cell = function (v, l) { return '<div class="prof-stat"><b class="mono">' + v + '</b><span>' + l + '</span></div>'; };
+    var days = function (ts) { return ts ? Math.max(1, Math.round((SO.serverNow() - ts) / 86400000)) : 0; };
+    h += '<div class="prof-head">' + face + '<div class="grow" style="min-width:0"><div class="prof-name"' + (x.color ? ' style="color:' + esc(x.color) + '"' : '') + '>' + esc(p.name) + '</div>' +
+      '<div class="hero-title">' + esc(x.title || S.titleFor(p.level || 1)) + '</div>' +
+      '<div class="small muted">' + clsName(p.cls) + ' · Nv ' + p.level + ' · <span class="' + (p.online ? 'on-txt' : '') + '">' + seenText(p) + '</span></div></div></div>' +
+      ptCard(p.points || 0) +
+      '<div class="prof-grid">' + cell(p.wins || 0, 'Vitórias') + cell(p.losses || 0, 'Derrotas') + cell(s.bosses || 0, 'Chefes') + cell(s.arenas || 0, 'Arenas') +
+      cell((x.ach || 0) + (x.achTotal ? '<small>/' + x.achTotal + '</small>' : ''), 'Conquistas') + cell(x.shadows || 0, 'Sombras') + cell(s.streak || 0, 'Sequência') + cell(s.best || 0, 'Melhor sequência') + '</div>' +
+      '<div class="small muted" style="margin-top:10px">' + (p.since ? 'Amigos há ' + days(p.since) + ' dia(s) · ' : '') + 'No Sistema há ' + days(p.joined) + ' dia(s)' + (s.day ? ' · Dia ' + s.day + ' do Sistema' : '') + '</div>';
+    if (!self) h += '<div class="row" style="gap:6px;margin-top:12px"><button class="btn grow" data-a="chat-open" data-id="' + esc(p.id) + '">' + uiIcon('ui_chat', '💬', 'btn-ico') + ' Conversar</button><button class="btn grow bad" data-a="duel-invite" data-id="' + esc(p.id) + '">' + uiIcon('ui_duel', '⚔', 'btn-ico') + ' Desafiar</button></div>';
+    return h;
+  }
   function socialPage(st) {
     var h = backBtn('Social');
     if (!SO.ready()) return h + socNoLink();
@@ -1019,12 +1047,15 @@
     if (!c) { socLoad(true); return h + '<section class="win"><div class="empty">A ligar ao Sistema…</div></section>'; }
     if (!c.ok) return h + '<section class="win"><div class="empty">' + esc(c.msg || 'Não foi possível ligar.') + '</div><button class="btn block" data-a="soc-reload">Tentar outra vez</button></section>';
     var me = c.me, inc = c.requests_in.length + c.invites.length;
-    h += '<section class="win soc-me"><div class="row">' + socAvatar({ cls: st.cls, level: st.level, name: st.name, online: true }, 'big') +
+    var meP = { id: st.playerId, cls: st.cls, level: st.level, name: st.name, gender: st.gender, online: true, photo_ver: me.photo_ver || 0 };
+    h += '<section class="win soc-me"><div class="row">' + socAvatar(meP, 'big', true) +
       '<div class="grow"><div class="card-t">' + esc(st.name) + '</div><div class="small muted">' + clsName(st.cls) + ' · Nv ' + st.level + '</div>' +
       '<button class="btn sm mono id-chip" data-a="id-copy">' + esc(st.playerId) + ' ⧉</button></div>' +
       '<div class="soc-rec"><b class="mono">' + (me.points || 0) + '</b><span class="small muted">pontos</span><span class="small"><span style="color:var(--good)">' + me.wins + 'V</span> · <span style="color:var(--danger)">' + me.losses + 'D</span></span></div></div>' +
       ptCard(me.points || 0) +
-      '<p class="hint" style="margin:8px 0 0">Partilha o teu ID para os outros jogadores te adicionarem.</p></section>';
+      '<div class="row" style="gap:6px;margin-top:10px"><label class="btn sm grow photo-pick">' + uiIcon('ui_camera', '📷', 'btn-ico') + (me.photo_ver ? ' Mudar foto de perfil' : ' Pôr foto de perfil') + '<input type="file" accept="image/*" id="photo-in" hidden></label>' +
+      (me.photo_ver ? '<button class="btn sm ghost" data-a="photo-del">Tirar foto</button>' : '') + '</div>' +
+      '<p class="hint" style="margin:8px 0 0">Só os teus amigos veem a tua foto. Partilha o teu ID para os outros jogadores te adicionarem.</p></section>';
     h += '<div class="chips" style="margin-top:12px">' + [['amigos', 'Amigos', c.friends.length, c.unread], ['duelos', 'Duelos', null, c.invites.length], ['pedidos', 'Pedidos', null, c.requests_in.length]].map(function (x) {
       return '<button class="chip' + (t === x[0] ? ' on' : '') + '" data-a="soc-tab" data-v="' + x[0] + '">' + x[1] + (x[2] != null ? ' <span class="muted">' + x[2] + '</span>' : '') + (x[3] ? ' <span class="badge-in">' + x[3] + '</span>' : '') + '</button>';
     }).join('') + '</div>';
@@ -1047,7 +1078,7 @@
     h += '<section class="win"><div class="win-h">Amigos <small>' + on + ' online · ' + c.friends.length + '</small></div>';
     if (!c.friends.length) h += '<div class="empty">Ainda não tens amigos no Sistema. Procura alguém pelo ID ou pelo nome.</div>';
     else h += '<div class="stack" style="gap:8px">' + c.friends.map(function (f) {
-      return '<div class="card soc-row' + (f.online ? ' online' : '') + '"><div class="card-h">' + socAvatar(f) + '<div class="grow"><div class="card-t">' + esc(f.name) + (f.unread ? ' <span class="badge-in">' + f.unread + '</span>' : '') + '</div>' +
+      return '<div class="card soc-row' + (f.online ? ' online' : '') + '"><div class="card-h">' + socAvatar(f, '', true) + '<div class="grow"><div class="card-t">' + esc(f.name) + (f.unread ? ' <span class="badge-in">' + f.unread + '</span>' : '') + '</div>' +
         '<div class="small muted">' + clsName(f.cls) + ' · Nv ' + f.level + ' · <span class="' + (f.online ? 'on-txt' : '') + '">' + seenText(f) + '</span></div>' + ptChip(f.points) + '</div></div>' +
         '<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm grow" data-a="chat-open" data-id="' + esc(f.id) + '">' + uiIcon('ui_chat', '💬', 'btn-ico') + ' Conversar</button><button class="btn sm grow bad" data-a="duel-invite" data-id="' + esc(f.id) + '">' + uiIcon('ui_duel', '⚔', 'btn-ico') + ' Desafiar</button><button class="btn sm ghost" data-a="soc-remove" data-id="' + esc(f.id) + '" aria-label="Remover amigo">✕</button></div></div>';
     }).join('') + '</div>';
@@ -1457,6 +1488,8 @@
       (st.battle && !st.battle.over ? '<p class="hint" style="margin:0">Termina a batalha em curso primeiro.</p>' : '') + '</div></section>';
     h += '<section class="win"><div class="win-h">Receber uma conta</div><div class="stack">' + receiveHtml(true) + '</div></section>';
     h += '<section class="win"><div class="win-h">Preferências</div>' +
+      '<div class="small muted">Aparência do avatar</div><div class="gender-pick" style="margin-bottom:12px">' + [['m', 'Masculina', '♂'], ['f', 'Feminina', '♀']].map(function (g) {
+        return '<button class="gender-opt' + ((st.gender === 'f' ? 'f' : 'm') === g[0] ? ' on' : '') + '" data-a="set-gender" data-v="' + g[0] + '"><span class="g-ico">' + g[2] + '</span>' + g[1] + '</button>'; }).join('') + '</div>' +
       (Notify.available()
         ? '<label class="row between" style="margin-bottom:6px"><span>Lembretes do Sistema<br><small class="muted">Avisos no telemóvel antes dos prazos, emergências e Zona de Penalidade</small></span><input type="checkbox" id="set-rem" data-a="set-rem"' + (st.settings.reminders !== false ? ' checked' : '') + '></label>' +
           '<div id="notif-status" class="notif-status small muted">A verificar autorizações…</div>' +
@@ -1749,13 +1782,13 @@
     var art = S.ARENA_ART && S.ARENA_ART[champ.id];
     h += '<section class="win prem-win arena-sec" style="--ac:' + champ.color + '"><div class="win-h"><span style="color:' + champ.color + '">Arena ' + ROMAN[n - 1] + ': ' + esc(champ.arenaName.replace(/^Arena (d[oa]s?|Abissal) /, function (m) { return m; })) + '</span><small>' + pg.won + '/10 vencidos</small></div>' +
       (art ? '<div class="arena-banner" style="--av-art:url(\'' + art + '\')"></div>' : '') +
-      '<p class="hint" style="margin-top:0">' + (pg.unlocked ? '9 sub-chefes por ordem e, no fim, o Campeão. Cada adversário vencido volta ' + S.PREMIUM_RULES.arenaCooldownH + ' horas depois para revanche.' : 'Arena selada. Abre-a uma vez com Cristais e fica aberta para sempre: 9 sub-chefes (Nv ' + lad[0].level + ' a ' + (champ.level - 1) + ') e o Campeão (Nv ' + champ.level + ').') + '</p>';
+      '<p class="hint" style="margin-top:0">' + (pg.unlocked ? '9 sub-chefes por ordem e, no fim, o Campeão. Os já vencidos podem ser revisitados, sem recompensas.' : 'Arena selada. Abre-a uma vez com Cristais e fica aberta para sempre: 9 sub-chefes (Nv ' + lad[0].level + ' a ' + (champ.level - 1) + ') e o Campeão (Nv ' + champ.level + ').') + '</p>';
     if (!pg.unlocked) h += '<button class="btn prem block" style="margin-bottom:12px" data-a="arena-unlock" data-id="' + champ.id + '"><i class="crys-ico"></i> Desbloquear a arena por ' + champ.cost + ' Cristais</button>';
     h += '<div class="boss-grid">' + lad.map(function (b) {
       var ps = S.premium.status(st, b), dg = C.danger(st, b), bart = S.BOSS_ART && S.BOSS_ART[b.id];
       var hide = !b.champion && (!pg.unlocked || (!ps.wins && !ps.open && b.slot > pg.won + 2));
       var locked = !pg.unlocked || (!ps.open && !ps.wins);
-      var label = ps.wins ? (ps.readyAt ? cdText(ps.readyAt) : 'Revanche') : locked ? 'Selado' : dg.label;
+      var label = ps.wins ? (ps.readyAt ? cdText(ps.readyAt) : 'Revisitar') : locked ? 'Selado' : dg.label;
       return '<button class="boss-tile card' + (ps.wins ? ' done' : '') + (b.champion || b.lieutenant ? ' king' : '') + (locked ? ' locked' : '') + '"' + (hide ? ' disabled' : ' data-a="boss" data-id="' + b.id + '"') +
         ' style="--dg:' + (ps.wins ? 'var(--good)' : locked ? 'var(--muted)' : dg.color) + '">' +
         (hide ? '<span class="bt-ico">' + uiIcon('ui_unknown', '❔', 'bt-unk') + '</span>' : bart ? '<img src="' + bart + '" alt="" loading="lazy">' : '<span class="bt-ico">' + b.icon + '</span>') +
@@ -1936,7 +1969,6 @@
     var list = E.shopList(st, ui.shopTab);
     var tab = S.SHOP_TABS.filter(function (t) { return t.id === ui.shopTab; })[0];
     h += '<section class="win"><div class="win-h">' + tab.name + coins(st.coins) + '</div>';
-    if (ui.shopTab === 'lazer') h += '<p class="hint" style="margin-top:0">Recompensas para a vida real. Compra com as moedas que ganhas nas missões e usa-as na Bolsa quando quiseres.</p><button class="btn gold block" data-a="cl-new" style="margin-bottom:10px">+ Criar a minha recompensa</button>';
     if (ui.shopTab === 'sistema') { var sy = E.sysState(st), xs = [];
       if (sy.dbl) xs.push(sy.dbl + ' Selo(s) do Dobro à espera da próxima missão');
       if (sy.dblBoss) xs.push(sy.dblBoss + ' Bilhete(s) da Vitória Dupla à espera do próximo chefe');
@@ -1969,7 +2001,6 @@
         (it.lvl > 1 && st.level >= it.lvl ? '<span class="tag">Nv ' + it.lvl + '</span>' : '') + (own ? '<span class="tag">Tens ' + own + '</span>' : '') + '</div>' +
         (reqHtml ? '<div class="reqs">' + reqHtml + '</div>' : '') + '</div></div>' +
         '<div class="row between">' + coins(price) + '<div class="row">' +
-        (it.custom ? '<button class="btn sm ghost" data-a="cl-del" data-id="' + it.id + '">Remover</button>' : '') +
         (it.cat === 'consumivel' && rq.ok ? '<button class="btn sm" data-a="buy" data-id="' + it.id + '" data-q="5"' + (st.coins >= price * 5 ? '' : ' disabled') + '>×5</button>' : '') +
         (rq.ok ? '<button class="btn sm ' + (can ? 'gold' : '') + '" data-a="buy" data-id="' + it.id + '" data-q="1"' + (can ? '' : ' disabled') + '>Comprar</button>'
           : '<span class="tag locked-tag">Bloqueado</span>') + '</div></div></div>';
@@ -1983,19 +2014,9 @@
     h += '</section>';
     return h;
   }
-  function leisureForm() {
-    var f = ui.form;
-    return '<div class="sheet-h"><h2>Nova recompensa</h2><button class="btn sm ghost" data-a="close">Fechar</button></div><div class="stack">' +
-      '<label class="f">Nome<input class="in" id="cl-name" maxlength="40" placeholder="Ex.: Pizza ao sábado" value="' + esc(f.name) + '" data-f="name"></label>' +
-      '<label class="f">Preço em moedas<input class="in" id="cl-price" type="number" min="10" max="100000" value="' + esc(f.price) + '" data-f="price"></label>' +
-      '<div class="f"><span class="small muted">Ícone</span><div class="seg">' + ['🎁', '🍕', '🎮', '🎬', '🛍️', '🏖️', '🍦', '📱'].map(function (i) {
-        return '<button class="' + (f.icon === i ? 'on' : '') + '" data-a="f-set" data-k="icon" data-v="' + i + '">' + customIcon(i, 'pick-img') + '</button>';
-      }).join('') + '</div></div>' +
-      '<button class="btn pri block" data-a="cl-save">Criar recompensa</button></div>';
-  }
 
   /* ================= BOLSA ================= */
-  var BAG_FILTERS = [['tudo', 'Tudo'], ['equip', 'Equipamento'], ['consumivel', 'Poções'], ['sistema', 'Sistema'], ['bau', 'Baús'], ['lazer', 'Lazer'], ['atributo', 'Atributos'], ['secreto', 'Secretos'], ['premium', 'Premium']];
+  var BAG_FILTERS = [['tudo', 'Tudo'], ['equip', 'Equipamento'], ['consumivel', 'Poções'], ['sistema', 'Sistema'], ['bau', 'Baús'], ['atributo', 'Atributos'], ['secreto', 'Secretos'], ['premium', 'Premium']];
   function bagMatch(it, f) {
     if (f === 'tudo') return true;
     if (f === 'equip') return !!it.equip;
@@ -2025,7 +2046,7 @@
     var sv = E.sellValue(st, id);
     var btns = [];
     if (it.cat === 'bau' && n) btns.push('<button class="btn pri block" data-a="use" data-id="' + id + '">Abrir baú</button>');
-    else if (it.field && n) btns.push('<button class="btn pri block" data-a="use" data-id="' + id + '">' + (it.cat === 'lazer' ? 'Usar recompensa' : 'Usar') + '</button>');
+    else if (it.field && n) btns.push('<button class="btn pri block" data-a="use" data-id="' + id + '">' + 'Usar' + '</button>');
     if (it.equip && n) {
       if (it.equip.slot === 'acc') btns.push('<div class="row"><button class="btn pri grow" data-a="equip" data-id="' + id + '" data-s="acc1">Equipar no espaço 1</button><button class="btn pri grow" data-a="equip" data-id="' + id + '" data-s="acc2">No espaço 2</button></div>');
       else btns.push('<button class="btn pri block" data-a="equip" data-id="' + id + '">Equipar</button>');
@@ -2090,11 +2111,14 @@
     else if (m.type === 'slot') inner = slotModal(m.slot);
     else if (m.type === 'bsheet') inner = battleSheet();
     else if (m.type === 'dsheet') inner = duelSheet();
-    else if (m.type === 'leisure') inner = leisureForm();
     else if (m.type === 'order') inner = orderModal(m);
     else if (m.type === 'arise') inner = ariseModal(m);
     else if (m.type === 'shadow') inner = shadowModal(m);
     else if (m.type === 'ach') inner = achInfoModal(m);
+    else if (m.type === 'profile') inner = profileModal(m);
+    else if (m.type === 'rename') inner = '<div class="sheet-h"><h2>✒️ Novo nome</h2></div><p class="small muted" style="margin-top:0">Nome atual: <b>' + esc(E.state.name) + '</b>. O progresso, o ID de Jogador e os amigos ficam iguais.</p>' +
+      '<label class="f">Novo nome<input class="in" id="rn-name" maxlength="24" autocomplete="off" placeholder="Como queres ser chamado?"></label>' +
+      '<div class="row" style="margin-top:12px"><button class="btn ghost grow" data-a="close">Mais tarde</button><button class="btn pri grow" data-a="rename-go">Mudar nome</button></div>';
     var fresh = ui.modal !== ui.shownModal;
     return '<div class="overlay' + (fresh ? ' fresh' : '') + (m.type === 'arise' ? ' arise-ov' : '') + '" data-a="overlay"><div class="sheet' + (fresh ? ' fresh' : '') + (m.type === 'arise' ? ' arise-sheet' : '') + '" role="dialog" aria-modal="true">' + inner + '</div></div>';
   }
@@ -2594,8 +2618,16 @@
   var H = {
     'intro-yes': function () { FX.flash('#6fd6ff', .3); FX.burst(ui.pt.x, ui.pt.y, '#6fd6ff', 40, { speed: 7 }); ui.intro.step = 1; render(); },
     'intro-cls': function (d) { ui.intro.cls = d.v; render(); },
+    'rename-go': function () {
+      var e = document.getElementById('rn-name'), r = E.rename(e ? e.value : '');
+      if (!r.ok) return toast(r.msg, true);
+      ui.modal = null; toast(r.msg); sfx('quest'); FX.flash('#67d5ff', .2); shopSync(true); render();
+    },
+    'set-gender': function (d) { var r = E.setGender(d.v); if (r.ok && !r.same) { toast(r.msg); shopSync(true); } render(); },
+    'intro-g': function (d) { ui.intro.gender = d.v === 'f' ? 'f' : 'm'; render(); },
     'intro-go': function () {
-      var r = E.start(ui.intro.name, ui.intro.cls);
+      if (!ui.intro.gender) return toast('Escolhe a aparência do teu avatar.', true);
+      var r = E.start(ui.intro.name, ui.intro.cls, ui.intro.gender);
       if (!r.ok) return toast(r.msg, true);
       ui.popups.push({ _id: ++ui.popSeq, type: 'first', script: firstScript(E.state), i: 0, log: [], typed: -1 });
       ui.popups.push({ _id: ++ui.popSeq, type: 'info', title: 'BEM-VINDO, JOGADOR', name: E.state.name, lines: ['Classe: ' + S.CLASSES[E.state.cls].name, 'Começas com 100 moedas, poções e um Baú Comum.', 'Cria as tuas missões no separador Missões.'] });
@@ -2702,6 +2734,19 @@
       }, true);
     },
     // ---- social ----
+    'soc-profile': function (d) {
+      ui.modal = { type: 'profile', id: d.id }; render();
+      SO.profile(d.id).then(function (j) {
+        if (!ui.modal || ui.modal.type !== 'profile' || ui.modal.id !== d.id) return;
+        if (j.ok) ui.modal.data = j.profile; else ui.modal.err = j.msg || 'Não foi possível abrir o perfil.';
+        ui.shownModal = ui.modal; render();
+      });
+    },
+    'photo-del': function () {
+      confirmBox('Tirar a foto de perfil', 'Os teus amigos voltam a ver o teu avatar.', 'Tirar', function () {
+        SO.setPhoto(null).then(function (j) { if (!j.ok) return toast(j.msg, true); toast('Foto removida.'); socLoad(true); render(); });
+      }, true);
+    },
     'soc-tab': function (d) { ui.socTab = d.v; render(); if (d.v === 'duelos') { ui.duelHist = null; } },
     'soc-reload': function () { SO.cache = null; render(); },
     'soc-back': function () { ui.page = 'social'; ui.chatWith = null; ui.chatMsgs = null; ui.duelId = null; ui.duel = null; render(); socLoad(true); window.scrollTo(0, 0); },
@@ -2718,6 +2763,7 @@
       if (f) confirmBox('Remover amigo', 'Remover ' + f.name + ' da tua lista de amigos? As conversas deixam de estar disponíveis.', 'Remover', go, true); else go();
     },
     'chat-open': function (d) {
+      if (ui.modal && ui.modal.type === 'profile') ui.modal = null;
       ui.page = 'chat'; ui.chatWith = d.id; ui.chatMsgs = []; ui.chatLoading = true; ui.chatFriend = ((SO.cache && SO.cache.friends) || []).filter(function (x) { return x.id === d.id; })[0] || null;
       render(); window.scrollTo(0, 0); chatLoad(true);
     },
@@ -2736,6 +2782,7 @@
     'duel-hist': function () { SO.duels().then(function (j) { if (!j.ok) return toast(j.msg, true); ui.duelHist = j.duels; render(); }); },
     'duel-create': function (d) { duelStart(SO.create({ public: d.p === '1' })); },
     'duel-invite': function (d) {
+      if (ui.modal && ui.modal.type === 'profile') ui.modal = null;
       var c = SO.cache, open = c && c.duel;
       if (open && open.status === 'active') { toast('Já tens um duelo em curso.', true); return H['duel-open']({ id: open.id }); }
       if (open && open.status === 'waiting') { SO.invite(open.id, d.id).then(function (j) { act(j, j.ok ? 'Convite enviado.' : null); if (j.ok) { ui.duelId = open.id; ui.duel = j.duel; ui.page = 'duel'; render(); duelPoll(); } }); return; }
@@ -2764,6 +2811,7 @@
         var r0 = S.premium.buy(d.id, 1);
         if (r0.ok && it.cat === 'sistema') sysAfter(it);
         var r = act(r0);
+        if (r.ok && it.use && it.use.type === 'rename') { ui.modal = { type: 'rename' }; render(); }
         if (r.ok) { sfx('crystal'); FX.burst(p.x, p.y, '#67d5ff', 40, { speed: 8 }); FX.flash('#67d5ff', .2); FX.vibrate([30, 30, 60]); }
       });
     },
@@ -3079,21 +3127,13 @@
       if (before) { sfx('click'); S.storage.write(E.state); return confirmBox('O SISTEMA OBSERVA', '«' + before + '»\n\nComprar ' + it.name + '?', 'Comprar', go); }
       go();
     },
-    'cl-new': function () { ui.form = { name: '', price: 150, icon: '🎁' }; ui.modal = { type: 'leisure' }; render(); },
-    'cl-save': function () {
-      var f = ui.form;
-      var r = E.addCustomLeisure(f.name, f.price, f.icon);
-      if (!r.ok) return toast(r.msg, true);
-      ui.modal = null; ui.form = null;
-      act(r, 'Recompensa criada na Loja.');
-    },
-    'cl-del': function (d) { confirmBox('Remover recompensa', 'Remove esta recompensa da loja. As que já compraste ficam na bolsa.', 'Remover', function () { act(E.removeCustomLeisure(d.id)); }, true); },
 
     // bolsa
     bag: function (d) { ui.bag = d.v; render(); },
     item: function (d) { ui.modal = { type: 'item', id: d.id }; render(); },
     use: function (d) {
       var it = E.item(d.id);
+      if (it && it.use && it.use.type === 'rename') { ui.modal = { type: 'rename' }; render(); setTimeout(function () { var e = document.getElementById('rn-name'); if (e) e.focus(); }, 60); return; }
       if (!drinkable(it)) sfx('click');
       var go = function () {
         var p = { x: ui.pt.x, y: ui.pt.y };
@@ -3104,7 +3144,6 @@
         if (!r.ok || it.cat === 'bau') return;
         var u = it.use || {};
         if (u.type === 'heal' || u.type === 'restore') { FX.rise(window.innerWidth / 2, window.innerHeight * .7, 220, '#5be08a', 50); FX.text('+' + r.healed + ' VIDA', p.x, p.y - 20, '#5be08a'); }
-        else if (u.type === 'leisure') { ['#ffc85a', '#6fd6ff', '#ff3d7f', '#5be08a'].forEach(function (c, i) { setTimeout(function () { FX.burst(window.innerWidth / 2, window.innerHeight * .45, c, 30, { speed: 9 }); }, i * 120); }); FX.banner('APROVEITA', it.name, 'rgba(255,200,90,.4)', '#ffc85a'); }
         else if (u.type === 'perm' || u.type === 'permAll' || u.type === 'point' || u.type === 'core') { FX.rise(window.innerWidth / 2, window.innerHeight, 240, '#ffc85a', 70); FX.flash('#ffc85a', .3); FX.banner('PODER AUMENTOU', r.msg, 'rgba(255,200,90,.4)', '#ffc85a'); }
         else if (u.type === 'timed') { FX.rise(window.innerWidth / 2, window.innerHeight, 240, '#6fd6ff', 50); FX.text(r.msg, p.x, p.y - 20, '#6fd6ff'); }
         else if (u.type === 'system') {
@@ -3114,8 +3153,7 @@
         else if (u.type === 'unlockSkill' || u.type === 'revealBoss' || u.type === 'fragment') { FX.flash('#e0e6ff', .5); FX.burst(window.innerWidth / 2, window.innerHeight / 2, '#e0e6ff', 80, { speed: 11 }); }
         else FX.burst(p.x, p.y, rc(it.rarity), 30, { speed: 6 });
       };
-      if (it.cat === 'lazer') confirmBox('Usar recompensa', 'Vais usar "' + it.name + '" agora. Aproveita!', 'Usar', go);
-      else go();
+      go();
     },
     equip: function (d) {
       var it = E.item(d.id);
@@ -3275,6 +3313,15 @@
   }
   function onChange(ev) {
     var el = ev.target;
+    if (el.id === 'photo-in' && el.files && el.files[0]) {
+      toast('A preparar a foto…');
+      SO.shrink(el.files[0], 160).then(function (url) { return SO.setPhoto(url); }).then(function (j) {
+        if (!j.ok) return toast(j.msg || 'Não foi possível guardar a foto.', true);
+        toast('Foto de perfil guardada. Os teus amigos já a veem.'); sfx('quest'); socLoad(true); render();
+      }, function (e) { toast(e.message || 'Não foi possível usar essa imagem.', true); });
+      el.value = '';
+      return;
+    }
     if (el.getAttribute('data-a') === 'd-input') {
       act(M.setDailyValue(el.dataset.id, +el.value || 0));
     }
@@ -3287,7 +3334,7 @@
   }
   function onKey(ev) {
     if (ev.key === 'Escape' && ui.modal) { H.close(); }
-    if (ev.key === 'Enter' && ev.target && ev.target.id === 'in-name' && ui.intro.cls) H['intro-go']();
+    if (ev.key === 'Enter' && ev.target && ev.target.id === 'in-name' && ui.intro.cls && ui.intro.gender) H['intro-go']();
     if (ev.key === 'Enter' && ev.target && ev.target.id === 'chat-text') { ev.preventDefault(); H['chat-send'](); }
     if (ev.key === 'Enter' && ev.target && ev.target.id === 'soc-q') { ev.preventDefault(); H['soc-find'](); }
     if (ev.key === 'Enter' && ev.target && ev.target.id === 'duel-code') { ev.preventDefault(); H['duel-join-code'](); }
@@ -3309,6 +3356,8 @@
         sfx('notify'); if (n.type === 'invite') FX.vibrate([60, 40, 60]);
       }
       if (ui.page === 'social' || ui.page === 'chat' || news.length || ui.tab === 'status') softRender();
+      // fotos dos amigos (só as que mudaram)
+      SO.loadPics((j.friends || []).concat(j.me ? [Object.assign({}, j.me, { id: E.state.playerId })] : [])).then(function (n) { if (n && (ui.page === 'social' || ui.page === 'chat')) softRender(); });
     }, function () { socBusy = false; });
   }
   function chatScroll() { var l = document.getElementById('chat-list'); if (l) l.scrollTop = l.scrollHeight; }
@@ -3618,6 +3667,7 @@
     FX.setMode((E.state && E.state.settings.fx) || FX.defaultMode());
     if (E.state) {
       lastDay = E.dateKey(); M.processDeadlines(); greet(); pullEvents(); Notify.sync(true);
+      if (E.state.leisureRefund) { var lr = E.state.leisureRefund; delete E.state.leisureRefund; E.commit('loja de lazer'); ui.popups.push({ _id: ++ui.popSeq, type: 'info', title: 'LOJA DE LAZER ENCERRADA', name: '+' + fmt(lr.coins) + ' moedas', lines: ['O Sistema fechou a Loja de lazer.', 'As ' + lr.n + ' recompensa(s) que tinhas na Bolsa foram devolvidas em moedas, pelo preço base.'] }); }
       // pede autorização uma única vez (Android 13+)
       if (Notify.available() && !E.state.settings.notifAsked) { E.state.settings.notifAsked = true; E.commit('lembretes'); setTimeout(function () { Notify.ask().then(function () { Notify.sync(true); }); }, 4000); }
     }

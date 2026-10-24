@@ -12,7 +12,16 @@
   S.CLASS_ART = S.CLASS_ART || {}; // arte de cada classe (nível 1); usada enquanto não houver evoluções
   var uid = 0;
 
-  function imageFor(cls, level) {
+  /* aparência: 'm' (masculina) ou 'f' (feminina). Sem gender explícito, usa a do jogador atual.
+     A feminina vive em assets/avatars_f/<classe>/<nível> (no mapa como <classe>_f); enquanto faltar,
+     o jogo desenha o avatar provisório (nunca mostra a aparência masculina a quem escolheu a feminina). */
+  function g0(g) { return g === 'f' || g === 'm' ? g : ((S.engine && S.engine.state && S.engine.state.gender) === 'f' ? 'f' : 'm'); }
+  function imageFor(cls, level, g) {
+    if (g0(g) === 'f') {
+      var fm = S.AVATARS[cls + '_f'], fb = null;
+      if (fm) Object.keys(fm).map(Number).sort(function (a, b) { return a - b; }).forEach(function (lv) { if (lv <= level) fb = lv; });
+      return fb != null ? fm[fb] : (S.CLASS_ART[cls + '_f'] || null);
+    }
     var map = S.AVATARS[cls];
     var best = null;
     if (map) Object.keys(map).map(Number).sort(function (a, b) { return a - b; }).forEach(function (lv) { if (lv <= level) best = lv; });
@@ -93,8 +102,9 @@
 
   S.avatar = {
     imageFor: imageFor,
-    html: function (cls, level, extraClass) {
-      var img = imageFor(cls, level);
+    gender: g0,
+    html: function (cls, level, extraClass, g) {
+      var img = imageFor(cls, level, g);
       var inner = img
         ? '<img src="' + img + '" alt="Avatar ' + S.CLASSES[cls].name + ' nível ' + level + '" onerror="this.replaceWith(document.createRange().createContextualFragment(SYS.avatar.svg(\'' + cls + '\',' + level + ')))">'
         : drawSvg(cls, level);
@@ -102,10 +112,10 @@
     },
     svg: drawSvg,
     /* verdadeiro quando o nível L mostra uma imagem diferente do nível L-1 */
-    evolved: function (cls, level) { var a = imageFor(cls, level), b = imageFor(cls, level - 1); return !!a && a !== b; },
+    evolved: function (cls, level, g) { var a = imageFor(cls, level, g), b = imageFor(cls, level - 1, g); return !!a && a !== b; },
     /* forma atual e próxima: { n, total, next } (next = nível da próxima forma, ou null) */
-    forms: function (cls, level) {
-      var lv = Object.keys(S.AVATARS[cls] || {}).map(Number).sort(function (a, b) { return a - b; });
+    forms: function (cls, level, g) {
+      var lv = Object.keys(S.AVATARS[cls + (g0(g) === 'f' ? '_f' : '')] || S.AVATARS[cls] || {}).map(Number).sort(function (a, b) { return a - b; });
       if (!lv.length) return null;
       var n = lv.filter(function (x) { return x <= level; }).length, next = lv.filter(function (x) { return x > level; })[0];
       return { n: Math.max(1, n), total: lv.length, next: next || null };

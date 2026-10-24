@@ -54,7 +54,21 @@ step('intro e criação de personagem', () => {
   click(w, '[data-a="intro-yes"]');
   type(w, '#in-name', 'Natanael');
   click(w, '[data-a="intro-cls"][data-v="assassino"]');
+  assert.ok($(w, '[data-a="intro-go"]').disabled, 'falta escolher a aparência');
+  click(w, '[data-a="intro-g"][data-v="f"]');
   click(w, '[data-a="intro-go"]');
+  assert.strictEqual(w.SYS.engine.state.gender, 'f', 'aparência feminina guardada');
+  { // o avatar feminino nunca mostra a imagem masculina (sem imagens femininas: avatar provisório)
+    const A = w.SYS.avatar, keep = w.SYS.AVATARS, keepC = w.SYS.CLASS_ART;
+    w.SYS.AVATARS = { mago: { 1: 'avatars/mago/1.webp' } }; w.SYS.CLASS_ART = {};
+    assert.strictEqual(A.imageFor('mago', 5, 'm'), 'avatars/mago/1.webp');
+    assert.strictEqual(A.imageFor('mago', 5, 'f'), null);
+    w.SYS.AVATARS.mago_f = { 1: 'avatars_f/mago/1.webp' };
+    assert.strictEqual(A.imageFor('mago', 5, 'f'), 'avatars_f/mago/1.webp');
+    assert.strictEqual(A.imageFor('mago', 5), 'avatars_f/mago/1.webp', 'sem indicação: usa a aparência do jogador');
+    w.SYS.AVATARS = keep; w.SYS.CLASS_ART = keepC;
+    assert.ok(A.imageFor('mago', 40, 'f') && /avatars_f\/mago\/40/.test(A.imageFor('mago', 40, 'f')), 'imagens femininas instaladas');
+  }
   // primeira conversa com o Sistema: pelo menos 6 falas seguidas antes da primeira pergunta ou do fim
   assert.ok($(w, '.first-talk'), 'primeira conversa do Sistema');
   let falas = 0;
@@ -124,18 +138,14 @@ step('estado: distribuir pontos', () => {
   assert.strictEqual(w.SYS.engine.state.alloc.agi, 1);
   ['skills', 'ach', 'collection', 'history', 'settings'].forEach((p) => { click(w, '[data-a="page"][data-p="' + p + '"]'); click(w, '[data-a="back"]'); });
 });
-step('loja: comprar e criar recompensa', () => {
+step('loja: comprar (sem Loja de lazer)', () => {
   w.SYS.engine.state.coins = 5000; w.SYS.ui.render();
   click(w, '[data-a="tab"][data-t="loja"]');
   click(w, '[data-a="shop-tab"][data-v="consumivel"]');
   const before = w.SYS.engine.count(w.SYS.engine.state, 'po_vida1');
   click(w, '[data-a="buy"][data-id="po_vida1"][data-q="5"]');
   assert.strictEqual(w.SYS.engine.count(w.SYS.engine.state, 'po_vida1'), before + 5);
-  click(w, '[data-a="shop-tab"][data-v="lazer"]');
-  click(w, '[data-a="cl-new"]');
-  type(w, '#cl-name', 'Pizza de sábado');
-  click(w, '[data-a="cl-save"]');
-  assert.ok(w.document.body.textContent.includes('Pizza de sábado'));
+  assert.ok(!$(w, '[data-a="shop-tab"][data-v="lazer"]'), 'a Loja de lazer já não existe');
   ['arma', 'armadura', 'acessorio', 'atributo', 'bau'].forEach((t) => click(w, '[data-a="shop-tab"][data-v="' + t + '"]'));
 });
 step('combate completo pela interface', () => {

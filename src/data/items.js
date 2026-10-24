@@ -13,35 +13,8 @@
   var I = S.ITEMS = {};
   function add(o) { I[o.id] = o; return o; }
 
-  /* ---------------- LAZER (recompensas da vida real) ---------------- */
-  [
-    ['lz_sesta', 'Sesta de 20 Minutos', '😴', 30, 'comum', 'Vale por uma sesta curta sem culpa.'],
-    ['lz_cafe', 'Pausa para Café', '☕', 40, 'comum', 'Vale por 30 minutos de pausa sem culpa.'],
-    ['lz_snack', 'Lanche Favorito', '🥨', 50, 'comum', 'Vale pelo teu lanche preferido.'],
-    ['lz_livro', 'Capítulo por Prazer', '📖', 50, 'comum', 'Vale por ler um capítulo só por prazer.'],
-    ['lz_episodio', 'Episódio de Série', '📺', 60, 'comum', 'Vale por um episódio da tua série favorita.'],
-    ['lz_redes', '30 Minutos de Redes Sociais', '📱', 60, 'comum', 'Vale por meia hora de redes sociais sem remorsos.'],
-    ['lz_doce', 'Doce Especial', '🍰', 80, 'comum', 'Vale por uma sobremesa ou doce que te apeteça.'],
-    ['lz_banho', 'Banho Relaxante Longo', '🛁', 90, 'incomum', 'Vale por um banho demorado e relaxante.'],
-    ['lz_musica', 'Hora Livre', '🎧', 100, 'incomum', 'Vale por 1 hora livre para fazeres o que quiseres.'],
-    ['lz_jogo', 'Sessão de Jogo', '🎮', 120, 'incomum', 'Vale por 1 hora de videojogo.'],
-    ['lz_refeicao', 'Refeição Livre', '🍔', 180, 'incomum', 'Vale por uma refeição fora da dieta.'],
-    ['lz_preguica', 'Manhã Preguiçosa', '🛌', 220, 'raro', 'Vale por dormir até tarde num dia à tua escolha.'],
-    ['lz_cinema', 'Noite de Cinema', '🎬', 250, 'raro', 'Vale por uma ida ao cinema ou maratona de filmes.'],
-    ['lz_amigos', 'Saída com Amigos', '🍻', 300, 'raro', 'Vale por uma saída com os amigos.'],
-    ['lz_maratona', 'Maratona de Série', '🍿', 350, 'raro', 'Vale por uma tarde inteira de série.'],
-    ['lz_restaurante', 'Jantar num Restaurante', '🍽️', 400, 'raro', 'Vale por um jantar fora num sítio de que gostes.'],
-    ['lz_passeio', 'Passeio Especial', '🏖️', 450, 'epico', 'Vale por um passeio ou saída especial.'],
-    ['lz_descanso', 'Dia de Descanso Total', '🌙', 600, 'epico', 'Vale por um dia inteiro sem obrigações (missões continuam a contar!).'],
-    ['lz_roupa', 'Peça de Roupa Nova', '👕', 600, 'epico', 'Vale por uma peça de roupa nova.'],
-    ['lz_spa', 'Dia de Spa ou Massagem', '💆', 700, 'epico', 'Vale por uma massagem ou um dia de spa.'],
-    ['lz_desejo', 'Compra de Desejo', '🛍️', 900, 'lendario', 'Vale por comprares aquela coisa pequena que queres há muito.'],
-    ['lz_gadget', 'Gadget Novo', '🎧', 1500, 'lendario', 'Vale por um gadget ou acessório tecnológico novo.'],
-    ['lz_viagem', 'Fim de Semana Fora', '✈️', 2000, 'lendario', 'Vale por uma escapadinha de fim de semana.'],
-    ['lz_dourado', 'Bilhete Dourado', '🎫', 2500, 'mitico', 'Vale por uma grande recompensa à tua escolha. Mereceste.']
-  ].forEach(function (r) {
-    add({ id: r[0], name: r[1], icon: r[2], price: r[3], rarity: r[4], desc: r[5], cat: 'lazer', lvl: 1, use: { type: 'leisure' }, field: true });
-  });
+  /* A antiga Loja de lazer foi removida: quem ainda tinha recompensas recebe o preço de volta em moedas (ver E.migrate). */
+  S.LEISURE_REFUND = {"lz_sesta": 30, "lz_cafe": 40, "lz_snack": 50, "lz_livro": 50, "lz_episodio": 60, "lz_redes": 60, "lz_doce": 80, "lz_banho": 90, "lz_musica": 100, "lz_jogo": 120, "lz_refeicao": 180, "lz_preguica": 220, "lz_cinema": 250, "lz_amigos": 300, "lz_maratona": 350, "lz_restaurante": 400, "lz_passeio": 450, "lz_descanso": 600, "lz_roupa": 600, "lz_spa": 700, "lz_desejo": 900, "lz_gadget": 1500, "lz_viagem": 2000, "lz_dourado": 2500};
 
   /* Versões melhoradas: mesmo nível, um pouco mais fortes e mais caras, com um bónus extra próprio */
   function roundPrice(p) { return p < 1000 ? Math.round(p / 10) * 10 : Math.round(p / 50) * 50; }
@@ -352,7 +325,6 @@
 
   /* ---------------- LOJA ---------------- */
   S.SHOP_TABS = [
-    { id: 'lazer', name: 'Lazer', icon: '🎮' },
     { id: 'arma', name: 'Armas', icon: '⚔️' },
     { id: 'armadura', name: 'Armaduras', icon: '🥋' },
     { id: 'acessorio', name: 'Acessórios', icon: '💍' },
@@ -369,10 +341,10 @@
   S.CHESTS = {
     comum: { coins: [30, 90], rolls: 1, table: [
       ['po_vida1', 28], ['po_mana1', 22], ['po_antidoto', 10], ['po_fumo', 8], ['po_vida2', 10], ['po_vento', 4], ['po_furia', 4], ['po_pedra', 4],
-      ['lz_cafe', 4], ['lz_episodio', 4], ['lz_snack', 4], ['po_bomba', 2], ['@weapon:2', 1] ] },
+      ['po_bomba', 2], ['@weapon:2', 1] ] },
     raro: { coins: [120, 300], rolls: 2, table: [
       ['po_vida2', 20], ['po_mana15', 14], ['po_furia', 10], ['po_pedra', 10], ['po_foco', 8], ['po_vento', 6], ['po_vampiro', 5], ['po_barreira', 5], ['po_fogo', 5],
-      ['po_escudo', 6], ['po_xp15', 5], ['@acc', 6], ['@weapon:4', 5], ['el_ponto', 3], ['lz_jogo', 5], ['sx_fragmento', 0.6] ] },
+      ['po_escudo', 6], ['po_xp15', 5], ['@acc', 6], ['@weapon:4', 5], ['el_ponto', 3], ['sx_fragmento', 0.6] ] },
     epico: { coins: [400, 900], rolls: 3, table: [
       ['po_vida3', 14], ['po_mana2', 10], ['po_restaura', 10], ['po_xp2', 8], ['po_coin2', 8], ['po_sorte', 6], ['po_escudo', 8], ['po_furia2', 5], ['po_tita', 5], ['po_gelo', 5],
       ['el_str', 4], ['el_agi', 4], ['el_vit', 4], ['el_int', 4], ['el_per', 4],

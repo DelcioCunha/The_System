@@ -329,7 +329,7 @@
       ['Comprar.', 'o', 'Compra com cabeça. As moedas não voltam.'],
       ['Ver.', 'q', 'Ver é de graça. Até ao dia em que não é.'],
       ['Não te interessa.', 'd', 'Interessa. Cada moeda que gastas foi uma missão que cumpriste.']]],
-    ['tab', 'tab=loja', 'Na Loja de lazer estão as recompensas reais. Já usaste alguma esta semana?', [
+    ['tab', 'tab=loja', 'A Loja não vende atalhos. Vende o que te mantém vivo. Escolhe bem.', [
       ['Já.', 'o', 'Ótimo. O descanso merecido também é disciplina.'],
       ['Não mereço.', 'q', 'Se cumpriste, mereces. O Sistema não é só cobrança.'],
       ['Não preciso.', 'd', 'Toda a gente precisa. Até eu, se pudesse.']]],
@@ -476,7 +476,7 @@
       ['Quais?', 'q', 'Missões mais difíceis. Prazos mais curtos. Menos falhas.']]],
     ['level', '!rankup', 'Mais um nível. Eu podia fazer uma festa. Não faço festas. Faço registos. Este fica bonito.', [
       ['Gosto de registos bonitos.', 'o', 'Então faz mais. Gosto de ter muitos.'],
-      ['Faz uma festa.', 'd', 'Não. A festa é tua. Faz uma recompensa na Loja de lazer.'],
+      ['Faz uma festa.', 'd', 'Não. A festa é tua. Faz alguma coisa de que gostes, longe do ecrã.'],
       ['Como é um registo bonito?', 'q', 'Sem falhas à volta. Este tem poucas.']]],
     ['level', '!rankup', 'Nível novo. Vida e mana maiores. Paciência minha, igual.', [
       ['A tua paciência é infinita.', 'q', 'Não. É grande. Não confundas.'],

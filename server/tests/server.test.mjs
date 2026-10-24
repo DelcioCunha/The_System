@@ -900,4 +900,39 @@ await test('aparelhos: bloqueio sobrevive a reinstalação e APK novo; restaurar
   assert.equal((await S.call('POST', '/api/admin/devices/' + id + '/block', { reason: 'abc' })).status, 401);
 });
 
+await test('perfis: foto só para amigos, perfil do amigo, aparência e moderação da foto', async () => {
+  const S = await setup('production');
+  const C = (u, b) => S.call('POST', u, b);
+  const T1 = 'segredo-do-jogador-um-123456', T2 = 'segredo-do-jogador-dois-1234', T3 = 'segredo-do-jogador-tres-1234', P3 = 'jogador_tres3333';
+  await C('/api/player/sync', { player_id: P1, token: T1, name: 'Ana', cls: 'mago', level: 12, gender: 'f', profile: { title: 'Desperta', ach: 14, shadows: 3, frame: 'fr_gelo', bad: 'x' }, stats: { bosses: 9, streak: 4 } });
+  await C('/api/player/sync', { player_id: P2, token: T2, name: 'Rui', cls: 'guerreiro', level: 9 });
+  await C('/api/player/sync', { player_id: P3, token: T3, name: 'Estranho', level: 3 });
+  const as = (id, tok, x) => Object.assign({ player_id: id, token: tok }, x || {});
+  // foto: só imagens verdadeiras e pequenas
+  const JPG = 'data:image/jpeg;base64,' + Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 16, 0x4a, 0x46, 0x49, 0x46, 0, 1]).toString('base64') + 'A'.repeat(200);
+  assert.equal((await C('/api/social/photo', as(P1, T1, { photo: 'data:image/jpeg;base64,PHN2Zz4=' }))).status, 400, 'não é JPEG');
+  assert.equal((await C('/api/social/photo', as(P1, T1, { photo: 'data:image/svg+xml;base64,PHN2Zz4=' }))).status, 400);
+  const ph = await C('/api/social/photo', as(P1, T1, { photo: JPG }));
+  assert.equal(ph.status, 200, ph.error); assert.equal(ph.photo_ver, 1);
+  // amizade P1–P2
+  await C('/api/social/friend/request', as(P2, T2, { to: P1 }));
+  await C('/api/social/friend/respond', as(P1, T1, { from: P2, accept: true }));
+  const st = await C('/api/social/state', as(P2, T2));
+  const f = st.friends.find((x) => x.id === P1);
+  assert.equal(f.gender, 'f'); assert.equal(f.photo_ver, 1); assert.equal(f.title, 'Desperta'); assert.equal(f.photo, undefined, 'a lista não leva a foto');
+  const phs = await C('/api/social/photos', as(P2, T2, { ids: [P1, P3] }));
+  assert.equal(phs.photos[P1].src, JPG); assert.equal(phs.photos[P3], undefined, 'quem não é amigo não aparece');
+  const pr = await C('/api/social/profile', as(P2, T2, { id: P1 }));
+  assert.equal(pr.status, 200, pr.error); assert.equal(pr.profile.name, 'Ana'); assert.equal(pr.profile.photo, JPG);
+  assert.equal(pr.profile.extra.ach, 14); assert.equal(pr.profile.extra.bad, undefined); assert.equal(pr.profile.stats.bosses, 9);
+  assert.equal((await C('/api/social/profile', as(P3, T3, { id: P1 }))).status, 403, 'só amigos veem o perfil');
+  // o administrador vê e apaga a foto
+  const A = S.admin(await S.login());
+  let d = await A.get('/api/admin/players/' + P1);
+  assert.equal(d.photo, JPG); assert.equal(d.player.gender, 'f');
+  d = await A.post('/api/admin/players/' + P1 + '/photo/delete', {});
+  assert.equal(d.photo, null);
+  assert.equal((await C('/api/social/state', as(P2, T2))).friends.find((x) => x.id === P1).photo_ver, 0);
+});
+
 console.log('\n' + passed + ' testes do servidor passaram' + (process.exitCode ? ' (com falhas)' : ''));

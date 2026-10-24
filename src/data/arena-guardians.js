@@ -70,7 +70,7 @@
         'Lirael foi a primeira de todas as mil lâminas, a única que Seraphine amou. Guarda a entrada do palco e corta quem ainda não mereceu ver a dança.',
         ['Ela só dança para quem sobrevive a mim.', 'Vai… e vê-a dançar… a sério… uma vez.']]
     ],
-    /* ---------- III · Arena Abissal das Marés (Leviarch, o Devorador) ---------- */
+    /* ---------- III · Arena Abissal das Marés (Leviarch, o que Tudo Guardava) ---------- */
     3: [
       ['Caranguejo do Cofre', '🦀', 'tanque', 'strike,shield',
         'Vive dentro de um cofre afundado e acha que tudo o que lá está é dele. Igual ao dono da arena.',

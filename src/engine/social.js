@@ -39,7 +39,7 @@
   /* atributos de combate enviados para o duelo (o servidor limita-os ao nível) */
   SO.fighter = function (st) {
     var c = E.combatStats(st), t = E.totalStats(st), keys = ['atk', 'matk', 'def', 'crit', 'critDmg', 'eva', 'lifesteal', 'regenHp', 'regenMp', 'summonPct', 'dotPct', 'potionPct', 'lowHpAtk', 'execute', 'firstStrike', 'manaOnHit', 'thorns', 'openShield', 'stunRes', 'lastStand', 'revive'];
-    var f = { cls: st.cls, hp: c.maxHp, mp: c.maxMp, agi: t.agi, avatar: String(st.level) };
+    var f = { cls: st.cls, gender: st.gender === 'f' ? 'f' : 'm', hp: c.maxHp, mp: c.maxMp, agi: t.agi, avatar: String(st.level) };
     keys.forEach(function (k) { f[k] = c[k] || 0; });
     f.skills = S.combat.unlockedActiveSkills(st).map(function (s) { return s.id; });
     // itens de combate da Bolsa (as relíquias premium só se estiverem prontas)
@@ -97,6 +97,65 @@
     (b.friends || []).forEach(function (f) { if (acc[f.id]) out.push({ type: 'accepted', name: f.name }); });
     return out;
   }
+  /* ---------- perfis e fotos ---------- */
+  var PIC_KEY = 'sis.pics.v1';
+  SO.pics = (function () { try { var r = globalThis.localStorage && globalThis.localStorage.getItem(PIC_KEY); return r ? JSON.parse(r) || {} : {}; } catch (e) { return {}; } })();
+  function savePics() {
+    try {
+      var ids = Object.keys(SO.pics);
+      if (ids.length > 60) ids.sort(function (a, b) { return (SO.pics[a].t || 0) - (SO.pics[b].t || 0); }).slice(0, ids.length - 60).forEach(function (k) { delete SO.pics[k]; });
+      if (globalThis.localStorage) globalThis.localStorage.setItem(PIC_KEY, JSON.stringify(SO.pics));
+    } catch (e) { /* sem espaço: fica só na memória */ }
+  }
+  /* foto de um jogador (só se a versão em cache for a atual) */
+  SO.pic = function (p) { if (!p || !p.photo_ver) return null; var c = SO.pics[p.id]; return c && c.v === p.photo_ver ? c.src : null; };
+  /* vai buscar as fotos que faltam (amigos e a própria) */
+  SO.loadPics = function (list) {
+    var need = (list || []).filter(function (p) { return p && p.photo_ver && !SO.pic(p); }).map(function (p) { return p.id; });
+    if (!need.length) return Promise.resolve(0);
+    return post('/api/social/photos', { ids: need.slice(0, 40) }).then(function (j) {
+      if (!j.ok) return 0;
+      var n = 0; Object.keys(j.photos || {}).forEach(function (id) { var x = j.photos[id]; if (x.src) { SO.pics[id] = { v: x.v, src: x.src, t: Date.now() }; n++; } else delete SO.pics[id]; });
+      savePics(); return n;
+    });
+  };
+  SO.setPhoto = function (dataUrl) {
+    return post('/api/social/photo', { photo: dataUrl || null }).then(function (j) {
+      var st = E.state;
+      if (j.ok && st) { if (dataUrl) SO.pics[st.playerId] = { v: j.photo_ver, src: dataUrl, t: Date.now() }; else delete SO.pics[st.playerId]; savePics(); if (SO.cache && SO.cache.me) SO.cache.me.photo_ver = j.photo_ver; }
+      return j;
+    });
+  };
+  SO.profile = function (id) {
+    return post('/api/social/profile', { id: id }).then(function (j) {
+      if (j.ok && j.profile && j.profile.photo) { SO.pics[id] = { v: j.profile.photo_ver, src: j.profile.photo, t: Date.now() }; savePics(); }
+      return j;
+    });
+  };
+  /* redimensiona e corta ao centro (quadrado) uma imagem escolhida no telemóvel */
+  SO.shrink = function (file, size) {
+    size = size || 160;
+    return new Promise(function (res, rej) {
+      if (!file || !/^image\//.test(file.type || '')) return rej(new Error('Escolhe uma imagem.'));
+      var fr = new FileReader();
+      fr.onerror = function () { rej(new Error('Não foi possível ler a imagem.')); };
+      fr.onload = function () {
+        var img = new Image();
+        img.onerror = function () { rej(new Error('Formato de imagem não suportado.')); };
+        img.onload = function () {
+          var s = Math.min(img.width, img.height), cv = document.createElement('canvas'); cv.width = cv.height = size;
+          var cx = cv.getContext && cv.getContext('2d'); if (!cx) return rej(new Error('Este aparelho não consegue preparar a foto.'));
+          cx.imageSmoothingQuality = 'high';
+          cx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+          var q = 0.85, out = cv.toDataURL('image/jpeg', q);
+          while (out.length > 60000 && q > 0.4) { q -= 0.1; out = cv.toDataURL('image/jpeg', q); }
+          res(out);
+        };
+        img.src = fr.result;
+      };
+      fr.readAsDataURL(file);
+    });
+  };
   SO.badge = function () { var c = SO.cache; if (!c || !c.ok) return 0; return (c.unread || 0) + (c.requests_in || []).length + (c.invites || []).length; };
 
   SO.find = function (q) { return post('/api/social/find', { query: q }); };
