@@ -33,7 +33,27 @@ App de evolução pessoal ao estilo de um "Sistema" de RPG: cumpres missões da 
 - **Comandante e Chefe da arena**: em todas as arenas (portões e arenas exclusivas) o penúltimo chefe é o Comandante (etiqueta roxa) e o último é o Chefe da arena (etiqueta vermelha).
 - **Sombras (Tornar Servo)**: depois de derrotar um chefe dos portões ou das arenas, 3 tentativas para extrair a sombra. Se falharem (ou a sombra de um portão desvanecer ao fim de 24 h), fica selada e obtém-se com Cristais: portões 50 (normal), 150 (comandante, o penúltimo de cada portão) e 300 (chefe da arena, o último); arenas 100 (normal), 300 (comandante, o penúltimo) e 500 (chefe da arena, o Campeão). 3 lugares de servos convocados para todos (+1 para o Invocador) e até +3 com a Insígnia do General das Sombras (Loja Exclusiva). Nos duelos só contam os 3 lugares base.
 - **Duelos e Amigos**: pedidos de amizade (pelo ID de Jogador ou pelo nome), lista de amigos com quem está online ou offline, conversa de texto entre amigos, e duelos 1 contra 1 por turnos contra jogadores reais, com o mesmo ecrã e as mesmas regras do combate contra chefes (todas as habilidades ativas da classe e os seus efeitos, itens de combate da Bolsa com limite de poções, estados, escudos, invocações, servos convocados e defender): salas públicas ou privadas com código, convites a amigos, 45 segundos por jogada, força das classes calibrada com torneios simulados (tools/pvp-tune.mjs), pontuação de duelo (subida/descida conforme o adversário), registo de vitórias e derrotas. O servidor decide cada golpe; perder não tira nada; as recompensas entram uma vez por duelo e só nos primeiros 5 do dia.
-- **Servidor da loja** (`server/`): Cloudflare Workers + D1. Pedidos, confirmação manual, códigos únicos guardados só como hash, resgate atómico, sessões do administrador, auditoria, idempotência e limites de tentativas, tipos de utilizador, avisos da administração e contas apagadas, amizades, conversas e duelos. Funciona em produção por omissão (a variável LOJA_MODE só serve para forçar "staging"). 31 testes, incluindo todos os testes de aceitação do Plano Mestre.
+- **Servidor da loja** (`server/`): Cloudflare Workers + D1. Pedidos, confirmação manual, códigos únicos guardados só como hash, resgate atómico, sessões do administrador, auditoria, idempotência e limites de tentativas, tipos de utilizador, avisos da administração e contas apagadas, amizades, conversas e duelos, acesso privado e bloqueio por aparelho (migração `0010_aparelhos.sql`). Funciona em produção por omissão (a variável LOJA_MODE só serve para forçar "staging"). 35 testes, incluindo todos os testes de aceitação do Plano Mestre.
+
+## Acesso privado e bloqueio por aparelho
+
+O jogo pode ser fechado só a quem tu autorizas, e um aparelho bloqueado não volta a jogar mesmo que desinstale e instale outra vez.
+
+- **Como o aparelho é reconhecido**: ao abrir, o jogo envia ao servidor dois identificadores do telemóvel (plugin nativo `SistemaDevice`, sem permissões):
+  - o **identificador de hardware Widevine**, que não muda ao desinstalar, ao limpar os dados nem com um APK novo (só com reposição de fábrica);
+  - o **ANDROID_ID**, que não muda ao reinstalar um APK com a mesma assinatura.
+  O servidor só guarda hashes destes valores (com a `CODE_PEPPER`). Basta um deles coincidir para o aparelho ser reconhecido.
+- **Assinatura fixa**: os APKs passam a ser todos assinados com a mesma chave (`android/app/sistema.keystore`). Assim, o ANDROID_ID fica igual entre versões e uma versão nova instala-se por cima da antiga, sem perder o progresso. Na primeira instalação desta versão, quem tem a versão antiga ainda precisa de desinstalar uma última vez (usa antes «Transferir conta»). Mantém o repositório **privado**.
+- **Modo privado** (painel → Aparelhos): com ele ligado, um aparelho novo vê o ecrã «Acesso restrito» com o código do aparelho (`APR-XXXX-XXXX`). Para entrar:
+  - escreve um **código de acesso** (`ACS-XXXX-XXXX`) que lhe deste; ou
+  - envia um **pedido de acesso** (nome e contacto), que aparece no painel para aprovares.
+  Ao ligar o modo privado, quem já jogava continua sem pedir nada.
+- **Bloquear**: na ficha do aparelho → «Bloquear». O jogo mostra «Aparelho bloqueado» com o motivo e o código do aparelho, e nada mais abre. Podes desativar também as contas jogadas nesse aparelho, para não continuarem noutro telemóvel. Os códigos de acesso não desbloqueiam aparelhos bloqueados.
+- **Restaurar**: «Restaurar» na ficha do aparelho, com o motivo obrigatório (por exemplo, uma decisão judicial). O motivo fica na auditoria. O jogo volta a abrir na próxima ligação e o Sistema avisa o jogador.
+- **Sem internet**: a última decisão fica guardada no telemóvel. Um aparelho autorizado joga sem internet até ao número de dias definido no painel (15 por omissão); depois, o jogo pede ligação. Na primeira abertura é sempre precisa internet.
+- **Limites**:
+  - uma reposição de fábrica muda os dois identificadores; com o modo privado ligado, esse «aparelho novo» precisa da tua autorização;
+  - na versão web, limpar os dados do navegador cria um aparelho novo, que também precisa de autorização em modo privado.
 
 ## Salvamento
 

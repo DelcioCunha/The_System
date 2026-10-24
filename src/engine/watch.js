@@ -363,6 +363,8 @@
     return { title: 'QUADRO DE MISSÕES FECHADO', lines: [fill(pick(SENTENCE.banned), v), 'Integridade: ' + w.trust + '%.'] };
   };
 
+  /* registo curto dos avisos (para os lembretes no telemóvel) */
+  function logEv(st, kind, sk) { var w = W.ensure(st); w.log = (w.log || []).concat([{ at: now(), kind: kind, sk: sk || [] }]).slice(-6); }
   function vars(st, extra) {
     var v = { nome: st.name, NOME: String(st.name).toUpperCase(), hora: hhmm(now()), dia: S.time ? S.time.systemDay(st) : 1, trust: W.trust(st) };
     Object.keys(extra || {}).forEach(function (k) { v[k] = extra[k]; });
@@ -383,6 +385,7 @@
     var lines = said.lines.concat(punished.map(function (p) { return p.line; }));
     if (punished.length) lines.push(W.closing(st));
     E.emit({ type: 'watch', level: Math.min(3, sev), title: said.title, lines: lines, sentence: punished.map(function (p) { return p.kind; }) });
+    logEv(st, verdict.kind === 'filler' ? 'filler' : 'text', punished.map(function (p) { return p.kind; }));
     E.history(st, '👁️', 'O Sistema recusou a missão «' + v.texto + '» (aviso ' + n + ').');
     return { ok: false, watch: true, msg: said.title.charAt(0) + said.title.slice(1).toLowerCase() + '. ' + said.lines[0] };
   };
@@ -404,12 +407,13 @@
     var n = w.quick.length, lvl = Math.min(3, n);
     setTrust(st, w.trust - S.WATCH.loss.quick[lvl - 1]);
     var v = vars(st, { texto: m.title.slice(0, 40), min: minText(elapsed), n: n });
-    if (lvl === 1) return { level: 1, factor: 1, line: fill(pick(VOICE.quick1), v) };
+    if (lvl === 1) { logEv(st, 'quick'); return { level: 1, factor: 1, line: fill(pick(VOICE.quick1), v) }; }
     var sev = W.severity(st, lvl);
     var said = voice(lvl === 2 ? VOICE.quick2 : VOICE.quick3, v);
     var punished = W.sentence(st, sev);
     var lines = said.lines.concat(punished.map(function (p) { return p.line; }));
     lines.push(W.closing(st));
+    logEv(st, 'quick', punished.map(function (p) { return p.kind; }));
     var ev = { title: sev >= 3 && lvl === 2 ? W.sentenceTitle(st, sev) : said.title, lines: lines, sentence: punished.map(function (p) { return p.kind; }) };
     if (lvl === 2) return { level: 2, factor: 0.5, event: ev, sev: sev };
     return { level: 3, factor: 0, penalty: true, event: ev, sev: sev, vars: v };

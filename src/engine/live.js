@@ -23,6 +23,10 @@
 
   function now() { return S.clock.now(); }
   function rnd() { return S.rng.random(); }
+  /* falas novas (src/data/voice-plus.js) juntam-se às antigas */
+  var P = S.PLUS || {};
+  function plus(group, key) { var g = P[group]; return (g && g[key]) || []; }
+  function join(list, group, key) { return list.concat(plus(group, key)); }
   function pick(list) { return list[Math.floor(rnd() * list.length) % list.length]; }
   function fill(t, v) { return String(t).replace(/\{(\w+)\}/g, function (m, k) { return v[k] !== undefined ? v[k] : m; }); }
   function hhmm(ts) { var d = new Date(ts); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
@@ -59,6 +63,9 @@
     fast: ['Ainda nem leste a missão, {nome}.', 'Em {seg} segundos? Eu também sei contar.'],
     lost: ['Recusaste. Fica registado quem és quando ninguém te obriga.', 'Tempo esgotado. Eu sabia.', 'Ignoraste a emergência. Ela não te ignorou a ti.']
   };
+  EMERGENCY = EMERGENCY.concat(P.emergency || []);
+  Object.keys(EM_VOICE).forEach(function (k) { EM_VOICE[k] = join(EM_VOICE[k], 'emVoice', k); });
+  L.EMERGENCY = EMERGENCY;
   function emReward(st) {
     var dr = S.missions.dailyReward(st);
     return { xp: Math.round(dr.xp * 0.6), coins: Math.round(dr.coins * 0.8) };
@@ -84,7 +91,7 @@
     l.em = { text: e[0], at: t, until: t + e[1] * 60000, xp: r.xp, coins: r.coins };
     l.emLast = e[0]; l.emCount++;
     scheduleNextEmergency(l, t, C.nextGap);
-    E.emit({ type: 'emergency', title: 'MISSÃO DE EMERGÊNCIA', lines: [e[0], 'Tempo: ' + e[1] + ' minutos.', 'Recompensa: +' + r.xp + ' XP · +' + r.coins + ' moedas.', fill(pick(EM_VOICE.open), vars(st))] });
+    E.emit({ type: 'emergency', title: 'MISSÃO DE EMERGÊNCIA', lines: [e[0], 'Tempo: ' + e[1] + ' minutos.', 'Recompensa: +' + r.xp + ' XP · +' + r.coins + ' moedas.', fill(e[2] && rnd() < 0.7 ? e[2] : pick(EM_VOICE.open), vars(st))] });
     return true;
   };
   L.completeEmergency = function () {
@@ -123,12 +130,14 @@
     { id: 'centena', name: 'A Centena', when: function (st) { return c(st, 'missionsDone') >= 100; },
       why: 'Cem missões cumpridas. Vou exigir-te uma coisa que nunca te exigi.', task: 'Um dia inteiro sem redes sociais.', reward: ['bau_lendario'] }
   ];
+  HIDDEN = HIDDEN.concat(P.hidden || []);
   L.HIDDEN = HIDDEN;
   var HID_VOICE = {
     open: ['Andei a observar-te, {nome}.', 'Eu vejo padrões onde tu vês dias.', 'Isto não aparece a toda a gente.'],
     done: ['Poucos chegam aqui. Não te habitues.', 'Cumprida. Já sabia que ias tentar. Não sabia que ias conseguir.'],
     lost: ['A Missão Oculta desapareceu. O Sistema não oferece duas vezes.', 'Deixaste passar uma Missão Oculta. Ela não volta.']
   };
+  Object.keys(HID_VOICE).forEach(function (k) { HID_VOICE[k] = join(HID_VOICE[k], 'hidVoice', k); });
   function rewardNames(list) { return list.map(function (id) { return S.ITEMS[id] ? (S.ITEMS[id].secret ? 'item secreto' : S.ITEMS[id].name) : id; }).join(' + '); }
   L.hiddenActive = function (st) {
     var l = L.ensure(st);
@@ -150,7 +159,7 @@
     l.hidden[def.id] = 'active';
     l.hq = { id: def.id, at: t, until: t + S.LIVE.hidden.hours * HOUR };
     E.emit({ type: 'hidden', title: 'MISSÃO OCULTA DESBLOQUEADA', name: def.name,
-      lines: [fill(pick(HID_VOICE.open), vars(st)), def.why, def.task, 'Tens 48 horas. Recompensa: ' + rewardNames(def.reward) + '.'] });
+      lines: [fill(def.say || pick(HID_VOICE.open), vars(st)), def.why, def.task, 'Tens 48 horas. Recompensa: ' + rewardNames(def.reward) + '.'] });
     E.history(st, '🗝️', 'Desbloqueou a Missão Oculta «' + def.name + '».');
     return true;
   }
@@ -244,16 +253,17 @@
     var pend = M.forDay(st, td).filter(function (x) { return x.status === 'pending'; });
     var soon = pend.filter(function (x) { return x.deadline - t < 3 * HOUR; });
     var lines = [];
-    if (away >= 2 * DAY) lines.push(fill(pick(['Desapareceste {d} dias, {nome}. Eu não.', '{d} dias sem ti. O Sistema funcionou perfeitamente.', 'Voltaste. {d} dias depois. Eu contei cada um.']), Object.assign(v, { d: Math.floor(away / DAY) })));
-    else if (L.zone(st)) lines.push('A Zona de Penalidade continua aberta. Eu também.');
-    else if (S.watch && S.watch.marked(st)) lines.push(fill('Ainda tens a minha marca, {nome}. Não te esqueças de quem a pôs.', v));
-    else if (soon.length) lines.push(fill(pick(['{hora}. {n} missões por cumprir. O relógio não espera por ti.', '{hora}. Faltam {n} missões e pouco tempo. Eu sei qual das duas acaba primeiro.']), Object.assign(v, { n: soon.length })));
-    else if (h < 4) lines.push(fill(pick(['{hora}. Os outros dormem. Tu estás aqui. Interessante.', '{hora}. O Sistema não dorme. Tu devias.']), v));
-    else if (h < 8) lines.push(fill(pick(['{hora}. Acordado antes do mundo. Fica registado.', 'Madrugada. Os fracos ainda dormem. Tu ainda não provaste que não és um deles.']), v));
-    else if (st.daily.streak >= 3) lines.push(fill(pick(['Sequência de {s} dias. Não estragues tudo hoje.', '{s} dias seguidos. Eu reparo. Não aplaudo.']), Object.assign(v, { s: st.daily.streak })));
-    else if (h < 12) lines.push(pick(['Manhã. As missões não se cumprem sozinhas.', 'Um dia novo. As mesmas desculpas de ontem?']));
-    else if (h < 19) lines.push(pick(['Metade do dia já foi. E tu?', 'Tarde. O Sistema já fez tudo o que tinha a fazer hoje. E tu?']));
-    else lines.push(pick(['A noite chega para todos. As tuas missões ainda não.', 'Fim do dia. O registo fecha à meia-noite. O que vais deixar nele?']));
+    var G = function (key, list) { return pick(join(list, 'greet', key)); };
+    if (away >= 2 * DAY) lines.push(fill(G('away', ['Desapareceste {d} dias, {nome}. Eu não.', '{d} dias sem ti. O Sistema funcionou perfeitamente.', 'Voltaste. {d} dias depois. Eu contei cada um.']), Object.assign(v, { d: Math.floor(away / DAY) })));
+    else if (L.zone(st)) lines.push(fill(G('zone', ['A Zona de Penalidade continua aberta. Eu também.']), v));
+    else if (S.watch && S.watch.marked(st)) lines.push(fill(G('marked', ['Ainda tens a minha marca, {nome}. Não te esqueças de quem a pôs.']), v));
+    else if (soon.length) lines.push(fill(G('soon', ['{hora}. {n} missões por cumprir. O relógio não espera por ti.', '{hora}. Faltam {n} missões e pouco tempo. Eu sei qual das duas acaba primeiro.']), Object.assign(v, { n: soon.length })));
+    else if (h < 4) lines.push(fill(G('night', ['{hora}. Os outros dormem. Tu estás aqui. Interessante.', '{hora}. O Sistema não dorme. Tu devias.']), v));
+    else if (h < 8) lines.push(fill(G('dawn', ['{hora}. Acordado antes do mundo. Fica registado.', 'Madrugada. Os fracos ainda dormem. Tu ainda não provaste que não és um deles.']), v));
+    else if (st.daily.streak >= 3) lines.push(fill(G('streak', ['Sequência de {s} dias. Não estragues tudo hoje.', '{s} dias seguidos. Eu reparo. Não aplaudo.']), Object.assign(v, { s: st.daily.streak })));
+    else if (h < 12) lines.push(fill(G('morning', ['Manhã. As missões não se cumprem sozinhas.', 'Um dia novo. As mesmas desculpas de ontem?']), v));
+    else if (h < 19) lines.push(fill(G('afternoon', ['Metade do dia já foi. E tu?', 'Tarde. O Sistema já fez tudo o que tinha a fazer hoje. E tu?']), v));
+    else lines.push(fill(G('evening', ['A noite chega para todos. As tuas missões ainda não.', 'Fim do dia. O registo fecha à meia-noite. O que vais deixar nele?']), v));
     return { type: 'note', text: lines[0], greet: true };
   };
 
@@ -264,6 +274,48 @@
     giant: ['Venceste um chefe {g} níveis acima de ti. Interessante. Não te dei essa hipótese.', '{g} níveis de diferença. Isso não estava nas minhas previsões. Corrigi as previsões.'],
     king: ['O rei do {portao} caiu. O próximo portão já sabe o teu nome.', '{portao}: sem rei. Alguém vai ter de ocupar o trono. Não és tu. Ainda.'],
     level: ['Nível {lv}. Metade do caminho. A metade fácil.', 'Nível {lv}. Já não és um caçador qualquer. Também não és especial.']
+  };
+  Object.keys(REACT).forEach(function (k) { REACT[k] = join(REACT[k], 'react', k); });
+  Object.keys(P.react || {}).forEach(function (k) { if (!REACT[k]) REACT[k] = P.react[k].slice(); });
+  L.REACT = REACT;
+  /* novos marcos: contadores que, ao passar um limiar, fazem o Sistema comentar (uma vez) */
+  var MARKS = [
+    { k: 'kills', c: 'bossesKilled', at: [10, 25, 50, 75, 100] },
+    { k: 'missions', c: 'missionsDone', at: [50, 100, 250, 500, 1000] },
+    { k: 'emerg', c: 'emergencies', at: [10, 25, 50] },
+    { k: 'zones', c: 'zonesCleared', at: [1, 5] },
+    { k: 'hiddenAll', c: 'hiddenDone', at: [5, 10, 17] },
+    { k: 'lv100', lvl: [100] }
+  ];
+  L.MARKS = MARKS;
+  function marksTick(st) {
+    var l = L.ensure(st), init = !l.marksInit, fired = false;
+    MARKS.forEach(function (m) {
+      if (!REACT[m.k]) return;
+      var val = m.lvl ? st.level : ((st.c && st.c[m.c]) || 0), list = m.lvl || m.at;
+      list.forEach(function (n) {
+        var key = 'mk_' + m.k + '_' + n;
+        if (val < n || l.reacted[key]) return;
+        l.reacted[key] = now();
+        if (init || fired) return; // primeira vez: só regista o que já passou, sem falar
+        fired = true;
+        E.emit({ type: 'note', text: fill(pick(REACT[m.k]), vars(st, { n: n })), react: true });
+      });
+    });
+    l.marksInit = true;
+    return fired;
+  }
+  /* comentário do Sistema no fim de uma batalha contra um chefe (vitória ou derrota) */
+  L.bossSay = function (st, b, over, seed) {
+    if (!b || (over !== 'win' && over !== 'lose')) return null;
+    var BS = P.bossSay || {}, own = BS[b.id], list = own && own[over];
+    if (!list || !list.length) {
+      var g = P.bossSayArena || {}, kind = b.champion ? 'champion' : b.lieutenant ? 'lieutenant' : 'guardian';
+      list = b.arena && g[kind] ? g[kind][over] : (P.bossSayAny || {})[over];
+    }
+    if (!list || !list.length) return null;
+    var line = list[Math.abs(seed || 0) % list.length];
+    return fill(line, vars(st, { boss: b.name }));
   };
   function note(st, key, list, v) {
     var l = L.ensure(st);
@@ -324,6 +376,8 @@
     D: { reward: [], coins: 0, says: ['D. Se isto foi o teu esforço, o problema é maior do que eu pensava.', 'Nota D. Eu reparei. Os chefes também.'] },
     E: { reward: [], coins: 0, says: ['E. Uma semana inteira e quase nada. Impressionante, à tua maneira.', 'Nota E. Até o silêncio produziu mais do que tu.'] }
   };
+  Object.keys(GRADE).forEach(function (k) { GRADE[k].says = join(GRADE[k].says, 'grade', k); });
+  L.GRADE = GRADE;
   function reportTick(st) {
     var mon = L.dueWeek(st);
     if (!mon) return false;
@@ -353,8 +407,12 @@
     absent3: ['Três dias, {nome}. As tuas missões apodrecem. Eu continuo aqui.', 'Três dias de silêncio. O registo não ficou em silêncio.'],
     absent7: ['Uma semana. Os portões continuam abertos. A pergunta é se tu ainda és Jogador.', 'Sete dias. O Sistema não desiste de ninguém. Só regista quem desiste.']
   };
+  Object.keys(NOTE_VOICE).forEach(function (k) { NOTE_VOICE[k] = join(NOTE_VOICE[k], 'note', k); });
+  Object.keys(P.note || {}).forEach(function (k) { if (!NOTE_VOICE[k]) NOTE_VOICE[k] = P.note[k].slice(); });
+  var WATCH_NOTE = P.watchNote || {};
+  L.NOTE_VOICE = NOTE_VOICE;
   /* separador da app que o lembrete abre quando é tocado */
-  L.noteTab = function (key) { return /^absent/.test(key) ? 'status' : 'missoes'; };
+  L.noteTab = function (key) { return /^(absent|wv|ws|mk|tl)/.test(key) ? 'status' : 'missoes'; };
   function seeded(key, list) { var h = 0; for (var i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0; return list[h % list.length]; }
   L.plan = function (st) {
     if (!st) return [];
@@ -373,6 +431,48 @@
         add('daily@' + d, dl - HOUR, 'SISTEMA · MISSÃO DIÁRIA', NOTE_VOICE.daily, { h: hhmm(dl) });
       }
     });
+    // missões a fechar: avisos aos 20 e aos 10 minutos (além dos 30)
+    [E.dateKey(t), E.addDays(E.dateKey(t), 1)].forEach(function (d) {
+      M.forDay(st, d).forEach(function (x) {
+        if (x.status !== 'pending') return;
+        var ex = { m: x.m.title, h: hhmm(x.deadline) };
+        add('m20:' + x.m.id + '@' + d, x.deadline - 20 * 60000, 'SISTEMA · PRAZO', NOTE_VOICE.m20, ex);
+        add('m10:' + x.m.id + '@' + d, x.deadline - 10 * 60000, 'SISTEMA · ÚLTIMOS MINUTOS', NOTE_VOICE.m10, ex);
+      });
+    });
+    // resumo da manhã: as missões de hoje (08:30)
+    var td0 = E.dateKey(t), pendToday = M.forDay(st, td0).filter(function (x) { return x.status === 'pending'; });
+    var at830 = new Date(t); at830.setHours(8, 30, 0, 0);
+    if (pendToday.length && NOTE_VOICE.today) add('today@' + td0, at830.getTime(), 'SISTEMA · HOJE', NOTE_VOICE.today, { n: pendToday.length, m: pendToday[0].m.title, h: hhmm(pendToday[0].deadline) });
+    var tm = E.addDays(td0, 1), pendTm = M.forDay(st, tm).filter(function (x) { return x.status === 'pending'; });
+    var at830b = new Date(t); at830b.setDate(at830b.getDate() + 1); at830b.setHours(8, 30, 0, 0);
+    if (pendTm.length && NOTE_VOICE.today) add('today@' + tm, at830b.getTime(), 'SISTEMA · HOJE', NOTE_VOICE.today, { n: pendTm.length, m: pendTm[0].m.title, h: hhmm(pendTm[0].deadline) });
+    // missões únicas marcadas para daqui a 1 ou mais dias
+    var keep = until;
+    until = t + 8 * DAY;
+    (M.upcomingOnce ? M.upcomingOnce(st) : []).slice(0, 8).forEach(function (m) {
+      var n = E.daysBetween ? E.daysBetween(td0, m.date) : Math.round((new Date(E.parseKey(m.date)) - new Date(E.parseKey(td0))) / DAY);
+      var ex = { m: m.title, h: m.deadline, n: n, dia: m.date.split('-').reverse().slice(0, 2).join('/') };
+      if (n === 1) { var e20 = new Date(t); e20.setHours(20, 0, 0, 0); add('tmw:' + m.id, e20.getTime(), 'SISTEMA · AMANHÃ', NOTE_VOICE.tomorrow, ex); }
+      else if (n >= 2 && n <= 7) { var e10 = new Date(t); e10.setHours(10, 0, 0, 0); if (e10.getTime() <= t + 60000) e10.setDate(e10.getDate() + 1), ex.n = n - 1; if (ex.n >= 2) add('days:' + m.id + '@' + E.dateKey(e10.getTime()), e10.getTime(), 'SISTEMA · DAQUI A ' + ex.n + ' DIAS', NOTE_VOICE.days, ex); }
+    });
+    until = keep;
+    // vigilância: o Sistema volta a lembrar avisos e sentenças no telemóvel
+    if (S.watch) {
+      var w = S.watch.ensure(st), wl = (w.log || []).slice(-3), wv = vars(st, { trust: w.trust });
+      var wadd = function (key, at, title, list, extra) { if (list && list.length) add(key, at, title, list, Object.assign({ trust: w.trust, ate: w.banUntil ? hhmm(w.banUntil) : '' }, extra || {})); };
+      wl.forEach(function (ev) {
+        if (ev.sk && ev.sk.length) wadd('ws:' + ev.at, ev.at + 3 * HOUR, 'SENTENÇA DO SISTEMA', WATCH_NOTE['s_' + ev.sk[ev.sk.length - 1]] || WATCH_NOTE.sentence);
+        else wadd('wv:' + ev.at, ev.at + 40 * 60000, 'AVISO DO SISTEMA', WATCH_NOTE['w_' + ev.kind] || WATCH_NOTE.warn);
+      });
+      if (w.banUntil && w.banUntil > t) wadd('ban:' + w.banUntil, w.banUntil, 'QUADRO DE MISSÕES', WATCH_NOTE.banEnd, { ate: hhmm(w.banUntil) });
+      var mk = (st.effects || []).filter(function (e) { return e.id === 'marcado'; })[0];
+      if (mk && mk.until > t) {
+        wadd('mk1:' + mk.until, mk.until - 12 * HOUR, 'MARCA DO SISTEMA', WATCH_NOTE.markMid);
+        wadd('mk2:' + mk.until, mk.until, 'MARCA DO SISTEMA', WATCH_NOTE.markEnd);
+      }
+      if (w.trust < 60) { var a10 = new Date(t); a10.setDate(a10.getDate() + 1); a10.setHours(10, 0, 0, 0); wadd('tl:' + E.dateKey(a10.getTime()), a10.getTime(), 'INTEGRIDADE ' + w.trust + '%', WATCH_NOTE.trustLow); }
+    }
     var z = L.zone(st);
     if (z) add('zone:' + z.at, z.until - 2 * HOUR, 'ZONA DE PENALIDADE', NOTE_VOICE.zone);
     if (l.hq) add('hq:' + l.hq.id, l.hq.until - 6 * HOUR, 'MISSÃO OCULTA', NOTE_VOICE.hidden);
@@ -386,7 +486,7 @@
     add('absent:' + E.dateKey(t), at19(first), 'SISTEMA', NOTE_VOICE.absent);
     add('absent3:' + E.dateKey(t), at19(first + 2), 'SISTEMA', NOTE_VOICE.absent3);
     add('absent7:' + E.dateKey(t), at19(first + 6), 'SISTEMA', NOTE_VOICE.absent7);
-    return out.sort(function (a, b) { return a.at - b.at; }).slice(0, 30);
+    return out.sort(function (a, b) { return a.at - b.at; }).slice(0, 48);
   };
 
   /* ================= verificação periódica ================= */
@@ -398,6 +498,7 @@
     changed = reportTick(st) || changed;
     changed = hiddenTick(st) || changed;
     changed = emergencyTick(st) || changed;
+    changed = marksTick(st) || changed;
     return changed;
   };
 })(globalThis.SYS = globalThis.SYS || {});

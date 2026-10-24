@@ -19,7 +19,7 @@
 
 import { DUEL_SKILLS, DUEL_ITEMS, CLASS_MAIN, HEAL_LIMIT, DOT_NAMES, BUFF_NAMES } from './duel-data.js';
 
-const VERSION = '1.4.0';
+const VERSION = '1.5.0';
 const MIN = 60 * 1000, HOUR = 60 * MIN, DAY = 24 * HOUR;
 const SESSION_TTL = 12 * HOUR;       // duração máxima de uma sessão
 const SESSION_IDLE = 2 * HOUR;       // sem uso durante 2 horas, a sessão expira
@@ -322,7 +322,10 @@ async function dashboard(env, url) {
     all(env, 'SELECT package_name AS name, COUNT(*) AS n, SUM(price_kz) AS kz FROM orders WHERE status IN ' + PAID + ' AND confirmed_at >= ?' + real(env) + ' GROUP BY package_name ORDER BY kz DESC', from)
   ]);
   const pls = await one(env, "SELECT COUNT(*) AS n, SUM(CASE WHEN status = 'banned' THEN 1 ELSE 0 END) AS banned, SUM(CASE WHEN last_seen > ? THEN 1 ELSE 0 END) AS week, SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS fresh FROM players" + (isTest(env) ? '' : ' WHERE test = 0'), now() - 7 * DAY, from);
+  const dv = await one(env, "SELECT SUM(CASE WHEN status = 'new' AND requested_at IS NOT NULL THEN 1 ELSE 0 END) AS req, SUM(CASE WHEN status = 'blocked' THEN 1 ELSE 0 END) AS blocked, SUM(CASE WHEN status = 'new' THEN 1 ELSE 0 END) AS waiting FROM devices" + (isTest(env) ? '' : ' WHERE test = 0'));
+  const cfg = await devCfg(env);
   return json({ ok: true, test: isTest(env), period: url.searchParams.get('period') || 'today',
+    devices: { requests: dv.req || 0, blocked: dv.blocked || 0, waiting: dv.waiting || 0, private: cfg.private },
     players: { total: pls.n || 0, banned: pls.banned || 0, active_7d: pls.week || 0, new: pls.fresh || 0 },
     pending: pend.n, awaiting_code: oldest.filter((o) => o.status === 'payment_confirmed').length, confirmed_sales: sales.n, revenue_kz: sales.kz, crystals_sold: sales.cr,
     codes_unredeemed: codes.n, cancelled: cancelled.n, queue: oldest.map(orderAdmin), activity: recent, by_package: byPkg });
@@ -499,12 +502,23 @@ async function getSettings(env) {
 }
 async function putSettings(env, A, body, ip) {
   const up = [];
+  let grandfather = false;
   if (body.whatsapp !== undefined) { const w = String(body.whatsapp).replace(/\D/g, ''); if (w && (w.length < 9 || w.length > 15)) throw bad('Número de WhatsApp inválido (usa o indicativo, ex.: 244…).'); up.push(['whatsapp', w]); }
   if (body.payment_info !== undefined) up.push(['payment_info', clean(body.payment_info, 600)]);
   if (body.shop_open !== undefined) up.push(['shop_open', body.shop_open ? '1' : '0']);
+  if (body.private_mode !== undefined) {
+    const on = body.private_mode ? '1' : '0';
+    up.push(['private_mode', on]);
+    // ao ligar: quem já tinha conta antes deste momento continua a jogar sem pedir acesso
+    if (on === '1' && (await setting(env, 'private_mode')) !== '1') { up.push(['private_since', String(now())]); grandfather = true; }
+  }
+  if (body.offline_days !== undefined) up.push(['offline_days', String(int(body.offline_days, 1, 90))]);
   if (!up.length) throw bad('Nada para alterar.');
+  const extra = [];
+  // os aparelhos que já jogavam (sem pedido pendente) ficam autorizados: só os novos precisam de autorização
+  if (grandfather) extra.push(q(env, "UPDATE devices SET status = 'approved', approved_at = ?, approved_by = 'sistema', approved_via = 'anterior' WHERE status = 'new' AND requested_at IS NULL", now()));
   await env.DB.batch(up.map((u) => q(env, 'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value', u[0], u[1]))
-    .concat([auditStmt(env, A.admin, 'settings.update', null, 'ok', Object.fromEntries(up), ip)]));
+    .concat(extra, [auditStmt(env, A.admin, 'settings.update', null, 'ok', Object.fromEntries(up), ip)]));
   return getSettings(env);
 }
 
@@ -575,6 +589,13 @@ async function sync(env, body, ip) {
   }
   const notices = await playerNotices(env, p);
   const role = await playerRole(env, p);
+  // aparelho: bloqueado ou (em modo privado) ainda sem autorização → sem presentes nem avisos
+  const dev = await deviceFor(env, body);
+  if (dev) {
+    await linkPlayer(env, dev, body);
+    const cfg = await devCfg(env), acc = devAccess(dev, cfg);
+    if (acc !== 'ok') return json({ ok: true, account: acc === 'blocked' ? 'device_blocked' : 'device_pending', device: devOut(dev, cfg), inbox: [], notices: [], role });
+  }
   if (p.status === 'banned') return json({ ok: true, account: 'banned', ban: banInfo(p), inbox: [], notices, role });
   const inbox = await all(env, "SELECT id, crystals, coins, reason, message, order_id FROM grants WHERE player_id = ? AND mode = 'auto' AND status = 'pending' ORDER BY created_at LIMIT 20", pid);
   return json({ ok: true, account: 'active', inbox, notices, role, server_time: t });
@@ -708,6 +729,317 @@ async function deletePlayer(env, A, id, body, ip) {
   return json({ ok: true, deleted: p.id });
 }
 
+/* ==========================================================
+   APARELHOS: acesso privado e bloqueio por aparelho
+   - o jogo envia os identificadores do aparelho; só guardamos hashes (com pimenta)
+   - hw  = identificador do hardware (Widevine): igual depois de desinstalar, de limpar dados e com APKs novos
+   - aid = ANDROID_ID: igual depois de desinstalar e instalar o mesmo APK
+   - web = versão web: identificador guardado no navegador
+   Um aparelho bloqueado é reconhecido por qualquer um destes identificadores.
+   ========================================================== */
+const DEV_RAW = /^[A-Za-z0-9:_.-]{8,128}$/;
+const DEV_BAD = { '9774d56d682e549c': 1, '0000000000000000': 1, unknown: 1 };
+const DEV_ID = /^d[0-9a-f]{18}$/;
+const ACC_ID = /^a[0-9a-f]{18}$/;
+async function devHashes(env, ids) {
+  ids = ids && typeof ids === 'object' ? ids : {};
+  const h = async (k) => { const v = String(ids[k] == null ? '' : ids[k]).trim(); return v && DEV_RAW.test(v) && !DEV_BAD[v.toLowerCase()] && !/^0+$/.test(v) ? sha256('dev|' + k + '|' + (env.CODE_PEPPER || '') + '|' + v.toLowerCase()) : null; };
+  return { hw: await h('hw'), aid: await h('aid'), web: await h('web') };
+}
+function newDevCode() {
+  let s = '';
+  while (s.length < 8) { const b = randomBytes(12); for (let i = 0; i < b.length && s.length < 8; i++) if (b[i] < 248) s += CODE_ALPHABET[b[i] % 31]; }
+  return 'APR-' + s.slice(0, 4) + '-' + s.slice(4);
+}
+async function devCfg(env) {
+  const rows = await all(env, "SELECT key, value FROM settings WHERE key IN ('private_mode','private_since','offline_days','whatsapp')");
+  const o = {}; rows.forEach((r) => { o[r.key] = r.value; });
+  return { private: o.private_mode === '1', since: +o.private_since || 0, offline: Math.max(1, Math.min(90, +o.offline_days || 15)), whatsapp: o.whatsapp || '' };
+}
+/* encontra o aparelho por qualquer um dos identificadores; se houver mais do que um, o bloqueado manda */
+async function findDevice(env, H) {
+  const rows = await all(env, 'SELECT * FROM devices WHERE hw_hash = ? OR aid_hash = ? OR web_hash = ?', H.hw, H.aid, H.web);
+  if (!rows.length) return { d: null, all: [] };
+  const rank = (d) => (d.status === 'blocked' ? 100 : 0) + (H.hw && d.hw_hash === H.hw ? 10 : 0) + (d.status === 'approved' ? 5 : 0) + (d.last_seen / 1e15);
+  rows.sort((a, b) => rank(b) - rank(a));
+  return { d: rows[0], all: rows };
+}
+async function ensureDevice(env, H, body, ip) {
+  const t = now();
+  const info = { platform: clean(body.platform, 16) || null, model: clean(body.model, 60) || null, os: clean(body.os, 30) || null, app_version: clean(body.app_version, 16) || null };
+  let { d, all: rows } = await findDevice(env, H);
+  if (!d) {
+    if (await limited(env, 'devnew:' + ip, 20, HOUR)) throw new HttpError(429, 'Demasiados aparelhos novos a partir desta ligação. Tenta mais tarde.');
+    for (let i = 0; i < 5 && !d; i++) {
+      const id = randomId('d'), code = newDevCode();
+      try {
+        await env.DB.batch([
+          q(env, 'INSERT INTO devices (id, code, hw_hash, aid_hash, web_hash, platform, model, os, app_version, first_seen, last_seen, checks, test) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)',
+            id, code, H.hw, H.aid, H.web, info.platform, info.model, info.os, info.app_version, t, t, isTest(env) ? 1 : 0),
+          auditStmt(env, 'sistema', 'device.new', code, 'ok', { model: info.model, platform: info.platform }, ip)
+        ]);
+        d = await one(env, 'SELECT * FROM devices WHERE id = ?', id);
+      } catch (e) {
+        // outro pedido igual registou o aparelho ao mesmo tempo: usa esse
+        const f = await findDevice(env, H); if (f.d) { d = f.d; rows = f.all; }
+      }
+    }
+    if (!d) throw new HttpError(500, 'Não foi possível registar o aparelho.');
+  }
+  // completa os identificadores que ainda faltam (sem roubar os de outro registo)
+  const taken = (k, v) => rows.some((r) => r.id !== d.id && r[k] === v);
+  const set = [], args = [];
+  [['hw_hash', H.hw], ['aid_hash', H.aid], ['web_hash', H.web]].forEach((x) => { if (x[1] && !d[x[0]] && !taken(x[0], x[1])) { set.push(x[0] + ' = ?'); args.push(x[1]); d[x[0]] = x[1]; } });
+  Object.keys(info).forEach((k) => { if (info[k]) { set.push(k + ' = ?'); args.push(info[k]); d[k] = info[k]; } });
+  set.push('last_seen = ?', 'checks = checks + 1'); args.push(t);
+  try { await run(env, 'UPDATE devices SET ' + set.join(', ') + ' WHERE id = ?', ...args, d.id); }
+  catch (e) { await run(env, 'UPDATE devices SET last_seen = ?, checks = checks + 1 WHERE id = ?', t, d.id); }
+  d.last_seen = t;
+  return d;
+}
+/* liga a conta (ID de Jogador) ao aparelho, se o segredo da conta estiver certo */
+async function linkPlayer(env, d, body) {
+  const pid = clean(body.player_id, 64), tok = String(body.token || '');
+  if (!PLAYER_RE.test(pid) || tok.length < 20 || tok.length > 200) return null;
+  const p = await one(env, 'SELECT * FROM players WHERE id = ?', pid);
+  if (!p || !same(await tokenHash(env, tok), p.token_hash)) return null;
+  const t = now();
+  await env.DB.batch([
+    q(env, 'INSERT INTO device_players (device_id, player_id, first_at, last_at) VALUES (?, ?, ?, ?) ON CONFLICT(device_id, player_id) DO UPDATE SET last_at = excluded.last_at', d.id, p.id, t, t),
+    q(env, 'UPDATE devices SET player_id = ?, player_name = ? WHERE id = ?', p.id, p.name, d.id)
+  ]);
+  d.player_id = p.id; d.player_name = p.name;
+  return p;
+}
+function devAccess(d, cfg) { return d.status === 'blocked' ? 'blocked' : (d.status === 'approved' || !cfg.private) ? 'ok' : 'pending'; }
+function devOut(d, cfg) {
+  const access = devAccess(d, cfg);
+  const wa = access !== 'ok' && cfg.whatsapp ? whatsappLink(cfg.whatsapp, access === 'blocked'
+    ? 'Olá! O meu aparelho foi bloqueado no Sistema. Código do aparelho: ' + d.code + '. Quero pedir a revisão do bloqueio.'
+    : 'Olá! Quero pedir acesso ao Sistema. Código do aparelho: ' + d.code + (d.request_name ? ' · ' + d.request_name : '') + '.') : null;
+  return { ok: true, access, private: cfg.private, offline_days: cfg.offline, device: { code: d.code, status: d.status },
+    block: access === 'blocked' ? { reason: d.block_reason || 'Violação das regras do Sistema.', since: d.blocked_at || null } : null,
+    restored: access === 'ok' && d.restored_at ? d.restored_at : null,
+    requested: !!d.requested_at, whatsapp_url: wa, server_time: now() };
+}
+function devIds(body) { return body.ids || body.device; }
+async function deviceCheck(env, body, ip) {
+  const H = await devHashes(env, devIds(body));
+  if (!H.hw && !H.aid && !H.web) throw bad('Identificação do aparelho inválida.');
+  if (await limited(env, 'devchk:' + ip, 300, HOUR)) throw new HttpError(429, 'Demasiados pedidos. Tenta mais tarde.');
+  const d = await ensureDevice(env, H, body, ip);
+  const p = await linkPlayer(env, d, body);
+  const cfg = await devCfg(env);
+  // quem já jogava antes de o modo privado ser ligado continua a jogar (o administrador pode bloquear depois)
+  if (cfg.private && d.status === 'new' && p && p.created_at < cfg.since) {
+    const t = now();
+    await env.DB.batch([
+      q(env, "UPDATE devices SET status = 'approved', approved_at = ?, approved_by = 'sistema', approved_via = 'anterior' WHERE id = ? AND status = 'new'", t, d.id),
+      auditStmt(env, 'sistema', 'device.approve', d.code, 'ok', { via: 'anterior', player: p.id }, ip)
+    ]);
+    d.status = 'approved'; d.approved_via = 'anterior';
+  }
+  return json(devOut(d, cfg));
+}
+function accNorm(c) { let s = String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (s.startsWith('ACS')) s = s.slice(3); return s.replace(/O/g, '0').replace(/[IL]/g, '1'); }
+async function accHash(env, c) { return sha256('acc|' + (env.CODE_PEPPER || '') + '|' + accNorm(c)); }
+async function deviceRedeem(env, body, ip) {
+  const H = await devHashes(env, devIds(body));
+  if (!H.hw && !H.aid && !H.web) throw bad('Identificação do aparelho inválida.');
+  if (await limited(env, 'devcode:' + ip, 10, HOUR)) throw new HttpError(429, 'Demasiadas tentativas. Espera uma hora antes de tentar outra vez.');
+  const d = await ensureDevice(env, H, body, ip);
+  if (await limited(env, 'devcode:' + d.id, 8, HOUR)) throw new HttpError(429, 'Demasiadas tentativas neste aparelho. Espera uma hora.');
+  await linkPlayer(env, d, body);
+  const cfg = await devCfg(env);
+  if (d.status === 'blocked') return json(devOut(d, cfg));
+  if (d.status === 'approved') return json(Object.assign(devOut(d, cfg), { already: true }));
+  if (accNorm(body.code).length !== 8) throw bad('O código de acesso tem 8 letras e números (ex.: ACS-ABCD-EFGH).');
+  const a = await one(env, 'SELECT * FROM access_codes WHERE code_hash = ?', await accHash(env, body.code));
+  const t = now();
+  if (!a || a.status !== 'active' || (a.expires_at && a.expires_at <= t) || a.uses >= a.max_uses) {
+    await audit(env, 'device:' + d.code, 'device.code', a ? a.hint : null, 'invalid', null, ip);
+    throw new HttpError(404, a && a.uses >= a.max_uses ? 'Este código de acesso já foi usado.' : a && a.expires_at && a.expires_at <= t ? 'Este código de acesso expirou.' : 'Código de acesso inválido.');
+  }
+  const r = await env.DB.batch([
+    q(env, "UPDATE access_codes SET uses = uses + 1, last_used_at = ? WHERE id = ? AND status = 'active' AND uses < max_uses", t, a.id),
+    q(env, "UPDATE devices SET status = 'approved', approved_at = ?, approved_by = ?, approved_via = 'codigo' WHERE id = ? AND status = 'new' AND EXISTS (SELECT 1 FROM access_codes WHERE id = ? AND last_used_at = ?)", t, 'codigo ···-' + a.hint, d.id, a.id, t),
+    q(env, "INSERT INTO audit (at, actor, action, target, result, detail, ip) SELECT ?, ?, 'device.approve', ?, 'ok', ?, ? WHERE EXISTS (SELECT 1 FROM access_codes WHERE id = ? AND last_used_at = ?)",
+      t, 'device:' + d.code, d.code, JSON.stringify({ via: 'codigo', code: a.hint, label: a.label || undefined }), ip, a.id, t)
+  ]);
+  if (changes(r[0]) !== 1) throw new HttpError(409, 'Este código de acesso acabou de ser usado. Pede outro.');
+  d.status = 'approved'; d.approved_via = 'codigo';
+  return json(devOut(d, cfg));
+}
+async function deviceRequest(env, body, ip) {
+  const H = await devHashes(env, devIds(body));
+  if (!H.hw && !H.aid && !H.web) throw bad('Identificação do aparelho inválida.');
+  if (await limited(env, 'devreq:' + ip, 10, HOUR)) throw new HttpError(429, 'Demasiados pedidos. Tenta mais tarde.');
+  const d = await ensureDevice(env, H, body, ip);
+  await linkPlayer(env, d, body);
+  const name = clean(body.name, 60), msg = clean(body.message, 300);
+  if (name.length < 2) throw bad('Indica o teu nome ou contacto.');
+  const cfg = await devCfg(env);
+  if (d.status === 'new') {
+    const t = now();
+    await env.DB.batch([
+      q(env, 'UPDATE devices SET request_name = ?, request_msg = ?, requested_at = ? WHERE id = ?', name, msg || null, t, d.id),
+      auditStmt(env, 'device:' + d.code, 'device.request', d.code, 'ok', { name }, ip)
+    ]);
+    d.request_name = name; d.request_msg = msg; d.requested_at = t;
+  }
+  return json(devOut(d, cfg));
+}
+/* para a sincronização: estado do aparelho (sem criar registos novos) */
+async function deviceFor(env, body) {
+  const raw = devIds(body);
+  if (!raw) return null;
+  const H = await devHashes(env, raw);
+  if (!H.hw && !H.aid && !H.web) return null;
+  return (await findDevice(env, H)).d;
+}
+
+/* ---------------- administração de aparelhos ---------------- */
+function deviceAdmin(d) {
+  return { id: d.id, code: d.code, status: d.status, platform: d.platform, model: d.model, os: d.os, app_version: d.app_version,
+    ids: { hw: !!d.hw_hash, aid: !!d.aid_hash, web: !!d.web_hash },
+    approved_at: d.approved_at, approved_by: d.approved_by, approved_via: d.approved_via, block_reason: d.block_reason, blocked_at: d.blocked_at, blocked_by: d.blocked_by,
+    restored_at: d.restored_at, restored_by: d.restored_by, restore_note: d.restore_note, request_name: d.request_name, request_msg: d.request_msg, requested_at: d.requested_at,
+    note: d.note, player_id: d.player_id, player_name: d.player_name, first_seen: d.first_seen, last_seen: d.last_seen, checks: d.checks, players: d.nplayers || 0 };
+}
+async function listDevices(env, url) {
+  const st = url.searchParams.get('status') || 'all', qq = clean(url.searchParams.get('q'), 40);
+  const limit = Math.min(200, +url.searchParams.get('limit') || 80);
+  const where = [], args = [];
+  if (st === 'requests') where.push("status = 'new' AND requested_at IS NOT NULL");
+  else if (['new', 'approved', 'blocked'].includes(st)) { where.push('status = ?'); args.push(st); }
+  if (qq) { where.push('(code LIKE ? OR model LIKE ? OR player_id LIKE ? OR player_name LIKE ? OR request_name LIKE ? OR id IN (SELECT device_id FROM device_players WHERE player_id LIKE ?))'); const l = '%' + qq + '%'; args.push('%' + qq.toUpperCase() + '%', l, '%' + qq.toUpperCase() + '%', l, l, '%' + qq.toUpperCase() + '%'); }
+  if (!isTest(env)) where.push('test = 0');
+  const order = st === 'requests' ? 'requested_at DESC' : 'last_seen DESC';
+  const rows = await all(env, 'SELECT *, (SELECT COUNT(*) FROM device_players dp WHERE dp.device_id = devices.id) AS nplayers FROM devices' + (where.length ? ' WHERE ' + where.join(' AND ') : '') + ' ORDER BY ' + order + ' LIMIT ?', ...args, limit);
+  const tot = await one(env, "SELECT COUNT(*) AS n, SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) AS approved, SUM(CASE WHEN status = 'blocked' THEN 1 ELSE 0 END) AS blocked, SUM(CASE WHEN status = 'new' THEN 1 ELSE 0 END) AS new, SUM(CASE WHEN status = 'new' AND requested_at IS NOT NULL THEN 1 ELSE 0 END) AS requests FROM devices" + (isTest(env) ? '' : ' WHERE test = 0'));
+  const cfg = await devCfg(env);
+  return json({ ok: true, devices: rows.map(deviceAdmin), totals: { devices: tot.n || 0, approved: tot.approved || 0, blocked: tot.blocked || 0, new: tot.new || 0, requests: tot.requests || 0 }, private: cfg.private, offline_days: cfg.offline });
+}
+async function deviceRowAdmin(env, id) {
+  const d = await one(env, 'SELECT * FROM devices WHERE id = ?', id);
+  if (!d) throw new HttpError(404, 'Aparelho não encontrado.');
+  return d;
+}
+async function deviceDetail(env, id) {
+  const d = await deviceRowAdmin(env, id);
+  const players = await all(env, 'SELECT dp.player_id, dp.first_at, dp.last_at, p.name, p.level, p.cls, p.status FROM device_players dp LEFT JOIN players p ON p.id = dp.player_id WHERE dp.device_id = ? ORDER BY dp.last_at DESC LIMIT 30', d.id);
+  const log = await all(env, 'SELECT at, actor, action, target, result, detail FROM audit WHERE target = ? OR actor = ? ORDER BY id DESC LIMIT 40', d.code, 'device:' + d.code);
+  d.nplayers = players.length;
+  return json({ ok: true, device: deviceAdmin(d), players: players.map((p) => ({ id: p.player_id, name: p.name || '(conta apagada)', level: p.level, cls: p.cls, status: p.status || 'deleted', first_at: p.first_at, last_at: p.last_at })), audit: log, private: (await devCfg(env)).private });
+}
+async function approveDevice(env, A, id, body, ip) {
+  const d = await deviceRowAdmin(env, id);
+  if (d.status === 'blocked') throw new HttpError(409, 'Este aparelho está bloqueado. Usa «Restaurar» para o desbloquear.');
+  if (d.status !== 'approved') {
+    await env.DB.batch([
+      q(env, "UPDATE devices SET status = 'approved', approved_at = ?, approved_by = ?, approved_via = 'admin' WHERE id = ?", now(), A.admin, d.id),
+      auditStmt(env, A.admin, 'device.approve', d.code, 'ok', { via: 'admin', note: clean(body.note, 200) || undefined }, ip)
+    ]);
+  }
+  return deviceDetail(env, d.id);
+}
+async function blockDevice(env, A, id, body, ip) {
+  const d = await deviceRowAdmin(env, id);
+  const reason = clean(body.reason, 200);
+  if (reason.length < 3) throw bad('Indica o motivo (o jogador vê-o).');
+  const t = now(), stmts = [
+    q(env, "UPDATE devices SET status = 'blocked', block_reason = ?, blocked_at = ?, blocked_by = ? WHERE id = ?", reason, t, A.admin, d.id),
+    auditStmt(env, A.admin, 'device.block', d.code, 'ok', { reason, accounts: body.players ? true : undefined }, ip)
+  ];
+  if (body.players) {
+    // também desativa as contas jogadas neste aparelho (para não continuarem noutro aparelho)
+    const ps = await all(env, "SELECT p.id FROM device_players dp JOIN players p ON p.id = dp.player_id WHERE dp.device_id = ? AND p.status = 'active'", d.id);
+    ps.forEach((p) => {
+      stmts.push(q(env, "UPDATE players SET status = 'banned', ban_reason = ?, ban_until = NULL, banned_at = ?, banned_by = ? WHERE id = ?", reason, t, A.admin, p.id));
+      stmts.push(auditStmt(env, A.admin, 'player.disable', p.id, 'ok', { reason, device: d.code }, ip));
+    });
+  }
+  await env.DB.batch(stmts);
+  return deviceDetail(env, d.id);
+}
+async function restoreDevice(env, A, id, body, ip) {
+  const d = await deviceRowAdmin(env, id);
+  const note = clean(body.note, 300);
+  if (note.length < 3) throw bad('Indica o motivo do restauro (fica na auditoria).');
+  if (d.status !== 'blocked') throw new HttpError(409, 'Este aparelho não está bloqueado.');
+  const t = now(), stmts = [
+    q(env, "UPDATE devices SET status = 'approved', approved_at = COALESCE(approved_at, ?), approved_by = COALESCE(approved_by, ?), approved_via = COALESCE(approved_via, 'admin'), restored_at = ?, restored_by = ?, restore_note = ?, block_reason = NULL WHERE id = ?", t, A.admin, t, A.admin, note, d.id),
+    auditStmt(env, A.admin, 'device.restore', d.code, 'ok', { note, accounts: body.players ? true : undefined, was: d.block_reason }, ip)
+  ];
+  if (body.players) {
+    const ps = await all(env, "SELECT p.id FROM device_players dp JOIN players p ON p.id = dp.player_id WHERE dp.device_id = ? AND p.status = 'banned'", d.id);
+    ps.forEach((p) => {
+      stmts.push(q(env, "UPDATE players SET status = 'active', ban_reason = NULL, ban_until = NULL WHERE id = ?", p.id));
+      stmts.push(auditStmt(env, A.admin, 'player.unban', p.id, 'ok', { note, device: d.code }, ip));
+    });
+  }
+  await env.DB.batch(stmts);
+  return deviceDetail(env, d.id);
+}
+async function resetDevice(env, A, id, body, ip) {
+  // volta a "novo" (tira a aprovação): em modo privado, o aparelho volta a precisar de autorização
+  const d = await deviceRowAdmin(env, id);
+  if (d.status !== 'approved') throw new HttpError(409, 'Só um aparelho aprovado pode perder a aprovação.');
+  await env.DB.batch([
+    q(env, "UPDATE devices SET status = 'new', approved_at = NULL, approved_by = NULL, approved_via = NULL, requested_at = NULL WHERE id = ?", d.id),
+    auditStmt(env, A.admin, 'device.unapprove', d.code, 'ok', null, ip)
+  ]);
+  return deviceDetail(env, d.id);
+}
+async function noteDevice(env, A, id, body, ip) {
+  const d = await deviceRowAdmin(env, id);
+  await env.DB.batch([q(env, 'UPDATE devices SET note = ? WHERE id = ?', clean(body.note, 500) || null, d.id), auditStmt(env, A.admin, 'device.note', d.code, 'ok', null, ip)]);
+  return deviceDetail(env, d.id);
+}
+function newAccCode() {
+  let s = '';
+  while (s.length < 8) { const b = randomBytes(12); for (let i = 0; i < b.length && s.length < 8; i++) if (b[i] < 248) s += CODE_ALPHABET[b[i] % 31]; }
+  return 'ACS-' + s.slice(0, 4) + '-' + s.slice(4);
+}
+function accAdmin(a) { return { id: a.id, hint: a.hint, label: a.label, max_uses: a.max_uses, uses: a.uses, expires_at: a.expires_at, status: a.status, created_by: a.created_by, created_at: a.created_at, last_used_at: a.last_used_at, revoked_at: a.revoked_at }; }
+async function createAccessCode(env, A, request, body, ip) {
+  const key = idemKey(request);
+  const prev = await idemGet(env, key, A.admin, 'access.create', 'access');
+  if (prev) return json(Object.assign(prev, { repeated: true }));
+  const label = clean(body.label, 80), uses = int(body.uses || 1, 1, 100), days = body.days ? int(body.days, 1, 365) : 0;
+  const t = now(), code = newAccCode(), id = randomId('a'), hint = code.slice(-4);
+  const exp = days ? t + days * DAY : null;
+  const out = { ok: true, code, access: { id, hint, label, max_uses: uses, uses: 0, expires_at: exp, status: 'active', created_by: A.admin, created_at: t },
+    message: 'O teu código de acesso ao Sistema: ' + code + (exp ? ' (válido até ' + new Date(exp + HOUR).toISOString().slice(0, 10).split('-').reverse().join('/') + ')' : '') + '. Abre o jogo e escreve-o no ecrã «Acesso restrito».' };
+  out.whatsapp_url = 'https://wa.me/?text=' + encodeURIComponent(out.message);
+  const stmts = [
+    q(env, 'INSERT INTO access_codes (id, code_hash, hint, label, max_uses, uses, expires_at, status, created_by, created_at) VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?)', id, await accHash(env, code), hint, label || null, uses, exp, 'active', A.admin, t),
+    auditStmt(env, A.admin, 'access.create', hint, 'ok', { label: label || undefined, uses, days: days || undefined }, ip)
+  ];
+  if (key) stmts.push(q(env, 'INSERT INTO idem (key, actor, action, target, response, expires_at) VALUES (?, ?, ?, ?, ?, ?)', key, A.admin, 'access.create', 'access', JSON.stringify(out), t + IDEM_TTL));
+  await env.DB.batch(stmts);
+  return json(out);
+}
+async function listAccessCodes(env, url) {
+  const st = url.searchParams.get('status') || 'active', t = now();
+  let where = '';
+  if (st === 'active') where = " WHERE status = 'active' AND uses < max_uses AND (expires_at IS NULL OR expires_at > " + t + ')';
+  else if (st === 'used') where = ' WHERE uses >= max_uses';
+  else if (st === 'revoked') where = " WHERE status = 'revoked'";
+  const rows = await all(env, 'SELECT * FROM access_codes' + where + ' ORDER BY created_at DESC LIMIT 100');
+  return json({ ok: true, codes: rows.map(accAdmin) });
+}
+async function revokeAccessCode(env, A, id, ip) {
+  const a = await one(env, 'SELECT * FROM access_codes WHERE id = ?', id);
+  if (!a) throw new HttpError(404, 'Código não encontrado.');
+  if (a.status === 'active') await env.DB.batch([q(env, "UPDATE access_codes SET status = 'revoked', revoked_at = ? WHERE id = ?", now(), a.id), auditStmt(env, A.admin, 'access.revoke', a.hint, 'ok', null, ip)]);
+  return json({ ok: true });
+}
+async function playerDevices(env, pid) {
+  return (await all(env, 'SELECT d.id, d.code, d.status, d.model, d.platform, d.last_seen, dp.last_at FROM device_players dp JOIN devices d ON d.id = dp.device_id WHERE dp.player_id = ? ORDER BY dp.last_at DESC LIMIT 20', pid))
+    .map((d) => ({ id: d.id, code: d.code, status: d.status, model: d.model, platform: d.platform, last_at: d.last_at }));
+}
+
 /* ---------------- administração de jogadores ---------------- */
 function playerAdmin(p) {
   let stats = {}; try { stats = JSON.parse(p.stats || '{}'); } catch (e) { stats = {}; }
@@ -749,7 +1081,7 @@ async function playerDetail(env, id) {
   const grants = await all(env, 'SELECT * FROM grants WHERE player_id = ? OR claimed_player = ? ORDER BY created_at DESC LIMIT 30', pid, pid);
   const log = await all(env, "SELECT at, actor, action, target, result, detail FROM audit WHERE target = ? OR actor = ? ORDER BY id DESC LIMIT 40", pid, 'player:' + pid);
   const notices = await all(env, 'SELECT * FROM notices WHERE player_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 20', pid);
-  return json({ ok: true, player: p ? playerAdmin(p) : null, orders: orders.map(orderAdmin), grants: grants.map(grantAdmin), audit: log, notices: notices.map(noticeOut), role_names: ROLES });
+  return json({ ok: true, player: p ? playerAdmin(p) : null, orders: orders.map(orderAdmin), grants: grants.map(grantAdmin), audit: log, notices: notices.map(noticeOut), role_names: ROLES, devices: await playerDevices(env, pid) });
 }
 async function banPlayer(env, A, id, body, ip) {
   const p = await playerRow(env, clean(id, 64));
@@ -1423,6 +1755,10 @@ export async function handle(request, env, ctx) {
     if (m === 'POST' && path === '/api/redeem') return await redeem(env, body, ip);
     if (m === 'POST' && path === '/api/player/sync') return await sync(env, body, ip);
     if (m === 'POST' && path === '/api/player/claim') return await claim(env, body, ip);
+    // ---- aparelhos (acesso privado e bloqueios) ----
+    if (m === 'POST' && path === '/api/device/check') return await deviceCheck(env, body, ip);
+    if (m === 'POST' && path === '/api/device/redeem') return await deviceRedeem(env, body, ip);
+    if (m === 'POST' && path === '/api/device/request') return await deviceRequest(env, body, ip);
     // ---- social e duelos ----
     if (m === 'POST' && path === '/api/social/state') return await socialState(env, body);
     if (m === 'POST' && path === '/api/social/find') return await socialFind(env, body);
@@ -1474,6 +1810,16 @@ export async function handle(request, env, ctx) {
       if (m === 'POST' && path === '/api/admin/notices') return await createNotice(env, A, request, body, ip);
       if (m === 'GET' && path === '/api/admin/notices') return await listNotices(env, url);
       if ((r = path.match(/^\/api\/admin\/notices\/(n[0-9a-f]{18})\/delete$/)) && m === 'POST') return await deleteNotice(env, A, r[1], ip);
+      if (m === 'GET' && path === '/api/admin/devices') return await listDevices(env, url);
+      if ((r = path.match(/^\/api\/admin\/devices\/(d[0-9a-f]{18})$/)) && m === 'GET') return await deviceDetail(env, r[1]);
+      if ((r = path.match(/^\/api\/admin\/devices\/(d[0-9a-f]{18})\/approve$/)) && m === 'POST') return await approveDevice(env, A, r[1], body, ip);
+      if ((r = path.match(/^\/api\/admin\/devices\/(d[0-9a-f]{18})\/block$/)) && m === 'POST') return await blockDevice(env, A, r[1], body, ip);
+      if ((r = path.match(/^\/api\/admin\/devices\/(d[0-9a-f]{18})\/restore$/)) && m === 'POST') return await restoreDevice(env, A, r[1], body, ip);
+      if ((r = path.match(/^\/api\/admin\/devices\/(d[0-9a-f]{18})\/unapprove$/)) && m === 'POST') return await resetDevice(env, A, r[1], body, ip);
+      if ((r = path.match(/^\/api\/admin\/devices\/(d[0-9a-f]{18})\/note$/)) && m === 'PUT') return await noteDevice(env, A, r[1], body, ip);
+      if (m === 'GET' && path === '/api/admin/access-codes') return await listAccessCodes(env, url);
+      if (m === 'POST' && path === '/api/admin/access-codes') return await createAccessCode(env, A, request, body, ip);
+      if ((r = path.match(/^\/api\/admin\/access-codes\/(a[0-9a-f]{18})\/revoke$/)) && m === 'POST') return await revokeAccessCode(env, A, r[1], ip);
     }
     return fail(404, 'Rota inexistente.');
   } catch (e) {

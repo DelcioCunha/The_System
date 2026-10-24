@@ -16,8 +16,21 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // chave fixa: todos os APKs saem com a mesma assinatura (atualizar sem desinstalar; o ANDROID_ID não muda entre versões)
+    signingConfigs {
+        sistema {
+            storeFile file('sistema.keystore')
+            storePassword 'sistema-cacador'
+            keyAlias 'sistema'
+            keyPassword 'sistema-cacador'
+        }
+    }
     buildTypes {
+        debug {
+            signingConfig signingConfigs.sistema
+        }
         release {
+            signingConfig signingConfigs.sistema
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

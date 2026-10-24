@@ -52,7 +52,7 @@ def sysq(t, tag='SISTEMA'): return '<div class="sysbox"><span class="systag">%s<
 
 # capa
 pages.append('<section class="page fixed cover"><div class="bk-art" style="background-image:url(%s);opacity:1"></div><div class="cv-veil cr"></div><div class="cv-in cr">'
-             '<div class="cv-k">[ REGISTO DO SISTEMA ]</div><h1 class="cv-t">CRÓNICAS<br>DO SISTEMA</h1><div class="cv-s">A história que eu nunca contei</div><div class="cv-line"></div>'
+             '<div class="cv-k">[ REGISTO DO SISTEMA ]</div><h1 class="cv-t">O SISTEMA</h1><div class="cv-s">A origem de tudo</div><div class="cv-line"></div>'
              '<div class="cv-q">Narrado pelo Sistema</div><div class="cv-by">Criado por <b>Delcio Cunha</b></div></div></section>' % art('lore_cover', 'bosses/b100.webp', 1600))
 fixed('', 'toc', 'toc')
 
@@ -90,13 +90,13 @@ for c in CHAPTERS:
     pages.append('<div class="flow" data-title="%s">%s</div>' % (e(c['title']), ''.join(els)))
 
 # contracapa
-pages.append('<section class="page fixed back"><div class="bk-art" style="background-image:url(%s)"></div><div class="cv-veil"></div><div class="bk-in"><div class="cv-k">[ SISTEMA ]</div><h2>Registo fechado.<br>Jogador: tu.<br>Estado: em curso.</h2><div class="cv-line"></div><p class="cv-by">Crónicas do Sistema · Criado por <b>Delcio Cunha</b></p></div></section>' % art('lore_first', 'bosses/ar10.webp', 1400))
+pages.append('<section class="page fixed back"><div class="bk-art" style="background-image:url(%s)"></div><div class="cv-veil"></div><div class="bk-in"><div class="cv-k">[ SISTEMA ]</div><h2>Registo fechado.<br>Jogador: tu.<br>Estado: em curso.</h2><div class="cv-line"></div><p class="cv-by">O Sistema · A origem de tudo · Criado por <b>Delcio Cunha</b></p></div></section>' % art('lore_first', 'bosses/ar10.webp', 1400))
 
 toc_json = json.dumps(TOC, ensure_ascii=False)
 css = open('/home/claude/livro/book.css').read() + open('/home/claude/livro/cr.css').read()
 fonts = ''.join('<link rel="stylesheet" href="%s%s.css">' % (F, x) for x in ['oxanium/500', 'oxanium/600', 'oxanium/700', 'oxanium/800', 'barlow/400', 'barlow/500', 'barlow/600', 'barlow/400-italic', 'barlow/500-italic', 'jetbrains-mono/400', 'cinzel/700', 'cinzel/900', 'cormorant-garamond/500', 'cormorant-garamond/500-italic', 'cormorant-garamond/600'])
 js = open('/home/claude/livro/paginate.js').read()
-out = '<!doctype html><html lang="pt"><head><meta charset="utf-8"><title>Crónicas do Sistema</title>%s<style>%s</style></head><body>%s<script>var TOC=%s;%s</script></body></html>' % (fonts, css, '\n'.join(pages), toc_json, js)
+out = '<!doctype html><html lang="pt"><head><meta charset="utf-8"><title>O Sistema · A origem de tudo</title>%s<style>%s</style></head><body>%s<script>var TOC=%s;%s</script></body></html>' % (fonts, css, '\n'.join(pages), toc_json, js)
 open('/home/claude/livro/cronicas.html', 'w').write(out)
 json.dump({k: v for k, v in PROMPTS.items()}, open('/home/claude/livro/cr_prompts.json', 'w'), ensure_ascii=False, indent=1)
 print(len(CHAPTERS), 'capítulos ·', len(PROMPTS), 'prompts novos · em falta:', len(set(MISSING)))

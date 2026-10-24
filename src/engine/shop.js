@@ -256,12 +256,14 @@
     lastSync = Date.now();
     var C = globalThis.Capacitor, platform = C && C.isNativePlatform && C.isNativePlatform() ? 'android' : 'web';
     syncing = call('POST', '/api/player/sync', { player_id: st.playerId, token: st.shop.secret, name: st.name, cls: st.cls, level: st.level, crystals: st.crystals, coins: st.coins,
-      stats: stats(st), app_version: S.VERSION, platform: platform }).then(function (j) {
+      stats: stats(st), app_version: S.VERSION, platform: platform, device: S.gate ? S.gate.idsForSync() : null }).then(function (j) {
       if (!j.ok) {
         if (j.conflict && !st.shop.conflict) { st.shop.conflict = true; E.commit('conta noutro aparelho'); }
         return j;
       }
       st.shop.conflict = false; st.shop.lastSync = S.clock.now();
+      // aparelho bloqueado ou à espera de autorização: o portão do aparelho trata do ecrã
+      if (j.account === 'device_blocked' || j.account === 'device_pending') { if (S.gate) S.gate.fromSync(j); return { ok: true, gate: true, changed: true }; }
       if (j.account === 'deleted') {
         if (!st.shop.deleted) { st.shop.deleted = { reason: j.reason || null, at: j.deleted_at || S.clock.now() }; E.commit('conta apagada'); }
         return { ok: true, deleted: true, changed: true };

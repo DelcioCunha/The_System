@@ -54,9 +54,10 @@ const BS_SRC = path.join(ROOT, 'assets', 'bosses');
 const bossArt = {};
 if (fs.existsSync(BS_SRC)) {
   fs.readdirSync(BS_SRC).forEach((file) => {
-    const m = file.match(/^(b\d{1,3}|secret_\d|ar\d{1,2}(?:g\d)?)\.(png|jpe?g|webp)$/i);
+    // <id>_f2 = forma final (segunda fase) dos reis dos portões e dos Campeões
+    const m = file.match(/^(b\d{1,3}|secret_\d|ar\d{1,2}(?:g\d)?)(_f2)?\.(png|jpe?g|webp)$/i);
     if (!m) return;
-    bossArt[m[1]] = 'bosses/' + file;
+    bossArt[m[1] + (m[2] || '')] = 'bosses/' + file;
     copies.push([path.join(BS_SRC, file), path.join(ROOT, 'www', 'bosses', file)]);
   });
 }
@@ -170,7 +171,10 @@ if (fs.existsSync(PUB_LIST)) {
   // avatares das fases novas (a cada 3 níveis) que não estão publicados como ficheiros
   Object.keys(manifest).forEach((cls) => Object.keys(manifest[cls]).forEach((lv) => { const rel = manifest[cls][lv]; if (!pub.has(rel)) embed(rel); }));
 }
-const preview = '<title>Sistema do Caçador</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n' + fonts + '\n<style>\n' + css + '\n</style>\n<div id="app"></div>\n<script>\n' + previewJs + '</script>\n' + '<script src="pv-extra.js"></script>\n';
+// fases finais dos chefes: vão num ficheiro à parte (pv-bosses.js) — a pré-visualização já está no limite de 512 ficheiros
+const f2 = {}; Object.keys(bossArt).forEach((k) => { if (/_f2$/.test(k)) f2[k] = bossArt[k]; });
+fs.writeFileSync(path.join(ROOT, 'dist', 'pv-bosses.js'), 'Object.assign(SYS.BOSS_ART, ' + JSON.stringify(inlineMap(f2)) + ');\nif (SYS.ui && SYS.ui.render) SYS.ui.render();\n');
+const preview = '<title>Sistema do Caçador</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n' + fonts + '\n<style>\n' + css + '\n</style>\n<div id="app"></div>\n<script>\n' + previewJs + '</script>\n' + '<script src="pv-extra.js"></script>\n<script src="pv-bosses.js"></script>\n';
 
 fs.rmSync(path.join(ROOT, 'www', 'avatars'), { recursive: true, force: true });
 fs.rmSync(path.join(ROOT, 'www', 'classes'), { recursive: true, force: true });

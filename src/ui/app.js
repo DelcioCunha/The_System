@@ -716,6 +716,62 @@
     return h;
   }
   /* ---------- conta apagada pela administração ---------- */
+  /* ---------- portão do aparelho (acesso privado e bloqueios) ---------- */
+  function gateHtml(g) {
+    var V = S.GATE_VOICE, P = S.gate.pick, U = S.gate.ui, seed = g.code || 'aparelho';
+    var eye = '<div class="watch-eye">' + uiIcon('ui_eye', '<span class="eye-fallback big"></span>', 'eye-big') + '</div>';
+    var codeRow = g.code ? '<div class="small muted" style="margin-top:8px">Código do aparelho</div><div class="mono gate-code">' + esc(g.code) + '</div>' : '';
+    var note = (U.err ? '<p class="ban-reply">' + esc(U.err) + '</p>' : '') + (U.msg ? '<p class="gate-ok">' + esc(U.msg) + '</p>' : '');
+    var busy = U.busy ? ' disabled' : '';
+    var checkBtn = '<button class="btn ghost block" data-a="gate-check"' + busy + '>' + (U.busy ? 'A verificar…' : 'Verificar com o Sistema') + '</button>';
+    if (g.type === 'blocked') {
+      var title = P(V.blockedTitle, seed);
+      return '<div class="ban-screen perm gate-screen"><div class="ban-veil"></div><div class="ban-box">' + eye +
+        '<div class="ban-tag">AVISO DO SISTEMA · APARELHO</div><h1 class="glitch" data-t="' + esc(title) + '">' + esc(title) + '</h1>' +
+        '<p class="ban-voice">' + esc(P(V.blocked, seed + 'v')) + '</p>' +
+        '<div class="ban-card"><div class="small muted">Motivo registado</div><div>' + esc(g.block.reason || 'Violação das regras do Sistema.') + '</div>' +
+        (g.block.since ? '<div class="small muted" style="margin-top:8px">Desde</div><div>' + esc(timeStr(g.block.since)) + '</div>' : '') + codeRow + '</div>' +
+        '<p class="ban-sub">' + esc(P(V.blockedSub, seed + 's')) + '</p>' + note +
+        (g.wa ? '<button class="btn bad block" data-a="ext" data-url="' + esc(g.wa) + '">Contestar o bloqueio (WhatsApp)</button>' : '') + checkBtn + '</div></div>';
+    }
+    if (g.type === 'pending') {
+      var tt = P(V.pendingTitle, seed);
+      return '<div class="ban-screen gate-screen gate-pending"><div class="ban-veil"></div><div class="ban-box">' + eye +
+        '<div class="ban-tag">AVISO DO SISTEMA · ACESSO PRIVADO</div><h1 class="glitch" data-t="' + esc(tt) + '">' + esc(tt) + '</h1>' +
+        '<p class="ban-voice">' + esc(P(V.pending, seed + 'v')) + '</p>' +
+        '<div class="ban-card">' + codeRow.replace('margin-top:8px', 'margin-top:0') + '<div class="small muted" style="margin-top:6px">Envia este código à administração ou usa um código de acesso.</div></div>' + note +
+        '<div class="gate-form"><label class="small muted" for="gate-acs">Código de acesso</label>' +
+        '<input class="in mono" id="gate-acs" placeholder="ACS-XXXX-XXXX" autocapitalize="characters" autocomplete="off" spellcheck="false" maxlength="16">' +
+        '<button class="btn pri block" data-a="gate-redeem"' + busy + '>Entrar com o código</button></div>' +
+        (g.requested
+          ? '<p class="gate-ok">Pedido de acesso enviado. A administração vai responder.</p>' + (g.wa ? '<button class="btn block" data-a="ext" data-url="' + esc(g.wa) + '">Avisar pelo WhatsApp</button>' : '')
+          : '<div class="gate-form"><label class="small muted" for="gate-name">Não tens código? Pede acesso</label>' +
+            '<input class="in" id="gate-name" placeholder="O teu nome e contacto" maxlength="60">' +
+            '<textarea class="in" id="gate-msg" rows="2" maxlength="300" placeholder="Quem te convidou? (opcional)"></textarea>' +
+            '<button class="btn block" data-a="gate-request"' + busy + '>Pedir acesso</button></div>') +
+        checkBtn + '</div></div>';
+    }
+    var line = g.type === 'stale' ? P(V.stale, seed).replace('{dias}', g.days) : P(V.verify, seed);
+    return '<div class="ban-screen gate-screen gate-verify"><div class="ban-veil"></div><div class="ban-box">' + eye +
+      '<div class="ban-tag">AVISO DO SISTEMA · VERIFICAÇÃO</div><h1 class="glitch" data-t="LIGAÇÃO NECESSÁRIA">LIGAÇÃO NECESSÁRIA</h1>' +
+      '<p class="ban-voice">' + esc(line) + '</p>' + note + checkBtn.replace('btn ghost block', 'btn pri block') + '</div></div>';
+  }
+  /* depois de falar com o servidor: avisos de uma só vez e retomar o jogo */
+  function afterGate() {
+    var n = S.gate.takeNote(), V = S.GATE_VOICE;
+    if (n && E.state) ui.popups.push({ _id: ++ui.popSeq, type: 'watch', level: 1, title: n === 'lift' ? 'BLOQUEIO LEVANTADO' : 'ACESSO CONCEDIDO', lines: [S.gate.pick(V[n], String(Date.now())), n === 'lift' ? 'Este aparelho voltou a ter acesso ao Sistema.' : 'Este aparelho tem agora acesso ao Sistema.'] });
+    else if (n) toast(n === 'lift' ? 'Bloqueio levantado.' : 'Acesso concedido.');
+    if (!S.gate.screen()) { S.gate.ui.err = null; S.gate.ui.msg = null; shopSync(true); }
+    render();
+  }
+  function gateCheck(force) {
+    if (!S.gate) return;
+    S.gate.check(force).then(function (r) {
+      var U = S.gate.ui, wasBusy = U.busy; U.busy = false;
+      if (r && !r.ok && !r.skipped && S.gate.screen()) U.err = r.offline ? 'Sem ligação. Liga-te à internet e toca em «Verificar».' : (r.msg || null);
+      if (r && r.ok && !r.skipped) afterGate(); else if (S.gate.screen() || wasBusy) render();
+    });
+  }
   function deletedHtml(st, d) {
     return '<div class="ban-screen perm"><div class="ban-veil"></div><div class="ban-box">' +
       '<div class="watch-eye">' + uiIcon('ui_eye', '<span class="eye-fallback big"></span>', 'eye-big') + '</div>' +
@@ -1737,8 +1793,9 @@
       }).join('') + '</div></section>';
     return h;
   }
-  function bossArt(b, cls, id) {
-    var src = S.BOSS_ART && S.BOSS_ART[b.id];
+  function bossArt(b, cls, id, phase) {
+    // na segunda fase (e seguintes), os reis e os Campeões mostram a forma final, se a imagem existir
+    var src = S.BOSS_ART && ((phase >= 2 && S.BOSS_ART[b.id + '_f2']) || S.BOSS_ART[b.id]);
     var ida = id ? ' id="' + id + '"' : '';
     if (!src) return '<div class="' + cls + '"' + ida + '>' + b.icon + '</div>';
     return '<div class="' + cls + ' has-art"' + ida + '><img src="' + src + '" alt="' + esc(b.name) + '" loading="lazy" onerror="this.parentNode.classList.remove(\'has-art\');this.replaceWith(document.createTextNode(\'' + b.icon + '\'))"></div>';
@@ -1808,7 +1865,7 @@
     if (bt.spar) auraC = 'rgba(123,77,255,.6)';
     var shSrc = bt.spar && S.SHADOW_ART && S.SHADOW_ART[b.id];
     h += '<section class="win danger boss-panel phase-' + bt.phase + (bt.spar ? ' spar-panel' : '') + '"><div class="win-h"><span>' + esc(bt.spar ? S.shadows.name(st, b.id) : b.name) + (bt.spar ? '' : ' ' + rankBadge(b, 'rk-sm')) + '</span><small>' + (bt.spar ? 'Treino · ' : '') + 'Nv ' + b.level + ' · turno ' + bt.turn + (bt.phase > 1 ? ' · fase ' + bt.phase : '') + '</small></div>' +
-      '<div class="boss-wrap"><div class="boss-aura" style="--c:' + auraC + '"></div>' + (bt.spar ? (shSrc ? '<div class="boss-ico' + bossCls + ' has-art sh-boss" id="boss-ico"><img src="' + shSrc + '" alt=""></div>' : '<div class="boss-ico' + bossCls + ' has-art sh-boss shade-boss" id="boss-ico">' + (S.BOSS_ART && S.BOSS_ART[b.id] ? '<img src="' + S.BOSS_ART[b.id] + '" alt="">' : b.icon) + '</div>') : bossArt(b, 'boss-ico' + bossCls, 'boss-ico')) + '</div>' + bossSpeech(bt, b) +
+      '<div class="boss-wrap"><div class="boss-aura" style="--c:' + auraC + '"></div>' + (bt.spar ? (shSrc ? '<div class="boss-ico' + bossCls + ' has-art sh-boss" id="boss-ico"><img src="' + shSrc + '" alt=""></div>' : '<div class="boss-ico' + bossCls + ' has-art sh-boss shade-boss" id="boss-ico">' + (S.BOSS_ART && S.BOSS_ART[b.id] ? '<img src="' + S.BOSS_ART[b.id] + '" alt="">' : b.icon) + '</div>') : bossArt(b, 'boss-ico' + bossCls, 'boss-ico', bt.phase)) + '</div>' + bossSpeech(bt, b) +
       '<div style="margin-top:8px">' + bar('boss', bt.b.hp, bt.b.maxHp, 'Vida' + (bt.b.shield ? ' · escudo ' + fmt(bt.b.shield) : ''), 'boss-' + bt.bossId + '-' + bt.started) + '</div>' +
       '<div class="statuses" style="margin-top:6px">' + statusTags(bt.b.st, true) + (bt.b.stunned ? '<span class="tag good">atordoado</span>' : '') + '</div></section>';
     h += '<div class="log" id="blog" aria-live="polite">' + bt.log.map(function (l) { return '<div class="' + l.c + '">' + logLine(l.t) + '</div>'; }).join('') + '</div>';
@@ -1818,7 +1875,9 @@
     if (bt.over) {
       var r = bt.result || {};
       var title = bt.over === 'win' ? 'Vitória' : (bt.over === 'lose' ? 'Derrota' : 'Fuga');
+      var bsay = !bt.spar && S.live && S.live.bossSay ? S.live.bossSay(st, b, bt.over, bt.started) : null;
       h += '<div class="card" style="margin-top:10px;text-align:center"><h3 style="color:' + (bt.over === 'win' ? 'var(--gold)' : 'var(--danger)') + '">' + title + '</h3>' +
+        (bsay ? '<p class="boss-sys-say"><span class="sys-tag-mini">SISTEMA</span>' + esc(bsay) + '</p>' : '') +
         (r.xp ? '<div class="reward">+' + fmt(r.xp) + ' XP · +' + fmt(r.coins) + ' moedas</div>' : '') +
         (r.coins < 0 ? '<div class="mono" style="color:var(--danger)">' + fmt(r.coins) + ' moedas</div>' : '') +
         (r.levelFrom ? '<div class="mono" style="color:var(--danger)">' + (r.level < r.levelFrom ? 'Nível ' + r.levelFrom + ' → ' + r.level : 'XP do nível perdido') + '</div>' : '') +
@@ -2046,7 +2105,9 @@
   }
   /* ---------- primeira conversa com o Sistema (só ao criar o Jogador) ---------- */
   function firstScript(st) {
-    var F = S.FIRST_TALK, pick = function (a) { return a[Math.floor(Math.random() * a.length)]; };
+    var F0 = S.FIRST_TALK, FP = S.FIRST_TALK_PLUS || {}, pick = function (a) { return a[Math.floor(Math.random() * a.length)]; };
+    var F = { open: F0.open.concat(FP.open || []), ask: F0.ask.concat(FP.ask || []), close: F0.close.concat(FP.close || []), cls: {} };
+    Object.keys(F0.cls).forEach(function (k) { F.cls[k] = F0.cls[k].concat((FP.cls || {})[k] || []); });
     var fill = function (t) { return t.replace(/\{nome\}/g, st.name).replace(/\{classe\}/g, S.CLASSES[st.cls].name); };
     var cl = F.cls[st.cls] || F.cls.guerreiro, q = pick(F.ask), out = [];
     pick(F.open).concat(pick(cl)).forEach(function (t) { out.push({ s: fill(t) }); });
@@ -2151,6 +2212,8 @@
           (R.fx.length ? '<ul class="sys-lines">' + R.fx.map(function (l, i) { return li(esc(l), i, 'color:' + (/^\+/.test(l) ? 'var(--gold)' : 'var(--danger)')); }).join('') + '</ul>' : '');
       }
       nLines = 1;
+      if (R && R.more) return '<div class="overlay sys-pop">' + extra + '<div class="sys-box ' + cls + '" id="sys-box" role="alertdialog" data-type="talk"><span class="sys-tag">' + tag + '</span>' + body +
+        '<button class="btn pri block" data-a="talk-next" style="--n:1">Continuar <span class="muted small">(' + (cv.step + 1) + '/' + cv.steps + ')</span></button></div></div>';
       if (!R) return '<div class="overlay sys-pop' + (fresh ? ' fresh' : '') + '">' + extra + '<div class="sys-box ' + cls + (fresh ? ' fresh' : '') + '" id="sys-box" role="alertdialog" data-type="talk"><span class="sys-tag">' + tag + '</span>' + body + '</div></div>';
     } else if (ev.type === 'notice') {
       var nt = ev.notice;
@@ -2279,6 +2342,13 @@
     var sheet = root.querySelector('.sheet');
     var sheetScroll = sheet ? sheet.scrollTop : 0;
     var modalKey = ui.modal ? ui.modal.type : null;
+    // portão do aparelho: bloqueado, à espera de autorização ou por verificar → nada mais aparece
+    var gs = S.gate && S.gate.screen();
+    if (gs) {
+      FX.battle(false); root.innerHTML = gateHtml(gs);
+      if (gs.type === 'blocked' && S.gate.firstBlockView()) { FX.flash('#ff1f3d', .25); FX.vibrate([80, 50, 160]); setTimeout(function () { FX.shake(1); }, 140); }
+      return;
+    }
     if (!E.state) {
       FX.battle(false);
       root.innerHTML = introHtml();
@@ -2733,6 +2803,39 @@
     },
     'cos-wear': function (d) { act(S.premium.wear(d.id)); },
     'shop-load': function () { loadShop(true); },
+    'gate-check': function () {
+      var U = S.gate.ui; if (U.busy) return;
+      if (!S.shop.ready()) { U.err = 'Sem ligação ao servidor.'; return render(); }
+      U.busy = true; U.err = null; U.msg = null; render();
+      S.gate.check(true).then(function (r) {
+        U.busy = false;
+        if (!r.ok) U.err = r.offline ? 'Sem ligação. Liga-te à internet e tenta outra vez.' : (r.msg || 'O Sistema não respondeu.');
+        else { var g = S.gate.screen(); if (g && g.type === 'blocked') { FX.flash('#ff1f3d', .2); FX.vibrate([60, 40, 120]); } }
+        afterGate();
+      });
+    },
+    'gate-redeem': function () {
+      var U = S.gate.ui, el = document.getElementById('gate-acs'), code = el ? el.value : '';
+      if (U.busy) return;
+      U.busy = true; U.err = null; U.msg = null; render();
+      S.gate.redeem(code).then(function (r) {
+        U.busy = false;
+        if (!r.ok) { U.err = r.msg; render(); var e2 = document.getElementById('gate-acs'); if (e2) e2.value = code; return; }
+        afterGate();
+      });
+    },
+    'gate-request': function () {
+      var U = S.gate.ui, n = document.getElementById('gate-name'), m = document.getElementById('gate-msg');
+      var name = n ? n.value : '', msg = m ? m.value : '';
+      if (U.busy) return;
+      U.busy = true; U.err = null; U.msg = null; render();
+      S.gate.request(name, msg).then(function (r) {
+        U.busy = false;
+        if (!r.ok) { U.err = r.msg; render(); var a = document.getElementById('gate-name'), b = document.getElementById('gate-msg'); if (a) a.value = name; if (b) b.value = msg; return; }
+        U.msg = 'Pedido enviado. Envia também uma mensagem no WhatsApp para ser visto mais depressa.'; render();
+        if (r.wa) H.ext({ url: r.wa });
+      });
+    },
     'ban-check': function () {
       if (!S.shop.ready()) return toast('Sem ligação ao servidor.', true);
       toast('A verificar…');
@@ -2796,6 +2899,13 @@
       if (ev.res.tag === 'd' && FX.full()) { if (b) b.classList.add('glitching'); FX.shake(1); FX.vibrate([30, 30, 60]); }
       else FX.vibrate(15);
       if (ev.res.fx.length) { var cc = FX.center(b); FX.burst(cc.x, cc.y, /^\+/.test(ev.res.fx[0]) ? '#ffc85a' : '#ff5a6e', 26, { speed: 6 }); }
+    },
+    'talk-next': function () {
+      var ev = ui.popups[0];
+      if (!ev || ev.type !== 'talk' || !ev.res || !ev.res.more) return;
+      if (!S.talk.next(E.state, ev.conv)) { ui.popups.shift(); render(); return; }
+      ev.res = null; ev._id = ++ui.popSeq;
+      render();
     },
     'first-next': function () {
       var ev = ui.popups[0];
@@ -3390,6 +3500,7 @@
   /* sincronização com o servidor: presentes do administrador e suspensões */
   function shopSync(force) {
     if (!E.state || !S.shop || !S.shop.ready()) return;
+    if (S.gate && S.gate.screen()) return;
     S.shop.sync(force).then(function (r) { if (r && r.changed) { pullEvents(); render(); } });
   }
   /* Loja de Cristais: pacotes do servidor e estado dos pedidos */
@@ -3492,12 +3603,14 @@
     root.addEventListener('click', onClick);
     Notify.setup();
     if (S.shop) S.shop.init().then(function () {
+      // primeiro o aparelho: só depois a conta
+      if (S.gate && S.shop.ready()) { var g0 = S.gate.screen(); if (g0 && g0.type === 'verify') S.gate.ui.busy = true; render(); gateCheck(true); }
       if (!E.state || !S.shop.ready()) return;
       shopSync(true);
       if (S.shop.pending(E.state).length) S.shop.refresh().then(function (r) { if (r.changed) render(); });
     });
     // sincroniza com o servidor de 10 em 10 minutos enquanto a app está aberta (presentes, suspensões)
-    setInterval(function () { if (document.visibilityState === 'visible') shopSync(false); }, 600000);
+    setInterval(function () { if (document.visibilityState === 'visible') { shopSync(false); gateCheck(false); } }, 600000);
     root.addEventListener('input', onInput);
     root.addEventListener('change', onChange);
     document.addEventListener('keydown', onKey);
@@ -3531,6 +3644,7 @@
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState === 'visible') {
         checkDeadlines(); if (E.state) { greet(); pullEvents(); }
+        gateCheck(false);
         shopSync(false);
         // voltou do WhatsApp: vê se o pedido já foi pago
         if (E.state && S.shop && S.shop.ready() && S.shop.pending(E.state).length) S.shop.refresh().then(function (r) { if (r.changed) render(); });

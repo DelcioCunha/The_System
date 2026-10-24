@@ -9,7 +9,7 @@ vc.on('jsdomError', (e) => { if (!/Not implemented/.test(e.message)) errors.push
 vc.on('error', (e) => errors.push(String(e)));
 const CLOCK = { t: new Date(2030, 2, 12, 10, 0, 0).getTime() };
 const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://app.local/', virtualConsole: vc,
-  beforeParse(w) { w.SYS = { clock: { now: () => CLOCK.t } }; w.matchMedia = () => ({ matches: false }); w.scrollTo = () => {}; w.addEventListener('error', (e) => errors.push(e.message)); } });
+  beforeParse(w) { w.localStorage.setItem('sis.gate.v1', JSON.stringify({ access: 'ok', checkedAt: Date.now(), offline: 15 })); w.SYS = { clock: { now: () => CLOCK.t } }; w.matchMedia = () => ({ matches: false }); w.scrollTo = () => {}; w.addEventListener('error', (e) => errors.push(e.message)); } });
 const w = dom.window, $ = (s) => w.document.querySelector(s);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const click = (s) => { const el = typeof s === 'string' ? $(s) : s; assert.ok(el, 'falta ' + s); el.dispatchEvent(new w.MouseEvent('click', { bubbles: true, clientX: 100, clientY: 200 })); };

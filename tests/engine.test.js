@@ -1078,20 +1078,28 @@ test('Lembretes: plano com missões, Diária, emergência e ausência, sempre no
   assert.ok(!L.plan(E.state).some((n) => n.key === mis.key));
 });
 
-test('Diálogos: 350 conversas (250 por contexto + 100 aleatórias), 3 respostas cada, textos sem variáveis por preencher', () => {
+test('Diálogos: 700 conversas (350 antigas + 350 novas, 20 longas de 7 trocas), 3 respostas cada, textos sem variáveis por preencher', () => {
   const { S } = boot();
   at(S, 2026, 10, 14, 10);
   S.engine.start('Delcio', 'guerreiro');
   const T = S.TALKS;
-  assert.strictEqual(T.length, 350);
-  assert.strictEqual(T.filter((d) => d.trigger === 'idle').length, 100);
-  assert.strictEqual(new Set(T.map((d) => d.id)).size, 350, 'ids únicos');
+  assert.strictEqual(T.length, 700);
+  assert.strictEqual(T.filter((d) => d.trigger === 'idle').length, 151);
+  assert.strictEqual(new Set(T.map((d) => d.id)).size, 700, 'ids únicos');
+  const longs = T.filter((d) => d.chain);
+  assert.strictEqual(longs.length, 20, '20 conversas longas');
+  assert.ok(longs.every((d) => d.chain.length === 6 && d.once), 'cada conversa longa tem 7 trocas e acontece uma vez');
   const st = S.engine.state;
   const V = S.talk.vars(st, { boss: S.BOSS_BY_ID.b30, missao: 'Ler', diff: 'C', item: 'Espada', rarity: 'raro', skill: 'Golpe', tab: 'loja', away: 3, level: 5, rankup: true, slot: 'weapon', diaria: false });
   const fill = (t) => String(t).replace(/\{(\w+)\}/g, (m, k) => (V[k] !== undefined ? V[k] : m));
   T.forEach((d) => {
     assert.strictEqual(d.choices.length, 3, d.id);
     [d.line].concat(...d.choices.map((c) => [c.t, c.r])).forEach((txt) => assert.ok(!/\{\w+\}/.test(fill(txt)), d.id + ': ' + txt));
+    (d.chain || []).forEach((c) => {
+      assert.strictEqual(c.choices.length, 3, d.id + ' passo');
+      assert.strictEqual(c.choices.map((x) => x.tag).sort().join(''), 'doq', d.id + ' passo com as três atitudes');
+      [c.line].concat(...c.choices.map((x) => [x.t, x.r])).forEach((txt) => assert.ok(!/\{\w+\}/.test(fill(txt)), d.id + ': ' + txt));
+    });
   });
   // cada conversa tem as três atitudes (obedecer, desafiar, perguntar)
   assert.ok(T.every((d) => d.choices.map((c) => c.tag).sort().join('') === 'doq'), 'três atitudes diferentes');
@@ -1875,6 +1883,63 @@ test('Conquistas II: 66 novas, todas avaliam sem erro e desbloqueiam com o progr
   S.body.logWeight(80);
   E.checkAchievements(st);
   ['sh1', 'shking', 'shname', 'spar1', 'ar1', 'grd1', 'champ1', 'rematch', 'body1'].forEach((id) => { if (id !== 'rematch') assert.ok(st.achievements[id], 'deve desbloquear: ' + id); });
+});
+
+
+test('Falas novas: conversa longa de 7 trocas às 03:07, comentário do Sistema por chefe e marcos novos', () => {
+  const { S } = boot();
+  at(S, 2026, 10, 14, 9);
+  const E = S.engine, T = S.talk, L = S.live;
+  E.start('Delcio', 'guerreiro');
+  const st = E.state;
+  st.created = S.clock.now() - 86400000;
+  at(S, 2026, 10, 15, 3, 7); st.level = 6;
+  const c = T.offer(st, 'idle', {}, { force: true });
+  assert.ok(c && c.id === 'lr1' && c.steps === 7, 'às 03:07 a conversa longa tem prioridade');
+  let n = 0, r;
+  do { r = T.answer(st, c, n % 3); n++; assert.ok(r.ok && r.reply.length > 1); } while (r.more && T.next(st, c));
+  assert.strictEqual(n, 7, 'sete trocas');
+  assert.ok(!T.candidates(st, 'idle', {}).list.some((d) => d.id === 'lr1'), 'só acontece uma vez');
+  // cada chefe tem falas próprias de vitória e de derrota (3 + 3)
+  S.BOSSES.concat(S.SECRET_BOSSES, S.ARENA_BOSSES).forEach((b) => {
+    const own = S.PLUS.bossSay[b.id];
+    assert.ok(own && own.win.length >= 3 && own.lose.length >= 3, b.id);
+  });
+  assert.ok(/./.test(L.bossSay(st, S.BOSS_BY_ID.b10, 'win', 5)) && /./.test(L.bossSay(st, S.ARENA_GUARDIANS[0], 'lose', 2)));
+  assert.strictEqual(L.bossSay(st, S.BOSS_BY_ID.b10, 'fled', 1), null, 'fuga não tem comentário');
+  // marcos novos: na primeira verificação só regista o que já passou; depois comenta uma vez
+  st.c.bossesKilled = 12; L.tick(st); E.takeEvents();
+  st.c.bossesKilled = 25; L.tick(st);
+  assert.ok(E.takeEvents().some((e) => e.type === 'note' && /25 chefes/.test(e.text)), 'marco de 25 chefes');
+  L.tick(st); assert.ok(!E.takeEvents().some((e) => /25 chefes/.test(e.text || '')), 'não repete');
+  // primeira conversa: novas variantes disponíveis
+  const F = S.FIRST_TALK_PLUS;
+  assert.strictEqual(F.open.length * 3 + Object.keys(F.cls).reduce((a, k) => a + F.cls[k].length * 2, 0) + F.ask.length * 7 + F.close.reduce((a, x) => a + x.length, 0), 71);
+});
+
+test('Lembretes novos: prazos aos 30, 20 e 10 minutos, resumo da manhã, missões dos próximos dias e vigilância', () => {
+  const { S } = boot();
+  at(S, 2026, 10, 14, 7);
+  const E = S.engine, M = S.missions, L = S.live, W = S.watch;
+  E.start('Delcio', 'mago');
+  M.create({ title: 'Estudar matemática', difficulty: 'C', stats: [], deadline: '18:00', recur: 'daily', days: [] });
+  M.create({ title: 'Entregar relatório', difficulty: 'B', stats: [], deadline: '12:00', recur: 'once', date: '2026-10-15', days: [] });
+  M.create({ title: 'Consulta no dentista', difficulty: 'D', stats: [], deadline: '15:00', recur: 'once', date: '2026-10-18', days: [] });
+  const plan = L.plan(E.state), now = S.clock.now();
+  const has = (p) => plan.some((n) => n.key.indexOf(p) === 0);
+  assert.ok(plan.every((n) => n.at > now && !/\{\w+\}/.test(n.body + n.title)), 'textos completos e no futuro');
+  ['m:', 'm20:', 'm10:', 'today@2026-10-14', 'tmw:', 'days:'].forEach((k) => assert.ok(has(k), 'falta ' + k));
+  const m10 = plan.find((n) => n.key.indexOf('m10:') === 0 && /Estudar/.test(n.body));
+  assert.ok(m10 && Math.abs(m10.at - new Date(2026, 9, 14, 17, 50).getTime()) < 60000, '10 minutos antes');
+  // vigilância: depois de um aviso e de uma sentença, o Sistema volta a lembrar no telemóvel
+  W.onBadText(E.state, { kind: 'text', word: 'asdfgh' });
+  W.onBadText(E.state, { kind: 'text', word: 'qwerty' });
+  const p2 = L.plan(E.state);
+  assert.ok(p2.some((n) => /^w[vs]:/.test(n.key)), 'aviso ou sentença no telemóvel');
+  assert.ok(p2.every((n) => !/\{\w+\}/.test(n.body)), 'sem variáveis por preencher');
+  E.state.watch.banUntil = S.clock.now() + 2 * 3600000;
+  assert.ok(L.plan(E.state).some((n) => n.key.indexOf('ban:') === 0), 'fim do bloqueio');
+  assert.strictEqual(L.noteTab('ws:1'), 'status');
 });
 
 console.log('\n' + passed + ' testes passaram' + (process.exitCode ? ' (com falhas)' : ''));

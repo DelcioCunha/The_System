@@ -800,4 +800,104 @@ await test('duelo: salas públicas, tempo esgotado (2 vezes = derrota), desistir
   assert.equal((await C('/api/social/state', as(P3, TOK3))).status, 403);
 });
 
+await test('aparelhos: modo privado, pedido de acesso, código de acesso e jogadores antigos', async () => {
+  const S = await setup('production');
+  const C = (u, b) => S.call('POST', u, b);
+  const A = S.admin(await S.login());
+  const PH = { hw: 'a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90', aid: '5f2c9e1a7b3d4c6e' };
+  const T1 = 'segredo-do-jogador-um-123456';
+  // sem modo privado: um aparelho novo joga logo
+  let r = await C('/api/device/check', { ids: PH, platform: 'android', model: 'Samsung A15', player_id: P1, token: T1 });
+  assert.equal(r.status, 200, r.error); assert.equal(r.access, 'ok'); assert.match(r.device.code, /^APR-[A-Z0-9]{4}-[A-Z0-9]{4}$/);
+  const code1 = r.device.code;
+  // o jogador antigo regista-se e sincroniza (fica ligado ao aparelho)
+  await C('/api/player/sync', { player_id: P1, token: T1, name: 'Antigo', level: 5, device: PH });
+  tick(60 * 1000);
+  // liga o modo privado
+  const s = await A.put('/api/admin/settings', { private_mode: true, offline_days: 10 });
+  assert.equal(s.settings.private_mode, '1'); assert.equal(s.settings.offline_days, '10'); assert.ok(+s.settings.private_since > 0);
+  tick(60 * 1000);
+  // o jogador antigo continua (aprovado automaticamente) e a identificação é estável
+  r = await C('/api/device/check', { ids: PH, player_id: P1, token: T1 });
+  assert.equal(r.access, 'ok'); assert.equal(r.device.code, code1); assert.equal(r.offline_days, 10);
+  // um aparelho novo fica à espera de autorização
+  const NEW = { hw: 'ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100', aid: '1234abcd5678ef90' };
+  r = await C('/api/device/check', { ids: NEW, platform: 'android', model: 'Tecno Spark' });
+  assert.equal(r.access, 'pending'); assert.equal(r.private, true);
+  // a sincronização de uma conta nova nesse aparelho não recebe nada
+  const sy = await C('/api/player/sync', { player_id: P2, token: 'segredo-do-jogador-dois-1234', name: 'Novo', device: NEW });
+  assert.equal(sy.account, 'device_pending');
+  // pedido de acesso aparece no painel
+  r = await C('/api/device/request', { ids: NEW, name: 'Ana · 923000000', message: 'Sou amiga do Delcio' });
+  assert.equal(r.requested, true);
+  let L = await A.get('/api/admin/devices?status=requests');
+  assert.equal(L.devices.length, 1); assert.equal(L.devices[0].request_name, 'Ana · 923000000'); assert.equal(L.totals.requests, 1);
+  assert.equal((await A.get('/api/admin/dashboard')).devices.requests, 1);
+  // o administrador aprova
+  const dv = await A.post('/api/admin/devices/' + L.devices[0].id + '/approve', {});
+  assert.equal(dv.device.status, 'approved');
+  assert.equal((await C('/api/device/check', { ids: NEW })).access, 'ok');
+  // código de acesso (convite): uso único
+  const NEW2 = { aid: '99aa88bb77cc66dd' };
+  assert.equal((await C('/api/device/check', { ids: NEW2, platform: 'android' })).access, 'pending');
+  const ac = await A.post('/api/admin/access-codes', { label: 'Primo João', uses: 1, days: 7 }, key('acc1'));
+  assert.equal(ac.status, 200, ac.error); assert.match(ac.code, /^ACS-[A-Z0-9]{4}-[A-Z0-9]{4}$/);
+  assert.equal((await A.post('/api/admin/access-codes', { label: 'Primo João' }, key('acc1'))).code, ac.code, 'idempotente');
+  assert.equal((await C('/api/device/redeem', { ids: NEW2, code: 'ACS-AAAA-BBBB' })).status, 404);
+  r = await C('/api/device/redeem', { ids: NEW2, code: ac.code.toLowerCase().replace(/-/g, ' ') });
+  assert.equal(r.status, 200, r.error); assert.equal(r.access, 'ok');
+  const NEW3 = { aid: '1122334455667788' };
+  await C('/api/device/check', { ids: NEW3 });
+  assert.equal((await C('/api/device/redeem', { ids: NEW3, code: ac.code })).status, 404, 'código já usado');
+  // códigos expiram
+  const ac2 = await A.post('/api/admin/access-codes', { uses: 3, days: 1 }, key('acc2'));
+  tick(2 * DAYMS);
+  const er = await C('/api/device/redeem', { ids: NEW3, code: ac2.code });
+  assert.equal(er.status, 404); assert.match(er.error, /expirou/);
+  // identificadores inválidos são recusados
+  assert.equal((await C('/api/device/check', { ids: { aid: '9774d56d682e549c' } })).status, 400);
+});
+
+await test('aparelhos: bloqueio sobrevive a reinstalação e APK novo; restaurar pela via legal', async () => {
+  const S = await setup('production');
+  const C = (u, b) => S.call('POST', u, b);
+  const A = S.admin(await S.login());
+  const HW = 'c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00';
+  const T1 = 'segredo-do-jogador-um-123456';
+  let r = await C('/api/device/check', { ids: { hw: HW, aid: 'aaaa1111bbbb2222' }, platform: 'android', model: 'Itel P55', player_id: P1, token: T1 });
+  await C('/api/player/sync', { player_id: P1, token: T1, name: 'Batoteiro', level: 9, device: { hw: HW, aid: 'aaaa1111bbbb2222' } });
+  r = await C('/api/device/check', { ids: { hw: HW, aid: 'aaaa1111bbbb2222' }, player_id: P1, token: T1 });
+  const L = await A.get('/api/admin/devices?q=' + r.device.code);
+  assert.equal(L.devices.length, 1); assert.equal(L.devices[0].player_id, P1);
+  const id = L.devices[0].id;
+  assert.equal((await A.post('/api/admin/devices/' + id + '/block', { reason: 'x' })).status, 400, 'motivo obrigatório');
+  const b = await A.post('/api/admin/devices/' + id + '/block', { reason: 'Partilha de contas', players: true });
+  assert.equal(b.device.status, 'blocked'); assert.equal(b.players[0].status, 'banned', 'a conta também ficou desativada');
+  // desinstalou e instalou o mesmo APK (mesmo ANDROID_ID, dados apagados, conta nova)
+  r = await C('/api/device/check', { ids: { hw: HW, aid: 'aaaa1111bbbb2222' }, player_id: P2, token: 'segredo-novo-depois-de-reinstalar' });
+  assert.equal(r.access, 'blocked'); assert.equal(r.block.reason, 'Partilha de contas');
+  // APK novo (ANDROID_ID diferente) no mesmo telemóvel: o hardware denuncia-o
+  r = await C('/api/device/check', { ids: { hw: HW, aid: 'ffff9999eeee8888' } });
+  assert.equal(r.access, 'blocked');
+  // só o ANDROID_ID (aparelho sem Widevine) também chega
+  assert.equal((await C('/api/device/check', { ids: { aid: 'aaaa1111bbbb2222' } })).access, 'blocked');
+  // um código de acesso não desbloqueia
+  const ac = await A.post('/api/admin/access-codes', {}, key('acc3'));
+  assert.equal((await C('/api/device/redeem', { ids: { hw: HW }, code: ac.code })).access, 'blocked');
+  // a sincronização fica sem nada
+  assert.equal((await C('/api/player/sync', { player_id: P1, token: T1, name: 'Batoteiro', device: { hw: HW } })).account, 'device_blocked');
+  // restaurar (decisão judicial): o motivo é obrigatório e fica na auditoria
+  assert.equal((await A.post('/api/admin/devices/' + id + '/restore', {})).status, 400);
+  const rs = await A.post('/api/admin/devices/' + id + '/restore', { note: 'Decisão do tribunal, processo 123/26', players: true });
+  assert.equal(rs.device.status, 'approved'); assert.equal(rs.players.find((p) => p.id === P1).status, 'active');
+  assert.ok(rs.audit.some((a) => a.action === 'device.restore'));
+  r = await C('/api/device/check', { ids: { hw: HW, aid: 'aaaa1111bbbb2222' } });
+  assert.equal(r.access, 'ok'); assert.ok(r.restored);
+  // a ficha do jogador mostra os aparelhos
+  const pd = await A.get('/api/admin/players/' + P1);
+  assert.equal(pd.devices.length, 1); assert.equal(pd.devices[0].status, 'approved');
+  // sem sessão de administrador, nada feito
+  assert.equal((await S.call('POST', '/api/admin/devices/' + id + '/block', { reason: 'abc' })).status, 401);
+});
+
 console.log('\n' + passed + ' testes do servidor passaram' + (process.exitCode ? ' (com falhas)' : ''));

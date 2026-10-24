@@ -37,7 +37,7 @@
     }
   };
   /* bónus de probabilidade quando um diálogo específico encaixa (ex.: chefe mortal) */
-  var SPECIAL = { gap: 0.33, king: 0.23, final: 0.5, zone: 0.25, marked: 0.2, trust: 0.15, streak: 0.15, away: 0.3 };
+  var SPECIAL = { hmn: 0.85, lore: 0.6, gap: 0.33, king: 0.23, final: 0.5, zone: 0.25, marked: 0.2, trust: 0.15, streak: 0.15, away: 0.3 };
 
   function now() { return S.clock.now(); }
   function rnd() { return S.rng.random(); }
@@ -52,7 +52,9 @@
     list.forEach(function (d, i) {
       S.TALKS.push({ id: prefix + (i + 1), trigger: d[0], cond: parseCond(d[1]), line: d[2],
         choices: d[3].map(function (c) { return { t: c[0], tag: c[1], r: c[2], fx: c[3] || null }; }),
-        w: (d[4] && d[4].w) || (d[1] ? 2 : 1), once: !!(d[4] && d[4].once), prio: !!(d[4] && d[4].prio) });
+        w: (d[4] && d[4].w) || (d[1] ? 2 : 1), once: !!(d[4] && d[4].once), prio: !!(d[4] && d[4].prio),
+        // conversa longa: passos seguintes [fala, [[resposta, atitude, réplica, efeito], ×3]]
+        chain: d[4] && d[4].chain ? d[4].chain.map(function (c) { return { line: c[0], choices: c[1].map(function (x) { return { t: x[0], tag: x[1], r: x[2], fx: x[3] || null }; }) }; }) : null });
     });
   };
 
@@ -94,7 +96,7 @@
     var cs = E.combatStats(st), hpPct = Math.round(E.curHp(st) / Math.max(1, cs.maxHp) * 100);
     var rank = S.rankFor(st.level);
     var V = {
-      nome: st.name, NOME: String(st.name).toUpperCase(), hora: hhmm(ts), h: d.getHours(), wd: d.getDay(),
+      nome: st.name, NOME: String(st.name).toUpperCase(), hora: hhmm(ts), h: d.getHours(), mi: d.getMinutes(), hmn: d.getHours() * 100 + d.getMinutes(), wd: d.getDay(),
       lvl: st.level, nivel: st.level, classe: S.CLASSES[st.cls].name, cls: st.cls, rank: rank.rank,
       coins: st.coins, moedas: st.coins, hp: hpPct, streak: st.daily.streak, best: st.daily.bestStreak,
       o: t.att.o, d: t.att.d, q: t.att.q, talks: t.talks || 0,
@@ -102,12 +104,13 @@
       zone: S.live ? !!S.live.zone(st) : false,
       won: st.c.battlesWon || 0, lost: st.c.battlesLost || 0, kills: st.c.bossesKilled || 0, done: st.c.missionsDone || 0, failed: st.c.missionsFailed || 0,
       bought: st.c.itemsBought || 0, chests: st.c.chestsOpened || 0, missions: (st.missions || []).filter(function (m) { return !m.deleted; }).length,
-      away: ctx.away || 0, dias: ctx.away || 0
+      away: ctx.away || 0, dias: ctx.away || 0, lore: true
     };
     if (ctx.boss) {
       var b = ctx.boss, g = S.GATES[b.gate - 1];
       V.boss = b.name; V.blvl = b.level; V.gap = b.level - st.level; V.king = !!b.king; V.final = b.special === 'final' || b.level >= 100;
       V.secret = !!b.secret; V.dead = !!st.defeated[b.id]; V.portao = g ? g.name : (b.arenaName || ''); V.premium = !!b.premium; V.gate = b.gate;
+      V.bid = b.id; V.champion = !!b.champion; V.lieutenant = !!b.lieutenant; V.guardian = !!b.guardian; V.arena = b.arena || 0;
     }
     ['missao', 'diff', 'item', 'rarity', 'skill', 'tab', 'tier', 'slot', 'price', 'diaria'].forEach(function (k) { if (ctx[k] !== undefined) V[k] = ctx[k]; });
     if (ctx.level) { V.nivel = ctx.level; V.rankup = !!ctx.rankup; }
@@ -177,14 +180,16 @@
       var p = ((R.chance[trigger] || 0.1) + specialBonus(specific, c.V)) * R.mode[T.mode(st)] * t.damp;
       if (rnd() >= Math.min(0.9, p)) return null;
     }
-    // escolhe: os específicos pesam mais
-    var pool = c.list, tot = 0;
+    // escolhe: as conversas longas (cenários raros do livro) passam à frente; depois, os específicos pesam mais
+    var longs = c.list.filter(function (d) { return d.chain && d.prio; });
+    var pool = longs.length ? longs : c.list, tot = 0;
     var ws = pool.map(function (d) { var w = weightOf(d, c.V); tot += w; return w; });
     var r = rnd() * tot, d = pool[pool.length - 1];
     for (var i = 0; i < pool.length; i++) { r -= ws[i]; if (r < 0) { d = pool[i]; break; } }
     var ts = now();
     t.seen[d.id] = ts; t.last = ts; t.count++; t.talks = (t.talks || 0) + 1;
-    return { id: d.id, trigger: trigger, line: fill(d.line, c.V), choices: d.choices.map(function (x) { return { t: fill(x.t, c.V), tag: x.tag }; }), V: c.V };
+    return { id: d.id, trigger: trigger, line: fill(d.line, c.V), choices: d.choices.map(function (x) { return { t: fill(x.t, c.V), tag: x.tag }; }), V: c.V,
+      step: 0, steps: d.chain ? d.chain.length + 1 : 1 };
   };
 
   function fxText(fx) {
@@ -199,8 +204,11 @@
   T.answer = function (st, conv, i) {
     var d = S.TALKS.filter(function (x) { return x.id === conv.id; })[0];
     if (!d || !d.choices[i]) return { ok: false };
-    var t = T.ensure(st), ch = d.choices[i];
-    t.done[d.id] = i + 1;
+    var step = conv.step || 0, cur = step ? d.chain && d.chain[step - 1] : d;
+    if (!cur || !cur.choices[i]) return { ok: false };
+    var t = T.ensure(st), ch = cur.choices[i];
+    if (!step) t.done[d.id] = i + 1;
+    else { t.chain = t.chain || {}; (t.chain[d.id] = t.chain[d.id] || [])[step] = i + 1; }
     t.att[ch.tag] = (t.att[ch.tag] || 0) + 1;
     t.damp = Math.min(1, t.damp + 0.15);
     t.skips = 0;
@@ -217,7 +225,17 @@
       E.history(st, '👁️', 'Conversa com o Sistema: ' + lines.join(', ') + '.');
     }
     E.commit('conversa');
-    return { ok: true, reply: fill(ch.r, V), said: fill(ch.t, V), fx: lines, tag: ch.tag };
+    return { ok: true, reply: fill(ch.r, V), said: fill(ch.t, V), fx: lines, tag: ch.tag, more: !!(d.chain && step < d.chain.length) };
+  };
+  /* Conversa longa: avança para o passo seguinte (devolve a conversa atualizada, ou null no fim) */
+  T.next = function (st, conv) {
+    var d = S.TALKS.filter(function (x) { return x.id === conv.id; })[0];
+    var step = (conv.step || 0) + 1;
+    if (!d || !d.chain || step > d.chain.length) return null;
+    var c = d.chain[step - 1], V = conv.V || T.vars(st);
+    conv.step = step; conv.line = fill(c.line, V);
+    conv.choices = c.choices.map(function (x) { return { t: fill(x.t, V), tag: x.tag }; });
+    return conv;
   };
   /* A conversa nunca chegou a ser mostrada (o jogador saiu, ou estava ocupado): não conta */
   T.cancel = function (st, conv) {

@@ -9,6 +9,6 @@ const { chromium } = require('playwright');
   console.log('páginas', await p.evaluate(() => window.__done), 'erros', JSON.stringify(errs));
   const broken = await p.evaluate(() => Array.from(document.images).filter((im) => !im.naturalWidth).length);
   console.log('broken', broken);
-  await p.pdf({ path: '/home/claude/livro/Cronicas-do-Sistema.pdf', format: 'A4', printBackground: true, preferCSSPageSize: true });
+  await p.pdf({ path: '/home/claude/livro/O-Sistema-A-Origem-de-Tudo.pdf', format: 'A4', printBackground: true, preferCSSPageSize: true });
   await b.close();
 })();

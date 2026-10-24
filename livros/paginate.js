@@ -2,7 +2,7 @@ document.fonts.ready.then(function () {
   function newPage(title) {
     var s = document.createElement('section');
     s.className = 'page text';
-    s.innerHTML = '<div class="frame"></div><div class="rh"><span>CRÓNICAS DO SISTEMA</span><span>' + title + '</span></div><div class="inner"></div><div class="foot"><span></span><span class="fn"></span></div>';
+    s.innerHTML = '<div class="frame"></div><div class="rh"><span>O SISTEMA · A ORIGEM DE TUDO</span><span>' + title + '</span></div><div class="inner"></div><div class="foot"><span></span><span class="fn"></span></div>';
     return s;
   }
   function fits(inner) { return inner.scrollHeight <= inner.clientHeight + 1; }

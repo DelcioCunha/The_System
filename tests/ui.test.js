@@ -17,7 +17,9 @@ function open(storageSeed) {
       w.matchMedia = () => ({ matches: true, addListener() {}, removeListener() {} });
       w.scrollTo = () => {};
       w.SYS = { clock: { now: () => CLOCK.t } };
-      if (storageSeed) Object.keys(storageSeed).forEach((k) => w.localStorage.setItem(k, storageSeed[k]));
+      // o aparelho já foi verificado pelo servidor (o portão fica aberto), salvo se o teste disser outra coisa
+      const seed = Object.assign({ 'sis.gate.v1': JSON.stringify({ access: 'ok', code: 'APR-TEST-0001', checkedAt: Date.now(), offline: 15 }) }, storageSeed || {});
+      Object.keys(seed).forEach((k) => { if (seed[k] != null) w.localStorage.setItem(k, seed[k]); });
     }
   });
   return dom;
@@ -181,6 +183,29 @@ step('batalha a meio continua depois de reabrir', () => {
   assert.strictEqual(w2.SYS.engine.state.battle.turn, turn);
   click(w2, '[data-a="tab"][data-t="combate"]');
   assert.ok($(w2, '[data-a="b-attack"]'));
+});
+
+step('portão do aparelho: bloqueado, acesso privado e verificação', () => {
+  const saved = {};
+  for (let i = 0; i < w.localStorage.length; i++) { const k = w.localStorage.key(i); saved[k] = w.localStorage.getItem(k); }
+  // bloqueado: nem o jogo nem a conta aparecem; o código do aparelho e o motivo sim
+  const wb = open(Object.assign({}, saved, { 'sis.gate.v1': JSON.stringify({ access: 'blocked', code: 'APR-ABCD-EFGH', block: { reason: 'Partilha de contas', since: Date.now() }, checkedAt: Date.now(), wa: 'https://wa.me/244900000000?text=x' }) })).window;
+  assert.ok($(wb, '.gate-screen'), 'ecrã de bloqueio');
+  assert.ok(/APR-ABCD-EFGH/.test($(wb, '.gate-screen').textContent));
+  assert.ok(/Partilha de contas/.test($(wb, '.gate-screen').textContent));
+  assert.ok($(wb, '[data-a="ext"]'), 'contestar pelo WhatsApp');
+  assert.ok(!$(wb, '[data-a="tab"]'), 'sem acesso ao jogo');
+  wb.close();
+  // acesso privado: código de acesso ou pedido; também antes de criar personagem
+  const wp = open({ 'sis.gate.v1': JSON.stringify({ access: 'pending', code: 'APR-WXYZ-2345', checkedAt: Date.now(), private: true }) }).window;
+  assert.ok($(wp, '.gate-pending'), 'ecrã de acesso restrito');
+  assert.ok($(wp, '#gate-acs') && $(wp, '[data-a="gate-redeem"]') && $(wp, '[data-a="gate-request"]'));
+  assert.ok(!$(wp, '[data-a="intro-yes"]'), 'a introdução fica para depois');
+  wp.close();
+  // há demasiados dias sem internet: o Sistema pede ligação
+  const ws = open(Object.assign({}, saved, { 'sis.gate.v1': JSON.stringify({ access: 'ok', code: 'APR-WXYZ-2345', checkedAt: Date.now() - 20 * 86400000, offline: 15 }) })).window;
+  assert.ok($(ws, '.gate-verify'), 'ligação necessária');
+  ws.close();
 });
 
 dom.window.close();
