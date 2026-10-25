@@ -64,6 +64,14 @@ O jogo pode ser fechado só a quem tu autorizas, e um aparelho bloqueado não vo
 
 Com a app aberta e em uso, o Sistema aparece para conversar a cada 15 minutos de uso (`S.TALK_RULES.spontMin`). Não aparece com a app fechada, parada há mais de 3 minutos, durante batalhas nem durante duelos contra outros jogadores.
 
+## A Última Arena (fim do jogo)
+- Abre quando o Jogador vence os 100 chefes dos portões e os 10 Campeões do Coliseu (`S.combat.finalProgress`, `checkFinale`).
+- Nesse momento aparece a conversa final (`src/data/finale.js`): o Sistema faz o balanço do caminho com os números reais, o registo é interrompido e o Arquiteto aparece, diz o nome (Delcio Cunha) e lança o último desafio. Pode ser revista na Última Arena.
+- Cada um tem 2 formas, como dois chefes: a 1.ª forma tem a sua barra de vida e, quando cai, a 2.ª ergue-se com a vida toda, outro nome, outra imagem (`_f2`) e outra música (`<id>_f2.mp3`). A 1.ª forma vencida fica guardada (`st.forms`): se perderes, voltas já à 2.ª.
+- Dois chefes, ambos com 3 fases: **O Sistema, Forma Suprema** (`secret_1`, Nv 110) e, depois dele, **Delcio Cunha, o Arquiteto** (`secret_2`, Nv 120). Não deixam sombra.
+- Quem tinha vencido os antigos chefes ocultos sem ter chegado ao fim volta a enfrentá-los (fica registo em `oldSecrets`). O Mapa do Portão Oculto passou a Mapa da Última Arena: mostra o progresso e não se gasta.
+- Imagens: `assets/bosses/secret_1(_f2)`, `secret_2(_f2)`, `assets/arenas/final`, `assets/trophies/secret_1|2`, `assets/ui/gate_0`, `ach_secretboss`, `ach_architect`, `ach_finale`. Música: `assets/music/secret_1.mp3` e `secret_2.mp3`.
+
 ## Salvamento
 
 Cada ganho ou perda (missão, compra, turno de combate, baú, ponto de atributo) é gravado no momento:

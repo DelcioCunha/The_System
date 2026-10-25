@@ -43,8 +43,9 @@
     { id: 'lose5', icon: '🥀', name: '???', realName: 'Cair e Levantar', secret: true, desc: 'Perde 5 batalhas.', check: function (s) { return c(s, 'battlesLost') >= 5; }, reward: { skill: 's7' } },
     { id: 'lose15', icon: '🔥', name: '???', realName: 'Das Cinzas', secret: true, desc: 'Perde 15 batalhas.', check: function (s) { return c(s, 'battlesLost') >= 15; }, reward: { skill: 's4' } },
     { id: 'brave', icon: '🫡', name: '???', realName: 'Coragem Cega', secret: true, desc: 'Enfrenta um chefe 20+ níveis acima de ti.', check: function (s) { return c(s, 'braveFights') >= 1; }, reward: { chest: 'raro' } },
-    { id: 'secretboss', icon: '🗝️', name: '???', realName: 'O Portão Oculto', secret: true, desc: 'Derrota o Guardião do Portão Oculto.', check: function (s) { return !!s.defeated.secret_1; }, reward: { chest: 'secreto' } },
-    { id: 'architect', icon: '💠', name: '???', realName: 'Verdade do Sistema', secret: true, desc: 'Derrota o Arquiteto do Sistema.', check: function (s) { return !!s.defeated.secret_2; }, reward: { chest: 'secreto', coins: 50000 } },
+    { id: 'secretboss', icon: '👁️', name: '???', realName: 'Forma Suprema', secret: true, desc: 'Derrota o Sistema na sua Forma Suprema, na Última Arena.', check: function (s) { return !!s.defeated.secret_1; }, reward: { chest: 'secreto' } },
+    { id: 'architect', icon: '✒️', name: '???', realName: 'O Nome do Criador', secret: true, desc: 'Derrota o Arquiteto, no fim da Última Arena.', check: function (s) { return !!s.defeated.secret_2; }, reward: { chest: 'secreto', coins: 50000 } },
+    { id: 'finale', icon: '🏟️', name: '???', realName: 'Poucos Chegaram Aqui', secret: true, desc: 'Vence todos os chefes dos portões e do Coliseu e ouve o Sistema até ao fim.', check: function (s) { return !!(s.finale && s.finale.seen); }, reward: { chest: 'secreto', coins: 20000 } },
     // Troféus
     { id: 'tr25', icon: '🏆', name: 'Sala de Troféus', desc: 'Junta 25 troféus de chefes.', check: function (s) { return Object.keys(s.trophies || {}).length >= 25; }, reward: { chest: 'epico' } },
     { id: 'set1', icon: '🥇', name: 'Conjunto Completo', desc: 'Junta os 10 troféus de um portão.', check: function (s) { return S.engine.completedSets(s).filter(function (g) { return g > 0; }).length >= 1; }, reward: { chest: 'epico' } },

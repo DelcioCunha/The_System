@@ -81,41 +81,10 @@
   ]
  },
  {
-  "title": "Itens 1: Lazer",
+  "title": "Itens 1: Armas de rei, Armaduras",
   "cols": 5,
   "rows": 4,
   "ids": [
-   "lz_sesta",
-   "lz_cafe",
-   "lz_snack",
-   "lz_livro",
-   "lz_episodio",
-   "lz_redes",
-   "lz_doce",
-   "lz_banho",
-   "lz_musica",
-   "lz_jogo",
-   "lz_refeicao",
-   "lz_preguica",
-   "lz_cinema",
-   "lz_amigos",
-   "lz_maratona",
-   "lz_restaurante",
-   "lz_passeio",
-   "lz_descanso",
-   "lz_roupa",
-   "lz_spa"
-  ]
- },
- {
-  "title": "Itens 2: Lazer, Armas de rei, Armaduras",
-  "cols": 5,
-  "rows": 4,
-  "ids": [
-   "lz_desejo",
-   "lz_gadget",
-   "lz_viagem",
-   "lz_dourado",
    "wk_fenrath",
    "wk_varyss",
    "wk_morvenna",
@@ -131,18 +100,18 @@
    "ar_acolchoada",
    "ar_malha",
    "ar_cacador",
-   "ar_escamas"
-  ]
- },
- {
-  "title": "Itens 3: Armaduras, Acessórios",
-  "cols": 5,
-  "rows": 4,
-  "ids": [
+   "ar_escamas",
    "ar_placas",
    "ar_runica",
    "ar_sombra",
-   "ar_arquimago",
+   "ar_arquimago"
+  ]
+ },
+ {
+  "title": "Itens 2: Armaduras, Acessórios",
+  "cols": 5,
+  "rows": 4,
+  "ids": [
    "ar_dragao",
    "ar_celeste",
    "ar_coral",
@@ -158,18 +127,18 @@
    "ac_espinhos",
    "ac_fortuna",
    "ac_insignia",
-   "ac_vampiro"
-  ]
- },
- {
-  "title": "Itens 4: Acessórios",
-  "cols": 5,
-  "rows": 4,
-  "ids": [
+   "ac_vampiro",
    "ac_selo",
    "ac_furia",
    "ac_titan",
-   "ac_rank_d",
+   "ac_rank_d"
+  ]
+ },
+ {
+  "title": "Itens 3: Acessórios",
+  "cols": 5,
+  "rows": 4,
+  "ids": [
    "ac_rank_c",
    "ac_rank_b",
    "ac_rank_a",
@@ -185,18 +154,18 @@
    "ac_dragao",
    "ac_perola",
    "ac_aureola",
-   "ac_abismo"
-  ]
- },
- {
-  "title": "Itens 5: Acessórios, Poções",
-  "cols": 5,
-  "rows": 4,
-  "ids": [
+   "ac_abismo",
    "ac_vazio",
    "ac_disciplina",
    "ac_monge",
-   "ac_gigante",
+   "ac_gigante"
+  ]
+ },
+ {
+  "title": "Itens 4: Acessórios, Poções",
+  "cols": 5,
+  "rows": 4,
+  "ids": [
    "ac_colecionador",
    "ac_cacador_lenda",
    "ac_t_crit1",
@@ -212,18 +181,18 @@
    "po_mana15",
    "po_mana2",
    "po_restaura",
-   "po_fenix"
-  ]
- },
- {
-  "title": "Itens 6: Poções",
-  "cols": 5,
-  "rows": 4,
-  "ids": [
+   "po_fenix",
    "po_antidoto",
    "po_furia",
    "po_furia2",
-   "po_pedra",
+   "po_pedra"
+  ]
+ },
+ {
+  "title": "Itens 5: Poções",
+  "cols": 5,
+  "rows": 4,
+  "ids": [
    "po_tita",
    "po_vento",
    "po_foco",
@@ -239,18 +208,18 @@
    "po_fraqueza",
    "po_correntes",
    "po_fumo",
-   "po_xp15"
-  ]
- },
- {
-  "title": "Itens 7: Poções, Atributos",
-  "cols": 5,
-  "rows": 4,
-  "ids": [
+   "po_xp15",
    "po_xp2",
    "po_xp3",
    "po_coin2",
-   "po_coin3",
+   "po_coin3"
+  ]
+ },
+ {
+  "title": "Itens 6: Poções, Atributos, Baús",
+  "cols": 5,
+  "rows": 4,
+  "ids": [
    "po_sorte",
    "po_escudo",
    "po_descanso",
@@ -266,31 +235,24 @@
    "elg_per",
    "el_ponto",
    "el_ascensao",
-   "el_nectar"
-  ]
- },
- {
-  "title": "Itens 8: Atributos, Baús, Secretos",
-  "cols": 5,
-  "rows": 2,
-  "ids": [
+   "el_nectar",
    "el_reset",
    "bau_comum",
    "bau_raro",
-   "bau_epico",
+   "bau_epico"
+  ]
+ },
+ {
+  "title": "Itens 7: Baús, Secretos",
+  "cols": 3,
+  "rows": 3,
+  "ids": [
    "bau_lendario",
    "bau_secreto",
    "sx_ampulheta",
    "sx_coracao",
    "sx_fenix",
-   "sx_moeda"
-  ]
- },
- {
-  "title": "Itens 9: Secretos",
-  "cols": 3,
-  "rows": 1,
-  "ids": [
+   "sx_moeda",
    "sx_mapa",
    "sx_fragmento",
    "sx_nucleo"

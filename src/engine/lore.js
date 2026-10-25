@@ -128,6 +128,7 @@
       case 'rename': rows.push(['Efeito', 'Muda o nome do jogador'], ['Fica igual', 'Progresso, ID de Jogador e amigos']); break;
       case 'shadowSlot': rows.push(['Efeito', '+1 lugar de servo convocado, para sempre'], ['Limite', 'Até 3 insígnias (de 3 para 6 lugares; o Invocador tem mais 1)']); break;
       case 'revealBoss': rows.push(['Efeito', 'Revela um portão escondido']); break;
+      case 'finalMap': rows.push(['Efeito', 'Mostra quanto falta para a Última Arena'], ['Uso', 'Não se gasta']); break;
       case 'system': rows.push(['Efeito', it.desc], ['Tipo', 'Artefato do Sistema (usa-se na Bolsa)']); break;
       case 'fragment': rows.push(['Efeito', 'Junta ' + u.need + ' para formar o ' + S.ITEMS[u.result].name]); break;
       case 'core': rows.push(['Efeito', '+' + u.points + ' pontos livres e a habilidade ' + S.ALL_SKILLS[u.skill].name]); break;
@@ -149,7 +150,7 @@
     Object.keys(S.BOSS_SPECIAL_DROPS).forEach(function (bid) {
       if ((S.BOSS_SPECIAL_DROPS[bid].items || []).indexOf(id) >= 0) {
         var b = S.BOSS_BY_ID[bid];
-        out.push(b.secret ? 'Chefe de um portão oculto' : b.name + ' (Nv ' + b.level + ')');
+        out.push(b.secret ? 'Chefe da Última Arena' : b.name + ' (Nv ' + b.level + ')');
       }
     });
     return out.filter(function (v, i, a) { return a.indexOf(v) === i; });

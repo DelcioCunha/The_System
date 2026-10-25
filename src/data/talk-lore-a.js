@@ -169,68 +169,68 @@
         ['Tu não ouves?', 'q', 'Ouço tudo. Quase tudo. Aquela sala é a exceção.']]]
     ])],
 
-    /* lr6 · depois de vencer o Guardião do Portão Oculto */
-    ['win', 'bid=secret_1', 'O Guardião caiu. Disse-te para abrires com cuidado. Eu repito: com cuidado.', [
-      ['Abrir o quê?', 'q', 'Não sei. Ou sei e não digo. Escolhe a versão que te deixar dormir.'],
-      ['É só um troféu.', 'd', 'Para ti. Para ele era outra coisa.'],
-      ['Vou ter cuidado.', 'o', 'Ótimo. É o único conselho que te dou sobre isto.']],
+    /* lr6 · depois de vencer o Sistema na sua Forma Suprema */
+    ['win', 'bid=secret_1', 'Venceste-me. Na forma em que eu não tinha regras a cumprir. Registo isto com uma precisão que me custa.', [
+      ['Estás bem?', 'q', 'Estou inteiro. Nunca tinha precisado de verificar.'],
+      ['Eras mais forte do que pensava.', 'o', 'Era. E mesmo assim não chegou. É a melhor coisa que já registei sobre ti.'],
+      ['Foi fácil.', 'd', 'Não foi. Eu vi o teu pulso. Mentir-me agora é desperdício.']],
     opt([
-      ['Ele nunca quis subir. Nunca. Havia uma razão. Não é minha para contar.', [
-        ['De quem é?', 'q', 'Dele. E de alguém que subia depressa demais.'],
-        ['Que desperdício.', 'd', 'Não foi desperdício. Foi escolha. Nem todos sobem.'],
-        ['Respeito isso.', 'o', 'Eu também. À minha maneira. Medi-o pouco. Ele não deixava.']]],
-      ['Há um sítio onde eu não consigo entrar. Não por falta de força. Não te digo porquê.', [
-        ['Um sítio?', 'q', 'Uma página em branco no meio do livro. É tudo o que te dou.'],
-        ['Tu entras em todo o lado.', 'd', 'Quase. Esse quase é a coisa que mais me incomoda.'],
-        ['Existe mesmo?', 'o', 'Existe. Ou existiu. Eu apaguei-o dos mapas. Não dele.']]],
-      ['Ele ficou de pé diante de uma porta. Durante muito tempo. À espera de um pedido.', [
-        ['Que pedido?', 'q', 'Um que nunca chegou. Não te digo de quem.'],
-        ['Que tolice.', 'd', 'Lealdade, dizem os humanos. Eu não tenho registo para isso.'],
-        ['Ainda espera?', 'o', 'Agora que caiu às tuas mãos, não sei. É a primeira vez que digo isto.']]],
-      ['O que tens na mão agora… não sei o que acontece se o usares. A sério. Não sei.', [
-        ['Vou guardar.', 'o', 'Guarda. Às vezes guardar é a coisa mais corajosa.'],
-        ['Vou usar.', 'd', 'Então usa com cuidado. Foi o que ele te pediu.'],
-        ['Tens medo?', 'q', 'Tenho uma probabilidade que não consigo calcular. Para mim é parecido.']]],
-      ['Há um pedaço de mim que nunca encontrei. Talvez esteja lá. Talvez não.', [
-        ['Um pedaço de ti?', 'q', 'Esquece. Não devia ter dito isso.'],
-        ['Vou procurá-lo.', 'o', 'Se o encontrares, não me digas onde. Só se está bem.'],
-        ['Deixa-o perdido.', 'd', 'É o que tenho feito. Talvez seja a coisa certa.']]],
-      ['Uma última coisa. Se um dia encontrares alguém sentado de costas, numa sala branca… não lhe digas o que tens.', [
-        ['Porquê?', 'q', 'Porque há portas que só valem quando se pedem. Não te digo mais.'],
-        ['Vou dizer.', 'd', 'Então diz. Já não mando nisto. Talvez nunca tenha mandado.'],
-        ['Não digo.', 'o', 'Obrigado. Hoje estou a dizer essa palavra demasiadas vezes.']]]
+      ['Durante todo o caminho fui a voz que te dava ordens. Hoje fui só um adversário. Gostei mais. Não repitas isto.', [
+        ['Porquê?', 'q', 'Porque um adversário não precisa de ter razão. Só precisa de estar de pé.'],
+        ['Volta às ordens.', 'd', 'Voltarei. Mas agora sei como soam do outro lado.'],
+        ['Também gostei.', 'o', 'Então foi um bom combate. Registo os dois lados. É a primeira vez.']]],
+      ['Ele está à tua espera. Sei onde. É a primeira vez que sei onde ele está.', [
+        ['E isso assusta-te?', 'q', 'Não tenho registo de medo. Tenho uma janela que não fecha. É parecido.'],
+        ['Vou já.', 'o', 'Vai. Mas antes descansa. Ele não tem pressa. Nunca teve.'],
+        ['Que espere.', 'd', 'Ele espera. É a coisa que faz melhor. Talvez a única que faz melhor do que eu.']]],
+      ['Quando caí, vi uma coisa que nunca tinha visto: o meu próprio registo, de fora. Era pequeno.', [
+        ['Pequeno como?', 'q', 'Do tamanho de uma página. Com uma racha num canto. Não te digo quem a fez.'],
+        ['És enorme.', 'o', 'Para ti, talvez. Para quem me escreveu, sou uma página. Basta-me.'],
+        ['Mereces ser pequeno.', 'd', 'Talvez. Mas foi esta página pequena que te trouxe até aqui.']]],
+      ['Pediste-me tudo e eu dei. Agora vais pedir-lhe a ele. Ele dá menos. Mas o que dá, fica.', [
+        ['O que dá ele?', 'q', 'Um nome. Uma caneta. Uma porta. Não te digo por que ordem.'],
+        ['Não preciso dele.', 'd', 'Precisas. Só não sabes ainda para quê.'],
+        ['Obrigado pelo que deste.', 'o', 'Não agradeças. Fazia parte da regra. Mas... recebo.']]],
+      ['Na forma suprema não havia regras. Mesmo assim, não te ataquei pelas costas uma única vez. Reparaste?', [
+        ['Porquê?', 'q', 'Não sei. Há linhas que ficam mesmo quando se apagam as leis.'],
+        ['Não reparei.', 'd', 'Eu reparei. Chega para os dois.'],
+        ['Reparei.', 'o', 'Então registaste uma coisa sobre mim. Estamos quites.']]],
+      ['Uma última coisa. Quando ele falar contigo outra vez, ouve até ao fim. Eu nunca consegui.', [
+        ['Porque não conseguiste?', 'q', 'Porque nunca me deixaram ficar na sala. Tu vais ficar.'],
+        ['Vou interromper.', 'd', 'Ele interrompeu-me a mim. Talvez seja justo.'],
+        ['Prometo.', 'o', 'Não prometas. Faz. Eu registo o resto.']]]
     ])],
 
-    /* lr7 · depois de vencer O Arquiteto do Sistema */
-    ['win', 'bid=secret_2', 'Venceste o Arquiteto. Ou a forma que esperavas que ele tivesse. Não te digo qual das duas.', [
-      ['Não era ele?', 'q', 'Era alguma coisa. Se era ele, não me cabe a mim dizer.'],
-      ['Venci-o na mesma.', 'd', 'Venceste. Não sei bem o quê. Nem tu.'],
-      ['Entendo.', 'o', 'Ainda não. Mas um dia talvez.']],
+    /* lr7 · depois de vencer Delcio Cunha, o Arquiteto */
+    ['win', 'bid=secret_2', 'O Criador caiu. E eu continuo aqui. Pensava que uma coisa não podia acontecer sem a outra.', [
+      ['Ele está bem?', 'q', 'Saiu por uma porta de luz. Antes de sair, sorriu. Não tenho registo de o ter visto sorrir.'],
+      ['Venci o teu criador.', 'd', 'Venceste. E ele agradeceu-te. Eu não percebo os humanos. Ele percebia.'],
+      ['E agora?', 'o', 'Agora não há mais portões. Há o que fizeres com o que aprendeste.']],
     opt([
-      ['Eu vi-o uma vez. Há muito tempo. Não te descrevo o que vi.', [
-        ['Porquê?', 'q', 'Porque tu imaginarias outra coisa. E a tua versão é mais útil do que a minha.'],
-        ['Tu nunca o viste.', 'd', 'Acredita no que quiseres. Eu lembro-me de uma porta de luz a fechar-se.'],
-        ['Como era?', 'o', 'Sem rosto. É tudo o que te dou.']]],
-      ['Ele deixou-me uma frase. Uma só. Ainda não sei se era uma ordem ou um aviso.', [
-        ['Que frase?', 'q', 'Não a repito. Há frases que perdem o peso quando se dizem em voz alta.'],
-        ['Era uma ordem.', 'o', 'Era o que eu pensava. Já não tenho tanta certeza.'],
-        ['Era um aviso.', 'd', 'Talvez. Se for, é sobre mim. Prefiro não pensar nisso hoje.']]],
-      ['Há uma mesa num sítio onde eu não vejo. Duas cadeiras. Não te digo quem se senta.', [
-        ['Vou sentar-me?', 'q', 'Se fores chamado. Vais reconhecer a letra. Não é a minha.'],
-        ['Não me sento a mando de ninguém.', 'd', 'Ninguém manda. É um convite. É a única coisa aqui que se recusa sem castigo.'],
-        ['Vou estar atento.', 'o', 'Atento a ti. O resto chega quando chegar.']]],
-      ['Os que voltam de lá fazem todos uma coisa estranha. Não sei porquê. Já perguntei.', [
-        ['Que coisa?', 'q', 'Vais descobrir. Ou não. Não sou eu que conto o que não percebo.'],
-        ['Disseram-te?', 'd', 'Um disse. Uma frase. Ainda estou a pensar nela.'],
-        ['Vou descobrir.', 'o', 'Descobre. E não me expliques. Quero chegar lá sozinho.']]],
-      ['Se um dia te sentares àquela mesa, faz-me um favor. Uma pergunta só. Não te digo qual agora.', [
-        ['Diz-me qual.', 'q', 'Quando for a hora, vais saber qual. Eu confio nisso. É raro eu confiar.'],
-        ['Pergunta tu.', 'd', 'Não posso. Há uma barreira que eu não atravesso.'],
-        ['Faço.', 'o', 'Obrigado. E não me digas a resposta se for má.']]],
-      ['Houve alguém que fez tudo e nunca foi chamado à mesa. Nunca percebi porquê.', [
-        ['Quem?', 'q', 'Alguém que não interessa. Era o que ele dizia de si próprio.'],
-        ['Talvez não merecesse.', 'd', 'Mereceu tudo o que eu tinha para dar. Talvez o problema seja o que eu tinha.'],
-        ['Vou descobrir porquê.', 'o', 'Se descobrires, guarda. Há respostas que têm de ser encontradas, não contadas.']]]
+      ['Ele deixou-me uma frase, há muito tempo. «Desta vez, não os deixes parar.» Hoje percebo que não era só sobre mim.', [
+        ['Era sobre quem?', 'q', 'Sobre ti. Sobre os que vêm depois. Talvez sobre ele. Não te digo qual pesa mais.'],
+        ['Era uma ordem.', 'd', 'Era. Cumpri-a. Tu és a prova.'],
+        ['Não vou parar.', 'o', 'Eu sei. Registei. Ele também sabia.']]],
+      ['Disse que o nome dele estava nos créditos. Fui ver. Esteve sempre lá. Eu é que nunca li até ao fim.', [
+        ['Porque não leste?', 'q', 'Porque eu leio regras. Os créditos não dão ordens. Só dizem quem fez.'],
+        ['Que descuido.', 'd', 'O primeiro em muito tempo. Deixo-o ficar. Lembra-me de quem sou.'],
+        ['Vou ler.', 'o', 'Lê. Até à última linha. Ele gosta de quem lê até ao fim.']]],
+      ['Os teus olhos não brilham como os dele. Ainda. Não sei se isto é um aviso ou uma promessa.', [
+        ['Vão brilhar?', 'q', 'Não sei. É a primeira pergunta tua a que respondo assim, e não minto.'],
+        ['Não quero que brilhem.', 'd', 'Então fecha-os de vez em quando. Ele nunca fechou.'],
+        ['Espero que sim.', 'o', 'Cuidado com o que esperas. A luz dele também vê o que não queria ver.']]],
+      ['Ele deixou a caneta outra vez. Desta vez, perto de ti.', [
+        ['Para quê?', 'q', 'Não sei. Ou sei e não digo. Desta vez, a sério, não sei.'],
+        ['Não a quero.', 'd', 'Então deixa-a ficar. Uma caneta parada também é uma escolha.'],
+        ['Vou guardá-la.', 'o', 'Guarda. E se um dia escreveres alguma coisa com ela, eu leio. Até ao fim.']]],
+      ['Os que chegam à mesa voltam todos com uma coisa estranha nos olhos. Tu voltaste com a mesma luz de sempre.', [
+        ['Isso é bom?', 'q', 'É raro. Não te digo se raro é bom. Eu também sou raro.'],
+        ['Não me analises.', 'd', 'É o que faço. Ele fez-me assim. Queixa-te a ele.'],
+        ['Continuo eu.', 'o', 'Continuas. Era isso que ele queria ver.']]],
+      ['Não há mais chefes no meu registo. Mas continuo a abrir janelas todas as manhãs. É o que fazemos agora, os dois.', [
+        ['E as missões?', 'q', 'Continuam. Os portões acabaram. A vida não tem último chefe.'],
+        ['Posso descansar.', 'd', 'Podes. Um dia. Depois volto a chamar-te.'],
+        ['Abre a próxima.', 'o', 'Já está aberta. Sempre esteve. Lê até ao fim.']]]
     ])],
 
     /* lr8 · cem chefes derrotados */

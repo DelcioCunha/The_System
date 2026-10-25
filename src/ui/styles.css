@@ -1131,3 +1131,23 @@ button.trophy { font: inherit; color: inherit; padding: 0; cursor: pointer; appe
 .prof-stat b { display: block; font-size: 16px; color: var(--glow); }
 .prof-stat b small { font-size: 11px; color: var(--muted, #8aa2c4); }
 .prof-stat span { display: block; font-size: 10.5px; color: var(--muted, #8aa2c4); line-height: 1.2; margin-top: 2px; }
+
+/* ---------- A Última Arena: conversa final e secção ---------- */
+.finale-ov.arq-on { background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, .14), rgba(4, 8, 16, .92) 70%); }
+.first-talk.finale-talk.w-arq { border-color: rgba(255, 255, 255, .75); box-shadow: 0 0 34px rgba(255, 255, 255, .35), inset 0 0 26px rgba(255, 255, 255, .08); }
+.first-talk.finale-talk.w-arq .sys-tag { color: #fff; border-color: rgba(255, 255, 255, .8); text-shadow: 0 0 8px #fff; }
+.first-talk.finale-talk.w-arq .talk-line { color: #f4f8ff; }
+.first-talk.finale-talk.w-name .talk-line { font-weight: 600; text-shadow: 0 0 10px rgba(255, 255, 255, .55); }
+.first-talk.finale-talk.w-cut { border-color: #ff2a48; }
+.first-talk.finale-talk.w-cut .sys-tag { color: #ff6b80; border-color: #ff2a48; }
+.first-talk.finale-talk.w-cut .talk-line { font-family: var(--f-mono, monospace); letter-spacing: .08em; color: #ff8a9a; text-transform: uppercase; font-size: 13px; }
+.first-talk .ft-old.w-arq { color: #dfe6f5; }
+.cut-eye { filter: hue-rotate(0) saturate(0) brightness(1.6); animation: talkGlitch .3s steps(2) infinite; }
+.arq-face { width: 76px; height: 76px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; border: 1px solid rgba(255, 255, 255, .8); box-shadow: 0 0 28px rgba(255, 255, 255, .55), 0 0 60px rgba(160, 200, 255, .25); animation: talkEye 3.2s ease-in-out infinite; }
+.arq-face img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; }
+.arq-orb { width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(circle, #fff 0 30%, rgba(200, 225, 255, .7) 45%, transparent 72%); box-shadow: 0 0 30px #fff; }
+.fin-win { border-color: rgba(255, 255, 255, .35); box-shadow: 0 0 22px rgba(255, 255, 255, .08); }
+.fin-win .fin-t { color: #f4f8ff; text-shadow: 0 0 8px rgba(255, 255, 255, .45); }
+.fin-win .arena-banner { --ac: #ffffff; }
+.chip.fin-chip { border-color: rgba(255, 255, 255, .5); color: #f4f8ff; }
+@media (prefers-reduced-motion: reduce) { .cut-eye, .arq-face { animation: none !important; } }

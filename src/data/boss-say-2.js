@@ -113,10 +113,10 @@
     b100: [['O Soberano do Vazio caiu. Fico em silêncio um instante.', 'O último trono está vazio outra vez. Não te sentes nele.', 'Venceste o fim. O olho dele apagou-se. O meu continua aberto.'],
       ['O Soberano viu-te cair. Ele vê tudo. Já não mede nada.', 'Perdeste para o fim de tudo. Ainda não é o teu fim.', 'O trono continua ocupado. Volta quando estiveres pronto para o esvaziar.']],
     /* chefes secretos */
-    secret_1: [['O Guardião caiu e disse-te: abre com cuidado. Ouve-o.', 'Venceste quem guarda uma chave há muito tempo. A chave agora é tua.', 'O Guardião do Portão Oculto descansou. Pela primeira vez em muito tempo.'],
-      ['O Guardião não te deixou passar. Ainda não mereces a chave.', 'Perdeste para um amigo leal de alguém. A lealdade bate forte.', 'O portão continua fechado. Ele continua de pé.']],
-    secret_2: [['Venceste a forma que esperavas ver. A conversa vem depois.', 'O Arquiteto do Sistema caiu. Não era ele. Era a tua pergunta.', 'Nível 120. Ninguém sobe tanto por acaso. Senta-te quando te chamarem.'],
-      ['A tua pergunta venceu-te.', 'Perdeste para a ideia que tens do criador. Muda a ideia.', 'O Arquiteto ganhou. Ele escreveu as regras. Volta quando as souberes melhor.']],
+    secret_1: [['Venceste-me. Na forma em que eu não tinha regras a cumprir. Registo isto devagar.', 'O Sistema caiu às mãos de um Jogador. Escrevo a frase e ela continua estranha.', 'Núcleo estável. Orgulho: sem registo. Mas há qualquer coisa parecida.'],
+      ['Caíste diante de mim sem as regras a proteger-te. Agora sabes o que elas faziam por ti.', 'A minha forma suprema venceu. Não comemoro. Espero que voltes.', 'Perdeste para a voz que te fez crescer. Volta e mostra-me que cresceste o suficiente.']],
+    secret_2: [['O Criador caiu. E eu continuo aqui. Pensava que uma coisa não acontecia sem a outra.', 'Delcio Cunha sorriu quando caiu. Não tenho registo de o ter visto sorrir antes.', 'Venceste quem escreveu as regras. Não há portão depois deste. Há o que fizeres com isso.'],
+      ['O Arquiteto venceu-te. Ele escreve o chão que pisas. Aprende a ler.', 'Perdeste para quem te deu o caminho. Ele não se riu. Esperou. Ainda espera.', 'Os olhos dele apagaram-se por um instante quando caíste. Acho que foi pena. Volta.']],
     /* Coliseu · Campeões */
     ar1: [['Kaelthar caiu. Por agora. O machado volta sempre.', 'Venceste a mão que cobrava por mim. Não lhe peças desculpa.', 'O Carrasco perdeu. Duas mil cento e catorze penalidades depois.'],
       ['Kaelthar cobrou-te. Ele gosta de cobrar.', 'Perdeste para o homem mais justo que conheci. A justiça dele já não é justa.', 'O Carrasco do Eclipse ganhou. Paga e volta.']],

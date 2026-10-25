@@ -598,15 +598,59 @@ test('fugir guarda a batalha como fuga e o chefe continua vivo', () => {
   assert.strictEqual(E.state.battle.over, 'fled');
   assert.ok(!E.state.defeated.b60);
 });
-test('chefe secreto só aparece com o mapa', () => {
+test('A Última Arena: só abre depois de todos os chefes e arenas, com a conversa final, e o Arquiteto depois do Sistema', () => {
   const { S } = boot();
   at(S, 2026, 10, 14, 9);
   const E = S.engine, C = S.combat;
-  makeHero(S, 'guerreiro', 10);
+  makeHero(S, 'guerreiro', 100);
+  const st = E.state;
   assert.ok(!C.start('secret_1').ok);
-  E.addItem(E.state, 'sx_mapa');
+  // o mapa mostra o progresso e não se gasta
+  E.addItem(st, 'sx_mapa');
   assert.ok(E.useItem('sx_mapa').ok);
+  assert.strictEqual(E.count(st, 'sx_mapa'), 1);
+  // todos os portões, menos o último Campeão
+  S.BOSSES.forEach((b) => { st.defeated[b.id] = 1; });
+  S.premium.ensure(st);
+  S.ARENA_BOSSES.slice(0, 9).forEach((b) => { st.arena.wins[b.id] = 1; });
+  assert.ok(!C.checkFinale(st) && !st.finale);
+  st.arena.wins.ar10 = 1;
+  E.takeEvents();
+  assert.ok(C.checkFinale(st));
+  assert.ok(E.takeEvents().some((e) => e.type === 'finale'));
+  assert.ok(!C.bossUnlocked(st, S.BOSS_BY_ID.secret_1), 'antes da conversa continua oculto');
+  const sc = S.finaleScript(st);
+  assert.ok(sc.some((x) => x.who === 'arq' && /Delcio Cunha/.test(x.s) && x.name), 'o Arquiteto diz o nome');
+  assert.ok(sc.some((x) => x.who === 'cut'), 'o registo é interrompido');
+  assert.ok(sc.every((x) => !/undefined|NaN|\{/.test((x.s || '') + (x.ask || ''))));
+  st.gender = 'f'; assert.ok(S.finaleScript(st).some((x) => /antes de escolheres o teu/.test(x.s || '')));
+  assert.ok(E.finaleSeen().first);
+  assert.ok(C.bossUnlocked(st, S.BOSS_BY_ID.secret_1));
+  assert.ok(!C.bossUnlocked(st, S.BOSS_BY_ID.secret_2), 'o Arquiteto só depois do Sistema');
+  st.defeated.secret_1 = 1;
+  assert.ok(C.bossUnlocked(st, S.BOSS_BY_ID.secret_2));
+  assert.ok(C.start('secret_2').ok);
+  // duas formas: vencer a primeira dá uma barra nova; se perderes, voltas já à segunda forma
+  C.close && E.state.battle && (E.state.battle.over = 'fled'); st.battle = null;
+  delete st.defeated.secret_1; st.hp = null;
   assert.ok(C.start('secret_1').ok);
+  const bt = st.battle, full = bt.b.maxHp;
+  bt.b.hp = 1; bt.b.def = 0;
+  C.act('attack');
+  assert.ok(!st.defeated.secret_1 && st.battle && !st.battle.over, 'a primeira forma cai e a batalha continua');
+  assert.strictEqual(st.battle.phase, 2);
+  assert.ok(st.battle.b.hp > full * 0.9 && st.forms.secret_1, 'segunda forma com a vida toda');
+  assert.ok(st.battle.log.some((l) => /SEGUNDA FORMA: O Sistema, Núcleo Exposto/.test(l.t || l.text || l[1] || JSON.stringify(l))));
+  st.battle = null; st.hp = null;
+  assert.ok(C.start('secret_1').ok);
+  assert.strictEqual(st.battle.phase, 2, 'recomeça na segunda forma');
+  st.battle.b.hp = 1; st.battle.b.def = 0; C.act('attack');
+  assert.ok(st.defeated.secret_1, 'a segunda forma cai: chefe vencido');
+  st.battle = null;
+  // quem venceu os secretos antigos sem ter chegado ao fim volta a enfrentá-los
+  const old = JSON.parse(JSON.stringify(st)); delete old.finale; old.defeated = { secret_1: 5, b1: 1 }; old.trophies = { secret_1: 5 }; old.battle = null;
+  const m = E.migrate(old);
+  assert.ok(!m.defeated.secret_1 && !m.trophies.secret_1 && m.oldSecrets.secret_1 === 5);
 });
 
 console.log('Narrativa');

@@ -115,6 +115,7 @@
     var evs = E.takeEvents();
     evs.forEach(function (ev) {
       if (ev.type === 'note') { ui.notes.push(ev.text); return; }
+      if (ev.type === 'finale') return; // a conversa final entra pelo render (finaleTry)
       ev._id = ++ui.popSeq; ui.popups.push(ev);
     });
     talkFromEvents(evs);
@@ -1402,7 +1403,7 @@
       '<p class="small muted" style="margin:0">Cada chefe derrotado deixa um troféu. Junta os 10 troféus de um portão para ganhares um bónus permanente.</p>' +
       '<div class="bar xp" style="margin-top:10px"><i style="width:' + (have / total * 100).toFixed(1) + '%"></i></div></section>';
     var gates = S.GATES.map(function (g) { return { id: g.id, ico: uiIcon('gate_' + g.id, g.icon), name: g.name, color: g.color, bosses: S.BOSSES.filter(function (b) { return b.gate === g.id; }) }; });
-    if (S.SECRET_BOSSES.some(function (b) { return st.trophies[b.id] || S.combat.bossUnlocked(st, b); })) gates.push({ id: 0, ico: uiIcon('gate_0', '🗝️'), name: 'Portões Ocultos', color: 'var(--gold)', bosses: S.SECRET_BOSSES });
+    if (S.SECRET_BOSSES.some(function (b) { return st.trophies[b.id] || S.combat.bossUnlocked(st, b); })) gates.push({ id: 0, ico: uiIcon('gate_0', '👁️'), name: 'A Última Arena', color: '#f4f8ff', bosses: S.SECRET_BOSSES });
     if (S.ARENA_BOSSES.some(function (b) { return st.trophies[b.id] || (st.arena && st.arena.unlocked[b.id]); })) {
       h += '<section class="win prem-win"><div class="win-h"><span class="prem-t"><i class="crys-ico"></i> Coliseu dos Condenados</span><small>' + S.ARENA_BOSSES.filter(function (b) { return st.trophies[b.id]; }).length + '/10</small></div><div class="trophy-grid">' +
         S.ARENA_BOSSES.map(function (b) {
@@ -1772,6 +1773,23 @@
       (cur < max && !pots ? '<button class="btn sm gold" style="margin-top:8px" data-a="go-potions">Comprar poções</button>' : '') + '</section>';
   }
   /* Combate → Arenas: igual aos portões gratuitos (10 combates por arena: 9 sub-chefes + o Campeão) */
+  function finalArenaHtml(st) {
+    var list = S.SECRET_BOSSES, art = S.ARENA_ART && S.ARENA_ART.final;
+    var killed = list.filter(function (b) { return st.defeated[b.id]; }).length;
+    var h = '<section class="win fin-win"><div class="win-h"><span class="fin-t">' + uiIcon('gate_0', '', 'gate-head') + 'A Última Arena</span><small>' + killed + '/' + list.length + ' derrotados</small></div>' +
+      (art ? '<div class="arena-banner" style="--av-art:url(\'' + art + '\')"></div>' : '') +
+      '<p class="hint" style="margin-top:0">' + (killed === 2 ? 'Não há portão depois deste. O caminho que sobra é o teu.' : 'Primeiro, o Sistema na sua forma suprema. Depois, quem o criou. Três fases cada um.') + '</p>' +
+      '<div class="boss-grid">' + list.map(function (b) {
+        var dead = st.defeated[b.id], open = C.bossUnlocked(st, b), dg = C.danger(st, b), art2 = S.BOSS_ART && S.BOSS_ART[b.id];
+        return '<button class="boss-tile card king fin-tile' + (dead ? ' done' : '') + (open ? '' : ' locked') + '"' + (open || dead ? ' data-a="boss" data-id="' + b.id + '"' : ' disabled') + ' style="--dg:' + (dead ? 'var(--good)' : open ? dg.color : 'var(--muted)') + '">' +
+          (art2 ? '<img src="' + art2 + '" alt="" loading="lazy">' : '<span class="bt-ico">' + b.icon + '</span>') +
+          '<span class="bt-tl"><span class="bt-lv mono">' + b.level + '</span></span><span class="bt-crown">' + uiIcon('ui_king', '♛', 'crown-img') + '</span>' +
+          (open || dead ? '' : '<span class="bt-lock">' + uiIcon('ic_lock', '🔒', 'bt-lock-img') + '</span>') +
+          '<span class="bt-info"><span class="bt-name">' + esc(b.name.split(',')[0]) + '</span><span class="bt-dg">' + (dead ? 'Derrotado' : open ? dg.label : 'Vence o Sistema primeiro') + '</span></span></button>';
+      }).join('') + '</div>' +
+      '<button class="btn ghost block" style="margin-top:12px" data-a="finale-replay">' + uiIcon('ui_eye', '👁️', 'btn-ico') + ' Rever a conversa final</button></section>';
+    return h;
+  }
   function arenaCombatHtml(st) {
     S.premium.ensure(st);
     var n = ui.arenaN || (function () { for (var i = 1; i <= 10; i++) if (st.arena.unlocked['ar' + i] && S.premium.arenaProgress(st, i).won < 10) return i; return 1; })();
@@ -1809,11 +1827,12 @@
     var h = hpHtml + '<div class="chips" style="margin-top:14px">' + gates.map(function (g) {
       var k = S.BOSSES.filter(function (b) { return b.gate === g.id && st.defeated[b.id]; }).length;
       return '<button class="chip' + (ui.gate === g.id ? ' on' : '') + '" data-a="gate" data-g="' + g.id + '">' + uiIcon('gate_' + g.id, g.icon) + ' ' + g.id + (k === 10 ? ' ✓' : '') + '</button>';
-    }).join('') + (secretOn ? '<button class="chip' + (ui.gate === 0 ? ' on' : '') + '" data-a="gate" data-g="0">' + uiIcon('gate_0', '🗝️') + ' Oculto</button>' : '') +
+    }).join('') + (secretOn ? '<button class="chip fin-chip' + (ui.gate === 0 ? ' on' : '') + '" data-a="gate" data-g="0">' + uiIcon('gate_0', '👁️') + ' Última</button>' : '') +
       '<button class="chip prem-chip' + (ui.gate === 'arena' ? ' on' : '') + '" data-a="gate" data-g="arena"><i class="crys-ico"></i> Arenas</button></div>';
     if (ui.gate === 'arena') return h + arenaCombatHtml(st);
     var list, gname, gcolor;
-    if (ui.gate === 0) { list = S.SECRET_BOSSES.filter(function (b) { return C.bossUnlocked(st, b); }); gname = 'Portões Ocultos'; gcolor = 'var(--gold)'; }
+    if (ui.gate === 0 && !secretOn) ui.gate = 1;
+    if (ui.gate === 0) return h + finalArenaHtml(st);
     else { var g = S.GATES[ui.gate - 1]; list = S.BOSSES.filter(function (b) { return b.gate === g.id; }); gname = g.name; gcolor = g.color; }
     var killed = list.filter(function (b) { return st.defeated[b.id]; }).length;
     h += '<section class="win"><div class="win-h"><span style="color:' + gcolor + '">' + uiIcon('gate_' + ui.gate, '', 'gate-head') + esc(gname) + '</span><small>' + killed + '/' + list.length + ' derrotados</small></div>' +
@@ -1847,7 +1866,7 @@
     return '<div class="sheet-h"><h2>' + esc(b.name) + '</h2><button class="btn sm ghost" data-a="close">Fechar</button></div>' +
       (S.BOSS_ART && S.BOSS_ART[b.id] ? '<div class="boss-hero">' + bossArt(b, 'boss-hero-img') + '</div>' : '') +
       '<div class="row" style="align-items:flex-start">' + (S.BOSS_ART && S.BOSS_ART[b.id] ? '' : '<div class="ico big">' + b.icon + '</div>') + '<div class="grow"><div class="meta"><span class="mono">Nível ' + b.level + '</span><span>' + S.ARCHETYPES[b.arch].name + '</span>' +
-      rankBadge(b) + (b.champion ? '<span class="tag prem-tag">Campeão da Arena: 3 fases</span>' : b.lieutenant ? '<span class="tag prem-tag">2 fases</span>' : b.guardian ? '<span class="tag prem-tag">Guardião ' + b.slot + ' de 9</span>' : (b.king ? '<span class="tag" style="color:var(--gold)">Rei do portão: 2 fases</span>' : '')) + '</div>' +
+      rankBadge(b) + (b.champion ? '<span class="tag prem-tag">Campeão da Arena: 3 fases</span>' : b.lieutenant ? '<span class="tag prem-tag">2 fases</span>' : b.guardian ? '<span class="tag prem-tag">Guardião ' + b.slot + ' de 9</span>' : (b.form2 ? '<span class="tag" style="color:#f4f8ff">2 formas, cada uma com a sua vida</span>' + (st.forms && st.forms[b.id] && !dead ? '<span class="tag" style="color:var(--good)">1.ª forma vencida: começas em ' + esc(b.form2.name.split(',')[0] === b.name.split(',')[0] ? b.form2.name.split(', ')[1] || b.form2.name : b.form2.name) + '</span>' : '') : b.king ? '<span class="tag" style="color:var(--gold)">Rei do portão: 2 fases</span>' : '')) + '</div>' +
       (b.lore ? '<p class="small muted" style="font-style:italic;margin:6px 0 0">«' + esc(b.lore) + '»</p>' : '') + '</div></div>' +
       '<div class="chronicle"><div class="info-h">Crónica</div>' + loreHtml(S.lore.bossText(b), 'boss-lore') +
       (S.lore.gateText(b) ? '<details class="gate-lore"><summary>' + (b.premium ? 'Sobre o Coliseu dos Condenados' : b.gate ? 'Sobre o portão: ' + esc((S.GATES[b.gate - 1] || {}).name || '') : 'Sobre os portões ocultos') + '</summary>' + loreHtml(S.lore.gateText(b)) + '</details>' : '') + '</div>' +
@@ -1886,12 +1905,12 @@
     if (!lines) return '';
     var txt = null, cls = '';
     if (bt.over === 'win') { txt = lines[1]; cls = ' last'; }
-    else if (!bt.over && bt.turn <= 2) txt = lines[0];
+    else if (!bt.over && bt.turn <= 2) txt = b.form2 && bt.phase >= 2 ? b.form2.say : lines[0];
     if (!txt) return '';
     var key = bt.bossId + (bt.over === 'win' ? ':last' : ':intro');
     var fresh = ui.lastSpeech !== key;
     ui.lastSpeech = key;
-    return '<div class="speech' + cls + (fresh ? ' fresh' : '') + '"><span class="speech-name">' + esc(b.name) + '</span><span class="speech-txt">«' + esc(txt) + '»</span></div>';
+    return '<div class="speech' + cls + (fresh ? ' fresh' : '') + '"><span class="speech-name">' + esc(b.form2 && bt.phase >= 2 ? b.form2.name : b.name) + '</span><span class="speech-txt">«' + esc(txt) + '»</span></div>';
   }
   function battleHtml(st) {
     var bt = st.battle, b = S.BOSS_BY_ID[bt.bossId], p = bt.p;
@@ -1900,7 +1919,7 @@
     var h = '<div class="battle">';
     if (bt.spar) auraC = 'rgba(123,77,255,.6)';
     var shSrc = bt.spar && S.SHADOW_ART && S.SHADOW_ART[b.id];
-    h += '<section class="win danger boss-panel phase-' + bt.phase + (bt.spar ? ' spar-panel' : '') + '"><div class="win-h"><span>' + esc(bt.spar ? S.shadows.name(st, b.id) : b.name) + (bt.spar ? '' : ' ' + rankBadge(b, 'rk-sm')) + '</span><small>' + (bt.spar ? 'Treino · ' : '') + 'Nv ' + b.level + ' · turno ' + bt.turn + (bt.phase > 1 ? ' · fase ' + bt.phase : '') + '</small></div>' +
+    h += '<section class="win danger boss-panel phase-' + bt.phase + (bt.spar ? ' spar-panel' : '') + '"><div class="win-h"><span>' + esc(bt.spar ? S.shadows.name(st, b.id) : (b.form2 && bt.phase >= 2 ? b.form2.name : b.name)) + (bt.spar ? '' : ' ' + rankBadge(b, 'rk-sm')) + '</span><small>' + (bt.spar ? 'Treino · ' : '') + 'Nv ' + b.level + ' · turno ' + bt.turn + (bt.phase > 1 ? ' · fase ' + bt.phase : '') + '</small></div>' +
       '<div class="boss-wrap"><div class="boss-aura" style="--c:' + auraC + '"></div>' + (bt.spar ? (shSrc ? '<div class="boss-ico' + bossCls + ' has-art sh-boss" id="boss-ico"><img src="' + shSrc + '" alt=""></div>' : '<div class="boss-ico' + bossCls + ' has-art sh-boss shade-boss" id="boss-ico">' + (S.BOSS_ART && S.BOSS_ART[b.id] ? '<img src="' + S.BOSS_ART[b.id] + '" alt="">' : b.icon) + '</div>') : bossArt(b, 'boss-ico' + bossCls, 'boss-ico', bt.phase)) + '</div>' + bossSpeech(bt, b) +
       '<div style="margin-top:8px">' + bar('boss', bt.b.hp, bt.b.maxHp, 'Vida' + (bt.b.shield ? ' · escudo ' + fmt(bt.b.shield) : ''), 'boss-' + bt.bossId + '-' + bt.started) + '</div>' +
       '<div class="statuses" style="margin-top:6px">' + statusTags(bt.b.st, true) + (bt.b.stunned ? '<span class="tag good">atordoado</span>' : '') + '</div></section>';
@@ -2130,6 +2149,14 @@
     (ids || []).forEach(function (id) { var it = S.ITEMS[id]; if (it && S.RARITY[it.rarity].order > S.RARITY[best].order) best = it.rarity; });
     return best;
   }
+  /* ---------- A Última Arena: a conversa final (Sistema + Arquiteto) ---------- */
+  function finalePop() { return { _id: ++ui.popSeq, type: 'first', finale: true, script: S.finaleScript(E.state), i: 0, log: [], typed: -1 }; }
+  function finaleTry(st) {
+    if (!st.finale || st.finale.seen || (st.battle && !st.battle.over) || inDuel()) return;
+    if (ui.popups.some(function (p) { return p.finale; })) return;
+    ui.popups.push(finalePop());
+    setTimeout(firstType, 60);
+  }
   /* ---------- primeira conversa com o Sistema (só ao criar o Jogador) ---------- */
   function firstScript(st) {
     var F0 = S.FIRST_TALK, FP = S.FIRST_TALK_PLUS || {}, pick = function (a) { return a[Math.floor(Math.random() * a.length)]; };
@@ -2144,16 +2171,22 @@
   }
   function firstHtml(ev, fresh) {
     var step = ev.script[ev.i], typed = ev.typed === ev.i || !FX.full(), last = ev.i === ev.script.length - 1;
-    var hist = ev.log.slice(-3).map(function (h) { return h.me ? '<p class="talk-me">' + esc(E.state.name) + ': «' + esc(h.me) + '»</p>' : '<p class="ft-old">' + esc(h.s) + '</p>'; }).join('');
-    var txt = step.ask || step.s;
-    var body = '<div class="talk-eye">' + uiIcon('ui_eye', '<span class="eye-fallback big"></span>', 'eye-big') + '</div>' +
+    var hist = ev.log.slice(-3).map(function (h) { return h.me ? '<p class="talk-me">' + esc(E.state.name) + ': «' + esc(h.me) + '»</p>' : '<p class="ft-old' + (h.who ? ' w-' + h.who : '') + '">' + esc(h.s) + '</p>'; }).join('');
+    var txt = step.ask || step.s, who = step.who || 'sys';
+    if (step.name) ev.named = true;
+    var arqArt = S.BOSS_ART && S.BOSS_ART.secret_2;
+    var face = who === 'arq' ? '<div class="arq-face' + (arqArt ? ' has-art' : '') + '">' + (arqArt ? '<img src="' + arqArt + '" alt="">' : '<span class="arq-orb"></span>') + '</div>'
+      : who === 'cut' ? '<span class="eye-fallback big cut-eye"></span>' : uiIcon('ui_eye', '<span class="eye-fallback big"></span>', 'eye-big');
+    var tagTxt = who === 'arq' ? (ev.named ? 'DELCIO CUNHA · O ARQUITETO' : '???') : who === 'cut' ? 'ERRO' : 'SISTEMA';
+    var body = '<div class="talk-eye">' + face + '</div>' +
       '<div class="ft-hist">' + hist + '</div>' +
       '<p class="talk-line" id="talk-line" data-full="' + esc(txt) + '">' + (typed ? esc(txt) : '') + '</p>';
     if (step.ask) body += '<div class="talk-ch' + (typed ? '' : ' wait') + '" id="talk-ch">' + step.opts.map(function (c, i) { return '<button class="btn talk-opt" data-a="first-pick" data-i="' + i + '" style="--k:' + i + '"><span class="talk-n">' + (i + 1) + '</span>' + esc(c.t) + '</button>'; }).join('') + '</div>';
-    else body += '<div class="talk-ch' + (typed ? '' : ' wait') + '" id="talk-ch"><button class="btn pri block talk-opt ft-next" data-a="first-next" style="--k:0">' + (last ? 'Começar' : 'Continuar') + '</button></div>';
+    else body += '<div class="talk-ch' + (typed ? '' : ' wait') + '" id="talk-ch"><button class="btn pri block talk-opt ft-next" data-a="first-next" style="--k:0">' + (last ? (ev.finale ? 'Entrar na Última Arena' : 'Começar') : 'Continuar') + '</button></div>';
     body += '<div class="ft-foot"><span class="ft-dots">' + ev.script.map(function (x, i) { return '<i class="' + (i < ev.i ? 'on' : i === ev.i ? 'cur' : '') + '"></i>'; }).join('') + '</span>' +
       (last ? '' : '<button class="talk-skip" data-a="first-skip">Saltar</button>') + '</div>';
-    return '<div class="overlay sys-pop' + (fresh ? ' fresh' : '') + '"><div class="rays blue"></div><div class="sys-box talk first-talk' + (fresh ? ' fresh' : '') + '" id="sys-box" role="alertdialog" data-type="first"><span class="sys-tag">SISTEMA</span>' + body + '</div></div>';
+    var fin = ev.finale ? ' finale-talk w-' + who + (step.name ? ' w-name' : '') : '';
+    return '<div class="overlay sys-pop' + (fresh ? ' fresh' : '') + (ev.finale ? ' finale-ov' + (who === 'arq' ? ' arq-on' : '') : '') + '"><div class="rays ' + (who === 'arq' ? 'white' : 'blue') + '"></div><div class="sys-box talk first-talk' + fin + (fresh ? ' fresh' : '') + '" id="sys-box" role="alertdialog" data-type="first"><span class="sys-tag">' + tagTxt + '</span>' + body + '</div></div>';
   }
   function firstType() {
     var ev = ui.popups[0];
@@ -2375,7 +2408,13 @@
   function musicSync() {
     var MU = S.music; if (!MU) return;
     var st = E.state, bt = st && st.battle;
-    if (bt && !bt.over && !bt.spar && MU.has(bt.bossId)) { ui.musicPreview = null; return MU.play(bt.bossId, { loop: true }); }
+    if (bt && !bt.over && !bt.spar && MU.has(bt.bossId)) {
+      ui.musicPreview = null;
+      // a segunda forma (ou fase) tem a sua própria música, se existir: <id>_f2
+      var f2 = bt.bossId + '_f2';
+      if (MU.preload && MU.has(f2)) MU.preload(f2);
+      return MU.play(bt.phase >= 2 && MU.has(f2) ? f2 : bt.bossId, { loop: true });
+    }
     if (ui.modal && ui.modal.type === 'boss' && MU.has(ui.modal.id)) {
       if (ui.musicPreview !== ui.modal) { ui.musicPreview = ui.modal; MU.play(ui.modal.id, { loop: false }); }
       return;
@@ -2417,6 +2456,7 @@
       return;
     }
     ui.banShown = null; ui.banLine = null;
+    finaleTry(st);
     // depois da vitória (e das janelas do Sistema), abre a extração da sombra
     if (ui.ariseId && !ui.popups.length && !ui.modal && Date.now() >= (ui.holdUntil || 0)) { ui.modal = { type: 'arise', id: ui.ariseId }; ui.ariseId = null; sfx('system'); }
     var body = '';
@@ -2543,6 +2583,9 @@
         (function (t0, c) { at(t0, function () { FX.burst(bc.x, bc.y, c, 20, { speed: 4, gravity: -.05 }); }); })(t, DOT_COLOR[dn] || '#ff8a3d');
       } else if (txt.indexOf('💥 A bomba') === 0) {
         (function (t0) { at(t0, function () { sfx('skill', 1.1); FX.attack('impact', bc.x, bc.y, '#ff8a3d', 1, true); FX.shake(2); }); })(t);
+      } else if (txt.indexOf('SEGUNDA FORMA') >= 0) {
+        (function (t0, nm) { at(t0, function () { sfx('awaken'); FX.flash('#ffffff', .55); FX.shake(3); FX.vibrate([120, 60, 240]); FX.banner('SEGUNDA FORMA', nm, 'rgba(255,255,255,.45)', '#f4f8ff'); }); })(t, (txt.match(/FORMA: (.+?) ergue-se/) || [])[1] || '');
+        t += 900;
       } else if (txt.indexOf('FASE') >= 0) {
         (function (t0, full) { at(t0, function () { sfx('phase'); FX.flash('#ff2040', .35); FX.shake(3); FX.vibrate([100, 50, 200]); FX.banner(full ? 'FASE FINAL' : 'FASE 2', 'O chefe libertou o seu poder', 'rgba(255,40,70,.55)', '#ff5a6e'); }); })(t, txt.indexOf('FINAL') >= 0);
         t += 500;
@@ -2984,24 +3027,38 @@
     'first-next': function () {
       var ev = ui.popups[0];
       if (!ev || ev.type !== 'first') return;
-      if (ev.i >= ev.script.length - 1) { ui.popups.shift(); render(); return; }
-      ev.log.push({ s: ev.script[ev.i].s }); ev.i++;
+      if (ev.i >= ev.script.length - 1) {
+        ui.popups.shift();
+        if (ev.finale) { var fr = E.finaleSeen(); if (fr && fr.first) { ui.tab = 'combate'; ui.page = null; ui.gate = 0; sfx('arena_open'); FX.flash('#ffffff', .35); } pullEvents(); }
+        render(); return;
+      }
+      var cur = ev.script[ev.i];
+      ev.log.push({ s: cur.s, who: cur.who }); ev.i++;
       render(); firstType();
+      var nx = ev.script[ev.i];
+      if (ev.finale && nx && FX.full()) {
+        if (nx.who === 'cut') { var bx = document.getElementById('sys-box'); if (bx) bx.classList.add('glitching'); FX.shake(2); FX.flash('#ffffff', .5); sfx('dark'); FX.vibrate([60, 40, 120]); }
+        else if (nx.name) { FX.flash('#ffffff', .4); sfx('awaken'); }
+        else if (nx.who === 'arq' && cur.who !== 'arq') sfx('holy');
+      }
     },
     'first-pick': function (d) {
       var ev = ui.popups[0];
       if (!ev || ev.type !== 'first') return;
       var st = ev.script[ev.i], o = st.opts[+d.i];
-      E.state.firstTalk = { q: st.ask, a: o.t, tag: o.tag };
+      if (ev.finale) { if (E.state.finale) E.state.finale.answer = o.tag; }
+      else E.state.firstTalk = { q: st.ask, a: o.t, tag: o.tag };
       S.storage.write(E.state);
-      ev.log.push({ s: st.ask }); ev.log.push({ me: o.t });
-      ev.script.splice(ev.i + 1, 0, { s: o.r }); ev.i++;
+      ev.log.push({ s: st.ask, who: st.who }); ev.log.push({ me: o.t });
+      ev.script.splice(ev.i + 1, 0, { s: o.r, who: st.who }); ev.i++;
       render(); firstType();
       if (o.tag === 'd' && FX.full()) { var b = document.getElementById('sys-box'); if (b) b.classList.add('glitching'); FX.shake(1); }
     },
+    'finale-replay': function () { if (E.state && E.state.finale && E.state.finale.seen) { ui.popups.push(finalePop()); render(); firstType(); } },
     'first-skip': function () {
       var ev = ui.popups[0];
       if (!ev || ev.type !== 'first') return;
+      if (ev.finale) ev.script.forEach(function (x) { if (x.name) ev.named = true; });
       ev.log = []; ev.i = ev.script.length - 1; ev.typed = -1;
       render(); firstType();
     },
@@ -3649,6 +3706,7 @@
   }
   function talkFromEvents(evs) {
     if (!E.state) return;
+    if (E.state.finale && !E.state.finale.seen) return; // a conversa final tem a palavra
     var bt = E.state.battle;
     for (var i = 0; i < evs.length; i++) {
       var ev = evs[i], r = false;

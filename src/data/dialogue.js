@@ -116,8 +116,8 @@
     b98: ['Envolvo o mundo inteiro. Tu és apenas um grão de areia nele.', 'Solto... o mundo... cuida bem dele...'],
     b99: ['Também eu subi até aqui. Também eu pensei que era diferente.', 'Sê melhor... do que eu fui... caçador...'],
     b100: ['O último. O primeiro. Sou o fim do Sistema. Mostra-me se mereces ser o seu começo.', 'Então... és tu... O Sistema escolheu bem. Senta-te no trono, Jogador... e nunca te esqueças de quem foste.'],
-    // ---------- Portões ocultos ----------
-    secret_1: ['Procuraste o que não devia ser encontrado. Há um preço para isso.', 'A chave... é tua... abre com cuidado...'],
-    secret_2: ['Criei o Sistema. Criei os portões. Criei-te a ti. Chegou a hora de ver se o meu trabalho valeu a pena.', 'Valeu... valeu a pena... A partir de hoje, o Sistema és tu.']
+    // ---------- A Última Arena ----------
+    secret_1: ['Sempre me viste como uma janela. Hoje vês o que está por trás dela. Sem regras. Nem as minhas.', 'Registo... completo... Vai. Ele espera por ti. E eu... vou estar a ver. Como sempre.'],
+    secret_2: ['Fiz o Sistema para que alguém chegasse aqui. Não me poupes. Eu não te vou poupar.', 'Então era isto... ver a obra olhar-me nos olhos. Obrigado, Jogador. A partir daqui, o caminho é teu.']
   };
 })(globalThis.SYS = globalThis.SYS || {});

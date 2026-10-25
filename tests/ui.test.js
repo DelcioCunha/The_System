@@ -218,6 +218,34 @@ step('portão do aparelho: bloqueado, acesso privado e verificação', () => {
   ws.close();
 });
 
+step('A Última Arena: conversa final com o Arquiteto e os dois últimos chefes', () => {
+  const S = w.SYS, st = S.engine.state;
+  st.battle = null;
+  S.BOSSES.forEach((b) => { st.defeated[b.id] = 1; });
+  S.ARENA_BOSSES.forEach((b) => { st.arena.wins[b.id] = 1; });
+  S.combat.checkFinale(st); S.engine.commit('teste');
+  click(w, '[data-a="tab"][data-t="status"]');
+  assert.ok($(w, '.finale-talk'), 'a conversa final aparece');
+  let named = false, cut = false, g = 0;
+  while ($(w, '.finale-talk') && g++ < 60) {
+    if ($(w, '.finale-talk.w-cut')) cut = true;
+    if (/DELCIO CUNHA/.test($(w, '.finale-talk .sys-tag').textContent)) named = true;
+    const opt = $(w, '[data-a="first-pick"]');
+    click(w, opt || '[data-a="first-next"]');
+  }
+  assert.ok(cut && named, 'registo interrompido e nome revelado');
+  assert.ok(st.finale.seen);
+  popAll(w);
+  click(w, '[data-a="tab"][data-t="combate"]');
+  click(w, '[data-a="gate"][data-g="0"]');
+  assert.ok($(w, '.fin-win'), 'secção da Última Arena');
+  assert.ok($(w, '.fin-tile[data-id="secret_1"]') && $(w, '.fin-tile.locked'), 'o Sistema aberto, o Arquiteto selado');
+  click(w, '[data-a="finale-replay"]');
+  assert.ok($(w, '.finale-talk'), 'rever a conversa');
+  click(w, '[data-a="first-skip"]'); click(w, '[data-a="first-next"]');
+  assert.ok(!$(w, '.finale-talk'));
+});
+
 dom.window.close();
 if (errors.length) { console.error('Erros de JavaScript:\n' + errors.join('\n')); process.exit(1); }
 console.log('\n' + steps + ' passos da interface sem erros');

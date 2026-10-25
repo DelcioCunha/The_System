@@ -119,6 +119,7 @@
       } catch (e) { /* ignora */ }
     });
   };
+  M.preload = function (id) { if (M.enabled() && M.has(id) && !cache[id]) load(id); };
   M.stop = function (fade) { token++; if (!M.current && !voices.length) return; M.current = null; M.loop = false; stopAll(fade == null ? 0.6 : fade); };
   M.setVolume = function () { var c = ctx(); if (master && c) { try { master.gain.setValueAtTime(M.volume(), c.currentTime); } catch (e) { /* ignora */ } } };
   M.isPlaying = function (id) { return M.current === id && voices.length > 0; };

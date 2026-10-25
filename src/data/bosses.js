@@ -188,13 +188,19 @@
     S.BOSSES.push(b);
   });
 
+  /* A Última Arena: só aparece depois de vencidos todos os chefes dos portões e todas as arenas do Coliseu.
+     O Sistema na sua forma suprema e, no fim, o seu criador. (Os ids antigos ficam: secret_1 e secret_2) */
   S.SECRET_BOSSES = [
-    { id: 'secret_1', level: 60, gate: 0, name: 'Guardião do Portão Oculto', icon: '🗝️', arch: 'rei',
-      skills: ['heavy', 'shield', 'stun', 'ult', 'heal'], king: true, secret: true,
-      lore: 'Um portão que não aparece em nenhum mapa. Só quem o procura o encontra.', unlock: 'map' },
-    { id: 'secret_2', level: 120, gate: 0, name: 'O Arquiteto do Sistema', icon: '💠', arch: 'rei',
+    { id: 'secret_1', level: 110, gate: 0, name: 'O Sistema, Forma Suprema', icon: '👁️', arch: 'rei',
+      skills: ['apocalypse', 'ult', 'stun', 'weaken', 'shield', 'heal', 'enrage'], king: true, secret: true, special: 'final',
+      lore: 'A voz que te deu todas as ordens, sem as regras que a prendiam. Antes do criador, a criação.', unlock: 'final',
+      form2: { name: 'O Sistema, Núcleo Exposto', icon: '🔴', say: 'Primeira forma: apagada. Não te alegres. O que estava por trás das janelas era isto.' },
+      phaseLines: { 2: 'As janelas partem-se. Por trás delas não há nada para te proteger. Nunca houve.', 3: 'Núcleo exposto. Registo de dano: 3,4%... 12%... continua. Continua, Jogador. Mostra-me até onde.' } },
+    { id: 'secret_2', level: 120, gate: 0, name: 'Delcio Cunha, o Arquiteto', icon: '✒️', arch: 'rei',
       skills: ['apocalypse', 'ult', 'leech', 'weaken', 'shield', 'stun', 'enrage', 'heal'], king: true, secret: true, special: 'final',
-      lore: 'Quem criou o Sistema? Derrota os 100 chefes e descobre.', unlock: 'all100' }
+      lore: 'O criador do Sistema. Nunca esteve nas sombras: esteve sempre presente.', unlock: 'system',
+      form2: { name: 'Delcio Cunha, o Criador Desperto', icon: '✴️', say: 'Muito bem. Agora deixo de te mostrar o mundo. Vou reescrevê-lo à tua frente.' },
+      phaseLines: { 2: 'Vou reescrever o chão que pisas. Não leves a mal: é a única coisa que sei fazer.', 3: 'Os meus olhos já não guardam nada. Olha bem. É isto que um criador vê quando a obra lhe responde.' } }
   ];
 
   S.BOSS_BY_ID = {};

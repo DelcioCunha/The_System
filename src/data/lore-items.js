@@ -218,7 +218,7 @@
     sx_coracao: 'O coração de um dragão que viveu antes dos portões. Ainda bate, devagar, e cada batida fortalece quem o absorver.',
     sx_fenix: 'Uma pena que nunca arrefece. Enquanto estiver na tua bolsa, a morte tem de pedir licença duas vezes.',
     sx_moeda: 'Uma moeda de um império que já não existe. Os colecionadores pagam fortunas por ela.',
-    sx_mapa: 'Um mapa desenhado a sangue, que muda sempre que não está a ser observado. Mostra o caminho para um portão que oficialmente não existe.',
+    sx_mapa: 'Um mapa que não mostra lugares: mostra o que ainda te falta vencer. Quando já não falta nada, a última linha acende-se sozinha. Ninguém sabe quem a desenhou.',
     sx_fragmento: 'Um pedaço do próprio Sistema, frio e luminoso. Sozinho não faz nada. Cinco juntos formam algo que não devia existir nas mãos de um caçador.',
     sx_nucleo: 'O núcleo do Sistema, reconstruído a partir de cinco fragmentos. Ao tocá-lo, sentes as regras do mundo a dobrarem-se à tua volta.',
     sx_lamina: 'Uma lâmina sem nome, sem marca de ferreiro e sem história conhecida. Serve a qualquer mão, e todas as mãos a temem.',

@@ -138,6 +138,12 @@
     });
     if (st.customLeisure && st.customLeisure.length) st.customLeisure = [];
     if (lzN) { st.coins += lzBack; st.leisureRefund = { coins: lzBack, n: lzN }; E.history(st, '🪙', 'A Loja de lazer fechou: ' + lzN + ' recompensa(s) devolvida(s), +' + lzBack + ' moedas.'); }
+    // os chefes secretos mudaram (A Última Arena): quem os venceu com as regras antigas volta a enfrentá-los no fim
+    if (!(st.finale && st.finale.seen) && ((st.defeated || {}).secret_1 || (st.defeated || {}).secret_2 || (st.revealed || {}).secret_1)) {
+      st.oldSecrets = { secret_1: st.defeated.secret_1 || 0, secret_2: st.defeated.secret_2 || 0 };
+      ['secret_1', 'secret_2'].forEach(function (id) { delete st.defeated[id]; delete st.trophies[id]; if (st.revealed) delete st.revealed[id]; });
+    }
+    if (S.combat && S.combat.finalProgress && !st.finale && S.combat.finalProgress(st).ready) st.finale = { at: S.clock.now(), seen: 0 };
     // troféus de chefes derrotados antes desta versão
     Object.keys(st.defeated || {}).forEach(function (id) { if (S.TROPHIES[id] && !st.trophies[id]) st.trophies[id] = st.defeated[id]; });
     // itens que deixaram de existir são convertidos em moedas
@@ -436,6 +442,17 @@
     st.coins -= lost;
     st.c.coinsLost = (st.c.coinsLost || 0) + lost;
     return lost;
+  };
+  /* fim da conversa final: abre a Última Arena */
+  E.finaleSeen = function () {
+    var st = E.state;
+    if (!st || !st.finale) return null;
+    if (st.finale.seen) return { first: false };
+    st.finale.seen = S.clock.now();
+    E.history(st, '✒️', 'Conheceu o Arquiteto. A Última Arena abriu-se.');
+    E.emit({ type: 'info', title: 'A ÚLTIMA ARENA', name: 'Dois últimos adversários', lines: ['O Sistema, Forma Suprema (Nv ' + S.BOSS_BY_ID.secret_1.level + ')', 'Delcio Cunha, o Arquiteto (Nv ' + S.BOSS_BY_ID.secret_2.level + ')', 'Encontra-os no separador Combate.'] });
+    E.commit('última arena');
+    return { first: true };
   };
   E.bump = function (st, key, n) { st.c[key] = (st.c[key] || 0) + (n == null ? 1 : n); };
 
@@ -762,6 +779,12 @@
         E.grantSkill(st, u.skill);
         res.msg = 'Habilidade secreta aprendida: ' + S.ALL_SKILLS[u.skill].name + '!';
         break;
+      case 'finalMap':
+        var fp = S.combat.finalProgress(st);
+        res.msg = fp.ready ? 'A última linha do mapa está acesa.' : 'Faltam ' + (fp.gatesTotal - fp.gates + fp.arenasTotal - fp.arenas) + ' chefes.';
+        E.emit({ type: 'info', title: fp.ready ? 'A ÚLTIMA ARENA' : 'MAPA DA ÚLTIMA ARENA', lines: fp.ready ? ['O caminho está aberto. Alguém espera por ti.'] :
+          ['Chefes dos portões: ' + fp.gates + '/' + fp.gatesTotal, 'Campeões do Coliseu: ' + fp.arenas + '/' + fp.arenasTotal, 'Quando não faltar nenhum, a última linha acende-se.'] });
+        return res;
       case 'revealBoss':
         if (st.revealed[u.boss]) return { ok: false, msg: 'Esse portão já foi revelado.' };
         E.removeItem(st, id);

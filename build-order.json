@@ -13,6 +13,7 @@
  "src/data/shadow-premium.js",
  "src/data/spar-voice.js",
  "src/data/credits.js",
+ "src/data/finale.js",
  "src/data/talk-open.js",
  "src/data/talk-combat.js",
  "src/data/talk-life.js",

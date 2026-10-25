@@ -306,7 +306,7 @@
     { id: 'sx_coracao', name: 'Coração de Dragão Antigo', icon: '🫀', rarity: 'secreto', desc: 'Ainda bate. +5 em todos os atributos, para sempre.', use: { type: 'permAll', amount: 5 }, field: true },
     { id: 'sx_fenix', name: 'Pena da Fénix', icon: '🪶', rarity: 'secreto', desc: 'Basta tê-la na bolsa: ao morrer em combate, renasces com 50% de vida (gasta-se).', use: { type: 'revive', pct: 50 }, field: false },
     { id: 'sx_moeda', name: 'Moeda Antiga', icon: '🪙', rarity: 'secreto', desc: 'Um colecionador paga bem por ela. Usa para receber 5000 moedas.', use: { type: 'coins', amount: 5000 }, field: true },
-    { id: 'sx_mapa', name: 'Mapa do Portão Oculto', icon: '🗺️', rarity: 'secreto', desc: 'Revela a localização de um portão escondido.', use: { type: 'revealBoss', boss: 'secret_1' }, field: true },
+    { id: 'sx_mapa', name: 'Mapa da Última Arena', icon: '🗺️', rarity: 'secreto', desc: 'Mostra quanto falta para a Última Arena. Não se gasta.', use: { type: 'finalMap' }, field: true },
     { id: 'sx_fragmento', name: 'Fragmento do Sistema', icon: '🔷', rarity: 'secreto', desc: 'Parte de algo maior. Junta 5 para formar o Núcleo do Sistema.', use: { type: 'fragment', need: 5, result: 'sx_nucleo' }, field: true },
     { id: 'sx_nucleo', name: 'Núcleo do Sistema', icon: '💠', rarity: 'secreto', desc: 'O coração do Sistema. Usa para ganhar 10 pontos livres e a habilidade Autoridade do Sistema.', use: { type: 'core', points: 10, skill: 's8' }, field: true },
     { id: 'sx_lamina', name: 'Lâmina Sem Nome', icon: '🌑', cat: 'arma', rarity: 'secreto', lvl: 40, desc: 'Ninguém sabe quem a forjou. Serve a qualquer classe.',
@@ -377,7 +377,7 @@
     S.TROPHIES[b.id] = { id: b.id, name: TROPHY_NAMES[i], rarity: b.level === 100 ? 'mitico' : (b.king ? 'lendario' : (b.level > 50 ? 'epico' : 'raro')) };
   });
   S.SECRET_BOSSES.forEach(function (b) {
-    S.TROPHIES[b.id] = { id: b.id, name: b.id === 'secret_1' ? 'Chave do Portão Oculto' : 'Código-Fonte do Sistema', rarity: 'secreto' };
+    S.TROPHIES[b.id] = { id: b.id, name: b.id === 'secret_1' ? 'Olho do Sistema' : 'Caneta do Arquiteto', rarity: 'secreto' };
   });
 
   /* Bónus permanente por completar os 10 troféus de um portão */

@@ -23,9 +23,23 @@
       return !prev || !!st.arena.wins[prev.id];
     }
     if (!b.secret) return true;
-    if (b.unlock === 'map') return !!st.revealed[b.id];
-    if (b.unlock === 'all100') return S.BOSSES.every(function (x) { return st.defeated[x.id]; });
+    var seen = !!(st.finale && st.finale.seen);
+    if (b.unlock === 'final') return seen;
+    if (b.unlock === 'system') return seen && !!st.defeated.secret_1;
     return false;
+  };
+  /* A Última Arena: abre quando caírem os 100 chefes dos portões e os 10 Campeões do Coliseu */
+  C.finalProgress = function (st) {
+    var g = S.BOSSES.filter(function (b) { return st.defeated[b.id]; }).length;
+    var a = S.ARENA_BOSSES.filter(function (b) { return st.arena && st.arena.wins[b.id]; }).length;
+    return { gates: g, gatesTotal: S.BOSSES.length, arenas: a, arenasTotal: S.ARENA_BOSSES.length, ready: g === S.BOSSES.length && a === S.ARENA_BOSSES.length };
+  };
+  C.checkFinale = function (st) {
+    if (st.finale || !C.finalProgress(st).ready) return false;
+    st.finale = { at: now(), seen: 0 };
+    E.history(st, '👁️', 'Venceu todos os chefes dos portões e do Coliseu. O Sistema quer falar.');
+    E.emit({ type: 'finale' });
+    return true;
   };
 
   /* Ajuste global de dificuldade dos chefes */
@@ -44,7 +58,8 @@
       atk = Math.max(atk * 0.6, Math.max(ps.atk, ps.matk) * 0.75);
       def = Math.max(def * 0.6, ps.def);
     }
-    if (b.special === 'final' || (b.phases === 3 && !b.premium)) hp *= 1.3; // os Campeões já têm mecânicas próprias
+    if (b.special === 'final' || (b.phases === 3 && !b.premium)) hp *= 1.3;
+    if (b.form2) hp *= 0.6; // duas formas, cada uma com a sua barra de vida (como dois chefes) // os Campeões já têm mecânicas próprias
     return { maxHp: Math.round(hp), atk: Math.round(atk), def: Math.round(def) };
   };
 
@@ -174,6 +189,12 @@
       if (st.battle.cmd) log(st.battle, '👑 Comandante convocado: o teu dano +' + st.battle.cmd + '%.', 'good');
     }
     if (st.battle.p.shield) log(st.battle, '🛡️ Entras em combate com um escudo de ' + st.battle.p.shield + '.', 'good');
+    // a primeira forma já foi vencida: o combate começa na segunda (como um chefe à parte)
+    if (b.form2 && st.forms && st.forms[b.id]) {
+      st.battle.phase = 2; st.battle.formed = true; st.battle.b.bonusAtk += 20;
+      log(st.battle, '✴️ A primeira forma já caiu. ' + b.form2.name + ' espera por ti.', 'warn');
+      log(st.battle, b.form2.name.split(',')[0] + ': «' + b.form2.say + '»', 'say');
+    }
     if (emp) log(st.battle, (emp === 'noite' ? '🌙 A noite fortalece ' : '☀️ O sol fortalece ') + b.name + ': +15% vida e ataque, mas +20% recompensas.', 'warn');
     var lines = (S.BOSS_LINES || {})[b.id];
     var rematch = b.premium && st.arena && st.arena.wins[b.id];
@@ -454,6 +475,19 @@
   /* Renascer Imperial: a primeira vez que cai, volta */
   function rebirth(bt) {
     var def = S.BOSS_BY_ID[bt.bossId];
+    if (def.form2 && !bt.formed && !bt.spar && bt.b.hp <= 0) {
+      // segunda forma: barra de vida nova, como um chefe diferente; a primeira fica vencida para sempre
+      bt.formed = true; bt.phase = 2;
+      var b2 = bt.b;
+      b2.hp = b2.maxHp; b2.bonusAtk += 20; b2.shield = 0;
+      b2.st = b2.st.filter(function (x) { return x.kind !== 'dot' && x.kind !== 'debuff'; });
+      var st0 = E.state; st0.forms = st0.forms || {}; st0.forms[def.id] = now();
+      log(bt, '✴️ SEGUNDA FORMA: ' + def.form2.name + ' ergue-se com a vida toda!', 'warn');
+      log(bt, def.form2.name.split(',')[0] + ': «' + def.form2.say + '»', 'say');
+      if (def.phaseLines) log(bt, def.form2.name.split(',')[0] + ': «' + def.phaseLines[2] + '»', 'say');
+      E.history(st0, def.form2.icon, 'Venceu a primeira forma de ' + def.name + '.');
+      return true;
+    }
     if (def.sig !== 'rebirth' || bt.reborn || bt.b.hp > 0) return false;
     bt.reborn = true;
     bt.b.hp = Math.round(bt.b.maxHp * 0.25);
@@ -466,7 +500,7 @@
     var b = bt.b;
     var def = S.BOSS_BY_ID[bt.bossId];
     if (!def.king || b.hp <= 0) return;
-    if (bt.phase === 1 && b.hp <= b.maxHp * 0.5) {
+    if (bt.phase === 1 && !def.form2 && b.hp <= b.maxHp * 0.5) {
       bt.phase = 2;
       b.bonusAtk += 20;
       log(bt, '⚠️ ' + def.name + ' entra na FASE 2: ataque +20%!', 'warn');
@@ -479,14 +513,17 @@
         log(bt, '⏳ REBOBINAR! O tempo recua: Chronos-9 recupera ' + rh + ' de vida' + (had ? ' e os teus reforços desaparecem.' : '.'), 'warn');
       }
       if (def.sig === 'stone') log(bt, '🪨 A Pele de Pedra Rúnica racha: Gorrath já recebe o dano todo.', 'good');
+      if (def.phaseLines) log(bt, def.name.split(',')[0] + ': «' + def.phaseLines[2] + '»', 'say');
     }
     if ((def.special === 'final' || def.phases === 3) && bt.phase === 2 && b.hp <= b.maxHp * 0.25) {
       bt.phase = 3;
       b.bonusAtk += 20;
       var h = Math.round(b.maxHp * 0.15);
       b.hp = Math.min(b.maxHp, b.hp + h);
-      log(bt, '⚠️ FASE FINAL! ' + def.name + ' liberta todo o seu poder e recupera ' + h + ' de vida!', 'warn');
+      var nm = def.form2 ? def.form2.name : def.name;
+      log(bt, '⚠️ FASE FINAL! ' + nm + ' liberta todo o seu poder e recupera ' + h + ' de vida!', 'warn');
       if (def.story) log(bt, def.story.phase3, 'say');
+      if (def.phaseLines) log(bt, nm.split(',')[0] + ': «' + def.phaseLines[3] + '»', 'say');
     }
   }
 
@@ -632,11 +669,12 @@
       var g = def.gate, set = E.gateTrophies(st, g);
       if (set.have === set.total) {
         var sd = S.TROPHY_SETS[g];
-        E.emit({ type: 'info', title: 'CONJUNTO DE TROFÉUS COMPLETO', name: g === 0 ? 'Portões Ocultos' : S.GATES[g - 1].name, lines: ['Bónus permanente: ' + sd.desc] });
-        E.history(st, '🏆', 'Completou os troféus de ' + (g === 0 ? 'Portões Ocultos' : S.GATES[g - 1].name) + ': ' + sd.desc + '.');
+        E.emit({ type: 'info', title: 'CONJUNTO DE TROFÉUS COMPLETO', name: g === 0 ? 'A Última Arena' : S.GATES[g - 1].name, lines: ['Bónus permanente: ' + sd.desc] });
+        E.history(st, '🏆', 'Completou os troféus de ' + (g === 0 ? 'A Última Arena' : S.GATES[g - 1].name) + ': ' + sd.desc + '.');
       }
     }
     if (r.special && r.special.skill) E.grantSkill(st, r.special.skill);
+    C.checkFinale(st);
     // sombra: o Sistema deteta-a e abre a extração (3 tentativas)
     if (S.shadows && S.shadows.onVictory(st, def)) { bt.result.shadow = def.id; log(bt, '🌑 A sombra de ' + def.name + ' ainda não se dissipou...', 'sys'); }
     if (S.live) S.live.react(st, 'boss', { def: def, gap: def.level - levelBefore });

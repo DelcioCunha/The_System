@@ -131,8 +131,8 @@
     b98: 'Uma serpente tão grande que se enrola à volta do mundo e morde a própria cauda. Se a soltar, o mundo desfaz-se. Por isso, cada vez que combate, arrisca tudo.',
     b99: 'O eco de alguém que chegou aqui antes de ti. O primeiro caçador escolhido pelo Sistema, que ficou preso no trono para sempre. Luta como tu lutas, porque um dia foi como tu.',
     b100: 'O Soberano do Vazio esteve à tua espera desde o primeiro dia. Viu cada missão que cumpriste e cada uma que falhaste. É o último chefe e o primeiro mistério: talvez o Sistema tenha sido criado apenas para chegares a ele.',
-    // ---------- Portões ocultos ----------
-    secret_1: 'Ninguém sabe que portão este guardião protege, porque esse portão foi apagado de todos os registos. Ele ficou. Só aparece a quem segue o mapa certo, e só deixa passar quem provar que merece saber o que foi esquecido.',
-    secret_2: 'Quem criou o Sistema? Quem escolheu os caçadores, ergueu os portões e escreveu as regras? O Arquiteto observa desde o início, e só aceita encontrar-se com quem derrotou todos os cem chefes. A conversa que tem contigo é a última.'
+    // ---------- A Última Arena ----------
+    secret_1: 'Durante todo o caminho foi uma janela azul, uma voz fria, um olho vermelho por cima das regras. Aqui, na Última Arena, o Sistema larga tudo o que o prendia: as leis, os limites, o registo. Ninguém o tinha visto assim. Ninguém o tinha obrigado a lutar a sério. Dizem que, quando as janelas se partem, se vê o Núcleo por dentro, rachado num sítio pequeno, antigo. Ninguém sabe quem fez essa racha. Ele sabe. Não diz.',
+    secret_2: 'Delcio Cunha. O criador do Sistema. Escreveu as leis, desenhou os portões e deixou a caneta a pairar sobre o livro. Os registos falam dele 4 097 vezes e nenhuma descreve um rosto: agora sabes porquê. Nunca esteve nas sombras. Esteve sempre presente, mais perto de cada Jogador do que o próprio Sistema. Os olhos brilham-lhe com uma luz branca que não aquece nem cega: só vê. O nome dele esteve sempre nos créditos. Poucos os leram até ao fim.',
   };
 })(globalThis.SYS = globalThis.SYS || {});
