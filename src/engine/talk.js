@@ -27,7 +27,7 @@
     gapPrio: 15 * MIN,      // para diálogos importantes (chefe mortal, derrota…)
     perDay: { normal: 6, raro: 2, off: 0 },
     mode: { normal: 1, raro: 0.45, off: 0 },
-    spontMin: 10,           // conversa espontânea: a cada 10 minutos de uso ativo da app (fora de duelos e batalhas)
+    spontMin: 15,           // conversa espontânea: a cada 15 minutos de uso ativo da app (fora de duelos e batalhas)
     repeatDays: 21,         // conversa mostrada mas não respondida não volta antes disto
     skipDays: 3,            // conversa ignorada pode voltar ao fim de 3 dias
     chance: {

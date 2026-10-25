@@ -109,6 +109,7 @@ scanDir('skills', 'skills', skillArt);
 /* --- música: assets/music/<id>.mp3 (b10…b100 reis, ar1…ar10 Campeões, credits, duel). Ficheiros à parte: não vão embutidos --- */
 const MU_SRC = path.join(ROOT, 'assets', 'music');
 const musicMap = {};
+let musicLoop = {}; try { musicLoop = JSON.parse(fs.readFileSync(path.join(MU_SRC, 'loops.json'), 'utf8')); } catch (e) { musicLoop = {}; } // pontos de loop (tools/music_loops.py)
 if (fs.existsSync(MU_SRC)) fs.readdirSync(MU_SRC).forEach((f) => { const m = f.match(/^([a-z0-9_]+)\.mp3$/); if (!m) return; musicMap[m[1]] = 'music/' + f; copies.push([path.join(MU_SRC, f), path.join(ROOT, 'www', 'music', f)]); });
 
 /* --- endereço do servidor da Loja de Cristais (loja.json na raiz) --- */
@@ -119,6 +120,7 @@ const js = order.map((f) => '/* ' + f + ' */\n' + read(f)).join('\n') +
   '\nSYS.SHOP_API = ' + JSON.stringify(SHOP_API) + ';' +
   '\nSYS.SFX_DATA = ' + JSON.stringify(sfxData) + ';' +
   '\nSYS.MUSIC = ' + JSON.stringify(musicMap) + ';' +
+  '\nSYS.MUSIC_LOOP = ' + JSON.stringify(musicLoop) + ';' +
   '\nSYS.AVATARS = ' + JSON.stringify(manifest) + ';\nSYS.CLASS_ART = ' + JSON.stringify(classArt) + ';\nSYS.BOSS_ART = ' + JSON.stringify(bossArt) + ';\nSYS.ITEM_ART = ' + JSON.stringify(itemArt) + ';\nSYS.UI_ART = ' + JSON.stringify(uiArt) + ';\nSYS.TROPHY_ART = ' + JSON.stringify(trophyArt) + ';\nSYS.SKILL_ART = ' + JSON.stringify(skillArt) + ';\nSYS.FRAME_ART = ' + JSON.stringify(frameArt) + ';\nSYS.ARENA_ART = ' + JSON.stringify(arenaArt) + ';\nSYS.SHADOW_ART = ' + JSON.stringify(shadowArt) + ';\nSYS.boot(document.getElementById("app"));\n';
 const css = read('src/ui/styles.css') + '\n' + read('src/ui/fx.css');
 const fonts = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' +

@@ -3723,7 +3723,7 @@
     setInterval(checkDeadlines, 30000);
     // conversas aleatórias: só enquanto o jogador está a usar a app (tocou em algo nos últimos 2 minutos)
     ui.bootAt = Date.now();
-    // conversas espontâneas: o Sistema aparece a cada 10 minutos de uso (só com a app aberta e em uso; nunca num duelo nem numa batalha)
+    // conversas espontâneas: o Sistema aparece a cada 15 minutos de uso (só com a app aberta e em uso; nunca num duelo nem numa batalha)
     ['touchstart', 'pointerdown', 'scroll', 'keydown'].forEach(function (n) { document.addEventListener(n, function () { ui.lastAct = Date.now(); }, { passive: true, capture: true }); });
     setInterval(function () {
       if (!E.state || document.visibilityState === 'hidden') return;

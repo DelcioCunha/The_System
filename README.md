@@ -58,12 +58,11 @@ O jogo pode ser fechado só a quem tu autorizas, e um aparelho bloqueado não vo
 ## Sons e música
 
 - **Efeitos** (`assets/sfx/<nome>.mp3`, embutidos no jogo): 51 sons, incluindo conquista, vitória contra chefe, mudança de fase, crítico, defesa, gelo/sombra/luz, invocação, Missão Diária, baú raro, abrir cela do Coliseu, despertar, extração falhada, sombra perdida, aparelho bloqueado, ação recusada, amizade, mensagem, a tua vez no duelo e o Sistema a escrever.
-- **Música** (`assets/music/<id>.mp3`, ficheiros à parte): uma trilha por chefe final (`b10`…`b100` reis dos portões, `ar1`…`ar10` Campeões), `credits` (ecrã de créditos) e `duel` (início de um duelo). Em batalha toca em loop; ao abrir a ficha do chefe toca uma vez como pré-escuta. Interruptor e volume próprios nas Definições.
-- Falta a trilha do Gorrath (`assets/music/ar7.mp3`): basta pôr o ficheiro com esse nome.
+- **Música** (`assets/music/<id>.mp3`, ficheiros à parte): uma trilha por chefe final (`b10`…`b100` reis dos portões, `ar1`…`ar10` Campeões: as 20 completas), `credits` (ecrã de créditos) e `duel` (início de um duelo). Em batalha toca em loop contínuo: o loop salta o silêncio do início e a cauda que se apaga no fim (pontos em `assets/music/loops.json`, gerados por `python3 tools/music_loops.py`; volta a correr esta ferramenta quando trocares uma música) e as duas pontas cruzam-se durante 1,2 s; ao abrir a ficha do chefe toca uma vez como pré-escuta. Interruptor e volume próprios nas Definições.
 
 ## Conversas espontâneas
 
-Com a app aberta e em uso, o Sistema aparece para conversar a cada 10 minutos de uso (`S.TALK_RULES.spontMin`). Não aparece com a app fechada, parada há mais de 3 minutos, durante batalhas nem durante duelos contra outros jogadores.
+Com a app aberta e em uso, o Sistema aparece para conversar a cada 15 minutos de uso (`S.TALK_RULES.spontMin`). Não aparece com a app fechada, parada há mais de 3 minutos, durante batalhas nem durante duelos contra outros jogadores.
 
 ## Salvamento
 
