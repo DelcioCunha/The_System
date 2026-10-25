@@ -1989,4 +1989,19 @@ test('Loja de lazer removida: recompensas antigas voltam a moedas', () => {
   assert.ok(!m.inv.lz_cafe && !m.inv.cl_abc && m.customLeisure.length === 0 && m.leisureRefund.n === 3);
 });
 
+test('conversa espontânea: a cada 10 min de uso passa os limites do dia, mas nunca em batalha', () => {
+  const { S } = boot();
+  const E = S.engine, T = S.talk;
+  let t = at(S, 2026, 10, 14, 10);
+  E.start('Rui', 'guerreiro');
+  const st = E.state;
+  assert.strictEqual(S.TALK_RULES.spontMin, 10);
+  at(S, 2026, 10, 14, 11);
+  const tt = T.ensure(st); tt.count = 99; tt.last = S.clock.now();
+  assert.strictEqual(T.offer(st, 'idle', {}), null, 'normal: limite do dia');
+  assert.ok(T.offer(st, 'idle', {}, { spont: true }), 'espontânea: o Sistema aparece');
+  st.battle = { over: null };
+  assert.strictEqual(T.offer(st, 'idle', {}, { spont: true }), null, 'nunca durante uma batalha');
+});
+
 console.log('\n' + passed + ' testes passaram' + (process.exitCode ? ' (com falhas)' : ''));

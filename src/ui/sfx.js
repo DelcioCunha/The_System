@@ -18,12 +18,21 @@
    fury    · fúria (habilidades de fúria e chefe enfurecido)   warcry · grito de guerra, estandartes e exércitos
    heal    · habilidades de cura      buff · habilidades que melhoram o estado (bónus, escudos, mana)
    drink   · beber outras poções (bónus, elixires, tónicos)   equip · equipar   chest · abrir um baú
+   achievement · conquista   arena_open · abrir uma cela do Coliseu   awaken · despertar (início)
+   block · defender / escudo   chest_rare · baú com item lendário ou melhor   crit · golpe crítico
+   daily · Missão Diária cumprida   dark / holy / ice · habilidades de sombra, luz e gelo
+   victory · chefe derrotado   shadow_down · sombra perdida ou treino terminado   denied · aparelho bloqueado
+   error · ação recusada   extract_fail · extração falhada   friend · pedido de amizade
+   message · mensagem de um amigo   phase · o chefe muda de fase   summon · invocações e servos
+   turn · a tua vez no duelo   type · o Sistema a escrever
    Web Audio: baixa latência, vários sons ao mesmo tempo, volume por som.
    O áudio só arranca depois do primeiro toque (regra dos telemóveis).
    ========================================================== */
 (function (S) {
   'use strict';
-  var GAIN = { click: 0.5, back: 0.4, buy: 0.85, crystal: 0.8, potion: 0.55, unequip: 0.95, attack: 0.8, skill: 0.75, hurt: 0.75, system: 0.7, notify: 0.7, gain: 0.85, levelup: 0.9, quest: 0.85, sell: 0.75, create: 0.7, death: 0.9, emergency: 0.85, penalty: 0.85, arise: 0.95, fire: 0.8, thunder: 0.75, wind: 0.8, fury: 0.8, warcry: 0.85, heal: 0.7, buff: 0.7, drink: 0.7, equip: 0.85, chest: 0.85 };
+  var GAIN = { click: 0.5, back: 0.4, buy: 0.85, crystal: 0.8, potion: 0.55, unequip: 0.95, attack: 0.8, skill: 0.75, hurt: 0.75, system: 0.7, notify: 0.7, gain: 0.85, levelup: 0.9, quest: 0.85, sell: 0.75, create: 0.7, death: 0.9, emergency: 0.85, penalty: 0.85, arise: 0.95, fire: 0.8, thunder: 0.75, wind: 0.8, fury: 0.8, warcry: 0.85, heal: 0.7, buff: 0.7, drink: 0.7, equip: 0.85, chest: 0.85,
+    achievement: 0.85, arena_open: 0.9, awaken: 0.9, block: 0.8, chest_rare: 0.9, crit: 0.85, daily: 0.85, dark: 0.8, victory: 0.85, shadow_down: 0.8,
+    denied: 0.85, error: 0.6, extract_fail: 0.8, friend: 0.75, holy: 0.8, ice: 0.8, message: 0.7, phase: 0.9, summon: 0.8, turn: 0.75, type: 0.18 };
   var ctx = null, bufs = {}, last = {}, failed = false;
 
   function settings() { var st = S.engine && S.engine.state; return (st && st.settings) || {}; }
@@ -76,5 +85,7 @@
     document.addEventListener('touchstart', unlock, { passive: true, capture: true });
     document.addEventListener('visibilitychange', function () { if (ctx && document.visibilityState === 'hidden' && ctx.suspend) ctx.suspend(); });
   }
-  S.sfx = { play: play, init: init, log: [], ready: function () { return Object.keys(bufs); } };
+  /* sons que chegaram depois (pré-visualização: ficheiro à parte) */
+  function reload() { if (ctx) Object.keys(S.SFX_DATA || {}).forEach(function (k) { if (!bufs[k]) decode(k); }); }
+  S.sfx = { play: play, init: init, reload: reload, has: function (n) { return !!(S.SFX_DATA || {})[n]; }, log: [], ready: function () { return Object.keys(bufs); } };
 })(globalThis.SYS = globalThis.SYS || {});

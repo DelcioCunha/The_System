@@ -103,7 +103,7 @@
   }
   function busyCls() { return FX.full() && Date.now() < ui.busyUntil ? ' busy' : ''; }
   function vibrate(p) { try { if (E.state && E.state.settings.vibrate && navigator.vibrate) navigator.vibrate(p); } catch (e) { /* sem vibração */ } }
-  function toast(msg, bad) { ui.toast = { msg: msg, bad: !!bad, t: Date.now() }; renderToast(); }
+  function toast(msg, bad) { ui.toast = { msg: msg, bad: !!bad, t: Date.now() }; if (bad) sfx('error'); renderToast(); }
   function act(res, okMsg) {
     if (res && res.ok === false) toast(res.msg, true);
     else if (okMsg || (res && res.msg)) toast(okMsg || res.msg);
@@ -229,6 +229,7 @@
       if (!document.getElementById('typer')) return;
       i += 2;
       el.textContent = INTRO_TEXT.slice(0, i);
+      if (i % 6 === 0 && INTRO_TEXT.charAt(i - 1) !== ' ') sfx('type');
       if (i < INTRO_TEXT.length) setTimeout(tick, 22);
     })();
   }
@@ -1246,7 +1247,7 @@
       } else if (e.c === 'hit' || e.c === 'crit') {
         var crit = e.c === 'crit', hits = num(/\((\d+) golpes\)/, txt) || 1;
         if (e.tg !== me) {
-          (function (t0, v, hits, crit, summon) { at(t0, function () { sfx('attack', crit ? 1.15 : 1); var dd = FX.attack(summon ? 'spirit' : style, bc.x, bc.y, summon ? '#a184ff' : color, hits, crit); setTimeout(function () { hitBoss(); FX.number(fmt(v || 0), bc.x, bc.y - 30, crit ? 'crit' : (summon ? 'small' : '')); if (crit) { FX.shake(1); FX.vibrate(40); } }, Math.min(dd, 400) + 120); }); })(t, v, hits, crit, /^(💀|🌑|☠️)/.test(txt));
+          (function (t0, v, hits, crit, summon) { at(t0, function () { sfx(crit ? 'crit' : 'attack'); var dd = FX.attack(summon ? 'spirit' : style, bc.x, bc.y, summon ? '#a184ff' : color, hits, crit); setTimeout(function () { hitBoss(); FX.number(fmt(v || 0), bc.x, bc.y - 30, crit ? 'crit' : (summon ? 'small' : '')); if (crit) { FX.shake(1); FX.vibrate(40); } }, Math.min(dd, 400) + 120); }); })(t, v, hits, crit, /^(💀|🌑|☠️)/.test(txt));
           t += Math.min(hits * (hits > 4 ? 70 : 110), 700) + 250;
         } else {
           (function (t0, v, crit) { at(t0, function () { sfx('hurt', crit ? 1.1 : 1); panel('hit'); FX.number('-' + fmt(v || 0), pc.x, pc.y - 20, crit ? 'crit' : 'hurt'); FX.shake(crit ? 2 : 1); FX.vibrate(crit ? 80 : 40); }); })(t, v, crit);
@@ -1497,6 +1498,8 @@
         : '<p class="hint" style="margin:0 0 10px">Lembretes do Sistema no telemóvel: disponíveis na app Android (APK).</p>') +
       '<label class="row between" style="margin-bottom:6px"><span>Sons do Sistema</span><input type="checkbox" id="set-snd" data-a="set-snd"' + (st.settings.sound !== false ? ' checked' : '') + '></label>' +
       (st.settings.sound !== false ? '<label class="row between" style="margin-bottom:10px;gap:12px"><span class="small muted">Volume</span><input type="range" min="0" max="100" step="5" style="flex:1;max-width:200px" data-a="set-vol" value="' + Math.round((st.settings.soundVol == null ? .8 : st.settings.soundVol) * 100) + '"></label>' : '') +
+      (st.settings.sound !== false ? '<label class="row between" style="margin-bottom:6px"><span>Música dos chefes<br><small class="muted">Trilha em loop nas batalhas contra os reis e os Campeões; pré-escuta ao abrir a ficha</small></span><input type="checkbox" id="set-mus" data-a="set-mus"' + (st.settings.music !== false ? ' checked' : '') + '></label>' +
+        (st.settings.music !== false ? '<label class="row between" style="margin-bottom:10px;gap:12px"><span class="small muted">Volume da música</span><input type="range" min="0" max="100" step="5" style="flex:1;max-width:200px" data-a="set-mvol" value="' + Math.round((st.settings.musicVol == null ? .55 : st.settings.musicVol) * 100) + '"></label>' : '') : '') +
       '<label class="row between"><span>Vibrar ao subir de nível e em vitórias</span><input type="checkbox" id="set-vib" data-a="set-vib"' + (st.settings.vibrate ? ' checked' : '') + '></label>' +
       '<div class="f" style="margin-top:12px"><span class="small muted">Animações</span><div class="seg">' +
       [['full', 'Completas'], ['reduced', 'Reduzidas']].map(function (o) { return '<button class="' + ((st.settings.fx || FX.defaultMode()) === o[0] ? 'on' : '') + '" data-a="set-fx" data-v="' + o[0] + '">' + o[1] + '</button>'; }).join('') +
@@ -2361,6 +2364,27 @@
       if (k < 1) requestAnimationFrame(step); else num.textContent = fmt(to);
     })(t0);
   }
+  /* som de cada janela do Sistema */
+  function popSound(pop) {
+    if (pop.type === 'rank') return pop.up ? 'levelup' : 'penalty';
+    if (pop.type === 'loot') return (pop.items || []).some(function (id) { var it = S.ITEMS[id]; return it && /^(lendario|mitico|secreto)$/.test(it.rarity); }) ? 'chest_rare' : 'chest';
+    if ((pop.type === 'victory' || pop.type === 'defeat') && /^TREINO/.test(pop.title || '')) return 'shadow_down';
+    return { levelup: 'levelup', victory: 'victory', mission: 'quest', crystals: 'gain', gift: 'gain', defeat: 'death', emergency: 'emergency', penalty: 'penalty', zone: 'penalty', achievement: 'achievement', hidden: 'system' }[pop.type] || 'system';
+  }
+  /* música: trilha do chefe em batalha (loop), pré-escuta na ficha do chefe (uma vez), créditos */
+  function musicSync() {
+    var MU = S.music; if (!MU) return;
+    var st = E.state, bt = st && st.battle;
+    if (bt && !bt.over && !bt.spar && MU.has(bt.bossId)) { ui.musicPreview = null; return MU.play(bt.bossId, { loop: true }); }
+    if (ui.modal && ui.modal.type === 'boss' && MU.has(ui.modal.id)) {
+      if (ui.musicPreview !== ui.modal) { ui.musicPreview = ui.modal; MU.play(ui.modal.id, { loop: false }); }
+      return;
+    }
+    ui.musicPreview = null;
+    if (st && ui.page === 'credits' && MU.has('credits')) return MU.play('credits', { loop: true });
+    if (ui.page === 'duel' && MU.current === 'duel') return;
+    if (MU.current) MU.stop();
+  }
   function render() {
     if (!root) return;
     var sheet = root.querySelector('.sheet');
@@ -2370,7 +2394,7 @@
     var gs = S.gate && S.gate.screen();
     if (gs) {
       FX.battle(false); root.innerHTML = gateHtml(gs);
-      if (gs.type === 'blocked' && S.gate.firstBlockView()) { FX.flash('#ff1f3d', .25); FX.vibrate([80, 50, 160]); setTimeout(function () { FX.shake(1); }, 140); }
+      if (gs.type === 'blocked' && S.gate.firstBlockView()) { sfx('denied'); FX.flash('#ff1f3d', .25); FX.vibrate([80, 50, 160]); setTimeout(function () { FX.shake(1); }, 140); }
       return;
     }
     if (!E.state) {
@@ -2443,10 +2467,11 @@
       if (!ui.holdTimer) ui.holdTimer = setTimeout(function () { ui.holdTimer = null; render(); }, ui.holdUntil - Date.now() + 20);
     } else if (pop && pop._id !== ui.shownPop) {
       ui.shownPop = pop._id;
-      sfx(pop.type === 'rank' ? (pop.up ? 'levelup' : 'penalty') : { loot: 'chest', levelup: 'levelup', victory: 'quest', mission: 'quest', crystals: 'gain', gift: 'gain', defeat: 'death', emergency: 'emergency', penalty: 'penalty', zone: 'penalty' }[pop.type] || 'system');
+      sfx(popSound(pop));
       popupFx(pop);
     }
     ui.fxMission = null; ui.fxDaily = false; ui.spawn = false;
+    musicSync();
     if (ui.toast) renderToast();
     if (document.getElementById('notif-status')) notifStatus();
   }
@@ -2486,7 +2511,7 @@
         var hits = num(/\((\d+) golpes\)/, txt) || 1, crit = e.c === 'crit';
         (function (t0, v, hits, crit, col, sk) {
           at(t0, function () {
-            sfx(sk || 'attack', crit ? 1.15 : 1);
+            sfx(sk || (crit ? 'crit' : 'attack'), crit && sk ? 1.15 : 1);
             var d = FX.attack(style, bc.x, bc.y, col, hits, crit);
             setTimeout(function () { hitBoss(); FX.number(fmt(v), bc.x, bc.y - 30, crit ? 'crit' : ''); if (crit) { FX.shake(1); FX.vibrate(40); } }, Math.min(d, 400) + 120);
           });
@@ -2519,7 +2544,7 @@
       } else if (txt.indexOf('💥 A bomba') === 0) {
         (function (t0) { at(t0, function () { sfx('skill', 1.1); FX.attack('impact', bc.x, bc.y, '#ff8a3d', 1, true); FX.shake(2); }); })(t);
       } else if (txt.indexOf('FASE') >= 0) {
-        (function (t0, full) { at(t0, function () { FX.flash('#ff2040', .35); FX.shake(3); FX.vibrate([100, 50, 200]); FX.banner(full ? 'FASE FINAL' : 'FASE 2', 'O chefe libertou o seu poder', 'rgba(255,40,70,.55)', '#ff5a6e'); }); })(t, txt.indexOf('FINAL') >= 0);
+        (function (t0, full) { at(t0, function () { sfx('phase'); FX.flash('#ff2040', .35); FX.shake(3); FX.vibrate([100, 50, 200]); FX.banner(full ? 'FASE FINAL' : 'FASE 2', 'O chefe libertou o seu poder', 'rgba(255,40,70,.55)', '#ff5a6e'); }); })(t, txt.indexOf('FINAL') >= 0);
         t += 500;
       } else if (txt.indexOf('◀') === 0) {
         v = num(/: (\d+) de dano/, txt) || 0;
@@ -2629,6 +2654,7 @@
       if (!ui.intro.gender) return toast('Escolhe a aparência do teu avatar.', true);
       var r = E.start(ui.intro.name, ui.intro.cls, ui.intro.gender);
       if (!r.ok) return toast(r.msg, true);
+      sfx('awaken');
       ui.popups.push({ _id: ++ui.popSeq, type: 'first', script: firstScript(E.state), i: 0, log: [], typed: -1 });
       ui.popups.push({ _id: ++ui.popSeq, type: 'info', title: 'BEM-VINDO, JOGADOR', name: E.state.name, lines: ['Classe: ' + S.CLASSES[E.state.cls].name, 'Começas com 100 moedas, poções e um Baú Comum.', 'Cria as tuas missões no separador Missões.'] });
       ui.tab = 'status';
@@ -2705,7 +2731,7 @@
         pullEvents(); render();
         var c = FX.center(document.getElementById('arise-stage'));
         if (r.success) { sfx('arise'); FX.flash('#7b4dff', .55); FX.burst(c.x, c.y, '#8b6bff', 90, { speed: 10 }); FX.rise(c.x, c.y + 80, 220, '#5a3dff', 60); FX.shake(2); FX.vibrate([80, 40, 220]); }
-        else { sfx(r.lost ? 'back' : 'hurt'); FX.shake(r.lost ? 2 : 1); FX.vibrate(r.lost ? [120, 60, 120] : 60); }
+        else { sfx(r.lost ? 'shadow_down' : 'extract_fail'); FX.shake(r.lost ? 2 : 1); FX.vibrate(r.lost ? [120, 60, 120] : 60); }
       }, FX.full() ? 1150 : 150);
     },
     'body-edit': function () { ui.bodyEdit = true; render(); var e = document.getElementById('body-win'); if (e) e.scrollIntoView(); },
@@ -2824,7 +2850,7 @@
         var r = S.premium.unlock(d.id);
         if (!r.ok) { if (r.need) { ui.page = 'premium'; ui.premTab = 'obter'; loadShop(); } return act(r); }
         ui.modal = null; ui.arenaN = b.arena;
-        sfx('crystal');
+        sfx('arena_open');
         act(r);
       });
     },
@@ -2858,7 +2884,7 @@
       S.gate.check(true).then(function (r) {
         U.busy = false;
         if (!r.ok) U.err = r.offline ? 'Sem ligação. Liga-te à internet e tenta outra vez.' : (r.msg || 'O Sistema não respondeu.');
-        else { var g = S.gate.screen(); if (g && g.type === 'blocked') { FX.flash('#ff1f3d', .2); FX.vibrate([60, 40, 120]); } }
+        else { var g = S.gate.screen(); if (g && g.type === 'blocked') { sfx('denied'); FX.flash('#ff1f3d', .2); FX.vibrate([60, 40, 120]); } }
         afterGate();
       });
     },
@@ -3052,7 +3078,7 @@
       if (FX.full()) ui.holdUntil = Date.now() + 900;
       var res = act(M.completeDaily());
       if (!res.ok) return;
-      sfx('quest');
+      sfx('daily');
       talkTry('daily', {}, 1500);
       var c = FX.center(root.querySelector('#daily-win .stamp'));
       FX.burst(c.x, c.y, '#ffc85a', 60, { speed: 9 }); FX.shock(c.x, c.y, '#ffc85a');
@@ -3097,7 +3123,7 @@
       if (r && r.ok !== false) { sfx('arise'); FX.portal('#8b6bff', S.shadows.name(st, d.id), 'TREINO · NÍVEL ' + b.level); }
     },
     'b-attack': function () { battleAct('attack'); },
-    'b-defend': function () { battleAct('defend'); },
+    'b-defend': function () { sfx('block'); battleAct('defend'); },
     'b-pass': function () { battleAct('pass'); },
     'b-sheet': function (d) { ui.modal = { type: 'bsheet', v: d.v }; render(); },
     'b-skill': function (d) { ui.modal = null; battleAct('skill', d.id); },
@@ -3245,7 +3271,8 @@
     },
     'notif-exact': function () { Notify.openExact().then(function () { setTimeout(notifStatus, 800); }); },
     'notif-perm': function () { Notify.ask().then(function () { notifStatus(); Notify.sync(true); }); },
-    'set-snd': function (d, el) { E.state.settings.sound = el.checked; E.commit('definições'); render(); if (el.checked) sfx('click'); },
+    'set-snd': function (d, el) { E.state.settings.sound = el.checked; E.commit('definições'); if (!el.checked && S.music) S.music.stop(0); render(); if (el.checked) sfx('click'); },
+    'set-mus': function (d, el) { E.state.settings.music = el.checked; E.commit('definições'); if (!el.checked && S.music) S.music.stop(0); render(); },
     'set-vib': function (d, el) { E.state.settings.vibrate = el.checked; E.commit('definições'); },
     'set-fx': function (d) { E.state.settings.fx = d.v; E.commit('definições'); FX.setMode(d.v); render(); toast(d.v === 'full' ? 'Animações completas.' : 'Animações reduzidas.'); },
     reset: function () {
@@ -3256,7 +3283,7 @@
   };
 
   /* sons: estes botões tocam o seu próprio som quando a ação resulta */
-  var SFX_SELF = { buy: 1, use: 1, equip: 1, 'b-item': 1, 'duel-act': 1, 'duel-skill': 1, 'duel-item': 1, unequip: 1, 'b-attack': 1, 'b-skill': 1, 'arise-try': 1 };
+  var SFX_SELF = { 'b-defend': 1, buy: 1, use: 1, equip: 1, 'b-item': 1, 'duel-act': 1, 'duel-skill': 1, 'duel-item': 1, unequip: 1, 'b-attack': 1, 'b-skill': 1, 'arise-try': 1 };
   var SFX_BACK = { back: 1, close: 1, 'info-back': 1, 'tr-back': 1, 'pop-ok': 1, overlay: 1 };
   function sfx(n, g) { if (S.sfx) S.sfx.play(n, g); }
   /* poções e elixires que se bebem (bombas e fumo não) */
@@ -3273,7 +3300,11 @@
     else if (/fogo|chama|flamej|brasa|incênd|queimad|infern|magma|lava|fénix|ígne|solar|sol /.test(t) || ops.some(function (x) { return x.type === 'burn'; })) r = 'fire';
     else if (/trov|raio|relâmp|elétric|tempest|descarga|faísca/.test(t)) r = 'thunder';
     else if (/fúria|(^|\s)ira(\s|$)|frenesi|raiva|berserk|sanguinária/.test(t)) r = 'fury';
-    else if (/grito|rugido|estandarte|legião|exército|clone|guerra|comando|horda/.test(t) || has('summon')) r = 'warcry';
+    else if (has('summon') || /invoca|convoca|servo|esqueleto|espírit|lacaio|ergue-se/.test(t)) r = 'summon';
+    else if (/gelo|gélid|congel|neve|frio|inverno|glacia|cristal de gelo/.test(t) || ops.some(function (x) { return x.type === 'freeze'; })) r = 'ice';
+    else if (/luz|sagrad|divin|celest|santo|bênç|radian|aurora|julgamento/.test(t)) r = 'holy';
+    else if (/sombra|trevas|escurid|abismo|vazio|noite|eclipse|maldiç|necro|alma/.test(t)) r = 'dark';
+    else if (/grito|rugido|estandarte|legião|exército|clone|guerra|comando|horda/.test(t)) r = 'warcry';
     else if (/vento|vendaval|furacão|tornado|rajada|ciclone|tufão|furtivo|fumo/.test(t) || ops.some(function (x) { return x.key === 'eva'; })) r = 'wind';
     else if (!dmg && (has('buff') || has('shield') || has('mp') || has('debuff'))) r = 'buff';
     SKILL_SND[sk.id] = r;
@@ -3328,6 +3359,9 @@
     if (el.getAttribute('data-a') === 'set-vol') {
       E.state.settings.soundVol = Math.max(0, Math.min(1, (+el.value || 0) / 100)); E.commit('definições'); sfx('buy');
     }
+    if (el.getAttribute('data-a') === 'set-mvol') {
+      E.state.settings.musicVol = Math.max(0, Math.min(1, (+el.value || 0) / 100)); E.commit('definições'); if (S.music) S.music.setVolume();
+    }
     if (el.getAttribute('data-a') === 'z-input') {
       act(S.live.setZoneValue(el.dataset.id, +el.value || 0));
     }
@@ -3353,7 +3387,7 @@
       if (news.length) {
         var n = news[0];
         toast(n.type === 'request' ? n.name + ' quer ser teu amigo.' : n.type === 'invite' ? n.name + ' desafiou-te para um duelo!' : n.type === 'accepted' ? n.name + ' aceitou o teu pedido de amizade.' : 'Mensagem nova de ' + n.name + '.');
-        sfx('notify'); if (n.type === 'invite') FX.vibrate([60, 40, 60]);
+        sfx(n.type === 'message' ? 'message' : (n.type === 'request' || n.type === 'accepted') ? 'friend' : 'notify'); if (n.type === 'invite') FX.vibrate([60, 40, 60]);
       }
       if (ui.page === 'social' || ui.page === 'chat' || news.length || ui.tab === 'status') softRender();
       // fotos dos amigos (só as que mudaram)
@@ -3376,7 +3410,7 @@
       if (add.length) {
         var list = document.getElementById('chat-list'), atEnd = list && list.scrollHeight - list.scrollTop - list.clientHeight < 60;
         ui.chatMsgs = ui.chatMsgs.concat(add);
-        if (add.some(function (m) { return m.from !== E.state.playerId; })) sfx('notify');
+        if (add.some(function (m) { return m.from !== E.state.playerId; })) sfx('message');
         softRender(); if (atEnd) chatScroll();
       }
     }, function () { chatBusy = false; });
@@ -3392,7 +3426,7 @@
     if (!ui.duel || ui.duelBusy) return;
     ui.duelBusy = true;
     document.querySelectorAll('.duel-battle .actions .btn').forEach(function (b) { b.disabled = true; });
-    if (action === 'defend' || action === 'pass') sfx('click');
+    if (action === 'defend') sfx('block'); else if (action === 'pass') sfx('click');
     SO.act(ui.duel.id, action, ui.duel.version, extra).then(function (j) {
       if (!j.ok) { ui.duelBusy = false; toast(j.msg, true); render(); return; }
       duelShow(j.duel, true);
@@ -3403,7 +3437,7 @@
     ui.duel = d; ui.duelId = d.id;
     var me = d.me, last = prev && prev.log && prev.log.length ? prev.log[prev.log.length - 1].n : 0;
     var fresh = prev ? (d.log || []).filter(function (l) { return l.n > last; }) : [];
-    if (prev && prev.status === 'waiting' && d.status === 'active') { sfx('emergency'); FX.flash('#ff2a48', .35); FX.vibrate([120, 60, 120]); FX.portal('#ff3d5a', 'DUELO', 'CONTRA ' + ((d.fighters[d.host === me ? d.guest : d.host] || {}).name || '').toUpperCase()); }
+    if (prev && prev.status === 'waiting' && d.status === 'active') { if (S.music && S.music.has('duel')) S.music.play('duel', { loop: false }); else sfx('emergency'); FX.flash('#ff2a48', .35); FX.vibrate([120, 60, 120]); FX.portal('#ff3d5a', 'DUELO', 'CONTRA ' + ((d.fighters[d.host === me ? d.guest : d.host] || {}).name || '').toUpperCase()); }
     render(); pullEvents();
     var dur = duelFx(fresh, d);
     var endFx = function () {
@@ -3411,7 +3445,7 @@
       if (prev && prev.status === 'active' && d.status === 'done') {
         var won = d.winner === me;
         sfx(won ? 'levelup' : 'death'); FX.flash(won ? '#ffc85a' : '#ff1f3d', .5); FX.vibrate(won ? [80, 40, 200] : [300, 80, 300]);
-      } else if (d.status === 'active' && d.turn === me && (!prev || prev.turn !== me)) { sfx('notify'); FX.vibrate(50); }
+      } else if (d.status === 'active' && d.turn === me && (!prev || prev.turn !== me)) { sfx('turn'); FX.vibrate(50); }
       var a = document.querySelector('.duel-battle .actions'); if (a && !(d.status === 'active' && d.turn !== me)) a.classList.remove('busy');
       render();
     };
@@ -3573,10 +3607,12 @@
   /* ---------- Diálogos do Sistema ----------
      talkTry pede ao motor uma conversa (que decide com moderação se fala).
      A conversa espera que não haja janelas, animações nem batalhas a decorrer. */
-  function talkTry(trigger, ctx, delay) {
-    if (!E.state || !S.talk || ui.talkWait) return false;
+  /* duelo contra outro jogador: o Sistema nunca interrompe */
+  function inDuel() { return ui.page === 'duel' || !!ui.duelId || !!(SO.cache && SO.cache.duel && SO.cache.duel.status === 'active'); }
+  function talkTry(trigger, ctx, delay, opts) {
+    if (!E.state || !S.talk || ui.talkWait || inDuel()) return false;
     if (ui.popups.some(function (p) { return p.type === 'talk' || p.type === 'watch'; })) return false;
-    var conv = S.talk.offer(E.state, trigger, ctx);
+    var conv = S.talk.offer(E.state, trigger, ctx, opts);
     if (!conv) return false;
     S.storage.write(E.state);
     ui.talkWait = { conv: conv, until: Date.now() + 25000 };
@@ -3588,7 +3624,7 @@
     if (!w || !E.state) { ui.talkWait = null; return; }
     if (Date.now() > w.until) { ui.talkWait = null; S.talk.cancel(E.state, w.conv); S.storage.write(E.state); return; }
     var busy = ui.popups.length || Date.now() < ui.holdUntil || Date.now() < ui.busyUntil || document.getElementById('sys-note') ||
-      (ui.modal && !/^(boss|info|item)$/.test(ui.modal.type)) || (E.state.battle && !E.state.battle.over) || document.visibilityState === 'hidden' ||
+      (ui.modal && !/^(boss|info|item)$/.test(ui.modal.type)) || (E.state.battle && !E.state.battle.over) || document.visibilityState === 'hidden' || inDuel() ||
       (document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName));
     if (busy) { setTimeout(talkShow, 800); return; }
     ui.talkWait = null;
@@ -3606,6 +3642,7 @@
       if (!el.isConnected || !ui.popups[0] || ui.popups[0]._id !== id) return;
       i = Math.min(full.length, i + (full.charAt(i) === ' ' ? 2 : 1));
       el.textContent = full.slice(0, i);
+      if (i % 4 === 0 && full.charAt(i - 1) !== ' ') sfx('type');
       if (i < full.length) setTimeout(step, /[.,?!]/.test(full.charAt(i - 1)) ? 140 : 22);
       else { el.classList.remove('typing'); var c2 = document.getElementById('talk-ch'); if (c2) c2.classList.remove('wait'); }
     })();
@@ -3686,11 +3723,15 @@
     setInterval(checkDeadlines, 30000);
     // conversas aleatórias: só enquanto o jogador está a usar a app (tocou em algo nos últimos 2 minutos)
     ui.bootAt = Date.now();
+    // conversas espontâneas: o Sistema aparece a cada 10 minutos de uso (só com a app aberta e em uso; nunca num duelo nem numa batalha)
+    ['touchstart', 'pointerdown', 'scroll', 'keydown'].forEach(function (n) { document.addEventListener(n, function () { ui.lastAct = Date.now(); }, { passive: true, capture: true }); });
     setInterval(function () {
       if (!E.state || document.visibilityState === 'hidden') return;
-      if (Date.now() - (ui.lastAct || 0) > 120000 || Date.now() - ui.bootAt < 90000) return;
-      talkTry('idle', {}, 700);
-    }, 60000);
+      if (Date.now() - (ui.lastAct || 0) > 3 * 60000) return; // aberta mas parada: não conta como uso
+      ui.useMs = (ui.useMs || 0) + 30000;
+      if (ui.useMs < S.TALK_RULES.spontMin * 60000 || inDuel() || (E.state.battle && !E.state.battle.over)) return;
+      if (talkTry('idle', {}, 700, { spont: true })) ui.useMs = 0;
+    }, 30000);
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState === 'visible') {
         checkDeadlines(); if (E.state) { greet(); pullEvents(); }

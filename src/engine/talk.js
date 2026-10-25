@@ -27,6 +27,7 @@
     gapPrio: 15 * MIN,      // para diálogos importantes (chefe mortal, derrota…)
     perDay: { normal: 6, raro: 2, off: 0 },
     mode: { normal: 1, raro: 0.45, off: 0 },
+    spontMin: 10,           // conversa espontânea: a cada 10 minutos de uso ativo da app (fora de duelos e batalhas)
     repeatDays: 21,         // conversa mostrada mas não respondida não volta antes disto
     skipDays: 3,            // conversa ignorada pode voltar ao fim de 3 dias
     chance: {
@@ -175,7 +176,11 @@
     if (!c.list.length) return null;
     var specific = c.list.filter(function (d) { return d.cond.length; });
     var prio = c.list.some(function (d) { return d.prio; });
-    if (!opts.force) {
+    if (opts.spont) {
+      // espontânea: o relógio de uso já decidiu a hora; só o modo desligado, o silêncio pedido, as batalhas e os primeiros minutos a travam
+      var bs = T.blocked(st, trigger, true);
+      if (bs && !/^(limite|reservada|cedo)$/.test(bs)) return null;
+    } else if (!opts.force) {
       if (T.blocked(st, trigger, prio)) return null;
       var p = ((R.chance[trigger] || 0.1) + specialBonus(specific, c.V)) * R.mode[T.mode(st)] * t.damp;
       if (rnd() >= Math.min(0.9, p)) return null;

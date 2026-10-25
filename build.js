@@ -9,7 +9,7 @@ const path = require('path');
 
 const ROOT = __dirname;
 require('./tools/export-duel-data.js')(); // habilidades e itens de combate para os duelos (servidor)
-const order = require('./build-order.json').concat(['src/ui/fx.js', 'src/ui/sfx.js', 'src/ui/avatar.js', 'src/ui/app.js']);
+const order = require('./build-order.json').concat(['src/ui/fx.js', 'src/ui/sfx.js', 'src/ui/music.js', 'src/ui/avatar.js', 'src/ui/app.js']);
 const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
 /* --- avatares: assets/avatars/<classe>/<nivel>.(png|jpg|jpeg|webp) --- */
@@ -106,6 +106,11 @@ scanDir('frames', 'frames', frameArt);
 scanDir('arenas', 'arenas', arenaArt);
 scanDir('skills', 'skills', skillArt);
 
+/* --- música: assets/music/<id>.mp3 (b10…b100 reis, ar1…ar10 Campeões, credits, duel). Ficheiros à parte: não vão embutidos --- */
+const MU_SRC = path.join(ROOT, 'assets', 'music');
+const musicMap = {};
+if (fs.existsSync(MU_SRC)) fs.readdirSync(MU_SRC).forEach((f) => { const m = f.match(/^([a-z0-9_]+)\.mp3$/); if (!m) return; musicMap[m[1]] = 'music/' + f; copies.push([path.join(MU_SRC, f), path.join(ROOT, 'www', 'music', f)]); });
+
 /* --- endereço do servidor da Loja de Cristais (loja.json na raiz) --- */
 let SHOP_API = '';
 try { SHOP_API = String(JSON.parse(read('loja.json')).api || ''); } catch (e) { SHOP_API = ''; }
@@ -113,6 +118,7 @@ try { SHOP_API = String(JSON.parse(read('loja.json')).api || ''); } catch (e) { 
 const js = order.map((f) => '/* ' + f + ' */\n' + read(f)).join('\n') +
   '\nSYS.SHOP_API = ' + JSON.stringify(SHOP_API) + ';' +
   '\nSYS.SFX_DATA = ' + JSON.stringify(sfxData) + ';' +
+  '\nSYS.MUSIC = ' + JSON.stringify(musicMap) + ';' +
   '\nSYS.AVATARS = ' + JSON.stringify(manifest) + ';\nSYS.CLASS_ART = ' + JSON.stringify(classArt) + ';\nSYS.BOSS_ART = ' + JSON.stringify(bossArt) + ';\nSYS.ITEM_ART = ' + JSON.stringify(itemArt) + ';\nSYS.UI_ART = ' + JSON.stringify(uiArt) + ';\nSYS.TROPHY_ART = ' + JSON.stringify(trophyArt) + ';\nSYS.SKILL_ART = ' + JSON.stringify(skillArt) + ';\nSYS.FRAME_ART = ' + JSON.stringify(frameArt) + ';\nSYS.ARENA_ART = ' + JSON.stringify(arenaArt) + ';\nSYS.SHADOW_ART = ' + JSON.stringify(shadowArt) + ';\nSYS.boot(document.getElementById("app"));\n';
 const css = read('src/ui/styles.css') + '\n' + read('src/ui/fx.css');
 const fonts = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' +
@@ -141,7 +147,7 @@ function webPage(code, iconBase) {
 const full = webPage(safeJs, 'icons/');
 
 /* versão da raiz: os caminhos das imagens passam a começar por assets/ */
-const ART_MAPS = { CLASS_ART: classArt, BOSS_ART: bossArt, ITEM_ART: itemArt, UI_ART: uiArt, TROPHY_ART: trophyArt, SKILL_ART: skillArt, FRAME_ART: frameArt, ARENA_ART: arenaArt, SHADOW_ART: shadowArt };
+const ART_MAPS = { MUSIC: musicMap, CLASS_ART: classArt, BOSS_ART: bossArt, ITEM_ART: itemArt, UI_ART: uiArt, TROPHY_ART: trophyArt, SKILL_ART: skillArt, FRAME_ART: frameArt, ARENA_ART: arenaArt, SHADOW_ART: shadowArt };
 const prefixMap = (m) => { const o = {}; Object.keys(m).forEach((k) => { o[k] = 'assets/' + m[k]; }); return o; };
 let rootJs = safeJs.replace('SYS.AVATARS = ' + JSON.stringify(manifest) + ';', 'SYS.AVATARS = ' + JSON.stringify(Object.keys(manifest).reduce((o, c) => { o[c] = prefixMap(manifest[c]); return o; }, {})) + ';');
 Object.keys(ART_MAPS).forEach((name) => { rootJs = rootJs.replace('SYS.' + name + ' = ' + JSON.stringify(ART_MAPS[name]) + ';', 'SYS.' + name + ' = ' + JSON.stringify(prefixMap(ART_MAPS[name])) + ';'); });
@@ -151,6 +157,10 @@ const rootPage = webPage(rootJs, 'assets/web/');
 const INLINE = { TROPHY_ART: trophyArt, UI_ART: uiArt, SKILL_ART: skillArt, FRAME_ART: frameArt, ARENA_ART: arenaArt, SHADOW_ART: shadowArt };
 const inlineMap = (m) => { const o = {}; Object.keys(m).forEach((k) => { const pv = path.join(ROOT, 'dist', 'pv', m[k]); const f = fs.existsSync(pv) ? pv : path.join(ROOT, 'assets', m[k]); const ext = path.extname(f).slice(1).replace('jpg', 'jpeg'); o[k] = 'data:image/' + ext + ';base64,' + fs.readFileSync(f).toString('base64'); }); return o; };
 let previewJs = 'globalThis.SYS = { PREVIEW: true };\n' + safeJs;
+// pré-visualização: os sons vão num ficheiro à parte (pv-sfx.js) para a página não passar dos 16 MB
+previewJs = previewJs.replace('SYS.SFX_DATA = ' + JSON.stringify(sfxData) + ';', 'SYS.SFX_DATA = {};');
+fs.mkdirSync(path.join(ROOT, 'dist'), { recursive: true });
+fs.writeFileSync(path.join(ROOT, 'dist', 'pv-sfx.js'), 'Object.assign(SYS.SFX_DATA, ' + JSON.stringify(sfxData) + ');\nif (SYS.sfx && SYS.sfx.reload) SYS.sfx.reload();\n');
 // sombras: as dos portões vão embutidas; as das arenas premium são ficheiros publicados ao lado da página (poupa espaço)
 // todas as sombras vão no pv-extra.js: a página fica com folga no limite de 16 MB
 const shadowPv = {}, shadowFiles = Object.assign({}, shadowArt);
@@ -185,10 +195,11 @@ fs.writeFileSync(path.join(ROOT, 'dist', 'pv-bosses.js'), 'Object.assign(SYS.BOS
   // vai no fim do pv-bosses.js (a pré-visualização está no limite de 512 ficheiros)
   fs.appendFileSync(path.join(ROOT, 'dist', 'pv-bosses.js'), 'Object.assign(SYS.AVATARS, ' + JSON.stringify(fem) + ');\nObject.assign(SYS.CLASS_ART, ' + JSON.stringify(inlineMap(femCls)) + ');\nif (SYS.ui && SYS.ui.render) SYS.ui.render();\n');
 }
-const preview = '<title>Sistema do Caçador</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n' + fonts + '\n<style>\n' + css + '\n</style>\n<div id="app"></div>\n<script>\n' + previewJs + '</script>\n' + '<script src="pv-extra.js"></script>\n<script src="pv-bosses.js"></script>\n';
+const preview = '<title>Sistema do Caçador</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n' + fonts + '\n<style>\n' + css + '\n</style>\n<div id="app"></div>\n<script>\n' + previewJs + '</script>\n' + '<script src="pv-extra.js"></script>\n<script src="pv-bosses.js"></script>\n<script src="pv-sfx.js"></script>\n';
 
 fs.rmSync(path.join(ROOT, 'www', 'avatars'), { recursive: true, force: true });
 fs.rmSync(path.join(ROOT, 'www', 'avatars_f'), { recursive: true, force: true });
+fs.rmSync(path.join(ROOT, 'www', 'music'), { recursive: true, force: true });
 fs.rmSync(path.join(ROOT, 'www', 'classes'), { recursive: true, force: true });
 fs.rmSync(path.join(ROOT, 'www', 'bosses'), { recursive: true, force: true });
 fs.rmSync(path.join(ROOT, 'www', 'items'), { recursive: true, force: true });

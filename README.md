@@ -55,6 +55,16 @@ O jogo pode ser fechado só a quem tu autorizas, e um aparelho bloqueado não vo
   - uma reposição de fábrica muda os dois identificadores; com o modo privado ligado, esse «aparelho novo» precisa da tua autorização;
   - na versão web, limpar os dados do navegador cria um aparelho novo, que também precisa de autorização em modo privado.
 
+## Sons e música
+
+- **Efeitos** (`assets/sfx/<nome>.mp3`, embutidos no jogo): 51 sons, incluindo conquista, vitória contra chefe, mudança de fase, crítico, defesa, gelo/sombra/luz, invocação, Missão Diária, baú raro, abrir cela do Coliseu, despertar, extração falhada, sombra perdida, aparelho bloqueado, ação recusada, amizade, mensagem, a tua vez no duelo e o Sistema a escrever.
+- **Música** (`assets/music/<id>.mp3`, ficheiros à parte): uma trilha por chefe final (`b10`…`b100` reis dos portões, `ar1`…`ar10` Campeões), `credits` (ecrã de créditos) e `duel` (início de um duelo). Em batalha toca em loop; ao abrir a ficha do chefe toca uma vez como pré-escuta. Interruptor e volume próprios nas Definições.
+- Falta a trilha do Gorrath (`assets/music/ar7.mp3`): basta pôr o ficheiro com esse nome.
+
+## Conversas espontâneas
+
+Com a app aberta e em uso, o Sistema aparece para conversar a cada 10 minutos de uso (`S.TALK_RULES.spontMin`). Não aparece com a app fechada, parada há mais de 3 minutos, durante batalhas nem durante duelos contra outros jogadores.
+
 ## Salvamento
 
 Cada ganho ou perda (missão, compra, turno de combate, baú, ponto de atributo) é gravado no momento:
