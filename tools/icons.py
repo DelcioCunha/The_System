@@ -6,7 +6,45 @@ RES = 'android/app/src/main/res'
 BG = (6, 10, 20, 255)
 GLOW = (111, 214, 255, 255)
 
+SRC = 'assets/logo/icon.png'
+SPLASH = 'assets/logo/logo-2.png'   # ícone desenhado (se existir, substitui o emblema gerado)
+_src = None
+
+
+_cache = {}
+
+
+def from_art(size, transparent=False, scale=1.0, src=None):
+    """Usa a imagem do ícone: o losango ocupa ~60% do quadrado; 'scale' ajusta como no emblema gerado."""
+    src = src or SRC
+    if src not in _cache:
+        _cache[src] = Image.open(src).convert('RGB')
+    _src = _cache[src]
+    k = 0.68 / 0.60 * scale          # o ícone já traz margem: no emblema gerado o losango ocupa 68%
+    inner = max(1, int(round(size * k)))
+    art = _src.resize((inner, inner), Image.LANCZOS)
+    if transparent:
+        # néon sobre fundo escuro: o brilho passa a transparência (sem halo escuro à volta)
+        px = art.load(); out = Image.new('RGBA', art.size); po = out.load()
+        for y in range(inner):
+            for x in range(inner):
+                r, g, b = px[x, y]; m = max(r, g, b)
+                a = max(0, min(255, int((m - 24) * 255 / 190)))
+                po[x, y] = (min(255, r * 255 // m) if m else 0, min(255, g * 255 // m) if m else 0, min(255, b * 255 // m) if m else 0, a)
+        art = out
+    else:
+        art = art.convert('RGBA')
+    img = Image.new('RGBA', (size, size), (0, 0, 0, 0) if transparent else BG)
+    off = (size - inner) // 2
+    if inner > size:
+        art = art.crop((-off, -off, -off + size, -off + size)); off = 0
+    img.alpha_composite(art, (off, off))
+    return img
+
+
 def emblem(size, transparent=False, scale=1.0):
+    if os.path.exists(SRC):
+        return from_art(size, transparent, scale)
     img = Image.new('RGBA', (size, size), (0, 0, 0, 0) if transparent else BG)
     layer = Image.new('RGBA', (size, size), (0, 0, 0, 0))
     d = ImageDraw.Draw(layer)
@@ -30,7 +68,7 @@ def notif_icons(res=RES):
     """Ícone pequeno das notificações (Android exige silhueta branca sobre transparente)."""
     for dens, size in {'mdpi': 24, 'hdpi': 36, 'xhdpi': 48, 'xxhdpi': 72, 'xxxhdpi': 96}.items():
         big = emblem(size * 4, transparent=True, scale=1.25)
-        alpha = big.split()[3].point(lambda a: 255 if a > 90 else 0)
+        alpha = big.split()[3].point(lambda a: 255 if a > (215 if os.path.exists(SRC) else 90) else 0)
         white = Image.new('RGBA', big.size, (255, 255, 255, 0))
         white.putalpha(alpha)
         os.makedirs(f'{res}/drawable-{dens}', exist_ok=True)
@@ -57,7 +95,7 @@ if __name__ == '__main__':
         rnd = Image.new('RGBA', (s, s), (0, 0, 0, 0)); rnd.paste(base, (0, 0), m)
         rnd.save(f'{RES}/mipmap-{dens}/ic_launcher_round.png')
         fg = int(s * 108 / 48)
-        emblem(fg * 4, transparent=True, scale=0.62).resize((fg, fg), Image.LANCZOS).save(f'{RES}/mipmap-{dens}/ic_launcher_foreground.png')
+        emblem(fg * 4, transparent=True, scale=0.62 if not os.path.exists(SRC) else 0.72).resize((fg, fg), Image.LANCZOS).save(f'{RES}/mipmap-{dens}/ic_launcher_foreground.png')
 
     with open(f'{RES}/values/ic_launcher_background.xml', 'w') as f:
         f.write('<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#060A14</color>\n</resources>\n')
@@ -66,7 +104,11 @@ if __name__ == '__main__':
         w, h = Image.open(p).size
         sp = Image.new('RGBA', (w, h), BG)
         e = min(w, h) // 3
-        sp.alpha_composite(emblem(e * 2, transparent=True).resize((e, e), Image.LANCZOS), ((w - e) // 2, (h - e) // 2))
+        if os.path.exists(SPLASH):
+            # ecrã de abertura: o losango de cristal (assets/logo/logo-2.png)
+            sp.alpha_composite(from_art(e * 2, transparent=True, src=SPLASH).resize((e, e), Image.LANCZOS), ((w - e) // 2, (h - e) // 2))
+        else:
+            sp.alpha_composite(emblem(e * 2, transparent=True).resize((e, e), Image.LANCZOS), ((w - e) // 2, (h - e) // 2))
         sp.convert('RGB').save(p)
     emblem(512).save('assets/icon-512.png')
     print('ícones e splash gerados')

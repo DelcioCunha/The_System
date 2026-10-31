@@ -31,7 +31,7 @@ def shell(file, title, desc, body):
 <meta name="theme-color" content="#060A14">
 <meta property="og:title" content="%(title)s">
 <meta property="og:description" content="%(desc)s">
-<meta property="og:image" content="img/icon-512.png">
+<meta property="og:image" content="img/og.png">
 <link rel="icon" href="img/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Oxanium:wght@500;600;700;800&display=swap">
@@ -40,7 +40,7 @@ def shell(file, title, desc, body):
 <body>
 <header class="top">
   <div class="wrap">
-    <a class="brand" href="index.html"><img src="img/icon-192.png" alt="">Sistema</a>
+    <a class="brand" href="index.html" aria-label="Sistema"><img class="wm" src="img/logo-nome.webp" alt="Sistema"></a>
     <nav class="nav" aria-label="Páginas">%(nav)s</nav>
     <a class="btn sm cta-top" href="comprar.html">Obter o Sistema</a>
     <button class="menu-btn" type="button" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>

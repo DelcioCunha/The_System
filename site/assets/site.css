@@ -394,3 +394,6 @@ footer a:hover { color: var(--ice); }
 @keyframes nudge { 50% { transform: translateX(6px) rotate(45deg); } }
 .bossart.shade { box-shadow: 0 0 40px rgba(139, 107, 255, .35); border-color: rgba(139, 107, 255, .5); }
 .item .gl { width: 64px; height: 64px; border-radius: 10px; display: grid; place-items: center; font-size: 28px; color: var(--gc); background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--gc) 28%, transparent), #0D182E 70%); text-shadow: 0 0 14px var(--gc); }
+.brand img.wm { width: auto; height: 34px; border-radius: 0; background: none; mix-blend-mode: screen; }
+footer .brand img.wm { height: 40px; }
+@media (max-width: 520px) { .brand img.wm { height: 28px; } }

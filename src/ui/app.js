@@ -59,7 +59,8 @@
     '🏃': 'log_flee', '🏅': 'h_achievement', '🏆': 'log_victory', '💀': 'log_defeat', '💠': 'h_core', '💨': 'log_smoke', '💱': 'h_sell', '📝': 'h_mission_new',
     '📲': 'h_transfer', '🔰': 'h_shield', '🗺️': 'h_map', '🛒': 'h_buy', '👁️': 'ui_eye', '◆': 'ui_crystal',
     '🔔': 'h_bell', '🩸': 'h_blood', '📜': 'h_scroll', '🌑': 'log_shadow', '🌫️': 'h_fade', '🔒': 'ic_lock', '⚔️': 'log_appear', '⚡': 'log_storm',
-    '🗝️': 'h_key', '🧭': 'h_compass', '⛓️': 'h_chains', '📊': 'h_stats' };
+    '🗝️': 'h_key', '🧭': 'h_compass', '⛓️': 'h_chains', '📊': 'h_stats',
+    '🪙': 'h_coins', '🎁': 'h_gift', '✒️': 'h_quill', '🏛️': 'h_arena', '✔': 'ic_verify' };
   function hasArt(key) { return !!(S.UI_ART && S.UI_ART[key]); }
   /* texto que começa por emoji (registo de batalha) → ícone + texto */
   function iconText(txt, table, special) {
@@ -1013,7 +1014,7 @@
         }).join('') + '</div></section>';
       var buyBtn = function (c) { var can = (st.crystals || 0) >= c.crystals; return '<div class="row between">' + crys(c.crystals) + '<button class="btn sm prem" data-a="cos-buy" data-id="' + c.id + '"' + (can ? '' : ' disabled') + '>' + (can ? 'Comprar' : 'Faltam ' + (c.crystals - (st.crystals || 0))) + '</button></div>'; };
       var wearBtn = function (c, on) { return '<button class="btn sm ' + (on ? 'ghost' : 'pri') + ' block" data-a="cos-wear" data-id="' + c.id + '">' + (on ? 'Tirar' : 'Usar') + '</button>'; };
-      var giftBtn = function (c) { return S.shop.ready() && S.GIFTABLE && S.GIFTABLE[c.id] ? '<button class="btn sm ghost block" data-a="gift-open" data-id="' + c.id + '">🎁 Oferecer a um amigo</button>' : ''; };
+      var giftBtn = function (c) { return S.shop.ready() && S.GIFTABLE && S.GIFTABLE[c.id] ? '<button class="btn sm ghost block" data-a="gift-open" data-id="' + c.id + '">' + uiIcon('h_gift', '🎁', 'btn-ico') + ' Oferecer a um amigo</button>' : ''; };
       h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">Títulos exclusivos</span></div><p class="hint" style="margin-top:0">Substituem o título do teu nível. Aparecem no Estado, no teu perfil e nos duelos.</p><div class="cos-grid">' +
         S.COSMETICS.filter(function (c) { return c.kind === 'titulo'; }).map(function (c) {
           var own = !!st.cosmetics.owned[c.id], on = st.cosmetics.titulo === c.id;
@@ -1234,7 +1235,7 @@
         '<div class="row" style="gap:6px;margin-top:10px"><button class="btn grow" data-a="soc-back">Sair do duelo</button>' + (isFriend ? '<button class="btn bad grow" data-a="duel-invite" data-id="' + esc(opId) + '">Revanche</button>' : '<button class="btn bad grow" data-a="duel-create" data-p="1">Nova sala</button>') + '</div></div>';
     } else if (!myTurn) {
       h += '<div class="actions busy duel-wait-acts" style="margin-top:10px"><button class="btn pri" disabled>Atacar</button><button class="btn" disabled>Habilidades</button><button class="btn" disabled>Itens</button><button class="btn" disabled>Defender</button>' +
-        '<div class="duel-turn wait" style="grid-column:1/-1">Vez de ' + esc(B.name) + '…</div><button class="btn ghost emote-btn" data-a="emote-open">💬 Emote</button><button class="btn bad" data-a="duel-leave">Desistir</button></div>';
+        '<div class="duel-turn wait" style="grid-column:1/-1">Vez de ' + esc(B.name) + '…</div><button class="btn ghost emote-btn" data-a="emote-open">' + uiIcon('ui_chat', '💬', 'btn-ico') + ' Emote</button><button class="btn bad" data-a="duel-leave">Desistir</button></div>';
     } else if (A.stunned > 0) {
       h += '<div class="actions" style="margin-top:10px"><button class="btn pri" style="grid-column:1/-1" data-a="duel-act" data-v="pass">Atordoado: passar o turno</button><button class="btn bad" style="grid-column:1/-1" data-a="duel-leave">Desistir</button></div>';
     } else {
@@ -1243,7 +1244,7 @@
         '<button class="btn" data-a="d-sheet" data-v="skills">Habilidades</button>' +
         '<button class="btn" data-a="d-sheet" data-v="items">Itens</button>' +
         '<button class="btn" data-a="duel-act" data-v="defend">Defender</button>' +
-        '<button class="btn ghost emote-btn" data-a="emote-open">💬 Emote</button><button class="btn bad" data-a="duel-leave">Desistir</button></div>';
+        '<button class="btn ghost emote-btn" data-a="emote-open">' + uiIcon('ui_chat', '💬', 'btn-ico') + ' Emote</button><button class="btn bad" data-a="duel-leave">Desistir</button></div>';
     }
     h += '</section></div>';
     return h;
@@ -1259,7 +1260,7 @@
     var c = S.COSMETIC_BY_ID[m.id], st = E.state, fr = ((SO.cache && SO.cache.friends) || []);
     if (!c) return '';
     var can = (st.crystals || 0) >= c.crystals;
-    return '<div class="sheet-h"><h2>🎁 Oferecer</h2><button class="btn sm ghost" data-a="close">Fechar</button></div>' +
+    return '<div class="sheet-h"><h2>' + uiIcon('h_gift', '🎁', 'btn-ico') + ' Oferecer</h2><button class="btn sm ghost" data-a="close">Fechar</button></div>' +
       (artId(c.id) || artId('ui_presente') ? '<div class="gift-art"><img src="' + (artId(c.id) || artId('ui_presente')) + '" alt=""></div>' : '') + '<p class="small" style="margin-top:0"><b>' + esc(c.name) + '</b> por ' + crys(c.crystals) + '. Pagas com os teus Cristais e o amigo recebe na próxima vez que abrir o jogo com internet. Se já a tiver, recebe o valor em Cristais.</p>' +
       (!can ? '<p class="small" style="color:var(--warn)">Faltam ' + (c.crystals - (st.crystals || 0)) + ' Cristais.</p>' : '') +
       (fr.length ? '<div class="stack" style="gap:6px">' + fr.map(function (f) {

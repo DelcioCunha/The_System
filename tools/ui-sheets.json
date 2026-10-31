@@ -427,5 +427,18 @@
    "notice_evento",
    "notice_manutencao"
   ]
+ },
+ {
+  "title": "Ícones em falta (31 de outubro)",
+  "cols": 3,
+  "rows": 2,
+  "ids": [
+   "eff_monarca",
+   "ui_camera",
+   "h_coins",
+   "h_quill",
+   "h_arena",
+   "h_gift"
+  ]
  }
 ]
