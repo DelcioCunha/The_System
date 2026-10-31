@@ -130,14 +130,16 @@
   SH.cached = function () { return cfgCache; };
 
   /* cria o pedido no servidor e guarda-o no jogo */
-  SH.order = function (packageId) {
+  SH.order = function (packageId, giftTo) {
     var st = E.state;
     S.premium.ensure(st); SH.ensure(st);
-    return call('POST', '/api/orders', { package_id: packageId, player_id: st.playerId, player_name: st.name }).then(function (j) {
+    var body = { package_id: packageId, player_id: st.playerId, player_name: st.name };
+    if (giftTo) { body.gift_to = giftTo; body.token = st.shop.secret; }
+    return call('POST', '/api/orders', body).then(function (j) {
       if (!j.ok) { if (j.banned) setBan(st, j.ban); return j; }
-      st.shop.orders.unshift({ id: j.order.id, token: j.token, pkg: j.order.package, crystals: j.order.crystals, coins: j.order.coins || 0, price: j.order.price_kz, status: j.order.status, at: j.order.created_at, test: !!j.order.test, wa: j.whatsapp_url || (S.SHOP_WHATSAPP ? 'https://wa.me/' + S.SHOP_WHATSAPP + '?text=' + encodeURIComponent(j.message || ('Pedido ' + j.order.id)) : ''), msg: j.message || '' });
+      st.shop.orders.unshift({ id: j.order.id, token: j.token, pkg: j.order.package, crystals: j.order.crystals, coins: j.order.coins || 0, price: j.order.price_kz, status: j.order.status, at: j.order.created_at, test: !!j.order.test, gift: j.order.gift_name || null, wa: j.whatsapp_url || (S.SHOP_WHATSAPP ? 'https://wa.me/' + S.SHOP_WHATSAPP + '?text=' + encodeURIComponent(j.message || ('Pedido ' + j.order.id)) : ''), msg: j.message || '' });
       st.shop.orders = st.shop.orders.slice(0, 30);
-      E.history(st, j.order.coins ? '🪙' : '◆', 'Pedido ' + j.order.id + ': ' + (j.order.coins ? j.order.coins + ' moedas' : j.order.crystals + ' Cristais') + ' (' + j.order.price_kz + ' Kz).');
+      E.history(st, j.order.coins ? '🪙' : '◆', 'Pedido ' + j.order.id + ': ' + (j.order.coins ? j.order.coins + ' moedas' : j.order.crystals + ' Cristais') + (j.order.gift_name ? ' para ' + j.order.gift_name : '') + ' (' + j.order.price_kz + ' Kz).');
       E.commit('pedido de cristais');
       return { ok: true, order: st.shop.orders[0], whatsapp_url: j.whatsapp_url, message: j.message, payment_info: j.payment_info };
     });
@@ -174,9 +176,10 @@
   SH.apply = function (st, res) {
     SH.ensure(st);
     var rid = String(res.redemption_id || '');
-    if (!rid || !(res.crystals > 0 || res.coins > 0)) return { ok: false, msg: 'Resposta inválida do servidor.' };
+    if (!rid || !(res.crystals > 0 || res.coins > 0 || res.item)) return { ok: false, msg: 'Resposta inválida do servidor.' };
     if (st.shop.redeemed[rid]) return { ok: true, already: true, crystals: 0, msg: 'Este código já tinha sido resgatado nesta conta. O que comprou já está contigo.' };
-    st.shop.redeemed[rid] = { at: S.clock.now(), crystals: res.crystals || 0, coins: res.coins || 0, order: res.order_id || '' };
+    st.shop.redeemed[rid] = { at: S.clock.now(), crystals: res.crystals || 0, coins: res.coins || 0, order: res.order_id || '', item: res.item || '' };
+    if (res.item) { S.premium.receiveGift(st, res.item, res.from_name); E.commit('presente recebido'); return { ok: true, item: res.item, gifted: true, msg: 'Presente recebido.' }; }
     if (res.crystals > 0) S.premium.grant(st, res.crystals, res.order_id ? 'pedido ' + res.order_id : 'oferta do Sistema');
     if (res.coins > 0) { st.coins += res.coins; E.bump(st, 'coinsEarned', res.coins); E.history(st, '🪙', '+' + res.coins + ' moedas (' + (res.order_id ? 'pedido ' + res.order_id : 'oferta do Sistema') + ').'); }
     st.shop.orders.forEach(function (o) { if (o.id === res.order_id) o.status = 'redeemed'; });
@@ -206,6 +209,7 @@
      - os presentes por receber (Cristais e moedas), que entram sozinhos e uma única vez. */
   function giftEvent(g) {
     var what = [g.crystals ? '+' + g.crystals + ' Cristais' : '', g.coins ? '+' + g.coins + ' moedas' : ''].filter(Boolean).join(' · ');
+    if (g.from_name) return { type: 'gift', title: 'PRESENTE DE ' + String(g.from_name).toUpperCase(), name: what, lines: [g.from_name + ' comprou isto para ti.', 'Os amigos também contam como aliados.'] };
     return { type: 'gift', title: g.order_id ? 'COMPRA ENTREGUE' : 'O SISTEMA ENVIOU-TE ALGO', name: what,
       lines: [g.order_id ? 'Pedido ' + g.order_id + ': pagamento confirmado.' : (g.reason || 'Oferta do Sistema.'), g.message || 'Não agradeças. Usa-o bem.'].filter(Boolean) };
   }
@@ -225,8 +229,10 @@
   function profileOf(st) {
     var fr = S.premium && S.premium.cosmeticOn ? S.premium.cosmeticOn(st, 'moldura') : null, nm = S.premium && S.premium.cosmeticOn ? S.premium.cosmeticOn(st, 'nome') : null;
     var sh = st.shadows && st.shadows.owned ? Object.keys(st.shadows.owned).length : 0;
-    return { title: S.titleFor ? S.titleFor(st.level) : '', ach: Object.keys(st.achievements || {}).length, achTotal: (S.ACHIEVEMENTS || []).length, shadows: sh,
-      trophies: Object.keys(st.trophies || {}).length, frame: fr ? fr.id : null, color: nm && nm.color ? nm.color : null };
+    return { title: S.premium && S.premium.titleOf ? S.premium.titleOf(st) : (S.titleFor ? S.titleFor(st.level) : ''), ach: Object.keys(st.achievements || {}).length, achTotal: (S.ACHIEVEMENTS || []).length, shadows: sh,
+      trophies: Object.keys(st.trophies || {}).length, frame: fr ? fr.id : null, color: nm && nm.color ? nm.color : null,
+      tcolor: S.premium && S.premium.titleColor ? S.premium.titleColor(st) : null,
+      emotes: st.cosmetics && st.cosmetics.owned ? (S.COSMETICS || []).filter(function (c) { return c.kind === 'emote' && st.cosmetics.owned[c.id]; }).map(function (c) { return c.id; }) : [] };
   }
   /* avisos da administração: guardados no jogo; os novos aparecem uma vez e ficam na área de Avisos */
   SH.NOTICE_KINDS = { info: 'Informação', importante: 'Importante', evento: 'Evento', manutencao: 'Manutenção' };
@@ -276,6 +282,10 @@
         return { ok: true, deleted: true, changed: true };
       }
       if (j.role && j.role.id) st.shop.role = { id: j.role.id, name: j.role.name };
+      if (j.legal !== undefined) {
+        var wasLegal = !!st.shop.legal; st.shop.legal = j.legal || null;
+        if (!wasLegal && j.legal) { E.history(st, '✔', 'O Sistema registou esta conta como Jogador legalizado.'); E.emit({ type: 'watch', good: true, level: 1, title: 'JOGADOR LEGALIZADO', lines: ['Esta conta foi ativada com um código oficial.', 'A marca «Legalizado» aparece no teu perfil e para os teus amigos.'] }); }
+      }
       var nn = Array.isArray(j.notices) ? SH.applyNotices(st, j.notices) : 0;
       if (j.account === 'banned') { setBan(st, j.ban); return { ok: true, banned: true, changed: true }; }
       var changed = false;
@@ -290,7 +300,7 @@
           return call('POST', '/api/player/claim', { player_id: st.playerId, token: st.shop.secret, grant_id: g.id }).then(function (c) {
             if (!c.ok) return;
             var r = SH.apply(st, c);
-            if (r.ok && !r.already) { changed = true; E.emit(giftEvent(c)); }
+            if (r.ok && !r.already) { changed = true; if (!r.gifted) E.emit(giftEvent(c)); }
           });
         });
       }, Promise.resolve()).then(function () { E.commit('sincronização'); return { ok: true, changed: changed || nn > 0, gifts: inbox.length, notices: nn }; });

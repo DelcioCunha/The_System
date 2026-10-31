@@ -207,8 +207,11 @@ step('portão do aparelho: bloqueado, acesso privado e verificação', () => {
   assert.ok(!$(wb, '[data-a="tab"]'), 'sem acesso ao jogo');
   wb.close();
   // acesso privado: código de acesso ou pedido; também antes de criar personagem
-  const wp = open({ 'sis.gate.v1': JSON.stringify({ access: 'pending', code: 'APR-WXYZ-2345', checkedAt: Date.now(), private: true }) }).window;
-  assert.ok($(wp, '.gate-pending'), 'ecrã de acesso restrito');
+  const wp = open({ 'sis.gate.v1': JSON.stringify({ access: 'pending', code: 'APR-WXYZ-2345', checkedAt: Date.now(), private: true, wa: 'https://wa.me/244923000111?text=x', activation: { price_kz: 5000, price_old_kz: 7500, payment: 'Multicaixa Express' } }) }).window;
+  assert.ok($(wp, '.gate-pending'), 'ecrã de ativação');
+  assert.ok(/Ativação do Sistema/.test($(wp, '.act-price').textContent) && /5.000 Kz/.test($(wp, '.act-price').textContent), 'preço da ativação');
+  assert.ok($(wp, '.act-buy [data-a="ext"]'), 'comprar pelo WhatsApp');
+  assert.ok(/bloqueio permanente/.test($(wp, '.act-warn').textContent));
   assert.ok($(wp, '#gate-acs') && $(wp, '[data-a="gate-redeem"]') && $(wp, '[data-a="gate-request"]'));
   assert.ok(!$(wp, '[data-a="intro-yes"]'), 'a introdução fica para depois');
   wp.close();

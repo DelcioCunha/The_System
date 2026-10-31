@@ -25,6 +25,10 @@ module.exports = function exportDuelData() {
     'export const DUEL_SKILLS = ' + JSON.stringify(skills) + ';\n' +
     'export const DUEL_ITEMS = ' + JSON.stringify(items) + ';\n' +
     'export const CLASS_MAIN = ' + JSON.stringify(main) + ';\n' +
+    'export const MANA_RULES = ' + JSON.stringify(S.MANA_RULES) + ';\n' +
+    'export const CLASS_INT = ' + JSON.stringify(Object.keys(S.CLASSES).reduce((o, c) => { o[c] = [S.CLASSES[c].base.int, S.CLASSES[c].growth.indexOf('int') >= 0 ? 1 : 0]; return o; }, {})) + ';\n' +
+    'export const EMOTES = ' + JSON.stringify(S.EMOTES) + ';\n' +
+    'export const GIFTABLE = ' + JSON.stringify(Object.keys(S.GIFTABLE).reduce((o, id) => { const c = S.COSMETIC_BY_ID[id]; o[id] = { n: c.name, k: c.kind, p: c.crystals }; return o; }, {})) + ';\n' +
     'export const HEAL_LIMIT = ' + JSON.stringify((S.PREMIUM_RULES && 3) || 3) + ';\n' +
     'export const DOT_NAMES = { burn: "queimadura", poison: "veneno", bleed: "sangramento" };\n' +
     'export const BUFF_NAMES = { atk: "Ataque", matk: "Ataque mágico", def: "Defesa", crit: "Crítico", eva: "Esquiva", lifesteal: "Roubo de vida", reflect: "Reflexão" };\n';

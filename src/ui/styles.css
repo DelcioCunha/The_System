@@ -1151,3 +1151,62 @@ button.trophy { font: inherit; color: inherit; padding: 0; cursor: pointer; appe
 .fin-win .arena-banner { --ac: #ffffff; }
 .chip.fin-chip { border-color: rgba(255, 255, 255, .5); color: #f4f8ff; }
 @media (prefers-reduced-motion: reduce) { .cut-eye, .arq-face { animation: none !important; } }
+
+/* ---------- Ativação (APK vendido) e marca de jogador legalizado ---------- */
+.legal-tag { display: inline-flex; align-items: center; gap: 4px; margin-top: 5px; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .05em; color: #6ff0b0; border: 1px solid rgba(111, 240, 176, .55); background: rgba(111, 240, 176, .08); white-space: nowrap; }
+.legal-tag.prem { color: #67d5ff; border-color: rgba(103, 213, 255, .65); background: linear-gradient(90deg, rgba(103, 213, 255, .12), rgba(185, 140, 255, .12)); }
+.legal-tag.no { color: var(--muted); border-color: var(--line); background: none; font-weight: 600; }
+.legal-tag.sm { margin: 0 0 0 6px; padding: 1px 7px; font-size: 10px; vertical-align: middle; }
+.act-screen .ban-box { max-width: 460px; }
+.act-price { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 2px 10px; margin: 6px 0 12px; padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(103, 213, 255, .45); background: rgba(103, 213, 255, .06); text-align: left; }
+.act-price .act-k { font-weight: 700; }
+.act-price .act-v { font-size: 22px; font-weight: 800; color: #67d5ff; grid-row: span 2; align-self: center; }
+.act-price .act-old { grid-column: 2; text-decoration: line-through; color: var(--muted); font-size: 12px; text-align: right; }
+.act-price .small { grid-column: 1; }
+.act-steps { margin: 0 0 10px; padding-left: 20px; text-align: left; font-size: 13px; line-height: 1.5; }
+.act-steps li { margin-bottom: 4px; }
+.act-warn { font-size: 12px; line-height: 1.5; color: #ffb3bf; border-left: 2px solid #ff2a48; padding: 4px 0 4px 10px; text-align: left; margin: 12px 0; }
+.act-paid { text-align: left; margin-bottom: 10px; font-size: 13px; }
+.act-paid summary { cursor: pointer; color: var(--muted); }
+.act-buy { text-align: left; }
+
+/* títulos, efeitos e emotes da Aparência */
+.cos-sw.titulo { flex-direction: column; display: flex; justify-content: center; align-items: center; gap: 2px; height: 56px; background: rgba(255,255,255,.03); }
+.cos-sw.titulo small { color: var(--muted, #8a94b0); font-size: 11px; }
+.cos-sw.titulo b { font-family: var(--f-display); font-size: 14px; letter-spacing: .06em; text-transform: uppercase; text-align: center; }
+.cos-sw.efeito { height: 56px; background: radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--cc) 35%, transparent), transparent 70%); }
+.cos-sw.efeito b { font-size: 26px; filter: drop-shadow(0 0 8px var(--cc)); animation: fxPulse 1.6s ease-in-out infinite; }
+@keyframes fxPulse { 50% { transform: scale(1.15); } }
+.emote-list { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 3px; font-size: 13px; color: var(--txt, #dfe6ff); }
+.emote-list li { background: rgba(255,255,255,.04); border-radius: 4px; padding: 3px 6px; }
+.duel-title { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; opacity: .9; }
+.emote-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.emote-bar button { font-size: 12px; }
+.duel-log .emote { font-style: italic; color: #ffd27a; }
+.emote-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.emote-btn { grid-column: auto; }
+.emote-bubble { position: absolute; left: 50%; top: 4px; transform: translateX(-50%); background: #10182e; border: 1px solid #ffd27a; color: #ffe7b0; padding: 6px 10px; border-radius: 10px; font-size: 13px; font-style: italic; white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis; z-index: 5; box-shadow: 0 0 14px rgba(255,210,122,.35); animation: emoteIn .35s ease-out, emoteOut .6s ease-in 8.4s forwards; }
+.ppanel { position: relative; }
+.ppanel .emote-bubble { top: -14px; }
+.boss-wrap { position: relative; }
+@keyframes emoteIn { from { opacity: 0; transform: translate(-50%, 8px) scale(.9); } }
+@keyframes emoteOut { to { opacity: 0; } }
+.gift-to { margin-top: 10px; display: grid; gap: 6px; }
+.gift-to .seg { flex-wrap: wrap; display: flex; gap: 4px; }
+.gift-to .seg button { font-size: 12px; padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,.12); background: transparent; color: inherit; }
+.gift-to .seg button[aria-pressed="true"] { border-color: var(--gold, #ffc85a); color: var(--gold, #ffc85a); }
+.emote-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.emote-bubble { position: absolute; left: 50%; top: 4px; transform: translateX(-50%); background: #10182e; border: 1px solid #ffd27a; color: #ffe7b0; padding: 6px 10px; border-radius: 10px; font-size: 13px; font-style: italic; white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis; z-index: 5; box-shadow: 0 0 14px rgba(255,210,122,.35); animation: emoteIn .35s ease-out, emoteOut .6s ease-in 8.4s forwards; }
+.ppanel { position: relative; }
+.ppanel .emote-bubble { top: -14px; }
+.boss-wrap { position: relative; }
+@keyframes emoteIn { from { opacity: 0; transform: translate(-50%, 8px) scale(.9); } }
+@keyframes emoteOut { to { opacity: 0; } }
+.gift-to { margin-top: 10px; display: grid; gap: 6px; }
+.gift-to .seg { flex-wrap: wrap; display: flex; gap: 4px; }
+.gift-to .seg button { font-size: 12px; padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,.12); background: transparent; color: inherit; }
+.gift-to .seg button[aria-pressed="true"] { border-color: var(--gold, #ffc85a); color: var(--gold, #ffc85a); }
+.win .win-h .duel-nm { display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 2px; min-width: 0; flex: 1 1 auto; }
+.win .win-h .duel-nm .duel-title { font-size: 10px; letter-spacing: .08em; font-family: var(--f-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
+.cos-sw.efeito img { width: 52px; height: 52px; object-fit: contain; filter: drop-shadow(0 0 8px var(--cc)); }
+.gift-art { display: grid; place-items: center; margin: -4px 0 10px; } .gift-art img { width: 96px; height: 96px; border-radius: 12px; box-shadow: 0 0 22px rgba(111,214,255,.35); }

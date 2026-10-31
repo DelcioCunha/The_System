@@ -182,4 +182,22 @@
   });
   S.COMMON_SKILLS.forEach(function (s) { s.cls = 'todos'; S.ALL_SKILLS[s.id] = s; });
   S.SECRET_SKILLS.forEach(function (s) { s.cls = 'secreta'; s.secret = true; S.ALL_SKILLS[s.id] = s; });
+
+  /* ---------- CUSTO DE MANA ----------
+     O valor "mp" de cada habilidade é o seu peso (o poder que tem). O custo real cresce com o nível:
+     é uma percentagem da mana natural da classe nesse nível (sem pontos extra nem equipamento),
+     por isso continua a pesar no nível 100. Quem investe em Inteligência ou em mana tem mais lançamentos.
+     - básicas (peso 4-10): 2-5% · médias (peso 20-30): 10-15% · supremas (peso 60-70): 30-35%
+     - nunca menos do que o peso; a mana regenera 5% por turno (era 3%) */
+  S.MANA_RULES = { pctPerWeight: 0.5, capPct: 45, regenPct: 5 };
+  S.naturalMp = function (cls, level) {
+    var c = S.CLASSES[cls] || S.CLASSES.guerreiro, L = Math.max(1, level || 1);
+    var int = c.base.int + (c.growth.indexOf('int') >= 0 ? L - 1 : 0);
+    return 30 + int * 5 + L * 3;
+  };
+  S.skillCost = function (sk, cls, level) {
+    if (!sk || !sk.mp) return 0;
+    var R = S.MANA_RULES, pct = Math.min(R.capPct, sk.mp * R.pctPerWeight);
+    return Math.max(sk.mp, Math.round(S.naturalMp(cls, level) * pct / 100));
+  };
 })(globalThis.SYS = globalThis.SYS || {});

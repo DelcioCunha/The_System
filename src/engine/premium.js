@@ -111,6 +111,16 @@
   };
 
   /* aparência */
+  /* título exclusivo (se houver) ou o título do nível */
+  P.titleOf = function (st) { var t = P.cosmeticOn(st, 'titulo'); return t ? t.name : S.titleFor(st.level); };
+  P.titleColor = function (st) { var t = P.cosmeticOn(st, 'titulo'); return t ? t.color : null; };
+  P.effectOf = function (st) { var f = P.cosmeticOn(st, 'efeito'); return f ? f.fx : null; };
+  P.emotesOf = function (st) {
+    P.ensure(st);
+    var out = S.EMOTES_FREE.map(function (t, i) { return { id: 'livre:' + i, t: t }; });
+    S.COSMETICS.forEach(function (c) { if (c.kind === 'emote' && st.cosmetics.owned[c.id]) c.lines.forEach(function (t, i) { out.push({ id: c.id + ':' + i, t: t, pack: c.name }); }); });
+    return out;
+  };
   P.cosmeticOn = function (st, kind) { P.ensure(st); var id = st.cosmetics[kind]; return id && st.cosmetics.owned[id] ? S.COSMETIC_BY_ID[id] || null : null; };
   P.buyCosmetic = function (id) {
     var st = E.state; P.ensure(st);
@@ -136,6 +146,32 @@
     return { ok: true, msg: st.cosmetics[c.kind] ? c.name + ' ativa.' : c.name + ' guardada.' };
   };
 
+  /* presente de um amigo: o item fica teu (se já o tinhas, o Sistema devolve-te o valor em Cristais) */
+  P.receiveGift = function (st, id, from) {
+    P.ensure(st);
+    var c = S.COSMETIC_BY_ID[id];
+    if (!c) return false;
+    if (st.cosmetics.owned[id]) {
+      P.grant(st, c.crystals, 'presente repetido de ' + (from || 'um amigo'));
+      E.emit({ type: 'gift', title: 'PRESENTE DE ' + String(from || 'UM AMIGO').toUpperCase(), name: '+' + c.crystals + ' Cristais', lines: [(from || 'Um amigo') + ' ofereceu-te ' + c.name + ', mas já era tua.', 'O Sistema converteu o presente em Cristais.'] });
+      return true;
+    }
+    st.cosmetics.owned[id] = now();
+    if (c.kind !== 'emote' && !st.cosmetics[c.kind]) st.cosmetics[c.kind] = id;
+    E.history(st, '🎁', (from || 'Um amigo') + ' ofereceu-te ' + c.name + '.');
+    E.emit({ type: 'gift', title: 'PRESENTE DE ' + String(from || 'UM AMIGO').toUpperCase(), name: c.name, lines: [(from || 'Um amigo') + ' ofereceu-te isto com os seus Cristais.', c.kind === 'emote' ? 'As frases novas já aparecem nos duelos.' : 'Está em Loja Premium › Aparência.'] });
+    return true;
+  };
+  /* depois de o servidor aceitar um presente enviado: os Cristais saem da tua conta */
+  P.giftSent = function (st, id, toName) {
+    P.ensure(st);
+    var c = S.COSMETIC_BY_ID[id];
+    if (!c) return;
+    st.crystals = Math.max(0, (st.crystals || 0) - c.crystals);
+    E.bump(st, 'crystalsSpent', c.crystals);
+    E.history(st, '🎁', 'Ofereceu ' + c.name + ' a ' + toName + ' (−' + c.crystals + ' Cristais).');
+    E.commit('presente enviado');
+  };
   /* aparência ganha (não comprada): a Moldura do Primeiro Jogador */
   P.award = function (st, id) {
     P.ensure(st);

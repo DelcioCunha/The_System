@@ -280,7 +280,7 @@
     s.eva = Math.min(40, t.agi * 0.2 + t.per * 0.05 + eb.eva + (p.eva || 0));
     s.lifesteal = eb.lifesteal + (p.lifesteal || 0);
     s.regenHp = (p.regenHp || 0) + (eb.regenHp || 0);
-    s.regenMp = 3 + (p.regenMp || 0) + (eb.regenMp || 0);
+    s.regenMp = ((S.MANA_RULES && S.MANA_RULES.regenPct) || 3) + (p.regenMp || 0) + (eb.regenMp || 0);
     s.summonPct = (p.summonPct || 0) + (eb.summonPct || 0);
     s.lastStand = !!p.lastStand;
     s.revive = p.revive || 0;

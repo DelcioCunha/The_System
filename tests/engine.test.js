@@ -520,6 +520,22 @@ test('batalha completa grava a cada turno e o chefe morto não volta', () => {
   assert.ok(!C.start('b1').ok, 'não reaparece');
   assert.ok(S.storage.loadLocal().state.defeated.b1);
 });
+test('mana: o custo das habilidades cresce com o nível e pesa conforme o poder', () => {
+  const { S } = boot();
+  const g1 = S.ALL_SKILLS.g1, g5 = S.ALL_SKILLS.g5, g9 = S.ALL_SKILLS.g9;
+  assert.strictEqual(S.skillCost(g1, 'guerreiro', 1), g1.mp, 'no início custa o mesmo');
+  const nat100 = S.naturalMp('guerreiro', 100);
+  assert.ok(S.skillCost(g9, 'guerreiro', 100) >= nat100 * 0.3, 'a suprema gasta um terço da mana natural');
+  assert.ok(S.skillCost(g5, 'guerreiro', 100) > g5.mp, 'as médias também sobem');
+  assert.ok(S.skillCost(g9, 'guerreiro', 100) > S.skillCost(g5, 'guerreiro', 100) * 2, 'o custo segue o poder');
+  assert.ok(S.skillCost(S.ALL_SKILLS.m9 || g9, 'mago', 100) > S.skillCost(g9, 'guerreiro', 100), 'classes de mana têm mais mana e pagam mais');
+  // em combate: a mana gasta é a do custo novo
+  makeHero(S, 'guerreiro', 100);
+  const E = S.engine, C = S.combat; C.start('b100');
+  const bt = E.state.battle, before = bt.p.mp;
+  assert.ok(C.act('skill', 'g9').ok);
+  assert.ok(before - bt.p.mp >= S.skillCost(g9, 'guerreiro', 100) - Math.round(bt.p.maxMp * 0.2), 'gasta a sério');
+});
 test('equilíbrio: mesmo nível vence na maioria; 12 níveis abaixo nunca', () => {
   const B = require('./balance.js');
   ['guerreiro', 'assassino', 'mago', 'guardiao', 'arqueiro', 'invocador'].forEach((cls) => {

@@ -752,8 +752,9 @@
         var known = C.unlockedActiveSkills(st).some(function (s) { return s.id === id; });
         if (!sk || !known) return { ok: false, msg: 'Habilidade indisponível.' };
         if (p.cds[id] > 0) return { ok: false, msg: 'Em recarga (' + p.cds[id] + ' turnos).' };
-        if (p.mp < sk.mp) return { ok: false, msg: 'Mana insuficiente.' };
-        p.mp -= sk.mp;
+        var cost = S.skillCost(sk, st.cls, st.level);
+        if (p.mp < cost) return { ok: false, msg: 'Mana insuficiente (precisas de ' + cost + ').' };
+        p.mp -= cost;
         if (sk.cd) p.cds[id] = sk.cd + 1;
         log(bt, '✦ Usaste ' + sk.name + '.', 'skill');
         sk.ops.forEach(function (op) { if (bt.b.hp > 0 || op.op !== 'dmg') doPlayerOp(bt, op, sk.name); });

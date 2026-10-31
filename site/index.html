@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sistema · O RPG da tua vida real</title>
+<meta name="description" content="Sistema é um RPG para Android em que a tua vida real é o jogo: cumpre missões do dia a dia, ganha XP, evolui o teu avatar e enfrenta mais de cem chefes. Criado em Angola.">
+<meta name="theme-color" content="#060A14">
+<meta property="og:title" content="Sistema · O RPG da tua vida real">
+<meta property="og:description" content="Sistema é um RPG para Android em que a tua vida real é o jogo: cumpre missões do dia a dia, ganha XP, evolui o teu avatar e enfrenta mais de cem chefes. Criado em Angola.">
+<meta property="og:image" content="img/icon-512.png">
+<link rel="icon" href="img/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Oxanium:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="img/icon-192.png" alt="">Sistema</a>
+    <nav class="nav" aria-label="Páginas"><a href="jogo.html">O jogo</a><a href="duelos.html">Duelos</a><a href="lojas.html">Lojas</a><a href="sistema-vivo.html">Sistema vivo</a><a href="comprar.html">Comprar</a></nav>
+    <a class="btn sm cta-top" href="comprar.html">Obter o Sistema</a>
+    <button class="menu-btn" type="button" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+<main>
+<section class="hero">
+  <canvas class="field" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div>
+      <h1><span class="ln"><span>A tua vida real</span></span><span class="ln"><span>é o jogo.</span></span></h1>
+      <p class="lead">Sistema é um RPG para Android que só avança quando tu avanças. Escreves as tuas missões do dia a dia, cumpres-nas e ganhas XP. O teu avatar evolui, e com ele chegam mais de cem chefes para derrotar.</p>
+      <div class="syswin" id="syswin" role="region" aria-label="Mensagem do Sistema">
+        <span class="tag"><i></i>SISTEMA</span>
+        <p class="msg" id="sys-msg" aria-live="polite"></p>
+        <div class="act" id="sys-act" hidden>
+          <button class="btn yes" type="button" data-sys="yes">Aceitar</button>
+          <button class="btn" type="button" data-sys="no">Recusar</button>
+        </div>
+      </div>
+      <p class="hero-note"><span data-bind="price-line">Ativação por 5 000 Kz</span>, pagamento único por Multicaixa Express. Feito em Angola.</p>
+    </div>
+    <div class="phone" aria-label="Capturas do jogo">
+      <div class="shots">
+        <img class="on" src="img/app-status.webp" alt="Ecrã de estado: nível 46, Guerreiro, atributos e evolução">
+        <img src="img/app-missoes.webp" alt="Missão Diária e missões do dia">
+        <img src="img/app-combate.webp" alt="Os chefes da Fortaleza de Gelo">
+        <img src="img/app-batalha.webp" alt="Batalha por turnos contra Skadhi, Rainha do Inverno Eterno">
+        <img src="img/app-coliseu.webp" alt="O Coliseu dos Condenados">
+      </div>
+      <div class="dots" aria-hidden="true"></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head"><h2 class="rv">Cada dia cumprido torna-te mais forte</h2><p class="lead rv">Não há atalhos. O XP vem do que fazes fora do ecrã, e o Sistema regista tudo.</p></div>
+    <div class="steps" data-stagger>
+      <article class="step rv"><div class="shot"><img src="img/app-missoes.webp" alt="" loading="lazy"></div><h3>Escreve as tuas missões</h3><p>Ler, treinar, estudar, arrumar a casa. Escolhe a dificuldade e o prazo. Todos os dias há também uma Missão Diária de exercício.</p></article>
+      <article class="step rv"><div class="shot"><img src="img/app-status.webp" alt="" loading="lazy"></div><h3>Cumpre e ganha XP</h3><p>Cada missão cumprida dá XP, moedas e baús. Sobes de nível, distribuis pontos de atributo e o avatar muda de aparência a cada 3 níveis.</p></article>
+      <article class="step rv"><div class="shot"><img src="img/app-batalha.webp" alt="" loading="lazy"></div><h3>Enfrenta os chefes</h3><p>Combates por turnos contra os reis de 10 portões. Falhar a Diária tem castigo: o Sistema não perdoa quem desiste.</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap split">
+    <div class="evo-stage rv">
+      <img id="evo-img" src="img/evo-m-1.webp" alt="Guerreiro no nível 1">
+      <div class="evo-lv"><span>1</span><small>Nível</small></div>
+    </div>
+    <div>
+      <h2 class="rv">Começas no nível 1. O resto, descobres a jogar</h2>
+      <p class="lead rv" style="margin-top:14px">O teu avatar muda de aparência a cada 3 níveis: 34 formas por classe, desenhadas à mão no estilo webtoon. Não mostramos nenhuma antes do tempo. Cada uma ganha-se.</p>
+      <div class="seg rv" role="group" aria-label="Aparência" style="margin-top:22px"><button type="button" data-g="m" aria-pressed="true">Masculina</button><button type="button" data-g="f" aria-pressed="false">Feminina</button></div>
+      <div class="locked rv" aria-label="Formas futuras escondidas">
+        <figure><div class="lk"><img src="img/evo-m-1.webp" alt=""></div><figcaption>Nível 10</figcaption></figure>
+        <figure><div class="lk"><img src="img/evo-m-1.webp" alt=""></div><figcaption>Nível 49</figcaption></figure>
+        <figure><div class="lk"><img src="img/evo-m-1.webp" alt=""></div><figcaption>Nível 100</figcaption></figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head"><h2 class="rv">Explora o Sistema</h2></div>
+    <div class="grid g2" data-stagger>
+      <a class="tile art rv" href="jogo.html"><img src="img/arena-ar10.webp" alt="" loading="lazy"><div class="body"><h3>O jogo</h3><p>Missões, 6 classes, 10 portões com 100 chefes, sombras que lutam por ti e um segredo no fim de tudo.</p><span class="go">Ver o jogo</span></div></a>
+      <a class="tile art rv" href="duelos.html"><img src="img/arena-ar1.webp" alt="" loading="lazy"><div class="body"><h3>Duelos online</h3><p>Desafia amigos para duelos por turnos decididos pelo servidor. Sobe nas patentes, do Ferro ao Monarca.</p><span class="go">Ver os duelos</span></div></a>
+      <a class="tile art rv" href="lojas.html"><img src="img/arena-ar5.webp" alt="" loading="lazy"><div class="body"><h3>Lojas</h3><p>A loja de moedas, a Loja Premium com equipamento soberano e relíquias, os Cristais e o Coliseu dos Condenados.</p><span class="go">Ver as lojas</span></div></a>
+      <a class="tile art rv" href="sistema-vivo.html"><img src="img/arena-final.webp" alt="" loading="lazy"><div class="body"><h3>O Sistema vivo</h3><p>Ele fala contigo, dá missões de emergência, castiga quem falha e repara quando tentas enganá-lo.</p><span class="go">Conhecer o Sistema</span></div></a>
+    </div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap split">
+    <div>
+      <h2 class="rv">O que te espera</h2>
+      <p class="lead rv" style="margin-top:14px">Um jogo completo, feito por uma só pessoa, em Angola.</p>
+    </div>
+    <div class="status rv">
+      <dl>
+        <dt>Chefes nos 10 portões</dt><dd data-count="100">100</dd>
+        <dt>Combates no Coliseu dos Condenados</dt><dd data-count="100">100</dd>
+        <dt>Aparências do avatar por classe</dt><dd data-count="34">34</dd>
+        <dt>Habilidades</dt><dd data-count="124">124</dd>
+        <dt>Itens</dt><dd data-count="462">462</dd>
+        <dt>Conversas do Sistema</dt><dd data-count="700">700</dd>
+        <dt data-legal-row hidden>Jogadores legalizados</dt><dd data-bind="legal" data-legal-row hidden>—</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <div class="cta-band rv">
+      <div><h2>Pronto para seres escolhido?</h2><p>Descarrega o APK, compra o teu código de ativação e começa no nível 1.</p></div>
+      <div class="btns"><a class="btn wa" data-buy href="comprar.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .2-1.2c-.1-.2-.3-.2-.5-.3Z"/></svg> Comprar o código</a><a class="btn" href="comprar.html">Ver como funciona</a></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer>
+  <div class="wrap cols">
+    <div>
+      <a class="brand" href="index.html" style="font-size:18px"><img src="img/icon-192.png" alt="">Sistema</a>
+      <p style="margin-top:12px;max-width:40ch">Um RPG para Android em que a tua vida real é o jogo. Criado em Angola por Delcio Cunha. © 2026</p>
+    </div>
+    <div>
+      <h4>Páginas</h4>
+      <ul><li><a href="index.html">Início</a></li><li><a href="jogo.html">O jogo</a></li><li><a href="duelos.html">Duelos</a></li><li><a href="lojas.html">Lojas</a></li><li><a href="sistema-vivo.html">Sistema vivo</a></li><li><a href="comprar.html">Comprar</a></li></ul>
+    </div>
+    <div>
+      <h4>Contacto</h4>
+      <ul>
+        <li><a data-buy href="comprar.html">WhatsApp</a></li>
+        <li><a href="https://www.instagram.com/delcio_369/" target="_blank" rel="noopener">Instagram</a></li>
+        <li><a href="https://www.facebook.com/delcio.cunha.2025/" target="_blank" rel="noopener">Facebook</a></li>
+        <li><a href="https://x.com/DelcioCunha369" target="_blank" rel="noopener">X</a></li>
+        <li><a href="https://delciocunha.github.io/Meu-Portfolio/" target="_blank" rel="noopener">Portfólio do criador</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+<div class="mbar" id="mbar"><a class="btn wa" data-buy href="comprar.html">Comprar código</a><a class="btn" data-apk data-apk-short href="download/sistema.apk" download>Descarregar APK</a></div>
+<script src="config.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

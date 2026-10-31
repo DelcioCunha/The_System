@@ -172,6 +172,15 @@
   SO.invite = function (id, to) { return post('/api/duel/invite', { id: id, to: to }); };
   SO.leave = function (id) { return post('/api/duel/leave', { id: id }); };
   SO.duels = function () { return post('/api/duel/history'); };
+  SO.emote = function (id, emote) { return post('/api/duel/emote', { id: id, emote: emote }); };
+  /* oferecer um item de aparência a um amigo: sincroniza primeiro para o servidor ver os Cristais certos */
+  SO.gift = function (to, item, toName) {
+    var st = E.state;
+    return S.shop.sync(true).then(function () { return post('/api/social/gift', { to: to, item: item }); }).then(function (j) {
+      if (j && j.ok) S.premium.giftSent(st, item, (j.gift && j.gift.to_name) || toName || 'um amigo');
+      return j;
+    });
+  };
 
   /* recompensa de um duelo terminado: uma única vez por duelo, até DAILY por dia */
   SO.reward = function (d) {

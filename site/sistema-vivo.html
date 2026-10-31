@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sistema vivo · Sistema</title>
+<meta name="description" content="O Sistema fala contigo, dá missões de emergência, vigia as tuas missões e castiga quem falha.">
+<meta name="theme-color" content="#060A14">
+<meta property="og:title" content="Sistema vivo · Sistema">
+<meta property="og:description" content="O Sistema fala contigo, dá missões de emergência, vigia as tuas missões e castiga quem falha.">
+<meta property="og:image" content="img/icon-512.png">
+<link rel="icon" href="img/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Oxanium:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="img/icon-192.png" alt="">Sistema</a>
+    <nav class="nav" aria-label="Páginas"><a href="jogo.html">O jogo</a><a href="duelos.html">Duelos</a><a href="lojas.html">Lojas</a><a href="sistema-vivo.html" aria-current="page">Sistema vivo</a><a href="comprar.html">Comprar</a></nav>
+    <a class="btn sm cta-top" href="comprar.html">Obter o Sistema</a>
+    <button class="menu-btn" type="button" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+<main>
+<section class="page-head">
+  <canvas class="field" aria-hidden="true"></canvas><div class="scan" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="crumb"><img src="img/ui-ui-eye.webp" alt="">Sistema vivo</div>
+    <h1>Ele vê tudo. E fala contigo.</h1>
+    <p class="lead">O Sistema não espera que abras o jogo para te dizer alguma coisa. Comenta o teu dia, dá ordens, castiga quem falha e lembra-se de tudo.</p>
+  </div>
+</section>
+<section>
+  <div class="wrap split">
+    <div>
+      <h2 class="rv">Uma voz própria</h2>
+      <p class="lead rv" style="margin-top:14px">Mais de 700 conversas, com três respostas à escolha em cada uma. O Sistema reage ao que fazes: às missões cumpridas e falhadas, aos chefes, aos baús, às horas a que jogas.</p>
+      <ul class="ticks rv" style="margin-top:22px">
+        <li>Fala contigo sozinho a cada 15 minutos de uso</li>
+        <li>Nunca aparece a meio de um duelo</li>
+        <li>Conversas longas ligadas à história do jogo, que só acontecem uma vez</li>
+        <li>Lembretes no telemóvel aos 30, 20 e 10 minutos do prazo</li>
+      </ul>
+    </div>
+    <div class="feed rv" id="feed" aria-label="Exemplos de avisos do Sistema"></div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head"><h2 class="rv">O que o Sistema faz sem pedir licença</h2></div>
+    <div class="grid g2" data-stagger>
+      <div class="tile rv"><img class="ico" src="img/ui-h-mission-fail.webp" alt=""><h3>Missões de emergência</h3><p>Até duas por dia, entre as 08:00 e as 22:00: «Faz 15 flexões», «Bebe um copo de água», «Responde à mensagem que andas a evitar». Têm tempo limite e recompensa à altura.</p></div>
+      <div class="tile rv"><img class="ico" src="img/ui-h-chains.webp" alt=""><h3>Zona de Penalidade</h3><p>Falhar a Missão Diária abre uma missão de castigo de 24 horas, a dobrar. Cumpri-la recupera metade do que perdeste.</p></div>
+      <div class="tile rv"><img class="ico" src="img/ui-h-key.webp" alt=""><h3>Missões Ocultas</h3><p>Não aparecem em lado nenhum até as desbloqueares com o teu comportamento. Dão recompensas raras.</p></div>
+      <div class="tile rv"><img class="ico" src="img/ui-h-mission-done.webp" alt=""><h3>Relatório semanal</h3><p>Ao domingo, o Sistema dá-te uma nota de E a S pela semana, um comentário e um prémio.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap split rev">
+    <div>
+      <h2 class="rv">Vigilância e Integridade</h2>
+      <p class="lead rv" style="margin-top:14px">O Sistema lê o que escreves. Missões sem sentido («asdasd», «teste») são recusadas com um alerta. Criar e concluir missões em poucos minutos, repetidamente, reduz e depois anula a recompensa.</p>
+      <p class="lead rv" style="margin-top:14px">A tua Integridade vai de 0 a 100%. Desce com cada abuso e sobe com missões legítimas e a cada novo dia. Abaixo de 80%, as recompensas descem.</p>
+    </div>
+    <div class="syswin red rv" style="max-width:none;margin-top:0">
+      <span class="tag"><i></i>VIGILÂNCIA</span>
+      <p class="msg" style="min-height:0">«Ler 20 páginas» foi concluída 2 minutos depois de ser criada. Não há livro que se leia tão depressa.</p>
+      <div style="margin-top:18px;display:flex;justify-content:space-between;font-size:14px" class="muted"><span>Integridade</span><span id="trust-v">100%</span></div>
+      <div class="meter" style="margin-top:8px"><i id="trust"></i></div>
+    </div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head"><h2 class="rv">O relógio do Sistema</h2><p class="lead rv">O jogo segue a hora real. Alguns itens só funcionam numa fase do dia e alguns chefes ficam mais fortes de dia ou de noite.</p></div>
+    <div class="phases" data-stagger>
+      <div class="phase rv"><img src="img/ui-phase-manha.webp" alt=""><b>Manhã</b><span>05:00 às 11:59</span></div>
+      <div class="phase rv"><img src="img/ui-phase-dia.webp" alt=""><b>Dia</b><span>06:00 às 17:59</span></div>
+      <div class="phase rv"><img src="img/ui-phase-crepusculo.webp" alt=""><b>Crepúsculo</b><span>18:00 às 20:59</span></div>
+      <div class="phase rv"><img src="img/ui-phase-noite.webp" alt=""><b>Noite</b><span>18:00 às 05:59</span></div>
+      <div class="phase rv"><img src="img/ui-phase-horaMorta.webp" alt=""><b>Hora Morta</b><span>00:00 às 02:59</span></div>
+    </div>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <div class="cta-band rv">
+      <div><h2>Deixa o Sistema escolher-te</h2><p>Ele já está à espera. Só falta o teu código de ativação.</p></div>
+      <div class="btns"><a class="btn wa" data-buy href="comprar.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .2-1.2c-.1-.2-.3-.2-.5-.3Z"/></svg> Comprar o código</a><a class="btn" href="comprar.html">Ver como funciona</a></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer>
+  <div class="wrap cols">
+    <div>
+      <a class="brand" href="index.html" style="font-size:18px"><img src="img/icon-192.png" alt="">Sistema</a>
+      <p style="margin-top:12px;max-width:40ch">Um RPG para Android em que a tua vida real é o jogo. Criado em Angola por Delcio Cunha. © 2026</p>
+    </div>
+    <div>
+      <h4>Páginas</h4>
+      <ul><li><a href="index.html">Início</a></li><li><a href="jogo.html">O jogo</a></li><li><a href="duelos.html">Duelos</a></li><li><a href="lojas.html">Lojas</a></li><li><a href="sistema-vivo.html">Sistema vivo</a></li><li><a href="comprar.html">Comprar</a></li></ul>
+    </div>
+    <div>
+      <h4>Contacto</h4>
+      <ul>
+        <li><a data-buy href="comprar.html">WhatsApp</a></li>
+        <li><a href="https://www.instagram.com/delcio_369/" target="_blank" rel="noopener">Instagram</a></li>
+        <li><a href="https://www.facebook.com/delcio.cunha.2025/" target="_blank" rel="noopener">Facebook</a></li>
+        <li><a href="https://x.com/DelcioCunha369" target="_blank" rel="noopener">X</a></li>
+        <li><a href="https://delciocunha.github.io/Meu-Portfolio/" target="_blank" rel="noopener">Portfólio do criador</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+<div class="mbar" id="mbar"><a class="btn wa" data-buy href="comprar.html">Comprar código</a><a class="btn" data-apk data-apk-short href="download/sistema.apk" download>Descarregar APK</a></div>
+<script src="config.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

@@ -153,6 +153,7 @@
       if (p.life <= 0) { parts.splice(i, 1); continue; }
       var a = Math.max(0, p.life);
       c.fillStyle = 'rgba(' + p.rgb[0] + ',' + p.rgb[1] + ',' + p.rgb[2] + ',' + a + ')';
+      if (p.shape) { p.rot = (p.rot || 0) + (p.spin || 0); drawShape(c, p, a); continue; }
       if (p.spark) {
         c.save(); c.translate(p.x, p.y); c.rotate(Math.atan2(p.vy, p.vx));
         c.fillRect(-p.r * 2.5, -p.r * .35, p.r * 5, p.r * .7); c.restore();
@@ -164,6 +165,44 @@
     if (parts.length) requestAnimationFrame(partLoop);
     else { running = false; c.clearRect(0, 0, W, H); fc.classList.remove('on'); }
   }
+
+  /* formas dos efeitos comprados (pétalas, cristais, brasas, raios) */
+  function drawShape(c, p, a) {
+    c.save(); c.translate(p.x, p.y); c.rotate(p.rot || 0);
+    if (p.shape === 'petal') {
+      c.fillStyle = 'rgba(' + p.rgb[0] + ',' + p.rgb[1] + ',' + p.rgb[2] + ',' + a * .9 + ')';
+      c.beginPath(); c.ellipse(0, 0, p.r * 2.2, p.r, 0, 0, Math.PI * 2); c.fill();
+    } else if (p.shape === 'crystal') {
+      c.fillStyle = 'rgba(' + p.rgb[0] + ',' + p.rgb[1] + ',' + p.rgb[2] + ',' + a + ')';
+      c.beginPath(); c.moveTo(0, -p.r * 2.4); c.lineTo(p.r, 0); c.lineTo(0, p.r * 2.4); c.lineTo(-p.r, 0); c.closePath(); c.fill();
+    } else if (p.shape === 'bolt') {
+      c.rotate(-(p.rot || 0)); c.translate(-p.x, -p.y);
+      c.strokeStyle = 'rgba(' + p.rgb[0] + ',' + p.rgb[1] + ',' + p.rgb[2] + ',' + a + ')'; c.lineWidth = 2 + a * 3; c.shadowColor = 'rgb(' + p.rgb.join(',') + ')'; c.shadowBlur = 18;
+      c.beginPath(); p.pts.forEach(function (q, i) { if (i) c.lineTo(q[0], q[1]); else c.moveTo(q[0], q[1]); }); c.stroke();
+    }
+    c.restore();
+  }
+  /* efeitos de vitória e de subida de nível (Loja Premium › Aparência) */
+  FX.celebrate = function (kind) {
+    if (mode !== 'full' || !fCtx || !kind) return;
+    var i, n;
+    if (kind === 'petalas') for (i = 0; i < 80; i++) parts.push({ x: Math.random() * W, y: -H * .4 + Math.random() * H * .5, vx: (Math.random() - .5) * 1.6, vy: 1 + Math.random() * 1.5, g: .05 + Math.random() * .03, life: 1, decay: .003 + Math.random() * .002, r: 3 + Math.random() * 3.5, rgb: Math.random() < .15 ? [230, 200, 255] : Math.random() < .5 ? [170, 90, 255] : [110, 50, 200], shape: 'petal', rot: Math.random() * 6, spin: (Math.random() - .5) * .1 });
+    else if (kind === 'cristais') for (i = 0; i < 60; i++) parts.push({ x: Math.random() * W, y: -20 - Math.random() * H * .5, vx: 0, vy: 3 + Math.random() * 4, g: .12, life: 1, decay: .006 + Math.random() * .006, r: 2 + Math.random() * 3, rgb: Math.random() < .3 ? [255, 255, 255] : [111, 214, 255], shape: 'crystal', rot: 0, spin: 0 });
+    else if (kind === 'chamas') for (i = 0; i < 110; i++) parts.push({ x: Math.random() * W, y: H + Math.random() * 80, vx: (Math.random() - .5) * 1.5, vy: -3 - Math.random() * 4, g: -.12 - Math.random() * .08, life: 1, decay: .006 + Math.random() * .006, r: 1.8 + Math.random() * 3, rgb: Math.random() < .5 ? [255, 138, 61] : [255, 210, 74], spark: Math.random() < .3 });
+    else if (kind === 'raios') {
+      for (n = 0; n < 4; n++) (function (k) {
+        setTimeout(function () {
+          var x = W * (.15 + Math.random() * .7), y = 0, pts = [[x, y]];
+          while (y < H * (.55 + Math.random() * .35)) { y += 20 + Math.random() * 40; x += (Math.random() - .5) * 60; pts.push([x, y]); }
+          parts.push({ x: x, y: y, vx: 0, vy: 0, g: 0, life: 1, decay: .045, r: 0, rgb: [170, 200, 255], shape: 'bolt', pts: pts });
+          FX.burst(x, y, '#9fc2ff', 24, { speed: 5 }); FX.flash('#9fc2ff', .25);
+          if (!running) { running = true; fc.classList.add('on'); requestAnimationFrame(partLoop); }
+        }, k * 260);
+      })(n);
+      return;
+    }
+    if (!running) { running = true; fc.classList.add('on'); requestAnimationFrame(partLoop); }
+  };
 
   /* ---------------- elementos DOM ---------------- */
   function el(cls, x, y, css, html, life) {

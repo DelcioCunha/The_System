@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>O jogo · Sistema</title>
+<meta name="description" content="Missões reais, atributos, 6 classes, 10 portões com 100 chefes, combate por turnos e sombras.">
+<meta name="theme-color" content="#060A14">
+<meta property="og:title" content="O jogo · Sistema">
+<meta property="og:description" content="Missões reais, atributos, 6 classes, 10 portões com 100 chefes, combate por turnos e sombras.">
+<meta property="og:image" content="img/icon-512.png">
+<link rel="icon" href="img/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Oxanium:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="img/icon-192.png" alt="">Sistema</a>
+    <nav class="nav" aria-label="Páginas"><a href="jogo.html" aria-current="page">O jogo</a><a href="duelos.html">Duelos</a><a href="lojas.html">Lojas</a><a href="sistema-vivo.html">Sistema vivo</a><a href="comprar.html">Comprar</a></nav>
+    <a class="btn sm cta-top" href="comprar.html">Obter o Sistema</a>
+    <button class="menu-btn" type="button" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+<main>
+<section class="page-head">
+  <canvas class="field" aria-hidden="true"></canvas><div class="scan" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="crumb"><img src="img/gate-1.webp" alt="">O jogo</div>
+    <h1>Um RPG em que tu és a personagem</h1>
+    <p class="lead">Missões reais, atributos, classes, chefes e sombras. Tudo o que fazes no jogo nasce do que fazes na vida.</p>
+  </div>
+</section>
+<section>
+  <div class="wrap split">
+    <div>
+      <h2 class="rv">Missões: a tua rotina vira XP</h2>
+      <p class="lead rv" style="margin-top:14px">Escreves as missões com as tuas palavras: «Ler 20 páginas», «Treino de 45 minutos», «Estudar inglês». Cada uma tem dificuldade (de D a S), atributos que treina e um prazo.</p>
+      <ul class="ticks rv" style="margin-top:22px">
+        <li>Missão Diária de exercício: flexões, abdominais, agachamentos e caminhada, que podes ajustar</li>
+        <li>Missões únicas, diárias ou em dias da semana escolhidos</li>
+        <li>Até 12 missões novas por dia, para o Sistema não ser enganado com missões a granel</li>
+        <li>Missões Ocultas que só aparecem quando o teu comportamento as desbloqueia</li>
+        <li>Falhar a Diária abre a Zona de Penalidade</li>
+      </ul>
+    </div>
+    <div class="phone sm rv"><div class="shots"><img class="on" src="img/app-missoes.webp" alt="Missões do dia"></div></div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head"><h2 class="rv">Atributos e ranks</h2><p class="lead rv">Cada nível dá 3 pontos para distribuíres. As missões também treinam os atributos que escolheste.</p></div>
+    <div class="grid g4" data-stagger style="grid-template-columns:repeat(5,1fr)">
+      <div class="tile rv"><img class="ico" src="img/ui-stat-str.webp" alt=""><h4>Força</h4><p>Dano físico.</p></div>
+      <div class="tile rv"><img class="ico" src="img/ui-stat-agi.webp" alt=""><h4>Agilidade</h4><p>Crítico e esquiva.</p></div>
+      <div class="tile rv"><img class="ico" src="img/ui-stat-vit.webp" alt=""><h4>Vitalidade</h4><p>Vida e defesa.</p></div>
+      <div class="tile rv"><img class="ico" src="img/ui-stat-int.webp" alt=""><h4>Inteligência</h4><p>Mana e magia.</p></div>
+      <div class="tile rv"><img class="ico" src="img/ui-stat-per.webp" alt=""><h4>Perceção</h4><p>Crítico e precisão.</p></div>
+    </div>
+    <p class="muted rv" style="margin-top:22px">Os ranks seguem o teu nível: E, D, C, B, A, S, SS, SSS e, no nível 100, Ω.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head"><h2 class="rv">Seis classes, seis caminhos</h2><p class="lead rv">Todas começam assim, no nível 1. Cada classe segue um caminho só seu até ao nível 100.</p></div>
+    <div class="grid g3" data-stagger><article class="cls-card rv"><div class="pics"><img src="img/evo-m-1.webp" alt="Guerreiro no nível 1" loading="lazy"></div><div class="body"><h3>Guerreiro</h3><p>Mestre do combate corpo a corpo. Muita força e resistência.</p><div class="kind">Dano físico · Força e Vitalidade</div></div></article><article class="cls-card rv"><div class="pics"><img src="img/cls-assassino-1.webp" alt="Assassino no nível 1" loading="lazy"></div><div class="body"><h3>Assassino</h3><p>Rápido e letal. Críticos devastadores e venenos.</p><div class="kind">Dano físico · Agilidade e Perceção</div></div></article><article class="cls-card rv"><div class="pics"><img src="img/cls-mago-1.webp" alt="Mago no nível 1" loading="lazy"></div><div class="body"><h3>Mago</h3><p>Domina a magia arcana. Dano mágico enorme, pouca defesa.</p><div class="kind">Dano mágico · Inteligência</div></div></article><article class="cls-card rv"><div class="pics"><img src="img/cls-guardiao-1.webp" alt="Guardião no nível 1" loading="lazy"></div><div class="body"><h3>Guardião</h3><p>Uma muralha viva. Aguenta tudo e devolve o dano.</p><div class="kind">Dano físico · Vitalidade e Força</div></div></article><article class="cls-card rv"><div class="pics"><img src="img/cls-arqueiro-1.webp" alt="Arqueiro no nível 1" loading="lazy"></div><div class="body"><h3>Arqueiro</h3><p>Precisão mortal à distância. Críticos e chuvas de flechas.</p><div class="kind">Dano físico · Perceção e Agilidade</div></div></article><article class="cls-card rv"><div class="pics"><img src="img/cls-invocador-1.webp" alt="Invocador no nível 1" loading="lazy"></div><div class="body"><h3>Invocador</h3><p>Chama espíritos para lutar ao seu lado e drena a vida dos inimigos.</p><div class="kind">Dano mágico · Inteligência e Vitalidade</div></div></article></div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head"><h2 class="rv">Dez portões, cem chefes</h2><p class="lead rv">Cada portão é um mundo com 10 chefes, do nível 1 ao 100. O último de cada portão é o rei, e luta em duas fases.</p></div>
+    <div class="gates" data-stagger><div class="gate rv"><img src="img/gate-1.webp" alt=""><div><b>Floresta Sussurrante</b><span>Nível 1 a 10</span></div></div><div class="gate rv"><img src="img/gate-2.webp" alt=""><div><b>Cavernas de Cristal</b><span>Nível 11 a 20</span></div></div><div class="gate rv"><img src="img/gate-3.webp" alt=""><div><b>Pântano Pútrido</b><span>Nível 21 a 30</span></div></div><div class="gate rv"><img src="img/gate-4.webp" alt=""><div><b>Ruínas do Deserto</b><span>Nível 31 a 40</span></div></div><div class="gate rv"><img src="img/gate-5.webp" alt=""><div><b>Fortaleza de Gelo</b><span>Nível 41 a 50</span></div></div><div class="gate rv"><img src="img/gate-6.webp" alt=""><div><b>Vulcão Carmesim</b><span>Nível 51 a 60</span></div></div><div class="gate rv"><img src="img/gate-7.webp" alt=""><div><b>Cidade Submersa</b><span>Nível 61 a 70</span></div></div><div class="gate rv"><img src="img/gate-8.webp" alt=""><div><b>Cidadela Celestial</b><span>Nível 71 a 80</span></div></div><div class="gate rv"><img src="img/gate-9.webp" alt=""><div><b>Abismo Sem Fim</b><span>Nível 81 a 90</span></div></div><div class="gate rv"><img src="img/gate-10.webp" alt=""><div><b>Trono do Vazio</b><span>Nível 91 a 100</span></div></div></div>
+    <div class="bosses" style="margin-top:34px" data-stagger><figure class="rv"><div class="bossart tilt"><img src="img/boss-b10.webp" alt="" loading="lazy"></div><figcaption>Fenrath, Rei Lobo<span>Floresta Sussurrante</span></figcaption></figure><figure class="rv"><div class="bossart tilt"><img src="img/boss-b20.webp" alt="" loading="lazy"></div><figcaption>Varyss, Rainha Cristalina<span>Cavernas de Cristal</span></figcaption></figure><figure class="rv"><div class="bossart tilt"><img src="img/boss-b30.webp" alt="" loading="lazy"></div><figcaption>Morvenna, Senhora da Praga<span>Pântano Pútrido</span></figcaption></figure><figure class="rv"><div class="bossart tilt"><img src="img/boss-b40.webp" alt="" loading="lazy"></div><figcaption>Ankharet, Imperador Solar<span>Ruínas do Deserto</span></figcaption></figure><figure class="rv"><div class="bossart tilt"><img src="img/boss-b50.webp" alt="" loading="lazy"></div><figcaption>Skadhi, Rainha do Inverno Eterno<span>Fortaleza de Gelo</span></figcaption></figure><figure class="rv"><div class="bossart tilt"><img src="img/boss-b60.webp" alt="" loading="lazy"></div><figcaption>Pyraxis, Dragão Vulcânico<span>Vulcão Carmesim</span></figcaption></figure><figure class="rv"><div class="bossart tilt"><img src="img/boss-b70.webp" alt="" loading="lazy"></div><figcaption>Thalassor, Rei Afogado<span>Cidade Submersa</span></figcaption></figure><figure class="rv"><div class="bossart tilt"><img src="img/boss-b80.webp" alt="" loading="lazy"></div><figcaption>Auriel, Imperatriz Celeste<span>Cidadela Celestial</span></figcaption></figure><figure class="rv"><div class="bossart tilt"><img src="img/boss-b90.webp" alt="" loading="lazy"></div><figcaption>Nyxaroth, Príncipe do Abismo<span>Abismo Sem Fim</span></figcaption></figure><figure class="rv"><div class="bossart tilt"><img src="img/boss-b100.webp" alt="" loading="lazy"></div><figcaption>O Soberano do Vazio<span>Trono do Vazio</span></figcaption></figure></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap split rev">
+    <div>
+      <h2 class="rv">Combate por turnos</h2>
+      <p class="lead rv" style="margin-top:14px">Atacar, usar habilidades, beber poções, defender. Os chefes atordoam, envenenam, criam escudos e ficam mais fortes na segunda fase.</p>
+      <ul class="ticks rv" style="margin-top:22px">
+        <li>124 habilidades, ativas e passivas, que se desbloqueiam com o nível</li>
+        <li>A mana pesa: as habilidades mais fortes gastam até um terço da tua mana, e a mana só regenera 5% por turno</li>
+        <li>Lutar acima do teu nível é perigoso: o dano que dás desce e o que recebes sobe</li>
+        <li>De dia e de noite há chefes mais fortes, com mais recompensas</li>
+        <li>Morrer custa um nível. O Sistema reanima-te com pouca vida</li>
+      </ul>
+    </div>
+    <div class="phone sm rv"><div class="shots"><img class="on" src="img/app-batalha.webp" alt="Batalha por turnos"><img src="img/app-combate.webp" alt="Os chefes de um portão"></div><div class="dots" aria-hidden="true"></div></div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap split">
+    <div class="arise rv">
+      <figure><div class="bossart"><img src="img/boss-ar3.webp" alt="Leviarch, Campeão do Coliseu" loading="lazy"></div><figcaption>Leviarch, o chefe</figcaption></figure>
+      <span class="arrow" aria-hidden="true"></span>
+      <figure><div class="bossart shade"><img src="img/sombra-ar3.webp" alt="A sombra de Leviarch" loading="lazy"></div><figcaption>A sua sombra, ao teu serviço</figcaption></figure>
+    </div>
+    <div>
+      <h2 class="rv">Os chefes que vences tornam-se as tuas sombras</h2>
+      <p class="lead rv" style="margin-top:14px">Depois da vitória, tens três tentativas para extrair a sombra do chefe. As sombras lutam ao teu lado, cada uma com o seu papel: atacante, guarda, arcano ou comandante.</p>
+      <ul class="ticks rv" style="margin-top:22px">
+        <li>Até 6 servos convocados ao mesmo tempo</li>
+        <li>Dás-lhes nome e treinas com elas sem castigo</li>
+        <li>As sombras dos reis e dos Campeões são as mais fortes</li>
+      </ul>
+      <div class="arise rv" style="margin-top:26px;max-width:420px"><figure><div class="bossart"><img src="img/boss-ar9.webp" alt="Morthis, Campeão do Coliseu" loading="lazy"></div><figcaption>Morthis</figcaption></figure><span class="arrow" aria-hidden="true"></span><figure><div class="bossart shade"><img src="img/sombra-ar9.webp" alt="A sombra de Morthis" loading="lazy"></div><figcaption>A sua sombra</figcaption></figure></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <a class="tile art rv" href="lojas.html#p-coliseu" style="max-width:none"><img src="img/arena-ar5.webp" alt="" loading="lazy" style="aspect-ratio:21/8"><div class="body"><h3>O Coliseu dos Condenados</h3><p>10 arenas com 9 Guardiões e um Campeão cada. Cada Campeão foi um Jogador que quebrou as regras do Sistema. Abrem-se com Cristais e ficam abertas para sempre.</p><span class="go">Ver as arenas</span></div></a>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap split">
+    <div>
+      <h2 class="rv">E no fim de tudo?</h2>
+      <p class="lead rv" style="margin-top:14px">Quem vence os cem chefes dos portões e os dez Campeões do Coliseu descobre uma última arena que não aparece em nenhum mapa. O Sistema tem algo para te dizer. E não é o único.</p>
+    </div>
+    <div class="bossart rv" style="aspect-ratio:16/9"><img src="img/arena-final.webp" alt="A Última Arena" loading="lazy"></div>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <div class="cta-band rv">
+      <div><h2>Pronto para seres escolhido?</h2><p>Descarrega o APK, compra o teu código de ativação e começa no nível 1.</p></div>
+      <div class="btns"><a class="btn wa" data-buy href="comprar.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .2-1.2c-.1-.2-.3-.2-.5-.3Z"/></svg> Comprar o código</a><a class="btn" href="comprar.html">Ver como funciona</a></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer>
+  <div class="wrap cols">
+    <div>
+      <a class="brand" href="index.html" style="font-size:18px"><img src="img/icon-192.png" alt="">Sistema</a>
+      <p style="margin-top:12px;max-width:40ch">Um RPG para Android em que a tua vida real é o jogo. Criado em Angola por Delcio Cunha. © 2026</p>
+    </div>
+    <div>
+      <h4>Páginas</h4>
+      <ul><li><a href="index.html">Início</a></li><li><a href="jogo.html">O jogo</a></li><li><a href="duelos.html">Duelos</a></li><li><a href="lojas.html">Lojas</a></li><li><a href="sistema-vivo.html">Sistema vivo</a></li><li><a href="comprar.html">Comprar</a></li></ul>
+    </div>
+    <div>
+      <h4>Contacto</h4>
+      <ul>
+        <li><a data-buy href="comprar.html">WhatsApp</a></li>
+        <li><a href="https://www.instagram.com/delcio_369/" target="_blank" rel="noopener">Instagram</a></li>
+        <li><a href="https://www.facebook.com/delcio.cunha.2025/" target="_blank" rel="noopener">Facebook</a></li>
+        <li><a href="https://x.com/DelcioCunha369" target="_blank" rel="noopener">X</a></li>
+        <li><a href="https://delciocunha.github.io/Meu-Portfolio/" target="_blank" rel="noopener">Portfólio do criador</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+<div class="mbar" id="mbar"><a class="btn wa" data-buy href="comprar.html">Comprar código</a><a class="btn" data-apk data-apk-short href="download/sistema.apk" download>Descarregar APK</a></div>
+<script src="config.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

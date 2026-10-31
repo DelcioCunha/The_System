@@ -73,6 +73,7 @@
     C.access = j.access; C.code = (j.device && j.device.code) || C.code || null;
     C.block = j.block || null; C.private = !!j.private; C.offline = +j.offline_days || 15;
     C.requested = !!j.requested; C.wa = j.whatsapp_url || null; C.checkedAt = Date.now();
+    C.activation = j.activation || null; C.legal = !!j.legal;
     if (j.access === 'blocked' && was !== 'blocked') C.blockedSeen = false;
     // estava bloqueado e voltou: o Sistema avisa uma vez
     if (j.access === 'ok' && was === 'blocked') C.liftNote = Date.now();
@@ -95,9 +96,9 @@
   };
   G.redeem = function (code) {
     code = String(code || '').trim();
-    if (code.replace(/[^A-Za-z0-9]/g, '').replace(/^ACS/i, '').length !== 8) return Promise.resolve({ ok: false, msg: 'O código de acesso tem 8 letras e números (ex.: ACS-ABCD-EFGH).' });
+    if (code.replace(/[^A-Za-z0-9]/g, '').replace(/^ACS/i, '').length !== 8) return Promise.resolve({ ok: false, msg: 'O código de ativação tem 8 letras e números (ex.: ACS-ABCD-EFGH).' });
     return G.ids().then(function (I) { return S.shop.call('POST', '/api/device/redeem', body(I, { code: code })); }).then(function (j) {
-      if (j && j.ok) { apply(j); return { ok: j.access === 'ok', access: j.access, msg: j.access === 'ok' ? null : 'Este aparelho não pode usar códigos de acesso.' }; }
+      if (j && j.ok) { apply(j); return { ok: j.access === 'ok', access: j.access, msg: j.access === 'ok' ? null : 'Este aparelho não pode usar códigos de ativação.' }; }
       return { ok: false, msg: (j && j.msg) || 'Não foi possível validar o código.' };
     });
   };
@@ -117,7 +118,7 @@
     if (!G.active()) return null;
     var C = load();
     if (C.access === 'blocked') return { type: 'blocked', code: C.code, block: C.block || {}, wa: C.wa };
-    if (C.access === 'pending') return { type: 'pending', code: C.code, requested: C.requested, wa: C.wa };
+    if (C.access === 'pending') return { type: 'pending', code: C.code, requested: C.requested, wa: C.wa, act: C.activation || {} };
     if (!C.checkedAt) return { type: 'verify' };
     if (C.access === 'ok' && Date.now() - C.checkedAt > (C.offline || 15) * DAY) return { type: 'stale', days: C.offline || 15, code: C.code };
     return null;
@@ -126,7 +127,7 @@
   G.takeNote = function () {
     var C = load();
     if (C.liftNote) { C.liftNote = 0; save(); return 'lift'; }
-    if (C.welcomeNote) { C.welcomeNote = 0; save(); return 'welcome'; }
+    if (C.welcomeNote) { C.welcomeNote = 0; save(); return C.legal ? 'activated' : 'welcome'; }
     return null;
   };
   G.firstBlockView = function () { var C = load(); if (C.access === 'blocked' && !C.blockedSeen) { C.blockedSeen = true; save(); return true; } return false; };
@@ -148,12 +149,12 @@
       'Há um caminho para contestar. Não passa por mim: passa pela administração.',
       'Contestar é um direito. Exige o código deste aparelho.'
     ],
-    pendingTitle: ['ACESSO RESTRITO', 'O SISTEMA NÃO TE CONHECE', 'PORTÃO FECHADO'],
+    pendingTitle: ['ATIVAÇÃO NECESSÁRIA', 'O SISTEMA AINDA NÃO TE CONHECE', 'CÓDIGO DE ATIVAÇÃO'],
     pending: [
-      'Este Sistema não aceita desconhecidos. Só entra quem é chamado.',
-      'Não te escolhi. Ainda. Alguém tem de responder por ti.',
-      'O Sistema é privado. Para entrar, precisas de um convite ou de uma autorização.',
-      'Encontraste a porta. Isso não quer dizer que ela abra.'
+      'Antes de te dar a primeira missão, preciso do teu código de ativação.',
+      'Não respondo a qualquer um. Mostra-me o teu código e eu desperto.',
+      'Encontraste a porta. Para ela abrir, precisas do código que só o Sistema oficial te dá.',
+      'Cada Jogador é registado. Começa pelo teu código de ativação.'
     ],
     stale: [
       'Há {dias} dias que não te vejo. Liga-te à internet para eu confirmar quem és.',
@@ -167,6 +168,11 @@
       'O bloqueio foi levantado. Este aparelho volta a ouvir-me.',
       'A decisão foi revista. A porta abriu-se outra vez. Não a desperdices.',
       'Voltaste. O registo do que aconteceu fica comigo.'
+    ],
+    activated: [
+      'Código aceite. Este aparelho é legítimo. A partir de agora, és um Jogador legalizado.',
+      'Ativação concluída. O teu nome vai entrar no registo com a marca dos legalizados.',
+      'Reconheço o teu código. Bem-vindo ao Sistema oficial, Jogador.'
     ],
     welcome: [
       'Acesso concedido. A partir de agora, este aparelho é meu conhecido.',

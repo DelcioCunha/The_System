@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Duelos online · Sistema</title>
+<meta name="description" content="Duelos por turnos entre amigos, decididos pelo servidor, com 41 patentes do Ferro ao Monarca.">
+<meta name="theme-color" content="#060A14">
+<meta property="og:title" content="Duelos online · Sistema">
+<meta property="og:description" content="Duelos por turnos entre amigos, decididos pelo servidor, com 41 patentes do Ferro ao Monarca.">
+<meta property="og:image" content="img/icon-512.png">
+<link rel="icon" href="img/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Oxanium:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="img/icon-192.png" alt="">Sistema</a>
+    <nav class="nav" aria-label="Páginas"><a href="jogo.html">O jogo</a><a href="duelos.html" aria-current="page">Duelos</a><a href="lojas.html">Lojas</a><a href="sistema-vivo.html">Sistema vivo</a><a href="comprar.html">Comprar</a></nav>
+    <a class="btn sm cta-top" href="comprar.html">Obter o Sistema</a>
+    <button class="menu-btn" type="button" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+<main>
+<section class="page-head">
+  <canvas class="field" aria-hidden="true"></canvas><div class="scan" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="crumb"><img src="img/ui-ui-duel.webp" alt="">Duelos online</div>
+    <h1>Jogador contra jogador</h1>
+    <p class="lead">Desafia os teus amigos para duelos por turnos. O servidor decide cada golpe, por isso ninguém faz batota.</p>
+  </div>
+</section>
+<section>
+  <div class="wrap split">
+    <div class="duel rv" id="duel" aria-label="Exemplo de duelo">
+      <div class="vs">
+        <div class="fighter" id="fA"><div class="who"><img src="img/evo-m-1.webp" alt=""><div><b>Delcio</b><small>Guerreiro · Nv 70</small></div></div><div class="bar"><i id="hpA"></i></div><div class="bar mp"><i id="mpA"></i></div></div>
+        <span class="x">VS</span>
+        <div class="fighter r" id="fB"><div class="who"><img src="img/cls-arqueiro-f1.webp" alt=""><div><b>Ana</b><small>Arqueira · Nv 68</small></div></div><div class="bar"><i id="hpB"></i></div><div class="bar mp"><i id="mpB"></i></div></div>
+      </div>
+      <div class="log" aria-live="off"></div>
+      <div class="turn"><span id="duel-turn">Turno 1</span><span>Sala SIS-7Q2K</span></div>
+    </div>
+    <div>
+      <h2 class="rv">Um duelo a sério, ao vivo</h2>
+      <p class="lead rv" style="margin-top:14px">Cada jogador usa as suas próprias habilidades, a sua mana, os seus itens e as suas sombras. Os turnos alternam e cada ação é calculada no servidor do Sistema.</p>
+      <ul class="ticks rv" style="margin-top:22px">
+        <li>Cria uma sala e partilha o código, ou convida um amigo diretamente</li>
+        <li>Turnos decididos pelo servidor: o resultado não depende do teu telemóvel</li>
+        <li>Equilibrado: os golpes muito fortes, as curas e os escudos têm limites próprios em duelo</li>
+        <li>Os lugares de servos comprados não dão vantagem contra jogadores</li>
+        <li>Os primeiros 5 duelos do dia dão recompensa. Perder não te tira nada</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-head"><h2 class="rv">41 patentes, do Ferro ao Monarca</h2><p class="lead rv">Cada 5 vitórias sobem uma patente e cada derrota tira um ponto. Há 8 escalões com 5 divisões cada e, aos 200 pontos, o Monarca dos Duelos.</p></div>
+    <div class="ranks" data-stagger><figure class="rv"><img src="img/pt-0.webp" alt="" loading="lazy">Ferro</figure><figure class="rv"><img src="img/pt-5.webp" alt="" loading="lazy">Bronze</figure><figure class="rv"><img src="img/pt-10.webp" alt="" loading="lazy">Prata</figure><figure class="rv"><img src="img/pt-15.webp" alt="" loading="lazy">Ouro</figure><figure class="rv"><img src="img/pt-20.webp" alt="" loading="lazy">Platina</figure><figure class="rv"><img src="img/pt-25.webp" alt="" loading="lazy">Diamante</figure><figure class="rv"><img src="img/pt-30.webp" alt="" loading="lazy">Carmesim</figure><figure class="rv"><img src="img/pt-35.webp" alt="" loading="lazy">Sombra</figure><figure class="rv"><img src="img/pt-40.webp" alt="" loading="lazy">Monarca</figure></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head"><h2 class="rv">Amigos, conversa e perfis</h2></div>
+    <div class="grid g3" data-stagger>
+      <div class="tile rv"><img class="ico" src="img/ui-ui-social.webp" alt=""><h3>Adiciona amigos</h3><p>Procura pelo ID de Jogador e envia um pedido. Vês quem está online e há quanto tempo cada um jogou.</p></div>
+      <div class="tile rv"><img class="ico" src="img/ui-ui-chat.webp" alt=""><h3>Conversa</h3><p>Fala com os teus amigos dentro do jogo e combina o próximo duelo.</p></div>
+      <div class="tile rv"><img class="ico" src="img/ui-ui-trofeus.webp" alt=""><h3>Perfil público</h3><p>Foto, patente, vitórias, chefes vencidos, sombras e a marca de Jogador legalizado.</p></div>
+    </div>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <div class="cta-band rv">
+      <div><h2>Os teus amigos já estão no Sistema?</h2><p>Ativa o teu aparelho e desafia-os para o primeiro duelo.</p></div>
+      <div class="btns"><a class="btn wa" data-buy href="comprar.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .2-1.2c-.1-.2-.3-.2-.5-.3Z"/></svg> Comprar o código</a><a class="btn" href="comprar.html">Ver como funciona</a></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer>
+  <div class="wrap cols">
+    <div>
+      <a class="brand" href="index.html" style="font-size:18px"><img src="img/icon-192.png" alt="">Sistema</a>
+      <p style="margin-top:12px;max-width:40ch">Um RPG para Android em que a tua vida real é o jogo. Criado em Angola por Delcio Cunha. © 2026</p>
+    </div>
+    <div>
+      <h4>Páginas</h4>
+      <ul><li><a href="index.html">Início</a></li><li><a href="jogo.html">O jogo</a></li><li><a href="duelos.html">Duelos</a></li><li><a href="lojas.html">Lojas</a></li><li><a href="sistema-vivo.html">Sistema vivo</a></li><li><a href="comprar.html">Comprar</a></li></ul>
+    </div>
+    <div>
+      <h4>Contacto</h4>
+      <ul>
+        <li><a data-buy href="comprar.html">WhatsApp</a></li>
+        <li><a href="https://www.instagram.com/delcio_369/" target="_blank" rel="noopener">Instagram</a></li>
+        <li><a href="https://www.facebook.com/delcio.cunha.2025/" target="_blank" rel="noopener">Facebook</a></li>
+        <li><a href="https://x.com/DelcioCunha369" target="_blank" rel="noopener">X</a></li>
+        <li><a href="https://delciocunha.github.io/Meu-Portfolio/" target="_blank" rel="noopener">Portfólio do criador</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+<div class="mbar" id="mbar"><a class="btn wa" data-buy href="comprar.html">Comprar código</a><a class="btn" data-apk data-apk-short href="download/sistema.apk" download>Descarregar APK</a></div>
+<script src="config.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

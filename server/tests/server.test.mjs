@@ -858,6 +858,60 @@ await test('aparelhos: modo privado, pedido de acesso, código de acesso e jogad
   assert.equal((await C('/api/device/check', { ids: { aid: '9774d56d682e549c' } })).status, 400);
 });
 
+await test('ativação: preço, compra pelo WhatsApp, código de ativação e jogador legalizado (e premium legalizado)', async () => {
+  const S = await setup('production');
+  const C = (u, b) => S.call('POST', u, b);
+  const A = S.admin(await S.login());
+  await A.put('/api/admin/settings', { whatsapp: '244923000111', activation_price: 5000, activation_price_old: 7500 });
+  // o jogador antigo (já jogava antes da ativação obrigatória) continua, mas não é legalizado
+  const OLD = { aid: 'aa11bb22cc33dd44' }, TO = 'segredo-do-jogador-antigo-999';
+  await C('/api/device/check', { ids: OLD, player_id: P1, token: TO });
+  await C('/api/player/sync', { player_id: P1, token: TO, name: 'Antigo', level: 9, device: OLD });
+  tick(60 * 1000);
+  await A.put('/api/admin/settings', { private_mode: true });
+  tick(60 * 1000);
+  let sy = await C('/api/player/sync', { player_id: P1, token: TO, name: 'Antigo', level: 9, device: OLD });
+  assert.equal(sy.account, 'active'); assert.equal(sy.legal, null);
+  // site: preço e link de compra públicos
+  const site = await S.call('GET', '/api/site');
+  assert.equal(site.price_kz, 5000); assert.equal(site.price_old_kz, 7500); assert.equal(site.activation_required, true);
+  assert.match(site.whatsapp_url, /^https:\/\/wa\.me\/244923000111\?text=.*5%20000%20Kz.*Multicaixa%20Express/);
+  // aparelho novo: ecrã de ativação com o preço e o link de compra com o código do aparelho
+  const NEW = { aid: '0f1e2d3c4b5a6978' }, TN = 'segredo-do-jogador-novo-1234';
+  let r = await C('/api/device/check', { ids: NEW, platform: 'android' });
+  assert.equal(r.access, 'pending'); assert.equal(r.activation.price_kz, 5000); assert.equal(r.activation.price_old_kz, 7500); assert.equal(r.legal, false);
+  assert.ok(decodeURIComponent(r.whatsapp_url).includes(r.device.code), 'a mensagem leva o código do aparelho');
+  // o administrador gera o código depois do pagamento; o jogador ativa o aparelho
+  const ac = await A.post('/api/admin/access-codes', { label: 'Ana · Multicaixa 5 000 Kz' }, key('atv1'));
+  assert.match(ac.message, /código de ativação/);
+  r = await C('/api/device/redeem', { ids: NEW, code: ac.code });
+  assert.equal(r.access, 'ok'); assert.equal(r.legal, true); assert.equal(r.activation, null);
+  // a conta criada depois da ativação fica legalizada na primeira sincronização
+  await C('/api/device/check', { ids: NEW, player_id: P2, token: TN });
+  sy = await C('/api/player/sync', { player_id: P2, token: TN, name: 'Ana', level: 1, device: NEW });
+  assert.equal(sy.account, 'active'); assert.ok(sy.legal && sy.legal.via === 'codigo');
+  sy = await C('/api/player/sync', { player_id: P2, token: TN, name: 'Ana', level: 2, device: NEW });
+  assert.ok(sy.legal, 'continua legalizado');
+  let pl = await A.get('/api/admin/players?status=legal');
+  assert.equal(pl.players.length, 1); assert.equal(pl.players[0].id, P2); assert.equal(pl.players[0].legal.code, ac.code.slice(-4)); assert.equal(pl.totals.legal, 1);
+  // o administrador legaliza o aparelho do jogador antigo
+  const dl = await A.get('/api/admin/devices?q=' + P1);
+  const lg = await A.post('/api/admin/devices/' + dl.devices[0].id + '/legalize', {});
+  assert.equal(lg.status, 200, lg.error); assert.equal(lg.device.legal, true);
+  sy = await C('/api/player/sync', { player_id: P1, token: TO, name: 'Antigo', level: 9, device: OLD });
+  assert.ok(sy.legal && sy.legal.via === 'admin');
+  // e pode tirar a marca diretamente
+  const un = await A.post('/api/admin/players/' + P1 + '/legal', { on: false });
+  assert.equal(un.player.legal, null);
+  // amigos veem as etiquetas: legalizado e premium legalizado
+  await A.put('/api/admin/players/' + P2 + '/role', { role: 'premium' });
+  await C('/api/social/friend/request', { player_id: P1, token: TO, to: P2 });
+  await C('/api/social/friend/respond', { player_id: P2, token: TN, from: P1, accept: true });
+  const so = await C('/api/social/state', { player_id: P1, token: TO });
+  const f = (so.friends || []).find((x) => x.id === P2);
+  assert.ok(f, 'amigo'); assert.equal(f.legal, true); assert.equal(f.premium, true);
+});
+
 await test('aparelhos: bloqueio sobrevive a reinstalação e APK novo; restaurar pela via legal', async () => {
   const S = await setup('production');
   const C = (u, b) => S.call('POST', u, b);
@@ -933,6 +987,65 @@ await test('perfis: foto só para amigos, perfil do amigo, aparência e moderaç
   d = await A.post('/api/admin/players/' + P1 + '/photo/delete', {});
   assert.equal(d.photo, null);
   assert.equal((await C('/api/social/state', as(P2, T2))).friends.find((x) => x.id === P1).photo_ver, 0);
+});
+
+await test('presentes: item de aparência entre amigos (Cristais do remetente, limite diário) e Cristais comprados para um amigo', async () => {
+  const S = await setup('production'); await trio(S);
+  const C = (u, b) => S.call('POST', u, b);
+  assert.equal((await C('/api/social/gift', Object.assign(as(P1, TOK1), { to: P2, item: 'tt_escolhido' }))).status, 400, 'só entre amigos');
+  await C('/api/social/friend/request', Object.assign(as(P1, TOK1), { to: P2 }));
+  await C('/api/social/friend/respond', Object.assign(as(P2, TOK2), { from: P1, accept: true }));
+  assert.equal((await C('/api/social/gift', Object.assign(as(P1, TOK1), { to: P2, item: 'moldura_falsa' }))).status, 400, 'só itens da lista');
+  assert.equal((await C('/api/social/gift', Object.assign(as(P1, TOK1), { to: P2, item: 'tt_escolhido' }))).status, 409, 'o servidor vê só 40 Cristais');
+  await syncP(S, P1, TOK1, { name: 'Delcio', cls: 'guerreiro', level: 30, crystals: 200 });
+  const g = await C('/api/social/gift', Object.assign(as(P1, TOK1), { to: P2, item: 'tt_escolhido' }));
+  assert.equal(g.status, 200, g.error); assert.equal(g.gift.crystals, 60); assert.equal(g.gift.to_name, 'Ana');
+  assert.equal((await C('/api/social/gift', Object.assign(as(P1, TOK1), { to: P2, item: 'tt_escolhido' }))).status, 409, 'o mesmo presente já está à espera');
+  const sy = await syncP(S, P2, TOK2, { name: 'Ana', cls: 'mago', level: 30 });
+  const box = sy.inbox.find((x) => x.item === 'tt_escolhido');
+  assert.ok(box, 'o presente chega ao amigo'); assert.equal(box.from_name, 'Delcio');
+  const cl = await C('/api/player/claim', { player_id: P2, token: TOK2, grant_id: box.id });
+  assert.equal(cl.status, 200, cl.error); assert.equal(cl.item, 'tt_escolhido'); assert.equal(cl.crystals, 0);
+  // o servidor tirou os Cristais (200 - 60): mais 3 presentes de 60 já não cabem
+  assert.equal((await C('/api/social/gift', Object.assign(as(P1, TOK1), { to: P2, item: 'em_sistema' }))).status, 200);
+  assert.equal((await C('/api/social/gift', Object.assign(as(P1, TOK1), { to: P2, item: 'tt_monarca' }))).status, 409, '90 restantes < 100');
+  // Cristais comprados com dinheiro para um amigo
+  const A = S.admin(await S.login());
+  await activate(A, 'c250', 2500);
+  assert.equal((await C('/api/orders', { package_id: 'c250', player_id: P1, player_name: 'Delcio', gift_to: P3, token: TOK1 })).status, 400, 'só para amigos');
+  const o = await C('/api/orders', { package_id: 'c250', player_id: P1, player_name: 'Delcio', gift_to: P2, token: TOK1 });
+  assert.equal(o.status, 200, o.error); assert.equal(o.order.gift_name, 'Ana'); assert.match(o.message, /oferecer a Ana/);
+  await A.post('/api/admin/orders/' + o.order.id + '/confirm-payment', { verified: true, payment_ref: 'REF-GIFT-1' });
+  const d = await A.post('/api/admin/orders/' + o.order.id + '/deliver', {}, key(91));
+  assert.equal(d.status, 200, d.error);
+  const in2 = (await syncP(S, P2, TOK2, { name: 'Ana', cls: 'mago', level: 30 })).inbox.find((x) => x.order_id === o.order.id);
+  assert.ok(in2, 'o amigo recebe a compra'); assert.equal(in2.from_name, 'Delcio'); assert.ok(in2.crystals > 0);
+  assert.equal((await syncP(S, P1, TOK1, { name: 'Delcio', cls: 'guerreiro', level: 30, crystals: 90 })).inbox.filter((x) => x.order_id === o.order.id).length, 0, 'quem paga não recebe');
+});
+
+await test('emotes de duelo: frases gratuitas, pacotes do perfil, título no duelo e limite de envio', async () => {
+  const S = await setup('production'); await trio(S);
+  const C = (u, b) => S.call('POST', u, b);
+  await syncP(S, P1, TOK1, { name: 'Delcio', cls: 'guerreiro', level: 30, profile: { title: 'Escolhido do Sistema', tcolor: '#6fd6ff', emotes: ['em_sistema', 'falso'] } });
+  await C('/api/social/friend/request', Object.assign(as(P1, TOK1), { to: P2 }));
+  await C('/api/social/friend/respond', Object.assign(as(P2, TOK2), { from: P1, accept: true }));
+  const c = await C('/api/duel/create', Object.assign(as(P1, TOK1), { fighter: FIGHT, invite: P2 }));
+  assert.equal(c.duel.fighters[P1].title, 'Escolhido do Sistema'); assert.equal(c.duel.fighters[P1].tcolor, '#6fd6ff');
+  assert.deepEqual(c.duel.fighters[P1].emo, ['em_sistema'], 'só pacotes que existem');
+  assert.equal((await C('/api/duel/emote', Object.assign(as(P1, TOK1), { id: c.duel.id, emote: 'livre:0' }))).status, 409, 'ainda à espera');
+  const jn = await C('/api/duel/join', Object.assign(as(P2, TOK2), { code: c.duel.code, fighter: FIGHT }));
+  const e1 = await C('/api/duel/emote', Object.assign(as(P1, TOK1), { id: c.duel.id, emote: 'em_sistema:2' }));
+  assert.equal(e1.status, 200, e1.error); assert.equal(e1.duel.emotes[0].t, 'O Sistema não esquece.');
+  assert.equal((await C('/api/duel/emote', Object.assign(as(P1, TOK1), { id: c.duel.id, emote: 'livre:1' }))).status, 429, 'espera entre frases');
+  assert.equal((await C('/api/duel/emote', Object.assign(as(P2, TOK2), { id: c.duel.id, emote: 'em_sistema:0' }))).status, 403, 'P2 não tem o pacote');
+  assert.equal((await C('/api/duel/emote', Object.assign(as(P2, TOK2), { id: c.duel.id, emote: 'xx:9' }))).status, 400);
+  for (let i = 0; i < 7; i++) { clock += 7000; assert.equal((await C('/api/duel/emote', Object.assign(as(P2, TOK2), { id: c.duel.id, emote: 'livre:' + (i % 3) }))).status, 200); }
+  clock += 7000;
+  assert.equal((await C('/api/duel/emote', Object.assign(as(P2, TOK2), { id: c.duel.id, emote: 'livre:0' }))).status, 200);
+  clock += 7000;
+  assert.equal((await C('/api/duel/emote', Object.assign(as(P2, TOK2), { id: c.duel.id, emote: 'livre:0' }))).status, 429, 'máximo 8 por duelo');
+  const st = await C('/api/duel/state', Object.assign(as(P1, TOK1), { id: c.duel.id }));
+  assert.equal(st.duel.emotes.length, 9); assert.equal(e1.duel.version, jn.duel.version, 'as frases não mudam a versão do duelo');
 });
 
 console.log('\n' + passed + ' testes do servidor passaram' + (process.exitCode ? ' (com falhas)' : ''));

@@ -123,6 +123,8 @@
 
   prem({ id: 'pr_nome', name: 'Pergaminho do Novo Nome', icon: '✒️', cat: 'premium', crystals: 30, rarity: 'lendario', lvl: 1, field: true,
     desc: 'Muda o teu nome de jogador. O progresso, o ID e os amigos ficam iguais.', use: { type: 'rename' } });
+  prem({ id: 'pr_reset', name: 'Pergaminho da Reconstrução', icon: '📜', cat: 'premium', crystals: 40, rarity: 'lendario', lvl: 1, field: true,
+    desc: 'Devolve todos os pontos de atributo que distribuíste, para os voltares a distribuir. Funciona desde o nível 1 (a Pedra do Renascimento da loja normal só a partir do nível 10).', use: { type: 'reset' } });
 
   /* Conjunto do Monarca: bónus por peças soberanas equipadas ao mesmo tempo */
   S.MONARCH_SET = [
@@ -134,7 +136,7 @@
   S.PREMIUM_SHOP = [
     { title: 'Equipamento soberano', ids: ['pr_lamina', 'pr_armadura', 'pr_coroa', 'pr_olho', 'pr_coracao', 'pr_ampulheta', 'pr_espinho', 'pr_executor', 'pr_egide'] },
     { title: 'Relíquias permanentes', note: 'Compras uma vez e ficam tuas para sempre. Depois de usada, cada relíquia recarrega sozinha. Só podes usar 1 relíquia premium por batalha.', ids: ['pr_juizo', 'pr_tempo', 'pr_legiao', 'pr_elixir', 'pr_fenix', 'pr_ruptura', 'pr_eco'] },
-    { title: 'Tesouros', ids: ['pr_general', 'pr_nome', 'pr_bau', 'pr_selo', 'pr_foco', 'pr_trevo'] }
+    { title: 'Tesouros', ids: ['pr_general', 'pr_nome', 'pr_reset', 'pr_bau', 'pr_selo', 'pr_foco', 'pr_trevo'] }
   ];
   S.PREMIUM_RELICS = ['pr_juizo', 'pr_tempo', 'pr_elixir', 'pr_legiao', 'pr_fenix', 'pr_ruptura', 'pr_eco'];
   S.PREMIUM_CONSUMABLES = ['pr_juizo', 'pr_tempo', 'pr_elixir', 'pr_legiao', 'pr_fenix', 'pr_ruptura', 'pr_eco'];
@@ -173,12 +175,37 @@
     { id: 'nm_ciano', kind: 'nome', name: 'Assinatura Ciano', color: '#6fd6ff', crystals: 60, desc: 'O teu nome escrito na luz do Sistema.' },
     { id: 'nm_carmesim', kind: 'nome', name: 'Assinatura Carmesim', color: '#ff4d66', crystals: 90, desc: 'O teu nome em vermelho de aviso.' },
     { id: 'nm_ouro', kind: 'nome', name: 'Assinatura Dourada', color: '#ffc85a', crystals: 90, desc: 'O teu nome em ouro, como nos troféus.' },
-    { id: 'nm_prisma', kind: 'nome', name: 'Assinatura Prismática', color: '#b56cff', crystals: 150, desc: 'O teu nome atravessado por todas as cores dos portões.', prism: true }
+    { id: 'nm_prisma', kind: 'nome', name: 'Assinatura Prismática', color: '#b56cff', crystals: 150, desc: 'O teu nome atravessado por todas as cores dos portões.', prism: true },
+    /* títulos exclusivos: aparecem por baixo do nome, no Estado, no perfil e nos duelos */
+    { id: 'tt_escolhido', kind: 'titulo', name: 'Escolhido do Sistema', color: '#6fd6ff', crystals: 60, desc: 'Para quem aceitou à primeira. O Sistema lembra-se.' },
+    { id: 'tt_horamorta', kind: 'titulo', name: 'Caçador da Hora Morta', color: '#b98cff', crystals: 70, desc: 'Para quem treina quando até os chefes dormem.' },
+    { id: 'tt_semdescanso', kind: 'titulo', name: 'Sem Descanso', color: '#ff8a5a', crystals: 70, desc: 'Para quem não falha um dia. Nem quando devia.' },
+    { id: 'tt_portoes', kind: 'titulo', name: 'Quebra-Portões', color: '#ffc85a', crystals: 80, desc: 'Para quem entra nos portões sem bater.' },
+    { id: 'tt_vigiado', kind: 'titulo', name: 'Aquele que o Sistema Vigia', color: '#ff4d66', crystals: 90, desc: 'O olho vermelho segue-te. E tu gostas.' },
+    { id: 'tt_monarca', kind: 'titulo', name: 'Sombra do Monarca', color: '#e0e6ff', crystals: 100, desc: 'O título mais raro da loja. Diz pouco e pesa muito.' },
+    /* efeitos de vitória e de subida de nível */
+    { id: 'fx_raios', kind: 'efeito', name: 'Fúria dos Raios', color: '#7aa8ff', crystals: 80, fx: 'raios', icon: '⚡', desc: 'Relâmpagos caem do topo do ecrã quando vences um chefe ou sobes de nível.' },
+    { id: 'fx_petalas', kind: 'efeito', name: 'Pétalas Negras', color: '#b56cff', crystals: 90, fx: 'petalas', icon: '❀', desc: 'Uma chuva lenta de pétalas negras com brilho violeta. Morthis aprovaria.' },
+    { id: 'fx_cristais', kind: 'efeito', name: 'Chuva de Cristais', color: '#6fd6ff', crystals: 100, fx: 'cristais', icon: '◆', desc: 'Cristais azuis caem e estilhaçam-se no fundo do ecrã.' },
+    { id: 'fx_chamas', kind: 'efeito', name: 'Chamas da Fénix', color: '#ff8a3d', crystals: 90, fx: 'chamas', icon: '🔥', desc: 'Brasas sobem do fundo do ecrã, como as de Ignivar a renascer.' },
+    /* emotes de duelo: frases curtas que mandas durante o combate */
+    { id: 'em_sistema', kind: 'emote', name: 'Vozes do Sistema', color: '#6fd6ff', crystals: 50, desc: 'Fala como o Sistema.', lines: ['Registado.', 'Isso não foi suficiente.', 'O Sistema não esquece.', 'Próximo turno. Prepara-te.'] },
+    { id: 'em_provocar', kind: 'emote', name: 'Provocações', color: '#ff4d66', crystals: 60, desc: 'Para quem gosta de irritar o adversário.', lines: ['Só isso?', 'Ainda estou de pé.', 'Já vi chefes de nível 1 bater mais.', 'Rende-te. Poupas tempo.'] },
+    { id: 'em_respeito', kind: 'emote', name: 'Respeito', color: '#6ff0b0', crystals: 50, desc: 'Para os duelos entre amigos.', lines: ['Bem jogado.', 'Esse golpe foi bonito.', 'Respeito.', 'Revanche amanhã?'] }
   ];
+  /* emotes de duelo que todos têm, sem comprar */
+  S.EMOTES_FREE = ['Boa sorte.', 'Bom combate.', 'GG.'];
+  /* o que se pode oferecer a um amigo (pago em Cristais pelo remetente) */
+  S.GIFTABLE = {};
+  S.COSMETICS.forEach(function (c) { if (c.crystals > 0 && !c.reward) S.GIFTABLE[c.id] = c.crystals; });
+  /* todas as frases de duelo: «livre:0», «em_sistema:2», … */
+  S.EMOTES = {};
+  S.EMOTES_FREE.forEach(function (t, i) { S.EMOTES['livre:' + i] = t; });
   /* auras antigas (retiradas): quem as comprou recebe os Cristais de volta */
   S.OLD_AURAS = { au_sistema: 100, au_esmeralda: 140, au_carmesim: 140, au_glacial: 160, au_sombra: 160, au_monarca: 250 };
   S.COSMETIC_BY_ID = {};
   S.COSMETICS.forEach(function (c) { S.COSMETIC_BY_ID[c.id] = c; });
+  S.COSMETICS.forEach(function (c) { if (c.kind === 'emote') c.lines.forEach(function (t, i) { S.EMOTES[c.id + ':' + i] = t; }); });
 
   /* ---------------- novos golpes dos Campeões ---------------- */
   var BS = S.BOSS_SKILLS;
@@ -316,6 +343,7 @@
     pr_elixir: 'O mesmo elixir que os Monarcas bebiam antes das batalhas que decidiam reinos. Fecha todas as feridas, enche a mana até transbordar e acende uma fúria fria durante três turnos. Tem sabor a metal e a vitória. Não conta como poção: o corpo aceita-o como se fosse seu.',
     pr_legiao: 'Um estandarte negro rasgado por mil batalhas. Quando o levantas, a sombra de um exército inteiro ergue-se atrás de ti e ataca a cada ronda durante cinco turnos. Não falam, não sangram, não recuam. Lutam por ti até o estandarte se calar.',
     pr_fenix: 'Uma única lágrima de uma fénix que ardeu negra. Não se usa: guarda-se. No momento em que a tua vida chega a zero, ela arde por ti e devolve-te inteiro ao combate. É mais forte do que a Pena da Fénix, e por isso arde primeiro.',
+    pr_reset: 'Um pergaminho com a tua ficha escrita a lápis. O Sistema apaga as escolhas que fizeste e devolve-te os pontos. O que aprendeste a fazer com eles, esse, fica.',
     pr_nome: 'Um pergaminho em branco com o selo do Sistema. O nome que escreveres nele passa a ser o teu em todos os registos. O que fizeste com o nome antigo, esse, o Sistema não esquece.',
     pr_general: 'Uma insígnia de metal negro, fria ao toque, com uma coroa partida gravada. Quem a usa é reconhecido pelas sombras como general, e mais servos atendem ao chamado.',
     pr_bau: 'Um baú forrado a veludo negro com o selo do Monarca na tampa. Dentro há sempre um Baú Lendário, uma relíquia de combate escolhida pelo acaso e uma soma de moedas que cresce com o teu nível. O Sistema não abre baús destes para qualquer um.',

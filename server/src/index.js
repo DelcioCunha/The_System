@@ -17,9 +17,9 @@
      MODE              "production" ou "staging" (staging marca tudo como teste)
    ========================================================== */
 
-import { DUEL_SKILLS, DUEL_ITEMS, CLASS_MAIN, HEAL_LIMIT, DOT_NAMES, BUFF_NAMES } from './duel-data.js';
+import { DUEL_SKILLS, DUEL_ITEMS, CLASS_MAIN, HEAL_LIMIT, DOT_NAMES, BUFF_NAMES, MANA_RULES, CLASS_INT, EMOTES, GIFTABLE } from './duel-data.js';
 
-const VERSION = '1.5.0';
+const VERSION = '1.7.0';
 const MIN = 60 * 1000, HOUR = 60 * MIN, DAY = 24 * HOUR;
 const SESSION_TTL = 12 * HOUR;       // duração máxima de uma sessão
 const SESSION_IDLE = 2 * HOUR;       // sem uso durante 2 horas, a sessão expira
@@ -137,11 +137,11 @@ async function housekeeping(env) {
 
 /* ---------------- formatos públicos ---------------- */
 function orderPublic(o) {
-  return { id: o.id, status: o.status, package: o.package_name, crystals: o.crystals, coins: o.coins || 0, price_kz: o.price_kz, created_at: o.created_at, test: !!o.test };
+  return { id: o.id, status: o.status, package: o.package_name, crystals: o.crystals, coins: o.coins || 0, price_kz: o.price_kz, created_at: o.created_at, test: !!o.test, gift_name: o.gift_name || null };
 }
 function orderAdmin(o) {
   return { id: o.id, seq: o.seq, status: o.status, package_id: o.package_id, package: o.package_name, crystals: o.crystals, coins: o.coins || 0, price_kz: o.price_kz,
-    player_id: o.player_id, player_name: o.player_name, payment_ref: o.payment_ref, payment_note: o.payment_note,
+    player_id: o.player_id, player_name: o.player_name, gift_to: o.gift_to || null, gift_name: o.gift_name || null, payment_ref: o.payment_ref, payment_note: o.payment_note,
     created_at: o.created_at, confirmed_at: o.confirmed_at, confirmed_by: o.confirmed_by, code_issued_at: o.code_issued_at,
     redeemed_at: o.redeemed_at, closed_at: o.closed_at, close_reason: o.close_reason, delivery: o.delivery || null, test: !!o.test };
 }
@@ -157,6 +157,13 @@ function whatsappLink(number, text) {
 /* ==========================================================
    ROTAS PÚBLICAS (jogo)
    ========================================================== */
+/* site oficial: preço da ativação e link de compra pelo WhatsApp (público, sem dados pessoais) */
+async function siteInfo(env) {
+  const cfg = await devCfg(env);
+  const n = await one(env, 'SELECT COUNT(*) AS n FROM players WHERE legal_at IS NOT NULL' + (isTest(env) ? '' : ' AND test = 0'));
+  return json({ ok: true, version: VERSION, price_kz: cfg.price || null, price_old_kz: cfg.priceOld > cfg.price ? cfg.priceOld : null, currency: 'Kz', payment: 'Multicaixa Express',
+    whatsapp_url: cfg.whatsapp ? whatsappLink(cfg.whatsapp, buyText(cfg, null)) : null, activation_required: cfg.private, legal_players: (n && n.n) || 0 });
+}
 async function getConfig(env) {
   const pk = await all(env, 'SELECT id, name, crystals, bonus, price_kz, badge, kind FROM packages WHERE active = 1 AND price_kz IS NOT NULL ORDER BY sort, crystals');
   return json({ ok: true, version: VERSION, test: isTest(env), open: (await setting(env, 'shop_open')) === '1',
@@ -176,17 +183,27 @@ async function createOrder(env, body, ip) {
   if (pending.n >= 3) throw new HttpError(409, 'Já tens 3 pedidos à espera de pagamento. Conclui ou cancela um primeiro.');
   const p = await one(env, 'SELECT * FROM packages WHERE id = ? AND active = 1 AND price_kz IS NOT NULL', clean(body.package_id, 32));
   if (!p) throw bad('Pacote indisponível.');
+  // compra para oferecer a um amigo: só entre amigos, e o amigo recebe quando o pagamento for confirmado
+  let giftTo = null, giftName = null;
+  if (body.gift_to) {
+    giftTo = clean(body.gift_to, 64);
+    const buyer = await playerAuth(env, { player_id: playerId, token: body.token });
+    if (giftTo === buyer.id || !(await areFriends(env, buyer.id, giftTo))) throw bad('Só podes oferecer a um amigo.');
+    const d = await playerRow(env, giftTo);
+    if (!d || d.status === 'banned') throw bad('Este jogador não pode receber presentes.');
+    giftName = d.name;
+  }
   const isCoins = p.kind === 'coins', total = p.crystals + p.bonus, oCr = isCoins ? 0 : total, oCo = isCoins ? total : 0;
   const c = await one(env, "UPDATE counters SET value = value + 1 WHERE name = 'order' RETURNING value");
   const seq = c.value, id = 'SIS-' + String(seq).padStart(6, '0');
   const token = randomToken(), t = now();
   await env.DB.batch([
-    q(env, 'INSERT INTO orders (id, seq, package_id, package_name, crystals, coins, price_kz, player_id, player_name, client_token_hash, status, created_at, test) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      id, seq, p.id, p.name, oCr, oCo, p.price_kz, playerId, name, await tokenHash(env, token), 'pending_payment', t, isTest(env) ? 1 : 0),
-    auditStmt(env, 'player:' + playerId, 'order.create', id, 'ok', { package: p.id, price_kz: p.price_kz, name }, ip)
+    q(env, 'INSERT INTO orders (id, seq, package_id, package_name, crystals, coins, price_kz, player_id, player_name, client_token_hash, status, created_at, test, gift_to, gift_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      id, seq, p.id, p.name, oCr, oCo, p.price_kz, playerId, name, await tokenHash(env, token), 'pending_payment', t, isTest(env) ? 1 : 0, giftTo, giftName),
+    auditStmt(env, 'player:' + playerId, 'order.create', id, 'ok', { package: p.id, price_kz: p.price_kz, name, gift_to: giftTo }, ip)
   ]);
-  const msg = 'Olá! Quero comprar ' + total.toLocaleString('pt-PT') + (isCoins ? ' moedas' : ' Cristais') + ' no jogo Sistema.\nPedido: ' + id + '\nJogador: ' + name + '\nValor: ' + p.price_kz.toLocaleString('pt-PT') + ' Kz';
-  return json({ ok: true, order: { id, status: 'pending_payment', package: p.name, crystals: oCr, coins: oCo, price_kz: p.price_kz, created_at: t, test: isTest(env) },
+  const msg = 'Olá! Quero comprar ' + total.toLocaleString('pt-PT') + (isCoins ? ' moedas' : ' Cristais') + ' no jogo Sistema' + (giftName ? ' para oferecer a ' + giftName : '') + '.\nPedido: ' + id + '\nJogador: ' + name + (giftName ? '\nPresente para: ' + giftName : '') + '\nValor: ' + p.price_kz.toLocaleString('pt-PT') + ' Kz';
+  return json({ ok: true, order: { id, status: 'pending_payment', package: p.name, crystals: oCr, coins: oCo, price_kz: p.price_kz, created_at: t, test: isTest(env), gift_name: giftName },
     token, whatsapp_url: whatsappLink(await setting(env, 'whatsapp'), msg), message: msg, payment_info: await setting(env, 'payment_info') });
 }
 
@@ -513,6 +530,8 @@ async function putSettings(env, A, body, ip) {
     if (on === '1' && (await setting(env, 'private_mode')) !== '1') { up.push(['private_since', String(now())]); grandfather = true; }
   }
   if (body.offline_days !== undefined) up.push(['offline_days', String(int(body.offline_days, 1, 90))]);
+  if (body.activation_price !== undefined) up.push(['activation_price', String(int(body.activation_price, 0, 10000000))]);
+  if (body.activation_price_old !== undefined) up.push(['activation_price_old', String(int(body.activation_price_old, 0, 10000000))]);
   if (!up.length) throw bad('Nada para alterar.');
   const extra = [];
   // os aparelhos que já jogavam (sem pedido pendente) ficam autorizados: só os novos precisam de autorização
@@ -600,14 +619,22 @@ async function sync(env, body, ip) {
     if (acc !== 'ok') return json({ ok: true, account: acc === 'blocked' ? 'device_blocked' : 'device_pending', device: devOut(dev, cfg), inbox: [], notices: [], role });
   }
   if (p.status === 'banned') return json({ ok: true, account: 'banned', ban: banInfo(p), inbox: [], notices, role });
-  const inbox = await all(env, "SELECT id, crystals, coins, reason, message, order_id FROM grants WHERE player_id = ? AND mode = 'auto' AND status = 'pending' ORDER BY created_at LIMIT 20", pid);
-  return json({ ok: true, account: 'active', inbox, notices, role, server_time: t });
+  const inbox = (await all(env, "SELECT id, crystals, coins, reason, message, order_id, from_name FROM grants WHERE player_id = ? AND mode = 'auto' AND status = 'pending' ORDER BY created_at LIMIT 20", pid))
+    .concat(await all(env, "SELECT id, 0 AS crystals, 0 AS coins, item, from_name FROM gifts WHERE player_id = ? AND status = 'pending' ORDER BY created_at LIMIT 20", pid));
+  return json({ ok: true, account: 'active', inbox, notices, role, legal: legalOut(await playerRow(env, pid)), server_time: t });
 }
 
 /* Receber um presente automático (uma única vez; repetir devolve o mesmo) */
 async function claim(env, body, ip) {
   const p = await playerAuth(env, body);
   if (p.status === 'banned') throw new HttpError(403, 'Esta conta está suspensa pelo Sistema.', { banned: true, ban: banInfo(p) });
+  if (String(body.grant_id || '').startsWith('gi_')) {
+    const gf = await one(env, 'SELECT * FROM gifts WHERE id = ? AND player_id = ?', clean(body.grant_id, 48), p.id);
+    if (!gf) throw new HttpError(404, 'Presente não encontrado.');
+    if (gf.status === 'revoked') throw new HttpError(410, 'Este presente foi anulado.');
+    if (gf.status === 'pending') await run(env, "UPDATE gifts SET status = 'claimed', claimed_at = ? WHERE id = ? AND status = 'pending'", now(), gf.id);
+    return json({ ok: true, redemption_id: gf.id, crystals: 0, coins: 0, item: gf.item, from_name: gf.from_name, repeated: gf.status === 'claimed' });
+  }
   const g = await one(env, "SELECT * FROM grants WHERE id = ? AND player_id = ? AND mode = 'auto'", clean(body.grant_id, 40), p.id);
   if (!g) throw new HttpError(404, 'Presente não encontrado.');
   if (g.status === 'revoked') throw new HttpError(410, 'Este presente foi anulado.');
@@ -621,7 +648,7 @@ async function claim(env, body, ip) {
     ]);
     if (changes(r[0]) !== 1) return claim(env, body, ip); // outra tentativa ganhou: devolve o resultado dela
   }
-  return json({ ok: true, redemption_id: 'g_' + g.id, crystals: g.crystals, coins: g.coins, message: g.message, reason: g.reason, order_id: g.order_id, repeated: g.status === 'claimed' });
+  return json({ ok: true, redemption_id: 'g_' + g.id, crystals: g.crystals, coins: g.coins, from_name: g.from_name || null, message: g.message, reason: g.reason, order_id: g.order_id, repeated: g.status === 'claimed' });
 }
 
 /* resgate de um código de oferta (tabela grants) */
@@ -755,10 +782,23 @@ function newDevCode() {
   return 'APR-' + s.slice(0, 4) + '-' + s.slice(4);
 }
 async function devCfg(env) {
-  const rows = await all(env, "SELECT key, value FROM settings WHERE key IN ('private_mode','private_since','offline_days','whatsapp')");
+  const rows = await all(env, "SELECT key, value FROM settings WHERE key IN ('private_mode','private_since','offline_days','whatsapp','activation_price','activation_price_old')");
   const o = {}; rows.forEach((r) => { o[r.key] = r.value; });
-  return { private: o.private_mode === '1', since: +o.private_since || 0, offline: Math.max(1, Math.min(90, +o.offline_days || 15)), whatsapp: o.whatsapp || '' };
+  return { private: o.private_mode === '1', since: +o.private_since || 0, offline: Math.max(1, Math.min(90, +o.offline_days || 15)), whatsapp: o.whatsapp || '',
+    price: Math.max(0, +o.activation_price || 0), priceOld: Math.max(0, +o.activation_price_old || 0) };
 }
+function kz(n) { return String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' Kz'; }
+function buyText(cfg, code) { return 'Olá! Quero comprar o código de ativação do Sistema' + (cfg.price ? ' (' + kz(cfg.price) + ')' : '') + '.' + (code ? ' Código do aparelho: ' + code + '.' : '') + ' Vou pagar por Multicaixa Express.'; }
+/* jogador legalizado: ativou o aparelho com um código comprado (ou foi aprovado pelo administrador) */
+const LEGAL_VIA = ['codigo', 'admin'];
+function legalHint(d) { const m = String(d.approved_by || '').match(/([A-Z0-9]{4})$/); return d.approved_via === 'codigo' && m ? m[1] : null; }
+function legalizeStmts(env, d, by) {
+  if (d.status !== 'approved' || !LEGAL_VIA.includes(d.approved_via)) return [];
+  const t = now();
+  return [q(env, 'UPDATE players SET legal_at = ?, legal_via = ?, legal_code = ?, legal_by = ? WHERE legal_at IS NULL AND id IN (SELECT player_id FROM device_players WHERE device_id = ?)',
+    t, d.approved_via, legalHint(d), by || d.approved_by || 'sistema', d.id)];
+}
+function legalOut(p) { return p && p.legal_at ? { at: p.legal_at, via: p.legal_via || 'codigo' } : null; }
 /* encontra o aparelho por qualquer um dos identificadores; se houver mais do que um, o bloqueado manda */
 async function findDevice(env, H) {
   const rows = await all(env, 'SELECT * FROM devices WHERE hw_hash = ? OR aid_hash = ? OR web_hash = ?', H.hw, H.aid, H.web);
@@ -810,8 +850,9 @@ async function linkPlayer(env, d, body) {
   await env.DB.batch([
     q(env, 'INSERT INTO device_players (device_id, player_id, first_at, last_at) VALUES (?, ?, ?, ?) ON CONFLICT(device_id, player_id) DO UPDATE SET last_at = excluded.last_at', d.id, p.id, t, t),
     q(env, 'UPDATE devices SET player_id = ?, player_name = ? WHERE id = ?', p.id, p.name, d.id)
-  ]);
+  ].concat(p.legal_at ? [] : legalizeStmts(env, d)));
   d.player_id = p.id; d.player_name = p.name;
+  if (!p.legal_at && d.status === 'approved' && LEGAL_VIA.includes(d.approved_via)) { p.legal_at = t; p.legal_via = d.approved_via; }
   return p;
 }
 function devAccess(d, cfg) { return d.status === 'blocked' ? 'blocked' : (d.status === 'approved' || !cfg.private) ? 'ok' : 'pending'; }
@@ -819,11 +860,13 @@ function devOut(d, cfg) {
   const access = devAccess(d, cfg);
   const wa = access !== 'ok' && cfg.whatsapp ? whatsappLink(cfg.whatsapp, access === 'blocked'
     ? 'Olá! O meu aparelho foi bloqueado no Sistema. Código do aparelho: ' + d.code + '. Quero pedir a revisão do bloqueio.'
-    : 'Olá! Quero pedir acesso ao Sistema. Código do aparelho: ' + d.code + (d.request_name ? ' · ' + d.request_name : '') + '.') : null;
+    : buyText(cfg, d.code) + (d.request_name ? ' Nome: ' + d.request_name + '.' : '')) : null;
   return { ok: true, access, private: cfg.private, offline_days: cfg.offline, device: { code: d.code, status: d.status },
     block: access === 'blocked' ? { reason: d.block_reason || 'Violação das regras do Sistema.', since: d.blocked_at || null } : null,
     restored: access === 'ok' && d.restored_at ? d.restored_at : null,
-    requested: !!d.requested_at, whatsapp_url: wa, server_time: now() };
+    requested: !!d.requested_at, whatsapp_url: wa, server_time: now(),
+    activation: access === 'pending' ? { price_kz: cfg.price || null, price_old_kz: cfg.priceOld > cfg.price ? cfg.priceOld : null, payment: 'Multicaixa Express' } : null,
+    legal: d.status === 'approved' && LEGAL_VIA.includes(d.approved_via) };
 }
 function devIds(body) { return body.ids || body.device; }
 async function deviceCheck(env, body, ip) {
@@ -856,12 +899,12 @@ async function deviceRedeem(env, body, ip) {
   const cfg = await devCfg(env);
   if (d.status === 'blocked') return json(devOut(d, cfg));
   if (d.status === 'approved') return json(Object.assign(devOut(d, cfg), { already: true }));
-  if (accNorm(body.code).length !== 8) throw bad('O código de acesso tem 8 letras e números (ex.: ACS-ABCD-EFGH).');
+  if (accNorm(body.code).length !== 8) throw bad('O código de ativação tem 8 letras e números (ex.: ACS-ABCD-EFGH).');
   const a = await one(env, 'SELECT * FROM access_codes WHERE code_hash = ?', await accHash(env, body.code));
   const t = now();
   if (!a || a.status !== 'active' || (a.expires_at && a.expires_at <= t) || a.uses >= a.max_uses) {
     await audit(env, 'device:' + d.code, 'device.code', a ? a.hint : null, 'invalid', null, ip);
-    throw new HttpError(404, a && a.uses >= a.max_uses ? 'Este código de acesso já foi usado.' : a && a.expires_at && a.expires_at <= t ? 'Este código de acesso expirou.' : 'Código de acesso inválido.');
+    throw new HttpError(404, a && a.uses >= a.max_uses ? 'Este código de ativação já foi usado.' : a && a.expires_at && a.expires_at <= t ? 'Este código de ativação expirou.' : 'Código de ativação inválido.');
   }
   const r = await env.DB.batch([
     q(env, "UPDATE access_codes SET uses = uses + 1, last_used_at = ? WHERE id = ? AND status = 'active' AND uses < max_uses", t, a.id),
@@ -869,8 +912,10 @@ async function deviceRedeem(env, body, ip) {
     q(env, "INSERT INTO audit (at, actor, action, target, result, detail, ip) SELECT ?, ?, 'device.approve', ?, 'ok', ?, ? WHERE EXISTS (SELECT 1 FROM access_codes WHERE id = ? AND last_used_at = ?)",
       t, 'device:' + d.code, d.code, JSON.stringify({ via: 'codigo', code: a.hint, label: a.label || undefined }), ip, a.id, t)
   ]);
-  if (changes(r[0]) !== 1) throw new HttpError(409, 'Este código de acesso acabou de ser usado. Pede outro.');
-  d.status = 'approved'; d.approved_via = 'codigo';
+  if (changes(r[0]) !== 1) throw new HttpError(409, 'Este código de ativação acabou de ser usado. Pede outro.');
+  d.status = 'approved'; d.approved_via = 'codigo'; d.approved_by = 'codigo ···-' + a.hint;
+  const lg = legalizeStmts(env, d);
+  if (lg.length) await env.DB.batch(lg);
   return json(devOut(d, cfg));
 }
 async function deviceRequest(env, body, ip) {
@@ -907,7 +952,8 @@ function deviceAdmin(d) {
     ids: { hw: !!d.hw_hash, aid: !!d.aid_hash, web: !!d.web_hash },
     approved_at: d.approved_at, approved_by: d.approved_by, approved_via: d.approved_via, block_reason: d.block_reason, blocked_at: d.blocked_at, blocked_by: d.blocked_by,
     restored_at: d.restored_at, restored_by: d.restored_by, restore_note: d.restore_note, request_name: d.request_name, request_msg: d.request_msg, requested_at: d.requested_at,
-    note: d.note, player_id: d.player_id, player_name: d.player_name, first_seen: d.first_seen, last_seen: d.last_seen, checks: d.checks, players: d.nplayers || 0 };
+    note: d.note, player_id: d.player_id, player_name: d.player_name, first_seen: d.first_seen, last_seen: d.last_seen, checks: d.checks, players: d.nplayers || 0,
+    legal: d.status === 'approved' && LEGAL_VIA.includes(d.approved_via) };
 }
 async function listDevices(env, url) {
   const st = url.searchParams.get('status') || 'all', qq = clean(url.searchParams.get('q'), 40);
@@ -921,7 +967,7 @@ async function listDevices(env, url) {
   const rows = await all(env, 'SELECT *, (SELECT COUNT(*) FROM device_players dp WHERE dp.device_id = devices.id) AS nplayers FROM devices' + (where.length ? ' WHERE ' + where.join(' AND ') : '') + ' ORDER BY ' + order + ' LIMIT ?', ...args, limit);
   const tot = await one(env, "SELECT COUNT(*) AS n, SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) AS approved, SUM(CASE WHEN status = 'blocked' THEN 1 ELSE 0 END) AS blocked, SUM(CASE WHEN status = 'new' THEN 1 ELSE 0 END) AS new, SUM(CASE WHEN status = 'new' AND requested_at IS NOT NULL THEN 1 ELSE 0 END) AS requests FROM devices" + (isTest(env) ? '' : ' WHERE test = 0'));
   const cfg = await devCfg(env);
-  return json({ ok: true, devices: rows.map(deviceAdmin), totals: { devices: tot.n || 0, approved: tot.approved || 0, blocked: tot.blocked || 0, new: tot.new || 0, requests: tot.requests || 0 }, private: cfg.private, offline_days: cfg.offline });
+  return json({ ok: true, devices: rows.map(deviceAdmin), totals: { devices: tot.n || 0, approved: tot.approved || 0, blocked: tot.blocked || 0, new: tot.new || 0, requests: tot.requests || 0 }, private: cfg.private, offline_days: cfg.offline, activation_price: cfg.price, activation_price_old: cfg.priceOld, whatsapp: !!cfg.whatsapp });
 }
 async function deviceRowAdmin(env, id) {
   const d = await one(env, 'SELECT * FROM devices WHERE id = ?', id);
@@ -942,9 +988,32 @@ async function approveDevice(env, A, id, body, ip) {
     await env.DB.batch([
       q(env, "UPDATE devices SET status = 'approved', approved_at = ?, approved_by = ?, approved_via = 'admin' WHERE id = ?", now(), A.admin, d.id),
       auditStmt(env, A.admin, 'device.approve', d.code, 'ok', { via: 'admin', note: clean(body.note, 200) || undefined }, ip)
-    ]);
+    ].concat(legalizeStmts(env, Object.assign({}, d, { status: 'approved', approved_via: 'admin', approved_by: A.admin }), A.admin)));
   }
   return deviceDetail(env, d.id);
+}
+/* aparelho que já jogava antes da ativação obrigatória (ou aprovado sem código): o administrador legaliza-o */
+async function legalizeDevice(env, A, id, body, ip) {
+  const d = await deviceRowAdmin(env, id);
+  if (d.status !== 'approved') throw new HttpError(409, 'Só um aparelho autorizado pode ser legalizado.');
+  const nd = Object.assign({}, d, { approved_via: LEGAL_VIA.includes(d.approved_via) ? d.approved_via : 'admin', approved_by: LEGAL_VIA.includes(d.approved_via) ? d.approved_by : A.admin });
+  await env.DB.batch([
+    q(env, 'UPDATE devices SET approved_via = ?, approved_by = ? WHERE id = ?', nd.approved_via, nd.approved_by, d.id),
+    auditStmt(env, A.admin, 'device.legalize', d.code, 'ok', { was: d.approved_via, note: clean(body.note, 200) || undefined }, ip)
+  ].concat(legalizeStmts(env, nd, A.admin)));
+  return deviceDetail(env, d.id);
+}
+/* marcar (ou tirar) um jogador como legalizado diretamente */
+async function setLegal(env, A, id, body, ip) {
+  const p = await playerRow(env, clean(id, 64));
+  if (!p) throw new HttpError(404, 'Jogador não encontrado.');
+  const on = !!body.on, t = now();
+  await env.DB.batch([
+    on ? q(env, "UPDATE players SET legal_at = COALESCE(legal_at, ?), legal_via = COALESCE(legal_via, 'admin'), legal_by = COALESCE(legal_by, ?) WHERE id = ?", t, A.admin, p.id)
+      : q(env, 'UPDATE players SET legal_at = NULL, legal_via = NULL, legal_code = NULL, legal_by = NULL WHERE id = ?', p.id),
+    auditStmt(env, A.admin, on ? 'player.legalize' : 'player.unlegalize', p.id, 'ok', { note: clean(body.note, 200) || undefined }, ip)
+  ]);
+  return playerDetail(env, p.id);
 }
 async function blockDevice(env, A, id, body, ip) {
   const d = await deviceRowAdmin(env, id);
@@ -1013,7 +1082,7 @@ async function createAccessCode(env, A, request, body, ip) {
   const t = now(), code = newAccCode(), id = randomId('a'), hint = code.slice(-4);
   const exp = days ? t + days * DAY : null;
   const out = { ok: true, code, access: { id, hint, label, max_uses: uses, uses: 0, expires_at: exp, status: 'active', created_by: A.admin, created_at: t },
-    message: 'O teu código de acesso ao Sistema: ' + code + (exp ? ' (válido até ' + new Date(exp + HOUR).toISOString().slice(0, 10).split('-').reverse().join('/') + ')' : '') + '. Abre o jogo e escreve-o no ecrã «Acesso restrito».' };
+    message: 'Obrigado pela compra! O teu código de ativação do Sistema: ' + code + (exp ? ' (válido até ' + new Date(exp + HOUR).toISOString().slice(0, 10).split('-').reverse().join('/') + ')' : '') + '. Abre o jogo e escreve-o no ecrã «Ativação». O código é pessoal e serve para um só aparelho: partilhá-lo ou usar cópias não oficiais leva ao bloqueio permanente do aparelho.' };
   out.whatsapp_url = 'https://wa.me/?text=' + encodeURIComponent(out.message);
   const stmts = [
     q(env, 'INSERT INTO access_codes (id, code_hash, hint, label, max_uses, uses, expires_at, status, created_by, created_at) VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?)', id, await accHash(env, code), hint, label || null, uses, exp, 'active', A.admin, t),
@@ -1050,7 +1119,8 @@ function playerAdmin(p) {
     created_at: p.created_at, last_seen: p.last_seen, syncs: p.syncs, status: p.status, ban_reason: p.ban_reason, ban_until: p.ban_until, banned_at: p.banned_at,
     banned_by: p.banned_by, note: p.note, duel_wins: p.duel_wins || 0, duel_losses: p.duel_losses || 0, duel_points: p.duel_points || 0, duel_best: p.duel_best || 0, spent_kz: p.spent_kz || 0, paid_orders: p.paid_orders || 0,
     gender: p.gender || 'm', has_photo: !!p.photo, profile: profOf(p),
-    role: p.role_eff || p.role || 'usuario', role_name: ROLES[p.role_eff || p.role || 'usuario'], role_auto: !p.role, role_by: p.role_by || null };
+    role: p.role_eff || p.role || 'usuario', role_name: ROLES[p.role_eff || p.role || 'usuario'], role_auto: !p.role, role_by: p.role_by || null,
+    legal: p.legal_at ? { at: p.legal_at, via: p.legal_via, code: p.legal_code, by: p.legal_by } : null };
 }
 function grantAdmin(g) {
   return { id: g.id, player_id: g.player_id, order_id: g.order_id, crystals: g.crystals, coins: g.coins, reason: g.reason, message: g.message, mode: g.mode, hint: g.hint,
@@ -1066,6 +1136,8 @@ async function listPlayers(env, url) {
   if (qq) { where.push('(id LIKE ? OR name LIKE ?)'); args.push('%' + qq.toUpperCase() + '%', '%' + qq + '%'); }
   if (st === 'banned' || st === 'active') { where.push('status = ?'); args.push(st); }
   if (st === 'online') { where.push('last_seen > ?'); args.push(now() - 15 * MIN); }
+  if (st === 'legal') where.push('legal_at IS NOT NULL');
+  if (st === 'illegal') where.push('legal_at IS NULL');
   if (!isTest(env)) where.push('test = 0');
   const role = clean(url.searchParams.get('role'), 20);
   if (ROLES[role]) { where.push('role_eff = ?'); args.push(role); }
@@ -1073,8 +1145,8 @@ async function listPlayers(env, url) {
   const rows = await all(env, 'SELECT * FROM (SELECT *, ' + SPENT + ' FROM players)' + (where.length ? ' WHERE ' + where.join(' AND ') : '') + ' ORDER BY ' + order + ' LIMIT ?', ...args, limit);
   const rc = await all(env, 'SELECT ' + ROLE_EFF + ' AS r, COUNT(*) AS n FROM players' + (isTest(env) ? '' : ' WHERE test = 0') + ' GROUP BY r');
   const roles = {}; Object.keys(ROLES).forEach((k) => { roles[k] = 0; }); rc.forEach((x) => { roles[x.r] = x.n; });
-  const tot = await one(env, "SELECT COUNT(*) AS n, SUM(CASE WHEN status = 'banned' THEN 1 ELSE 0 END) AS banned, SUM(CASE WHEN last_seen > ? THEN 1 ELSE 0 END) AS week, SUM(CASE WHEN last_seen > ? THEN 1 ELSE 0 END) AS online FROM players" + (isTest(env) ? '' : ' WHERE test = 0'), now() - 7 * DAY, now() - 15 * MIN);
-  return json({ ok: true, players: rows.map(playerAdmin), totals: { players: tot.n || 0, banned: tot.banned || 0, active_7d: tot.week || 0, online: tot.online || 0, roles }, role_names: ROLES });
+  const tot = await one(env, "SELECT COUNT(*) AS n, SUM(CASE WHEN status = 'banned' THEN 1 ELSE 0 END) AS banned, SUM(CASE WHEN last_seen > ? THEN 1 ELSE 0 END) AS week, SUM(CASE WHEN last_seen > ? THEN 1 ELSE 0 END) AS online, SUM(CASE WHEN legal_at IS NOT NULL THEN 1 ELSE 0 END) AS legal FROM players" + (isTest(env) ? '' : ' WHERE test = 0'), now() - 7 * DAY, now() - 15 * MIN);
+  return json({ ok: true, players: rows.map(playerAdmin), totals: { players: tot.n || 0, banned: tot.banned || 0, active_7d: tot.week || 0, online: tot.online || 0, legal: tot.legal || 0, roles }, role_names: ROLES });
 }
 async function playerDetail(env, id) {
   const pid = clean(id, 64);
@@ -1190,15 +1262,16 @@ async function deliverOrder(env, A, id, request, ip) {
   if (!o) throw new HttpError(404, 'Pedido não encontrado.');
   if (o.status === 'pending_payment') throw new HttpError(409, 'O pagamento ainda não foi confirmado. Não é possível entregar.');
   if (o.status !== 'payment_confirmed') throw new HttpError(409, 'Este pedido já foi entregue ou tem código emitido.');
-  const pl = await playerRow(env, o.player_id);
+  const dest = o.gift_to || o.player_id, pl = await playerRow(env, dest);
   if (pl && pl.status === 'banned') throw new HttpError(409, 'O jogador está suspenso. Levanta a suspensão ou reembolsa o pedido.');
   const gid = randomId('g'), t = now();
   try {
     await env.DB.batch([
-      q(env, 'INSERT INTO grants (id, player_id, order_id, crystals, coins, reason, message, mode, status, created_by, created_at, test) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        gid, o.player_id, o.id, o.crystals, o.coins || 0, 'Compra ' + o.id, 'Pagamento confirmado. Obrigado pela tua compra!', 'auto', 'pending', A.admin, t, o.test),
+      q(env, 'INSERT INTO grants (id, player_id, order_id, crystals, coins, reason, message, mode, status, created_by, created_at, test, from_id, from_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        gid, dest, o.id, o.crystals, o.coins || 0, o.gift_to ? 'Presente de ' + o.player_name : 'Compra ' + o.id, o.gift_to ? o.player_name + ' comprou isto para ti.' : 'Pagamento confirmado. Obrigado pela tua compra!', 'auto', 'pending', A.admin, t, o.test,
+        o.gift_to ? o.player_id : null, o.gift_to ? o.player_name : null),
       q(env, "UPDATE orders SET status = 'code_issued', delivery = 'auto', code_issued_at = ? WHERE id = ? AND status = 'payment_confirmed'", t, o.id),
-      auditStmt(env, A.admin, 'order.deliver', o.id, 'ok', { crystals: o.crystals, coins: o.coins || 0, player: o.player_id }, ip)
+      auditStmt(env, A.admin, 'order.deliver', o.id, 'ok', { crystals: o.crystals, coins: o.coins || 0, player: dest, gift_from: o.gift_to ? o.player_id : null }, ip)
     ]);
   } catch (e) { throw new HttpError(409, 'Este pedido já tem uma entrega em curso.'); }
   const res = { ok: true, order_id: o.id, grant_id: gid, crystals: o.crystals, coins: o.coins || 0, registered: !!pl,
@@ -1235,19 +1308,45 @@ async function socialAuth(env, body, touch) {
   if (touch !== false) await run(env, 'UPDATE players SET social_seen = ? WHERE id = ?', now(), p.id);
   return p;
 }
+function PAID_N(t) { return '(SELECT COUNT(*) FROM orders o WHERE o.player_id = ' + t + '.id AND o.status IN ' + PAID + ') AS paid_orders'; }
 function profOf(p) { try { return JSON.parse(p.profile || '{}') || {}; } catch (e) { return {}; } }
 function pub(p, extra) {
   const pf = profOf(p);
   return Object.assign({ id: p.id, name: p.name, cls: p.cls || null, level: p.level, gender: p.gender === 'f' ? 'f' : 'm', photo_ver: p.photo ? (p.photo_ver || 1) : 0, title: pf.title || null, frame: pf.frame || null, online: isOnline(p), seen: seenOf(p),
-    wins: p.duel_wins || 0, losses: p.duel_losses || 0, rating: p.duel_rating || 1000, points: p.duel_points || 0, best: p.duel_best || 0 }, extra || {});
+    wins: p.duel_wins || 0, losses: p.duel_losses || 0, rating: p.duel_rating || 1000, points: p.duel_points || 0, best: p.duel_best || 0,
+    legal: !!p.legal_at, premium: p.role ? p.role === 'premium' : (p.paid_orders || 0) > 0 }, extra || {});
 }
 async function friendRow(env, x, y) { const k = pairKey(x, y); return one(env, 'SELECT * FROM friends WHERE a = ? AND b = ?', k[0], k[1]); }
 async function areFriends(env, x, y) { const f = await friendRow(env, x, y); return !!(f && f.status === 'accepted'); }
+/* presentes entre amigos: um item de aparência pago com os Cristais de quem oferece */
+const GIFTS_PER_DAY = 5;
+async function giftSend(env, body, ip) {
+  const p = await socialAuth(env, body, false);
+  const to = clean(body.to, 64), item = clean(body.item, 24), g = GIFTABLE[item];
+  if (!g) throw bad('Este item não pode ser oferecido.');
+  if (to === p.id) throw bad('Não podes oferecer a ti mesmo.');
+  if (!(await areFriends(env, p.id, to))) throw bad('Só podes oferecer presentes a amigos.');
+  const dest = await playerRow(env, to);
+  if (!dest || dest.status === 'banned') throw bad('Este jogador não pode receber presentes.');
+  if ((p.crystals || 0) < g.p) throw new HttpError(409, 'Não tens Cristais suficientes (o servidor vê ' + (p.crystals || 0) + '). Sincroniza o jogo e tenta outra vez.');
+  if (await limited(env, 'gift:' + p.id, GIFTS_PER_DAY, DAY)) throw new HttpError(429, 'Já ofereceste ' + GIFTS_PER_DAY + ' presentes hoje. Volta amanhã.');
+  const dup = await one(env, "SELECT 1 AS x FROM gifts WHERE player_id = ? AND item = ? AND status = 'pending'", to, item);
+  if (dup) throw new HttpError(409, dest.name + ' já tem este presente à espera.');
+  const gid = 'gi_' + randomId('g'), t = now();
+  const r = await env.DB.batch([
+    q(env, 'UPDATE players SET crystals = crystals - ? WHERE id = ? AND crystals >= ?', g.p, p.id, g.p),
+    q(env, "INSERT INTO gifts (id, player_id, from_id, from_name, item, crystals, status, created_at, test) SELECT ?, ?, ?, ?, ?, ?, 'pending', ?, ? WHERE changes() = 1",
+      gid, to, p.id, p.name, item, g.p, t, isTest(env) ? 1 : 0),
+    auditStmt(env, 'player:' + p.id, 'gift.send', to, 'ok', { item, crystals: g.p }, ip)
+  ]);
+  if (changes(r[0]) !== 1 || changes(r[1]) !== 1) throw new HttpError(409, 'Não tens Cristais suficientes.');
+  return json({ ok: true, gift: { id: gid, to, to_name: dest.name, item, name: g.n, crystals: g.p } });
+}
 
 /* estado social: amigos (online/offline), pedidos, convites, salas abertas e duelo atual */
 async function socialState(env, body) {
   const p = await socialAuth(env, body);
-  const rows = await all(env, 'SELECT pl.*, f.status AS fstatus, f.requested_by AS freq, f.created_at AS fcreated, f.accepted_at AS facc FROM friends f JOIN players pl ON pl.id = CASE WHEN f.a = ? THEN f.b ELSE f.a END WHERE f.a = ? OR f.b = ?', p.id, p.id, p.id);
+  const rows = await all(env, 'SELECT pl.*, ' + PAID_N('pl') + ', f.status AS fstatus, f.requested_by AS freq, f.created_at AS fcreated, f.accepted_at AS facc FROM friends f JOIN players pl ON pl.id = CASE WHEN f.a = ? THEN f.b ELSE f.a END WHERE f.a = ? OR f.b = ?', p.id, p.id, p.id);
   const unread = await all(env, 'SELECT sender, COUNT(*) AS n FROM messages WHERE receiver = ? AND read_at IS NULL GROUP BY sender', p.id);
   const un = {}; unread.forEach((u) => { un[u.sender] = u.n; });
   const friends = [], inc = [], out = [];
@@ -1271,6 +1370,8 @@ function cleanProfile(o) {
   if (o.title) out.title = clean(o.title, 40);
   if (o.frame) out.frame = clean(o.frame, 24).replace(/[^a-z0-9_]/gi, '');
   if (o.color) { const c = String(o.color); if (/^#[0-9a-f]{6}$/i.test(c)) out.color = c; }
+  if (o.tcolor) { const c = String(o.tcolor); if (/^#[0-9a-f]{6}$/i.test(c)) out.tcolor = c; }
+  if (Array.isArray(o.emotes)) out.emotes = o.emotes.map((x) => clean(x, 24)).filter((x, i, a) => GIFTABLE[x] && GIFTABLE[x].k === 'emote' && a.indexOf(x) === i).slice(0, 20);
   ['ach', 'achTotal', 'bosses', 'shadows', 'arenas', 'streak', 'best', 'trust', 'day', 'kings', 'trophies'].forEach((k) => { if (o[k] != null) out[k] = int(o[k], 0, 1e7); });
   return JSON.stringify(out);
 }
@@ -1315,7 +1416,7 @@ async function profileGet(env, body) {
   const id = clean(body.id, 64);
   const f = id === p.id ? null : await friendRow(env, p.id, id);
   if (id !== p.id && !(f && f.status === 'accepted')) throw new HttpError(403, 'Só podes ver o perfil dos teus amigos.');
-  const o = await one(env, 'SELECT * FROM players WHERE id = ?', id);
+  const o = await one(env, 'SELECT *, ' + PAID_N('players') + ' FROM players WHERE id = ?', id);
   if (!o) throw new HttpError(404, 'Jogador não encontrado.');
   let stats = {}; try { stats = JSON.parse(o.stats || '{}'); } catch (e) { stats = {}; }
   const pf = profOf(o);
@@ -1453,7 +1554,8 @@ function fighter(p, f) {
   const M = Object.assign({}, CLASS_PVP[cls] ? CLASS_PVP[cls](L) : {}), CK = classK(cls, L); M.hp = (M.hp || 1) * Math.sqrt(CK); M.atk = (M.atk || 1) * Math.sqrt(CK); const B0 = baseAt(L), mainPow = Math.max(stats.atk, stats.matk), kPow = (BLEND * mainPow + (1 - BLEND) * B0[1]) / mainPow;
   stats.atk = Math.round(stats.atk * kPow * (M.atk || 1)); stats.matk = Math.round(stats.matk * kPow * (M.atk || 1)); stats.def = Math.round((BLEND * stats.def + (1 - BLEND) * B0[2]) * (M.def || 1)); stats.summonK = M.summon || 1;
   const maxHp = Math.round((BLEND * hp + (1 - BLEND) * B0[0]) * PVP_HP(L) * (M.hp || 1));
-  return { id: p.id, name: p.name, cls, gender: (f.gender || p.gender) === 'f' ? 'f' : 'm', level: L, points: p.duel_points || 0, maxHp, hp: maxHp, maxMp: mp, mp, shield: 0, st: [], cds: {}, stunned: 0, stunImmune: 0,
+  const pf = profOf(p);
+  return { id: p.id, name: p.name, title: pf.title || null, tcolor: pf.tcolor || null, emo: pf.emotes || [], cls, gender: (f.gender || p.gender) === 'f' ? 'f' : 'm', level: L, points: p.duel_points || 0, maxHp, hp: maxHp, maxMp: mp, mp, shield: 0, st: [], cds: {}, stunned: 0, stunImmune: 0,
     summons: [], squad, cmd: Math.min(15, squad.filter((x) => x.role === 'comandante').length * 5), stats, skills, items, used: {}, heals: 0, premUsed: 0,
     struck: false, lastStandUsed: false, reviveUsed: false, miss: 0 };
 }
@@ -1554,6 +1656,13 @@ function op(st, A, D, o, src) {
     case 'resetCd': A.cds = {}; addLog(st, '⏳ As recargas de ' + A.name + ' foram reiniciadas.', 'buff', A.id); break;
   }
 }
+/* custo de mana: igual ao do jogo (percentagem da mana natural da classe no nível do jogador) */
+function duelCost(sk, cls, level) {
+  if (!sk || !sk.mp) return 0;
+  const ci = CLASS_INT[cls] || CLASS_INT.guerreiro, L = Math.max(1, level || 1);
+  const nat = 30 + (ci[0] + (ci[1] ? L - 1 : 0)) * 5 + L * 3;
+  return Math.max(sk.mp, Math.round(nat * Math.min(MANA_RULES.capPct, sk.mp * MANA_RULES.pctPerWeight) / 100));
+}
 /* a ação do jogador da vez; devolve uma mensagem de erro ou null */
 function duelAct(st, me, oppId, action, id) {
   const A = st.f[me], D = st.f[oppId];
@@ -1563,8 +1672,9 @@ function duelAct(st, me, oppId, action, id) {
     const sk = DUEL_SKILLS[id];
     if (!sk || !A.skills.includes(id)) return 'Habilidade indisponível.';
     if ((A.cds[id] || 0) > 0) return 'Em recarga (' + A.cds[id] + ' turnos).';
-    if (A.mp < sk.mp) return 'Mana insuficiente.';
-    A.mp -= sk.mp; if (sk.cd) A.cds[id] = sk.cd + 1;
+    const cost = duelCost(sk, A.cls, A.level);
+    if (A.mp < cost) return 'Mana insuficiente (precisas de ' + cost + ').';
+    A.mp -= cost; if (sk.cd) A.cds[id] = sk.cd + 1;
     addLog(st, '✦ ' + A.name + ' usou ' + sk.n + '.', 'skill', me);
     sk.ops.forEach((o) => { if (D.hp > 0 || o.op !== 'dmg') op(st, A, D, o, sk.n); });
   } else if (action === 'item') {
@@ -1611,7 +1721,7 @@ function afterAction(st, me, oppId) {
   A.summons.forEach((x) => { if (D.hp <= 0) return; const d = hurt(st, D, mitig(x.power * rr(0.9, 1.1), effDef(D), A.level), null); addLog(st, '💀 ' + x.name + ' ataca ' + D.name + ': ' + d + '.', 'hit', me, oppId); });
   A.squad.forEach((x) => { if (D.hp <= 0) return; const d = hurt(st, D, mitig(x.power * rr(0.9, 1.1), effDef(D), A.level), null); addLog(st, '🌑 ' + x.name + ' ataca ' + D.name + ': ' + d + '.', 'hit', me, oppId); });
   if (A.hp > 0) {
-    A.mp = Math.min(A.maxMp, A.mp + Math.round(A.maxMp * (A.stats.regenMp || 0) / 100) + Math.round(A.maxMp * 0.03));
+    A.mp = Math.min(A.maxMp, A.mp + Math.round(A.maxMp * (A.stats.regenMp || 0) / 100) + Math.round(A.maxMp * (MANA_RULES.regenPct || 3) / 100));
     if (A.stats.regenHp) heal(A, A.maxHp * A.stats.regenHp / 100);
   }
   revive(st, D);
@@ -1701,7 +1811,28 @@ function duelOut(d, me) {
   const st = d.state ? JSON.parse(d.state) : null;
   return { id: d.id, code: d.code, status: d.status, host: d.host, guest: d.guest, invited: d.invited, public: !!d.public, turn: d.turn_player, turn_no: d.turn_no,
     deadline: d.turn_deadline, winner: d.winner, reason: d.end_reason, version: d.version, me, heal_limit: HEAL_LIMIT,
-    fighters: st ? st.f : null, log: st ? st.log : [], result: st ? st.result || null : null, server_time: now(), created_at: d.created_at };
+    fighters: st ? st.f : null, log: st ? st.log : [], result: st ? st.result || null : null, emotes: emotesOf(d), server_time: now(), created_at: d.created_at };
+}
+function emotesOf(d) { try { const a = JSON.parse(d.emotes || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+/* emotes de duelo: frases curtas do Sistema (só as gratuitas e as dos pacotes que o jogador tem) */
+const EMOTE_GAP = 6000, EMOTE_MAX = 8;
+async function duelEmote(env, body) {
+  const p = await socialAuth(env, body, false);
+  const d = await one(env, 'SELECT * FROM duels WHERE id = ?', clean(body.id, 40));
+  if (!d || (d.host !== p.id && d.guest !== p.id)) throw new HttpError(404, 'Duelo não encontrado.');
+  if (d.status !== 'active') throw new HttpError(409, 'Só podes mandar frases durante o duelo.');
+  const e = clean(body.emote, 32);
+  if (!EMOTES[e]) throw bad('Frase desconhecida.');
+  const pack = e.split(':')[0], st = JSON.parse(d.state), f = st.f[p.id];
+  if (pack !== 'livre' && !(f && (f.emo || []).includes(pack)) && !(profOf(p).emotes || []).includes(pack)) throw new HttpError(403, 'Ainda não tens este pacote de emotes.');
+  const list = emotesOf(d), mine = list.filter((x) => x.w === p.id), t = now();
+  if (mine.length >= EMOTE_MAX) throw new HttpError(429, 'Já mandaste ' + EMOTE_MAX + ' frases neste duelo.');
+  if (mine.length && t - mine[mine.length - 1].at < EMOTE_GAP) throw new HttpError(429, 'Espera um pouco antes da próxima frase.');
+  const n = (list.length ? list[list.length - 1].n : 0) + 1;
+  list.push({ n, w: p.id, e, t: EMOTES[e], at: t });
+  const r = await run(env, 'UPDATE duels SET emotes = ? WHERE id = ? AND COALESCE(emotes, \'\') = ?', JSON.stringify(list.slice(-20)), d.id, d.emotes || '');
+  if (changes(r) !== 1) throw new HttpError(409, 'Tenta outra vez.');
+  return json({ ok: true, duel: duelOut(await one(env, 'SELECT * FROM duels WHERE id = ?', d.id), p.id) });
 }
 async function myOpenDuel(env, pid) { return one(env, "SELECT * FROM duels WHERE (host = ? OR guest = ?) AND status IN ('waiting','active') ORDER BY created_at DESC LIMIT 1", pid, pid); }
 
@@ -1820,6 +1951,7 @@ export async function handle(request, env, ctx) {
     let r;
     // ---- jogo ----
     if (m === 'GET' && path === '/api/config') return await getConfig(env);
+    if (m === 'GET' && path === '/api/site') return await siteInfo(env);
     if (m === 'POST' && path === '/api/orders') return await createOrder(env, body, ip);
     if ((r = path.match(/^\/api\/orders\/(SIS-\d{6})$/)) && m === 'GET') return await orderStatus(env, r[1], url.searchParams.get('token') || request.headers.get('Authorization')?.replace(/^Bearer\s+/, ''));
     if ((r = path.match(/^\/api\/orders\/(SIS-\d{6})\/cancel$/)) && m === 'POST') return await playerCancel(env, r[1], body.token, ip);
@@ -1847,6 +1979,8 @@ export async function handle(request, env, ctx) {
     if (m === 'POST' && path === '/api/duel/act') return await duelMove(env, body);
     if (m === 'POST' && path === '/api/duel/invite') return await duelInvite(env, body);
     if (m === 'POST' && path === '/api/duel/leave') return await duelLeave(env, body);
+    if (m === 'POST' && path === '/api/duel/emote') return await duelEmote(env, body);
+    if (m === 'POST' && path === '/api/social/gift') return await giftSend(env, body, ip);
     if (m === 'POST' && path === '/api/duel/history') return await duelHistory(env, body);
     // ---- administração ----
     if (m === 'POST' && path === '/api/admin/auth/login') return await login(env, body, ip, request.headers.get('User-Agent'));
@@ -1881,6 +2015,7 @@ export async function handle(request, env, ctx) {
       if ((r = path.match(/^\/api\/admin\/orders\/(SIS-\d{6})\/deliver$/)) && m === 'POST') return await deliverOrder(env, A, r[1], request, ip);
       if (m === 'PUT' && path === '/api/admin/settings') return await putSettings(env, A, body, ip);
       if ((r = path.match(/^\/api\/admin\/players\/([A-Za-z0-9_-]{8,64})\/role$/)) && m === 'PUT') return await setRole(env, A, r[1], body, ip);
+      if ((r = path.match(/^\/api\/admin\/players\/([A-Za-z0-9_-]{8,64})\/legal$/)) && m === 'POST') return await setLegal(env, A, r[1], body, ip);
       if ((r = path.match(/^\/api\/admin\/players\/([A-Za-z0-9_-]{8,64})\/delete$/)) && m === 'POST') return await deletePlayer(env, A, r[1], body, ip);
       if (m === 'POST' && path === '/api/admin/notices') return await createNotice(env, A, request, body, ip);
       if (m === 'GET' && path === '/api/admin/notices') return await listNotices(env, url);
@@ -1892,6 +2027,7 @@ export async function handle(request, env, ctx) {
       if ((r = path.match(/^\/api\/admin\/devices\/(d[0-9a-f]{18})\/restore$/)) && m === 'POST') return await restoreDevice(env, A, r[1], body, ip);
       if ((r = path.match(/^\/api\/admin\/devices\/(d[0-9a-f]{18})\/unapprove$/)) && m === 'POST') return await resetDevice(env, A, r[1], body, ip);
       if ((r = path.match(/^\/api\/admin\/devices\/(d[0-9a-f]{18})\/note$/)) && m === 'PUT') return await noteDevice(env, A, r[1], body, ip);
+      if ((r = path.match(/^\/api\/admin\/devices\/(d[0-9a-f]{18})\/legalize$/)) && m === 'POST') return await legalizeDevice(env, A, r[1], body, ip);
       if (m === 'GET' && path === '/api/admin/access-codes') return await listAccessCodes(env, url);
       if (m === 'POST' && path === '/api/admin/access-codes') return await createAccessCode(env, A, request, body, ip);
       if ((r = path.match(/^\/api\/admin\/access-codes\/(a[0-9a-f]{18})\/revoke$/)) && m === 'POST') return await revokeAccessCode(env, A, r[1], ip);

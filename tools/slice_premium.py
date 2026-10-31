@@ -5,6 +5,7 @@ Uso:
   python3 tools/slice_premium.py molduras-altas <folha.png>  -> o mesmo, para as molduras altas (9:17, retrato inteiro)
   python3 tools/slice_premium.py molduras-novas <folha.png>  -> as 6 molduras novas (3x2, formato alto)
   python3 tools/slice_premium.py itens-premium <folha.png>   -> os 8 itens premium novos (4x2)
+  python3 tools/slice_premium.py aparencia <folha.png>      -> 4 efeitos, 3 emotes, presente e pr_reset (3x3)
   python3 tools/slice_premium.py cristal <imagem.png>        -> assets/ui/ui_crystal.webp (fundo verde tirado)
   python3 tools/slice_premium.py arena <1-10> <imagem.png>   -> assets/arenas/ar<n>.webp
   python3 tools/slice_premium.py guardioes <1-10> <folha.png> -> assets/bosses/ar<n>g1..9.webp
@@ -170,6 +171,17 @@ def main(a):
             for c in range(4):
                 t = trim(im.crop((xs[c], ys[r], xs[c + 1], ys[r + 1]))); w, h = t.size; s2 = min(w, h)
                 t = t.crop(((w - s2) // 2, (h - s2) // 2, (w - s2) // 2 + s2, (h - s2) // 2 + s2)); d = int(s2 * 0.06)
+                save(t.crop((d, d, s2 - d, s2 - d)).resize((192, 192), Image.LANCZOS), os.path.join(ROOT, 'assets', 'items', ids[k] + '.webp')); k += 1
+    elif mode == 'aparencia':
+        # folha 3x3: efeitos, emotes, presente e Pergaminho da Reconstrução -> assets/items/<id>.webp
+        ids = ['fx_raios', 'fx_petalas', 'fx_cristais', 'fx_chamas', 'em_sistema', 'em_provocar', 'em_respeito', 'ui_presente', 'pr_reset']
+        im = Image.open(a[1]).convert('RGB')
+        xs, ys = cuts(profile(im, 'x'), 3), cuts(profile(im, 'y'), 3)
+        k = 0
+        for r in range(3):
+            for c in range(3):
+                t = trim(im.crop((xs[c], ys[r], xs[c + 1], ys[r + 1]))); w, h = t.size; s2 = min(w, h)
+                t = t.crop(((w - s2) // 2, (h - s2) // 2, (w - s2) // 2 + s2, (h - s2) // 2 + s2)); d = int(s2 * 0.04)
                 save(t.crop((d, d, s2 - d, s2 - d)).resize((192, 192), Image.LANCZOS), os.path.join(ROOT, 'assets', 'items', ids[k] + '.webp')); k += 1
     elif mode == 'cristal':
         im = crop_alpha(key_green(Image.open(a[1])))

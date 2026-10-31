@@ -72,6 +72,23 @@ Com a app aberta e em uso, o Sistema aparece para conversar a cada 15 minutos de
 - Quem tinha vencido os antigos chefes ocultos sem ter chegado ao fim volta a enfrentá-los (fica registo em `oldSecrets`). O Mapa do Portão Oculto passou a Mapa da Última Arena: mostra o progresso e não se gasta.
 - Imagens: `assets/bosses/secret_1(_f2)`, `secret_2(_f2)`, `assets/arenas/final`, `assets/trophies/secret_1|2`, `assets/ui/gate_0`, `ach_secretboss`, `ach_architect`, `ach_finale`. Música: `assets/music/secret_1.mp3` e `secret_2.mp3`.
 
+## Venda do APK: código de ativação e site oficial
+- **Ativação obrigatória** (painel › Aparelhos): cada aparelho novo abre no ecrã «Ativação», com o preço, o botão «Comprar o código pelo WhatsApp» (a mensagem leva o código do aparelho) e o campo do código. O preço define-se no painel (`activation_price`, `activation_price_old`).
+- Depois do pagamento por Multicaixa Express, cria o código em Aparelhos › Códigos de ativação e envia-o pelo WhatsApp. Cada código ativa um aparelho.
+- Quem ativa com código fica **Jogador legalizado** (marca no perfil, nos amigos e no painel). Se também comprou Cristais aparece como **Premium legalizado**. Quem já jogava antes fica «não legalizado» até o legalizares (aparelho ou conta).
+- **Site oficial** em `site/`, com 6 páginas: Início, O jogo, Duelos, Lojas, Sistema vivo e Comprar. As páginas geram-se com `python3 tools/build-site.py` (topo, menu e rodapé comuns); estilos e animações em `site/assets/`. O preço e o link de compra vêm do servidor (`GET /api/site`), com reserva em `site/config.js`. Coloca o APK em `site/download/sistema.apk`; até lá o botão mostra «APK disponível em breve». No GitHub Pages fica em `…/site/`.
+- **Mana**: o custo das habilidades é o peso (`mp`) até ao nível em que a percentagem da mana natural da classe passa a valer mais (`S.MANA_RULES`, `S.skillCost`): básicas 2-5%, médias 10-15%, supremas 30-35%. A mana regenera 5% por turno. Os duelos usam a mesma regra no servidor.
+- Migração do servidor: `server/migrations/0012_ativacao.sql` (aplica antes de publicar o servidor).
+
+## Aparência, presentes e emotes (Loja Premium)
+
+- **Títulos exclusivos** (60 a 100 Cristais): substituem o título do nível no Estado, no perfil dos amigos e nos duelos (cor própria).
+- **Efeitos de vitória** (80 a 100 Cristais): raios, pétalas negras, chuva de cristais ou chamas da fénix ao vencer um chefe, um duelo ou subir de nível. Botão «Ver efeito» para experimentar antes de comprar.
+- **Emotes de duelo**: 3 frases gratuitas e pacotes de 4 (50 a 60 Cristais). Servidor valida o pacote pelo perfil sincronizado, no máximo 8 frases por duelo e 6 s entre elas; as frases ficam numa coluna à parte (`duels.emotes`) e não atrasam as jogadas.
+- **Presentes**: qualquer item de aparência pode ser oferecido a um amigo com os Cristais de quem oferece (`POST /api/social/gift`: só amigos, 5 por dia, o servidor desconta os Cristais sincronizados). Também se pode comprar um pacote de Cristais para um amigo: o pedido leva `gift_to` e o painel mostra «Presente para». Se o amigo já tiver o item, recebe o valor em Cristais.
+- **Pergaminho da Reconstrução** (40 Cristais): devolve os pontos de atributo. A versão em moedas continua na loja (nível 10).
+- Migração `0013_presentes_emotes.sql` (tabela `gifts`, colunas `gift_to`/`gift_name` nos pedidos, `from_id`/`from_name` nas ofertas, `emotes` nos duelos). Aplicar com `wrangler d1 migrations apply` antes de publicar o servidor 1.7.0.
+
 ## Salvamento
 
 Cada ganho ou perda (missão, compra, turno de combate, baú, ponto de atributo) é gravado no momento:

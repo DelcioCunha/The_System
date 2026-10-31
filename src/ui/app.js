@@ -17,6 +17,7 @@
   /* ---------------- utilitários ---------------- */
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function fmt(n) { return Math.floor(n).toLocaleString('pt-PT'); }
+  function kzFmt(n) { return String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
   /* imagem do item (as versões melhoradas usam a imagem do item base) */
   function artId(id) {
     if (!S.ITEM_ART) return null;
@@ -289,7 +290,7 @@
     h += '<section class="win"><div class="win-h">Estado <small>' + uiIcon('ui_sysday', '', 'tag-ico') + 'Dia ' + S.time.systemDay(st) + ' do Sistema · Poder ' + fmt(cs.power) + '</small></div>' +
       '<div class="hero" style="--aura:' + r.color + '">' + heroAvatar(st) +
       '<div class="stack" style="gap:8px;min-width:0">' +
-      '<div><div class="hero-name' + nameCls(st) + '"' + nameStyle(st) + '>' + esc(st.name) + '</div><div class="hero-title shine">' + esc(S.titleFor(st.level)) + '</div></div>' +
+      '<div><div class="hero-name' + nameCls(st) + '"' + nameStyle(st) + '>' + esc(st.name) + '</div><div class="hero-title shine"' + titleStyle(st) + '>' + esc(S.premium.titleOf(st)) + '</div>' + selfLegal(st) + '</div>' +
       '<div class="row" style="align-items:flex-end"><div><div class="lv-lab">Nível</div><div class="lv-big">' + st.level + '</div></div>' +
       '<div class="grow" style="padding-bottom:4px"><div class="lv-lab">Classe</div><div style="color:' + cls.color + ';font-family:var(--f-display);font-weight:700">' + classIcon(st.cls) + ' ' + cls.name + '</div>' +
       '<div class="lv-lab" style="margin-top:4px">Rank <b style="color:' + r.color + '">' + r.rank + '</b>' + (S.body.current(st) ? ' · Peso <b>' + String(S.body.current(st)).replace('.', ',') + ' kg</b>' : '') + '</div></div></div>' +
@@ -452,6 +453,10 @@
   }
   function trophyArt(b) { return (S.TROPHY_ART && S.TROPHY_ART[b.id]) || null; }
   /* imagem que abre a ficha detalhada ao tocar */
+  /* marca de jogador legalizado (código de ativação oficial) e de premium legalizado (comprou na Loja de Cristais) */
+  function titleStyle(st) { var c = S.premium.titleColor(st); return c ? ' style="color:' + c + ';-webkit-text-fill-color:' + c + ';text-shadow:0 0 10px ' + c + '66"' : ''; }
+  function legalTag(legal, premium, cls) { if (!legal) return ''; return '<span class="legal-tag' + (premium ? ' prem' : '') + (cls ? ' ' + cls : '') + '" title="Ativado com um código oficial">' + (premium ? '◆ Premium legalizado' : '✔ Legalizado') + '</span>'; }
+  function selfLegal(st) { return legalTag(st.shop && st.shop.legal, st.shop && st.shop.role && st.shop.role.id === 'premium'); }
   function tapInfo(html, k, id) { return '<span class="info-tap" data-a="info" data-k="' + k + '" data-id="' + id + '" role="button" aria-label="Ver detalhes">' + html + '</span>'; }
   function loreHtml(t, cls) { return t ? '<p class="lore' + (cls ? ' ' + cls : '') + '">' + esc(t) + '</p>' : ''; }
   function infoSecs(secs) {
@@ -501,7 +506,7 @@
       infoSecs([{ title: 'Registo', rows: rows }, { title: 'Conjunto do portão', rows: [['Troféus', t.have + ' / ' + t.total], [done ? 'Bónus ativo' : 'Bónus ao completar', S.TROPHY_SETS[b.gate].desc]] }]);
   }
   function skillCard(s, locked) {
-    var tag = s.type === 'passive' ? '<span class="tag">Passiva</span>' : '<span class="tag">' + s.mp + ' MP · recarga ' + s.cd + '</span>';
+    var tag = s.type === 'passive' ? '<span class="tag">Passiva</span>' : '<span class="tag">' + S.skillCost(s, E.state.cls, E.state.level) + ' MP · recarga ' + s.cd + '</span>';
     return '<button class="card tap' + (locked ? ' done' : '') + '" data-a="info" data-k="skill" data-id="' + s.id + '"><div class="card-h">' + skillIco(s) + '<div class="grow"><div class="card-t">' + esc(s.name) + '</div>' +
       '<div class="small muted">' + esc(s.desc) + '</div></div>' + (locked ? '<span class="tag">Nv ' + s.unlock + '</span>' : tag) + '</div></button>';
   }
@@ -737,20 +742,27 @@
         (g.wa ? '<button class="btn bad block" data-a="ext" data-url="' + esc(g.wa) + '">Contestar o bloqueio (WhatsApp)</button>' : '') + checkBtn + '</div></div>';
     }
     if (g.type === 'pending') {
-      var tt = P(V.pendingTitle, seed);
-      return '<div class="ban-screen gate-screen gate-pending"><div class="ban-veil"></div><div class="ban-box">' + eye +
-        '<div class="ban-tag">AVISO DO SISTEMA · ACESSO PRIVADO</div><h1 class="glitch" data-t="' + esc(tt) + '">' + esc(tt) + '</h1>' +
-        '<p class="ban-voice">' + esc(P(V.pending, seed + 'v')) + '</p>' +
-        '<div class="ban-card">' + codeRow.replace('margin-top:8px', 'margin-top:0') + '<div class="small muted" style="margin-top:6px">Envia este código à administração ou usa um código de acesso.</div></div>' + note +
-        '<div class="gate-form"><label class="small muted" for="gate-acs">Código de acesso</label>' +
+      // ativação: o APK é vendido; cada aparelho entra com um código de ativação oficial
+      var tt = P(V.pendingTitle, seed), act = g.act || {};
+      var price = act.price_kz ? '<div class="act-price"><span class="act-k">Ativação do Sistema</span><span class="act-v mono">' + kzFmt(act.price_kz) + ' Kz</span>' +
+        (act.price_old_kz ? '<span class="act-old mono">' + kzFmt(act.price_old_kz) + ' Kz</span>' : '') + '<span class="small muted">Pagamento único por ' + esc(act.payment || 'Multicaixa Express') + '</span></div>' : '';
+      var steps = '<ol class="act-steps"><li><b>Fala connosco no WhatsApp</b> e diz que queres o código de ativação.</li><li><b>Paga por Multicaixa Express.</b> Nunca te pedimos o PIN nem códigos do banco.</li><li><b>Recebes o código</b> e escreves-o no campo «Código de ativação», acima.</li></ol>';
+      return '<div class="ban-screen gate-screen gate-pending act-screen"><div class="ban-veil"></div><div class="ban-box">' + eye +
+        '<div class="ban-tag">SISTEMA · ATIVAÇÃO</div><h1 class="glitch" data-t="' + esc(tt) + '">' + esc(tt) + '</h1>' +
+        '<p class="ban-voice">' + esc(P(V.pending, seed + 'v')) + '</p>' + price + note +
+        '<div class="gate-form"><label class="small muted" for="gate-acs">Código de ativação</label>' +
         '<input class="in mono" id="gate-acs" placeholder="ACS-XXXX-XXXX" autocapitalize="characters" autocomplete="off" spellcheck="false" maxlength="16">' +
-        '<button class="btn pri block" data-a="gate-redeem"' + busy + '>Entrar com o código</button></div>' +
+        '<button class="btn pri block" data-a="gate-redeem"' + busy + '>Ativar o Sistema</button></div>' +
+        '<div class="ban-card act-buy"><div class="small muted" style="margin-bottom:6px">Ainda não tens código?</div>' + steps +
+        (g.wa ? '<button class="btn wa block" data-a="ext" data-url="' + esc(g.wa) + '">Comprar o código pelo WhatsApp</button>' : '<p class="small muted" style="margin:0">Contacta a administração do Sistema para comprar o teu código.</p>') +
+        codeRow + '<div class="small muted" style="margin-top:4px">Este código identifica o teu aparelho. Vai na mensagem de compra.</div></div>' +
+        '<p class="act-warn">Só o APK oficial, ativado com um código comprado ao Sistema, é legal. Cópias não oficiais e códigos partilhados ou revendidos levam ao <b>bloqueio permanente do aparelho</b>: desinstalar e instalar outra vez não o desbloqueia.</p>' +
         (g.requested
-          ? '<p class="gate-ok">Pedido de acesso enviado. A administração vai responder.</p>' + (g.wa ? '<button class="btn block" data-a="ext" data-url="' + esc(g.wa) + '">Avisar pelo WhatsApp</button>' : '')
-          : '<div class="gate-form"><label class="small muted" for="gate-name">Não tens código? Pede acesso</label>' +
-            '<input class="in" id="gate-name" placeholder="O teu nome e contacto" maxlength="60">' +
-            '<textarea class="in" id="gate-msg" rows="2" maxlength="300" placeholder="Quem te convidou? (opcional)"></textarea>' +
-            '<button class="btn block" data-a="gate-request"' + busy + '>Pedir acesso</button></div>') +
+          ? '<p class="gate-ok">Recebemos os teus dados. Assim que o pagamento for confirmado, recebes o código.</p>'
+          : '<details class="act-paid"><summary>Já pagaste e ainda não recebeste o código?</summary><div class="gate-form" style="margin-top:8px">' +
+            '<input class="in" id="gate-name" placeholder="O teu nome e número de WhatsApp" maxlength="60">' +
+            '<textarea class="in" id="gate-msg" rows="2" maxlength="300" placeholder="Referência ou hora do pagamento (opcional)"></textarea>' +
+            '<button class="btn block" data-a="gate-request"' + busy + '>Enviar os meus dados</button></div></details>') +
         checkBtn + '</div></div>';
     }
     var line = g.type === 'stale' ? P(V.stale, seed).replace('{dias}', g.days) : P(V.verify, seed);
@@ -761,8 +773,9 @@
   /* depois de falar com o servidor: avisos de uma só vez e retomar o jogo */
   function afterGate() {
     var n = S.gate.takeNote(), V = S.GATE_VOICE;
-    if (n && E.state) ui.popups.push({ _id: ++ui.popSeq, type: 'watch', level: 1, title: n === 'lift' ? 'BLOQUEIO LEVANTADO' : 'ACESSO CONCEDIDO', lines: [S.gate.pick(V[n], String(Date.now())), n === 'lift' ? 'Este aparelho voltou a ter acesso ao Sistema.' : 'Este aparelho tem agora acesso ao Sistema.'] });
-    else if (n) toast(n === 'lift' ? 'Bloqueio levantado.' : 'Acesso concedido.');
+    var tt = { lift: 'BLOQUEIO LEVANTADO', welcome: 'ACESSO CONCEDIDO', activated: 'SISTEMA ATIVADO' }[n], ln = { lift: 'Este aparelho voltou a ter acesso ao Sistema.', welcome: 'Este aparelho tem agora acesso ao Sistema.', activated: 'Jogador legalizado: a marca aparece no teu perfil.' }[n];
+    if (n && E.state) ui.popups.push({ _id: ++ui.popSeq, type: 'watch', good: n === 'activated', level: 1, title: tt, lines: [S.gate.pick(V[n], String(Date.now())), ln] });
+    else if (n) { toast(n === 'lift' ? 'Bloqueio levantado.' : n === 'activated' ? 'Sistema ativado. Bem-vindo, Jogador legalizado.' : 'Acesso concedido.'); if (n === 'activated') { sfx('awaken'); FX.flash('#67d5ff', .3); } }
     if (!S.gate.screen()) { S.gate.ui.err = null; S.gate.ui.msg = null; shopSync(true); }
     render();
   }
@@ -891,7 +904,10 @@
     }).join('') + '</div>';
     h += '<div class="buy-box' + (sel ? ' on' : '') + '" id="buy-box">' + (sel
       ? '<div class="row between"><span>' + crys(sel.crystals) + ' <span class="small muted">' + esc(sel.name) + '</span></span><b class="mono" style="color:var(--gold)">' + kz(sel.price_kz) + '</b></div>' +
-        '<button class="btn wa block" data-a="buy-wa" data-id="' + sel.id + '" style="margin-top:10px">Comprar pelo WhatsApp</button>' +
+        (live && ((SO.cache && SO.cache.friends) || []).length ? '<div class="gift-to"><span class="small muted">Para quem?</span><div class="seg">' + '<button type="button" data-a="gift-to" aria-pressed="' + (!ui.giftTo) + '">Para mim</button>' +
+          SO.cache.friends.slice(0, 20).map(function (f) { return '<button type="button" data-a="gift-to" data-id="' + esc(f.id) + '" aria-pressed="' + (ui.giftTo === f.id) + '">🎁 ' + esc(f.name) + '</button>'; }).join('') + '</div></div>' : '') +
+        (live && ui.giftTo ? '<button class="btn wa block" data-a="buy-gift" data-id="' + sel.id + '" style="margin-top:10px">Oferecer pelo WhatsApp</button><p class="small muted" style="margin:6px 0 0;text-align:center">O amigo recebe os Cristais quando o pagamento for confirmado.</p>'
+          : '<button class="btn wa block" data-a="buy-wa" data-id="' + sel.id + '" style="margin-top:10px">Comprar pelo WhatsApp</button>') +
         '<p class="small muted" style="margin:8px 0 0;text-align:center">Atendimento: <span class="mono">' + esc(S.SHOP_WHATSAPP_SHOW) + '</span></p>'
       : '<p class="small muted" style="margin:0;text-align:center">Toca num pacote para o comprar.</p>') + '</div>' +
       '<ol class="small prem-steps"><li>Escolhe o pacote e toca em <b>Comprar pelo WhatsApp</b>: abre a conversa com o administrador, com a mensagem já escrita.</li><li>Faz a transferência do valor por <b>MULTICAIXA Express</b>, com os dados que o administrador te envia.</li><li>Depois de confirmada a transferência, o administrador envia-te um <b>código de resgate</b>.</li><li>Escreve o código aqui em baixo e os Cristais entram na tua conta.</li></ol>' +
@@ -919,7 +935,7 @@
     var cfg = S.shop.cached();
     return '<div class="sheet-h"><h2>Pedido ' + esc(o.id) + '</h2><button class="btn sm ghost" data-a="close">Fechar</button></div>' +
       (o.test ? '<p class="hint test-note">Modo de teste: não faças pagamentos reais.</p>' : '') +
-      '<div class="ord-sum"><div>' + (o.coins ? coins(o.coins) : crys(o.crystals)) + '<div class="small muted">' + esc(o.pkg) + '</div></div><div class="ord-price mono">' + kz(o.price) + '</div></div>' +
+      '<div class="ord-sum"><div>' + (o.coins ? coins(o.coins) : crys(o.crystals)) + '<div class="small muted">' + esc(o.pkg) + (o.gift ? ' · 🎁 para ' + esc(o.gift) : '') + '</div></div><div class="ord-price mono">' + kz(o.price) + '</div></div>' +
       '<ol class="small prem-steps"><li>Toca em <b>Abrir WhatsApp</b>: a mensagem com o número do pedido já vai escrita.</li><li>Segue as instruções de pagamento por MULTICAIXA Express que vais receber.</li><li>Depois de confirmado, ' + (o.coins ? 'as moedas entram sozinhas ou ' : '') + 'recebes um código. Resgata-o em Ala Premium → ' + (o.coins ? 'Comprar Moedas' : 'Obter Cristais') + '.</li></ol>' +
       (cfg && cfg.payment_info ? '<p class="hint">' + esc(cfg.payment_info) + '</p>' : '') +
       (o.wa ? '<button class="btn wa block" data-a="ext" data-url="' + esc(o.wa) + '">Abrir WhatsApp</button>' : '<p class="small" style="color:var(--warn)">O número de atendimento ainda não está configurado. Copia a mensagem e envia-a ao atendimento.</p>') +
@@ -952,6 +968,7 @@
     h += '<section class="win prem-win prem-head"><div class="prem-bal"><span class="small muted">Os teus Cristais</span><span class="prem-big">' + crys(st.crystals || 0) + '</span></div>' +
       '<div class="prem-id"><span class="small muted">ID de Jogador</span><button class="mono id-chip" data-a="id-copy">' + esc(st.playerId) + '</button></div>' +
       (st.shop && st.shop.role ? '<div class="prem-id"><span class="small muted">Tipo de conta</span><span class="role-chip r-' + esc(st.shop.role.id) + '">' + esc(st.shop.role.name) + '</span></div>' : '') +
+      '<div class="prem-id"><span class="small muted">Licença</span>' + (st.shop && st.shop.legal ? selfLegal(st) : '<span class="legal-tag no">Sem registo de ativação</span>') + '</div>' +
       '<div class="row" style="margin-top:10px;gap:8px"><button class="btn prem grow" data-a="prem-tab" data-t="obter"><i class="crys-ico"></i> Cristais</button><button class="btn coin-btn" data-a="prem-tab" data-t="moedas"><i class="coin-ico"></i> Moedas</button><button class="btn don-btn" data-a="prem-tab" data-t="loja">\u2665 Doar</button></div></section>';
     h += '<div class="chips" style="margin-top:12px">' + [['arenas', 'Arenas'], ['loja', 'Loja Exclusiva'], ['aparencia', 'Aparência'], ['obter', 'Obter Cristais'], ['moedas', 'Comprar Moedas']].map(function (x) {
       return '<button class="chip' + (t === x[0] ? ' on' : '') + '" data-a="prem-tab" data-t="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
@@ -974,7 +991,7 @@
       var mold = S.premium.cosmeticOn(st, 'moldura'), nm = S.premium.cosmeticOn(st, 'nome');
       h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">Aparência</span><small>Só visual: não dá vantagem</small></div>' +
         '<div class="hero cos-preview" style="--aura:' + S.rankFor(st.level).color + '">' + heroAvatar(st) +
-        '<div class="stack" style="gap:6px;min-width:0"><div class="hero-name' + nameCls(st) + '"' + nameStyle(st) + '>' + esc(st.name) + '</div><div class="hero-title">' + esc(S.titleFor(st.level)) + '</div>' +
+        '<div class="stack" style="gap:6px;min-width:0"><div class="hero-name' + nameCls(st) + '"' + nameStyle(st) + '>' + esc(st.name) + '</div><div class="hero-title"' + titleStyle(st) + '>' + esc(S.premium.titleOf(st)) + '</div>' +
         '<div class="small muted">' + (mold ? esc(mold.name) : 'Moldura simples') + ' · ' + (nm ? esc(nm.name) : 'Assinatura normal') + '</div></div></div></section>';
       var TIER = { raro: 'Rara', epico: 'Épica', lendario: 'Lendária', mitico: 'Mítica', secreto: 'Exclusiva' };
       h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">Molduras do retrato</span></div><p class="hint" style="margin-top:0">Substituem o quadrado simples à volta do teu personagem, no Estado e no teu perfil.</p><div class="cos-grid">' +
@@ -993,6 +1010,28 @@
             '<div class="card-t">' + esc(c.name) + '</div><div class="small muted">' + esc(c.desc) + '</div>' +
             (own ? '<button class="btn sm ' + (on ? 'ghost' : 'pri') + ' block" data-a="cos-wear" data-id="' + c.id + '">' + (on ? 'Tirar' : 'Usar') + '</button>'
               : '<div class="row between">' + crys(c.crystals) + '<button class="btn sm prem" data-a="cos-buy" data-id="' + c.id + '"' + (can ? '' : ' disabled') + '>' + (can ? 'Comprar' : 'Faltam ' + (c.crystals - (st.crystals || 0))) + '</button></div>') + '</div>';
+        }).join('') + '</div></section>';
+      var buyBtn = function (c) { var can = (st.crystals || 0) >= c.crystals; return '<div class="row between">' + crys(c.crystals) + '<button class="btn sm prem" data-a="cos-buy" data-id="' + c.id + '"' + (can ? '' : ' disabled') + '>' + (can ? 'Comprar' : 'Faltam ' + (c.crystals - (st.crystals || 0))) + '</button></div>'; };
+      var wearBtn = function (c, on) { return '<button class="btn sm ' + (on ? 'ghost' : 'pri') + ' block" data-a="cos-wear" data-id="' + c.id + '">' + (on ? 'Tirar' : 'Usar') + '</button>'; };
+      var giftBtn = function (c) { return S.shop.ready() && S.GIFTABLE && S.GIFTABLE[c.id] ? '<button class="btn sm ghost block" data-a="gift-open" data-id="' + c.id + '">🎁 Oferecer a um amigo</button>' : ''; };
+      h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">Títulos exclusivos</span></div><p class="hint" style="margin-top:0">Substituem o título do teu nível. Aparecem no Estado, no teu perfil e nos duelos.</p><div class="cos-grid">' +
+        S.COSMETICS.filter(function (c) { return c.kind === 'titulo'; }).map(function (c) {
+          var own = !!st.cosmetics.owned[c.id], on = st.cosmetics.titulo === c.id;
+          return '<div class="cos-card' + (on ? ' on' : '') + '" style="--cc:' + c.color + '"><div class="cos-sw titulo"><small>' + esc(st.name) + '</small><b style="color:' + c.color + ';text-shadow:0 0 10px ' + c.color + '88">' + esc(c.name) + '</b></div>' +
+            '<div class="small muted">' + esc(c.desc) + '</div>' + (own ? wearBtn(c, on) : buyBtn(c)) + giftBtn(c) + '</div>';
+        }).join('') + '</div></section>';
+      h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">Efeitos de vitória</span></div><p class="hint" style="margin-top:0">Tocam quando derrotas um chefe, vences um duelo ou sobes de nível. Usa só um de cada vez.</p><div class="cos-grid">' +
+        S.COSMETICS.filter(function (c) { return c.kind === 'efeito'; }).map(function (c) {
+          var own = !!st.cosmetics.owned[c.id], on = st.cosmetics.efeito === c.id;
+          return '<div class="cos-card' + (on ? ' on' : '') + '" style="--cc:' + c.color + '"><div class="cos-sw efeito fx-' + c.fx + '">' + (artId(c.id) ? '<img src="' + artId(c.id) + '" alt="">' : '<b>' + esc(c.icon || '*') + '</b>') + '</div>' +
+            '<div class="card-t">' + esc(c.name) + '</div><div class="small muted">' + esc(c.desc) + '</div>' +
+            '<button class="btn sm ghost block" data-a="cos-test" data-id="' + c.id + '">Ver efeito</button>' + (own ? wearBtn(c, on) : buyBtn(c)) + giftBtn(c) + '</div>';
+        }).join('') + '</div></section>';
+      h += '<section class="win prem-win"><div class="win-h"><span class="prem-t">Emotes de duelo</span></div><p class="hint" style="margin-top:0">Frases curtas que mandas ao adversário durante um duelo online. Todos têm ' + S.EMOTES_FREE.map(function (t) { return '«' + esc(t) + '»'; }).join(', ') + '. Cada pacote junta mais 4.</p><div class="cos-grid">' +
+        S.COSMETICS.filter(function (c) { return c.kind === 'emote'; }).map(function (c) {
+          var own = !!st.cosmetics.owned[c.id];
+          return '<div class="cos-card' + (own ? ' on' : '') + '" style="--cc:' + c.color + '">' + (artId(c.id) ? '<div class="cos-sw efeito"><img src="' + artId(c.id) + '" alt=""></div>' : '') + '<div class="card-t">' + esc(c.name) + '</div><ul class="emote-list">' + c.lines.map(function (l) { return '<li>«' + esc(l) + '»</li>'; }).join('') + '</ul>' +
+            (own ? '<span class="tag prem-tag">Já é teu</span>' : buyBtn(c)) + giftBtn(c) + '</div>';
         }).join('') + '</div></section>';
     } else if (t === 'moedas') {
       h += moedasHtml(st);
@@ -1033,7 +1072,7 @@
     var cell = function (v, l) { return '<div class="prof-stat"><b class="mono">' + v + '</b><span>' + l + '</span></div>'; };
     var days = function (ts) { return ts ? Math.max(1, Math.round((SO.serverNow() - ts) / 86400000)) : 0; };
     h += '<div class="prof-head">' + face + '<div class="grow" style="min-width:0"><div class="prof-name"' + (x.color ? ' style="color:' + esc(x.color) + '"' : '') + '>' + esc(p.name) + '</div>' +
-      '<div class="hero-title">' + esc(x.title || S.titleFor(p.level || 1)) + '</div>' +
+      '<div class="hero-title">' + esc(x.title || S.titleFor(p.level || 1)) + '</div>' + (self ? selfLegal(E.state) : legalTag(p.legal, p.premium)) +
       '<div class="small muted">' + clsName(p.cls) + ' · Nv ' + p.level + ' · <span class="' + (p.online ? 'on-txt' : '') + '">' + seenText(p) + '</span></div></div></div>' +
       ptCard(p.points || 0) +
       '<div class="prof-grid">' + cell(p.wins || 0, 'Vitórias') + cell(p.losses || 0, 'Derrotas') + cell(s.bosses || 0, 'Chefes') + cell(s.arenas || 0, 'Arenas') +
@@ -1080,7 +1119,7 @@
     h += '<section class="win"><div class="win-h">Amigos <small>' + on + ' online · ' + c.friends.length + '</small></div>';
     if (!c.friends.length) h += '<div class="empty">Ainda não tens amigos no Sistema. Procura alguém pelo ID ou pelo nome.</div>';
     else h += '<div class="stack" style="gap:8px">' + c.friends.map(function (f) {
-      return '<div class="card soc-row' + (f.online ? ' online' : '') + '"><div class="card-h">' + socAvatar(f, '', true) + '<div class="grow"><div class="card-t">' + esc(f.name) + (f.unread ? ' <span class="badge-in">' + f.unread + '</span>' : '') + '</div>' +
+      return '<div class="card soc-row' + (f.online ? ' online' : '') + '"><div class="card-h">' + socAvatar(f, '', true) + '<div class="grow"><div class="card-t">' + esc(f.name) + (f.unread ? ' <span class="badge-in">' + f.unread + '</span>' : '') + legalTag(f.legal, f.premium, 'sm') + '</div>' +
         '<div class="small muted">' + clsName(f.cls) + ' · Nv ' + f.level + ' · <span class="' + (f.online ? 'on-txt' : '') + '">' + seenText(f) + '</span></div>' + ptChip(f.points) + '</div></div>' +
         '<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm grow" data-a="chat-open" data-id="' + esc(f.id) + '">' + uiIcon('ui_chat', '💬', 'btn-ico') + ' Conversar</button><button class="btn sm grow bad" data-a="duel-invite" data-id="' + esc(f.id) + '">' + uiIcon('ui_duel', '⚔', 'btn-ico') + ' Desafiar</button><button class="btn sm ghost" data-a="soc-remove" data-id="' + esc(f.id) + '" aria-label="Remover amigo">✕</button></div></div>';
     }).join('') + '</div>';
@@ -1166,9 +1205,11 @@
     var opDead = d.status === 'done' && d.winner === me;
     h += '<div class="battle duel-battle">';
     // adversário: em cima, como um chefe
-    h += '<section class="win danger boss-panel duel-op' + (d.turn === opId ? ' op-turn' : '') + '"><div class="win-h"><span>' + esc(B.name) + '</span><small>' + clsName(B.cls) + ' · Nv ' + B.level + ' · turno ' + d.turn_no +
+    var bubble = function (id) { var e = (d.emotes || []).filter(function (x) { return x.w === id; }).pop(); return e && SO.serverNow() - e.at < 9000 ? '<div class="emote-bubble' + (id === me ? ' mine' : '') + '">«' + esc(e.t) + '»</div>' : ''; };
+    var ttl = function (F0) { return F0.title ? '<div class="duel-title" style="' + (F0.tcolor ? 'color:' + F0.tcolor + ';text-shadow:0 0 8px ' + F0.tcolor + '88' : 'color:var(--glow)') + '">' + esc(F0.title) + '</div>' : ''; };
+    h += '<section class="win danger boss-panel duel-op' + (d.turn === opId ? ' op-turn' : '') + '"><div class="win-h"><span class="duel-nm">' + esc(B.name) + ttl(B) + '</span><small>' + clsName(B.cls) + ' · Nv ' + B.level + ' · turno ' + d.turn_no +
       (d.status === 'active' ? ' · <span class="duel-timer' + (secs <= 10 ? ' urgent' : '') + '" data-until="' + d.deadline + '">' + secs + 's</span>' : '') + '</small></div>' +
-      '<div class="boss-wrap"><div class="boss-aura" style="--c:' + (d.turn === opId ? 'rgba(255,60,90,.65)' : 'rgba(255,60,90,.35)') + '"></div>' + duelAvatar(B, 'boss-ico' + (opDead ? ' dead' : ''), 'boss-ico') + '</div>' +
+      '<div class="boss-wrap"><div class="boss-aura" style="--c:' + (d.turn === opId ? 'rgba(255,60,90,.65)' : 'rgba(255,60,90,.35)') + '"></div>' + duelAvatar(B, 'boss-ico' + (opDead ? ' dead' : ''), 'boss-ico') + bubble(opId) + '</div>' +
       (d.status === 'active' && d.turn === opId ? '<div class="speech duel-thinking"><span class="speech-name">' + esc(B.name) + '</span><span class="speech-txt">está a escolher a jogada<i class="dots"><b>.</b><b>.</b><b>.</b></i></span></div>' : '') +
       '<div style="margin-top:8px">' + bar('boss', B.hp, B.maxHp, 'Vida' + (B.shield ? ' · escudo ' + fmt(B.shield) : ''), 'dop-' + d.id) + '</div>' +
       '<div style="margin-top:6px">' + bar('mp', B.mp, B.maxMp, 'Mana', 'dopm-' + d.id) + '</div>' +
@@ -1177,7 +1218,7 @@
     // registo
     h += '<div class="log" id="blog" aria-live="polite">' + (d.log || []).map(function (l) { return '<div class="' + duelLogCls(l, me) + '">' + logLine(l.t) + '</div>'; }).join('') + '</div>';
     // o teu painel
-    h += '<section class="win ppanel' + (myTurn ? ' my-turn' : '') + '" id="ppanel" style="margin-top:10px"><div class="win-h"><span>' + esc(st.name) + '</span><small>' + (A.summons.length ? A.summons.map(function (s) { return esc(s.name) + ' ' + s.turns + 't'; }).join(' · ') : (A.squad && A.squad.length ? '🌑 ' + A.squad.map(function (s) { return esc(s.name); }).join(', ') : 'sem invocações')) + '</small></div>' +
+    h += '<section class="win ppanel' + (myTurn ? ' my-turn' : '') + '" id="ppanel" style="margin-top:10px">' + bubble(me) + '<div class="win-h"><span class="duel-nm">' + esc(st.name) + ttl(A) + '</span><small>' + (A.summons.length ? A.summons.map(function (s) { return esc(s.name) + ' ' + s.turns + 't'; }).join(' · ') : (A.squad && A.squad.length ? '🌑 ' + A.squad.map(function (s) { return esc(s.name); }).join(', ') : 'sem invocações')) + '</small></div>' +
       '<div class="stack" style="gap:6px">' + bar('hp', A.hp, A.maxHp, 'Vida' + (A.shield ? ' · escudo ' + fmt(A.shield) : ''), 'dme-' + d.id, true) + bar('mp', A.mp, A.maxMp, 'Mana', 'dmem-' + d.id, true) + '</div>' +
       '<div class="statuses" style="margin-top:6px;justify-content:flex-start">' + statusTags(A.st, false) + (A.stunned ? '<span class="tag bad">atordoado</span>' : '') + '</div>';
     if (d.status === 'done') {
@@ -1193,7 +1234,7 @@
         '<div class="row" style="gap:6px;margin-top:10px"><button class="btn grow" data-a="soc-back">Sair do duelo</button>' + (isFriend ? '<button class="btn bad grow" data-a="duel-invite" data-id="' + esc(opId) + '">Revanche</button>' : '<button class="btn bad grow" data-a="duel-create" data-p="1">Nova sala</button>') + '</div></div>';
     } else if (!myTurn) {
       h += '<div class="actions busy duel-wait-acts" style="margin-top:10px"><button class="btn pri" disabled>Atacar</button><button class="btn" disabled>Habilidades</button><button class="btn" disabled>Itens</button><button class="btn" disabled>Defender</button>' +
-        '<div class="duel-turn wait" style="grid-column:1/-1">Vez de ' + esc(B.name) + '…</div><button class="btn bad" style="grid-column:1/-1" data-a="duel-leave">Desistir</button></div>';
+        '<div class="duel-turn wait" style="grid-column:1/-1">Vez de ' + esc(B.name) + '…</div><button class="btn ghost emote-btn" data-a="emote-open">💬 Emote</button><button class="btn bad" data-a="duel-leave">Desistir</button></div>';
     } else if (A.stunned > 0) {
       h += '<div class="actions" style="margin-top:10px"><button class="btn pri" style="grid-column:1/-1" data-a="duel-act" data-v="pass">Atordoado: passar o turno</button><button class="btn bad" style="grid-column:1/-1" data-a="duel-leave">Desistir</button></div>';
     } else {
@@ -1202,10 +1243,29 @@
         '<button class="btn" data-a="d-sheet" data-v="skills">Habilidades</button>' +
         '<button class="btn" data-a="d-sheet" data-v="items">Itens</button>' +
         '<button class="btn" data-a="duel-act" data-v="defend">Defender</button>' +
-        '<button class="btn bad" style="grid-column:1/-1" data-a="duel-leave">Desistir</button></div>';
+        '<button class="btn ghost emote-btn" data-a="emote-open">💬 Emote</button><button class="btn bad" data-a="duel-leave">Desistir</button></div>';
     }
     h += '</section></div>';
     return h;
+  }
+  /* emotes: frases que mandas ao adversário */
+  function emoteSheet() {
+    var d = ui.duel, list = S.premium.emotesOf(E.state), sent = d ? (d.emotes || []).filter(function (x) { return x.w === d.me; }).length : 0;
+    return '<div class="sheet-h"><h2>Emotes</h2><button class="btn sm ghost" data-a="close">Fechar</button></div><p class="hint" style="margin:-4px 0 10px">Até 8 frases por duelo, com uns segundos entre elas. Já mandaste <b class="mono">' + sent + ' / 8</b>. Mais frases em Loja Premium › Aparência.</p>' +
+      '<div class="emote-pick">' + list.map(function (x) { return '<button class="btn sm" data-a="duel-emote" data-id="' + esc(x.id) + '"' + (sent >= 8 ? ' disabled' : '') + '>«' + esc(x.t) + '»</button>'; }).join('') + '</div>';
+  }
+  /* oferecer um item de aparência a um amigo */
+  function giftModal(m) {
+    var c = S.COSMETIC_BY_ID[m.id], st = E.state, fr = ((SO.cache && SO.cache.friends) || []);
+    if (!c) return '';
+    var can = (st.crystals || 0) >= c.crystals;
+    return '<div class="sheet-h"><h2>🎁 Oferecer</h2><button class="btn sm ghost" data-a="close">Fechar</button></div>' +
+      (artId(c.id) || artId('ui_presente') ? '<div class="gift-art"><img src="' + (artId(c.id) || artId('ui_presente')) + '" alt=""></div>' : '') + '<p class="small" style="margin-top:0"><b>' + esc(c.name) + '</b> por ' + crys(c.crystals) + '. Pagas com os teus Cristais e o amigo recebe na próxima vez que abrir o jogo com internet. Se já a tiver, recebe o valor em Cristais.</p>' +
+      (!can ? '<p class="small" style="color:var(--warn)">Faltam ' + (c.crystals - (st.crystals || 0)) + ' Cristais.</p>' : '') +
+      (fr.length ? '<div class="stack" style="gap:6px">' + fr.map(function (f) {
+        return '<div class="row between"><span class="row" style="gap:8px">' + socAvatar(f) + '<span>' + esc(f.name) + ' <span class="small muted">Nv ' + f.level + '</span></span></span><button class="btn sm prem" data-a="gift-send" data-id="' + esc(c.id) + '" data-to="' + esc(f.id) + '" data-n="' + esc(f.name) + '"' + (can && !ui.giftBusy ? '' : ' disabled') + '>Oferecer</button></div>';
+      }).join('') + '</div>' : '<div class="empty">Ainda não tens amigos. Adiciona-os em Social.</div>') +
+      '<p class="hint">Até 5 presentes por dia.</p>';
   }
   /* habilidades e itens do duelo (como no combate contra chefes) */
   function duelSheet() {
@@ -1215,9 +1275,9 @@
       var list = A.skills.map(function (id) { return S.ALL_SKILLS[id]; }).filter(Boolean);
       return '<div class="sheet-h"><h2>Habilidades</h2><button class="btn sm ghost" data-a="close">Fechar</button></div><p class="hint" style="margin:-4px 0 10px">Num duelo, os golpes muito fortes, as curas, os escudos e os bónus têm a força reduzida.</p><div class="skill-grid">' +
         (list.length ? list.map(function (s) {
-          var cdv = A.cds[s.id] || 0, dis = cdv > 0 || A.mp < s.mp;
+          var cdv = A.cds[s.id] || 0, dcost = S.skillCost(s, A.cls, A.level), dis = cdv > 0 || A.mp < dcost;
           return '<button class="skill-btn' + (S.SKILL_ART && S.SKILL_ART[s.id] ? ' has-ico' : '') + '" data-a="duel-skill" data-id="' + s.id + '"' + (dis ? ' disabled' : '') + '>' + skillIco(s, 'sk-b') + '<b>' + esc(s.name) + '</b>' +
-            '<span class="mono small" style="color:var(--glow)">' + (cdv > 0 ? 'recarga ' + cdv : s.mp + ' MP') + '</span><small>' + esc(s.desc) + '</small></button>';
+            '<span class="mono small" style="color:var(--glow)">' + (cdv > 0 ? 'recarga ' + cdv : dcost + ' MP') + '</span><small>' + esc(s.desc) + '</small></button>';
         }).join('') : '<div class="empty">Ainda não tens habilidades ativas.</div>') + '</div>';
     }
     var ids = Object.keys(A.items || {}).filter(function (id) { return (A.items[id] || 0) > (A.used[id] || 0) && S.ITEMS[id] && S.ITEMS[id].battle; });
@@ -1959,9 +2019,9 @@
       return '<div class="sheet-h"><h2>Habilidades</h2><button class="btn sm ghost" data-a="close">Fechar</button></div><div class="skill-grid">' +
         sk.map(function (s) {
           var cdv = p.cds[s.id] || 0;
-          var dis = cdv > 0 || p.mp < s.mp;
+          var cost = S.skillCost(s, st.cls, st.level), dis = cdv > 0 || p.mp < cost;
           return '<button class="skill-btn' + (S.SKILL_ART && S.SKILL_ART[s.id] ? ' has-ico' : '') + '" data-a="b-skill" data-id="' + s.id + '"' + (dis ? ' disabled' : '') + '>' + tapInfo(skillIco(s, 'sk-b'), 'skill', s.id) + '<b>' + esc(s.name) + '</b>' +
-            '<span class="mono small" style="color:var(--glow)">' + (cdv > 0 ? 'recarga ' + cdv : s.mp + ' MP') + '</span><small>' + esc(s.desc) + '</small></button>';
+            '<span class="mono small" style="color:var(--glow)">' + (cdv > 0 ? 'recarga ' + cdv : cost + ' MP') + '</span><small>' + esc(s.desc) + '</small></button>';
         }).join('') + '</div>';
     }
     var items = Object.keys(st.inv).filter(function (id) { return S.ITEMS[id] && S.ITEMS[id].battle; });
@@ -2133,6 +2193,8 @@
     else if (m.type === 'slot') inner = slotModal(m.slot);
     else if (m.type === 'bsheet') inner = battleSheet();
     else if (m.type === 'dsheet') inner = duelSheet();
+    else if (m.type === 'gift') inner = giftModal(m);
+    else if (m.type === 'emotes') inner = emoteSheet();
     else if (m.type === 'order') inner = orderModal(m);
     else if (m.type === 'arise') inner = ariseModal(m);
     else if (m.type === 'shadow') inner = shadowModal(m);
@@ -2508,6 +2570,7 @@
     } else if (pop && pop._id !== ui.shownPop) {
       ui.shownPop = pop._id;
       sfx(popSound(pop));
+      if ((pop.type === 'levelup' || (pop.type === 'victory' && !/^TREINO/.test(pop.title || ''))) && S.premium.effectOf(E.state)) setTimeout(function () { FX.celebrate(S.premium.effectOf(E.state)); }, 250);
       popupFx(pop);
     }
     ui.fxMission = null; ui.fxDaily = false; ui.spawn = false;
@@ -2864,6 +2927,41 @@
     'duel-open': function (d) { ui.page = 'duel'; ui.duelId = d.id; ui.duel = null; render(); window.scrollTo(0, 0); duelPoll(); },
     'duel-copy': function () { if (ui.duel) copyText(ui.duel.code, 'Código ' + ui.duel.code + ' copiado.'); },
     'duel-act': function (d) { duelMove(d.v); },
+    'emote-open': function () { if (!ui.duel || ui.duel.status !== 'active') return; ui.modal = { type: 'emotes' }; render(); },
+    'duel-emote': function (d) {
+      ui.modal = null; render();
+      if (!ui.duel) return;
+      SO.emote(ui.duel.id, d.id).then(function (j) { if (!j.ok) return toast(j.msg, true); sfx('click'); ui.duel.emotes = j.duel.emotes; softRender(); setTimeout(softRender, 9500); });
+    },
+    'gift-open': function (d) {
+      ui.modal = { type: 'gift', id: d.id }; render();
+      if (SO.ready() && !(SO.cache && SO.cache.friends)) SO.state && SO.state().then(function () { if (ui.modal && ui.modal.type === 'gift') render(); });
+    },
+    'gift-send': function (d) {
+      var c = S.COSMETIC_BY_ID[d.id];
+      confirmBox('Oferecer', 'Oferecer ' + c.name + ' a ' + d.n + ' por ' + c.crystals + ' Cristais?', 'Oferecer', function () {
+        ui.giftBusy = true; toast('A enviar o presente…');
+        SO.gift(d.to, d.id, d.n).then(function (j) {
+          ui.giftBusy = false;
+          if (!j.ok) return toast(j.msg, true);
+          sfx('crystal'); FX.burst(window.innerWidth / 2, window.innerHeight * .4, c.color, 50, { speed: 8 });
+          ui.modal = null; render(); toast('Presente enviado a ' + d.n + '.');
+        });
+      });
+    },
+    'gift-to': function (d) { ui.giftTo = d.id || null; render(); },
+    'buy-gift': function (d) {
+      var p = ((S.shop.cached() || {}).packages || []).filter(function (x) { return x.id === d.id; })[0], f = ((SO.cache && SO.cache.friends) || []).filter(function (x) { return x.id === ui.giftTo; })[0];
+      if (!p || !f) return;
+      confirmBox('Oferecer Cristais', p.crystals + ' Cristais para ' + f.name + ' por ' + kz(p.price_kz) + '.\n\nO pedido fica registado e abre-se o WhatsApp com a mensagem pronta. ' + f.name + ' recebe depois de o pagamento ser confirmado.', 'Pedir', function () {
+        toast('A registar o pedido…');
+        S.shop.order(p.id, f.id).then(function (r) {
+          if (!r.ok) return toast(r.msg, true);
+          ui.giftTo = null;
+          ui.modal = { type: 'order', id: r.order.id }; pullEvents(); render();
+        });
+      });
+    },
     'd-sheet': function (d) { if (!ui.duel || ui.duel.turn !== ui.duel.me) return; ui.modal = { type: 'dsheet', v: d.v }; render(); },
     'duel-skill': function (d) { ui.modal = null; duelMove('skill', { skill: d.id }); },
     'duel-item': function (d) { ui.modal = null; var it = S.ITEMS[d.id]; sfx(it && drinkable(it) ? drinkSound(it) : 'click'); duelMove('item', { item: d.id }); },
@@ -2919,6 +3017,7 @@
       });
     },
     'cos-wear': function (d) { act(S.premium.wear(d.id)); },
+    'cos-test': function (d) { var c = S.COSMETIC_BY_ID[d.id]; if (c && c.fx) FX.celebrate(c.fx); },
     'shop-load': function () { loadShop(true); },
     'gate-check': function () {
       var U = S.gate.ui; if (U.busy) return;
@@ -3502,6 +3601,7 @@
       if (prev && prev.status === 'active' && d.status === 'done') {
         var won = d.winner === me;
         sfx(won ? 'levelup' : 'death'); FX.flash(won ? '#ffc85a' : '#ff1f3d', .5); FX.vibrate(won ? [80, 40, 200] : [300, 80, 300]);
+        if (won && S.premium.effectOf(E.state)) setTimeout(function () { FX.celebrate(S.premium.effectOf(E.state)); }, 300);
       } else if (d.status === 'active' && d.turn === me && (!prev || prev.turn !== me)) { sfx('turn'); FX.vibrate(50); }
       var a = document.querySelector('.duel-battle .actions'); if (a && !(d.status === 'active' && d.turn !== me)) a.classList.remove('busy');
       render();
@@ -3514,7 +3614,9 @@
     SO.duel(ui.duelId).then(function (j) {
       duelBusy = false;
       if (!j.ok) { toast(j.msg, true); return; }
+      var lastE = function (x) { var a = (x && x.emotes) || []; return a.length ? a[a.length - 1].n : 0; };
       if (!ui.duel || j.duel.version !== ui.duel.version || j.duel.status !== ui.duel.status) duelShow(j.duel);
+      else if (lastE(j.duel) !== lastE(ui.duel)) { var ne = (j.duel.emotes || []).slice(-1)[0]; ui.duel.emotes = j.duel.emotes; if (ne && ne.w !== ui.duel.me) sfx('click'); softRender(); setTimeout(softRender, 9500); }
     }, function () { duelBusy = false; });
   }
   /* redesenha sem animação de entrada, mantendo a posição da página */

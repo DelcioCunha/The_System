@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lojas · Sistema</title>
+<meta name="description" content="Loja de moedas, Loja Premium com equipamento soberano e relíquias, pacotes de Cristais e o Coliseu dos Condenados.">
+<meta name="theme-color" content="#060A14">
+<meta property="og:title" content="Lojas · Sistema">
+<meta property="og:description" content="Loja de moedas, Loja Premium com equipamento soberano e relíquias, pacotes de Cristais e o Coliseu dos Condenados.">
+<meta property="og:image" content="img/icon-512.png">
+<link rel="icon" href="img/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Oxanium:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="img/icon-192.png" alt="">Sistema</a>
+    <nav class="nav" aria-label="Páginas"><a href="jogo.html">O jogo</a><a href="duelos.html">Duelos</a><a href="lojas.html" aria-current="page">Lojas</a><a href="sistema-vivo.html">Sistema vivo</a><a href="comprar.html">Comprar</a></nav>
+    <a class="btn sm cta-top" href="comprar.html">Obter o Sistema</a>
+    <button class="menu-btn" type="button" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+<main>
+<section class="page-head">
+  <canvas class="field" aria-hidden="true"></canvas><div class="scan" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="crumb"><img src="img/ui-ui-crystal.webp" alt="">Lojas</div>
+    <h1>Moedas, Cristais e o Coliseu</h1>
+    <p class="lead">A loja de moedas tem tudo o que precisas para os 10 portões. A Loja Premium e o Coliseu são opcionais, para quem quer ir mais longe.</p>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <div class="tabs" role="tablist" aria-label="Lojas">
+      <button role="tab" id="t-moedas" aria-controls="p-moedas" aria-selected="true">Loja de moedas</button>
+      <button role="tab" id="t-premium" aria-controls="p-premium" aria-selected="false">Loja Premium</button>
+      <button role="tab" id="t-cristais" aria-controls="p-cristais" aria-selected="false">Cristais</button>
+      <button role="tab" id="t-coliseu" aria-controls="p-coliseu" aria-selected="false">Coliseu</button>
+    </div>
+
+    <div class="panel" role="tabpanel" id="p-moedas" aria-labelledby="t-moedas">
+      <div class="split" style="align-items:start">
+        <div>
+          <h2>Tudo com as moedas que ganhas a jogar</h2>
+          <p class="lead" style="margin-top:14px">As moedas vêm das missões, dos chefes e dos baús. A loja tem 7 secções e mais de 400 itens, e mostra apenas o que já podes usar.</p>
+          <div class="items" style="grid-template-columns:1fr;margin-top:26px"><div class="item rv"><img src="img/it-w_mago_10.webp" alt="" loading="lazy"><div><b>Armas de cada classe</b><p>10 armas por classe, mais as versões do Artesão e do Campeão. Cada uma desbloqueia num nível.</p></div></div><div class="item rv"><img src="img/it-ar_soberano.webp" alt="" loading="lazy"><div><b>Armaduras</b><p>Do couro à armadura soberana, com vida, defesa e esquiva.</p></div></div><div class="item rv"><img src="img/it-po_vida2.webp" alt="" loading="lazy"><div><b>Poções</b><p>Vida, mana, fúria, escudos, venenos e bombas para usar em combate.</p></div></div><div class="item rv"><img src="img/it-bau_lendario.webp" alt="" loading="lazy"><div><b>Baús</b><p>Do Comum ao Secreto. Quanto mais raro, melhores os itens.</p></div></div><div class="item rv"><img src="img/it-bau_arsenal_5.webp" alt="" loading="lazy"><div><b>Baús especializados</b><p>Cada um dá só um tipo de item: armas, armaduras, acessórios, joias ou alquimia.</p></div></div><div class="item rv"><img src="img/it-sys_licenca.webp" alt="" loading="lazy"><div><b>Artefatos do Sistema</b><p>Licenças para mais missões, selos de dobro, bilhetes de vitória dupla e bússolas.</p></div></div></div>
+        </div>
+        <div class="phone sm"><div class="shots"><img class="on" src="img/app-loja.webp" alt="Loja de armas"></div></div>
+      </div>
+    </div>
+
+    <div class="panel" role="tabpanel" id="p-premium" aria-labelledby="t-premium" hidden>
+      <h2>Loja Premium</h2>
+      <p class="lead" style="margin-top:14px">Itens exclusivos que se compram com Cristais. Nenhum é obrigatório para acabar os 10 portões. O Sistema não vende Integridade nem sequências: essas só se ganham.</p>
+      <h3 style="margin:34px 0 14px">Equipamento soberano <span class="muted" style="font-weight:400;font-size:16px">· cresce contigo</span></h3>
+      <div class="items"><div class="item rv"><img src="img/it-pr_lamina.webp" alt="" loading="lazy"><div><b>Lâmina do Monarca Sombrio</b><p>Arma soberana para qualquer classe. Fica sempre 35% acima da melhor arma que podes usar no teu nível.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">350</span></div></div><div class="item rv"><img src="img/it-pr_armadura.webp" alt="" loading="lazy"><div><b>Armadura do Monarca</b><p>Cresce contigo: muita vida, regeneração, esquiva e resistência a atordoamentos.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">300</span></div></div><div class="item rv"><img src="img/it-pr_coroa.webp" alt="" loading="lazy"><div><b>Coroa da Arena</b><p>De +8% a +14% em todos os atributos, +20% de moedas e +10% de XP.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">250</span></div></div><div class="item rv"><img src="img/it-pr_olho.webp" alt="" loading="lazy"><div><b>Anel do Olho do Sistema</b><p>Crítico e dano crítico que crescem com o nível e +20% de XP em tudo.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">180</span></div></div><div class="item rv"><img src="img/it-pr_coracao.webp" alt="" loading="lazy"><div><b>Coração de Cristal</b><p>Muita vida e mana que crescem com o nível, e regeneração das duas.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">180</span></div></div></div>
+      <h3 style="margin:34px 0 14px">Relíquias permanentes <span class="muted" style="font-weight:400;font-size:16px">· compras uma vez, recarregam sozinhas, 1 por batalha</span></h3>
+      <div class="items"><div class="item rv"><img src="img/it-pr_juizo.webp" alt="" loading="lazy"><div><b>Lâmina do Juízo Final</b><p>Tira 20% da vida máxima do chefe (8% contra Campeões e reis ocultos).</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">180</span></div></div><div class="item rv"><img src="img/it-pr_tempo.webp" alt="" loading="lazy"><div><b>Selo do Tempo Parado</b><p>O chefe perde garantidamente os próximos 2 turnos.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">160</span></div></div><div class="item rv"><img src="img/it-pr_legiao.webp" alt="" loading="lazy"><div><b>Estandarte da Legião Sombria</b><p>Uma legião ataca ao teu lado durante 6 turnos.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">180</span></div></div><div class="item rv"><img src="img/it-pr_elixir.webp" alt="" loading="lazy"><div><b>Elixir do Monarca</b><p>Vida e mana ao máximo, limpa efeitos e +40% de ataque.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">140</span></div></div><div class="item rv"><img src="img/it-pr_fenix.webp" alt="" loading="lazy"><div><b>Lágrima da Fénix Negra</b><p>Se morreres em combate, renasces com a vida toda.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">240</span></div></div><div class="item rv"><img src="img/it-pr_ruptura.webp" alt="" loading="lazy"><div><b>Ruptura do Sistema</b><p>-50% de defesa e -30% de ataque no chefe durante 3 turnos.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">160</span></div></div><div class="item rv"><img src="img/it-pr_eco.webp" alt="" loading="lazy"><div><b>Eco do Monarca</b><p>Reinicia as recargas, enche a mana e dá +40% de crítico.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">150</span></div></div></div>
+      <h3 style="margin:34px 0 14px">Tesouros</h3>
+      <div class="items"><div class="item rv"><img src="img/it-pr_selo.webp" alt="" loading="lazy"><div><b>Selo do Monarca Eterno</b><p>Para sempre: +15% de XP e +15% de moedas em tudo.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">450</span></div></div><div class="item rv"><img src="img/it-pr_general.webp" alt="" loading="lazy"><div><b>Insígnia do General das Sombras</b><p>+1 lugar de servo convocado, para sempre (até 3).</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">150</span></div></div><div class="item rv"><img src="img/it-pr_bau.webp" alt="" loading="lazy"><div><b>Baú do Monarca</b><p>Baú Lendário, Baú Secreto, muitas moedas e recarga das relíquias.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">90</span></div></div><div class="item rv"><img src="img/it-pr_foco.webp" alt="" loading="lazy"><div><b>Pergaminho do Foco Absoluto</b><p>XP a dobrar durante 3 dias.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">90</span></div></div><div class="item rv"><img src="img/it-pr_trevo.webp" alt="" loading="lazy"><div><b>Trevo de Cristal</b><p>Durante 3 dias, cada baú dá um item extra.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">80</span></div></div><div class="item rv"><img src="img/it-pr_nome.webp" alt="" loading="lazy"><div><b>Pergaminho do Novo Nome</b><p>Muda o teu nome. O progresso, o ID e os amigos ficam.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">30</span></div></div></div>
+      <h3 style="margin:34px 0 14px">Estilo e amigos <span class="muted" style="font-weight:400;font-size:16px">· só visual, não dá vantagem</span></h3>
+      <div class="items"><div class="item rv"><span class="gl" style="--gc:#6fd6ff" aria-hidden="true">✦</span><div><b>Títulos exclusivos</b><p>«Escolhido do Sistema», «Caçador da Hora Morta», «Sem Descanso» e outros. Substituem o título do nível e aparecem no perfil e nos duelos.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">60 a 100</span></div></div><div class="item rv"><img src="img/it-fx_raios.webp" alt="" loading="lazy"><div><b>Efeitos de vitória</b><p>Raios, pétalas negras, chuva de cristais ou chamas da fénix quando derrotas um chefe, vences um duelo ou sobes de nível.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">80 a 100</span></div></div><div class="item rv"><img src="img/it-em_sistema.webp" alt="" loading="lazy"><div><b>Emotes de duelo</b><p>Pacotes de 4 frases curtas do Sistema para mandares ao adversário durante o duelo. Três frases já vêm de graça.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">50 a 60</span></div></div><div class="item rv"><img src="img/it-ui_presente.webp" alt="" loading="lazy"><div><b>Presentes</b><p>Oferece um título, efeito, moldura ou pacote de emotes a um amigo, com os teus Cristais. Ou compra Cristais pelo WhatsApp para ele.</p></div></div><div class="item rv"><img src="img/it-pr_reset.webp" alt="" loading="lazy"><div><b>Pergaminho da Reconstrução</b><p>Devolve todos os pontos de atributo para os distribuíres de novo. Também existe na loja de moedas a partir do nível 10.</p><span class="pr"><img src="img/ui-ui-crystal.webp" alt="">40</span></div></div></div>
+      <p class="muted" style="margin-top:22px">Também há baús especializados dos graus Ouro, Dragão e Monarca, molduras para o retrato e assinaturas de cor para o nome.</p>
+    </div>
+
+    <div class="panel" role="tabpanel" id="p-cristais" aria-labelledby="t-cristais" hidden>
+      <h2>Cristais</h2>
+      <p class="lead" style="margin-top:14px">Compram-se dentro do jogo, pelo WhatsApp, com pagamento por Multicaixa Express. Quanto maior o pacote, maior o bónus.</p>
+      <div class="packs" style="margin-top:30px"><div class="pack"><img src="img/ui-ui-crystal.webp" alt=""><b>60</b><small>Punhado</small><div class="kz">600 Kz</div></div><div class="pack"><img src="img/ui-ui-crystal.webp" alt=""><b>130</b><small>120 + 10 de bónus</small><div class="kz">1 200 Kz</div></div><div class="pack hl"><span class="badge">Mais popular</span><img src="img/ui-ui-crystal.webp" alt=""><b>280</b><small>250 + 30 de bónus</small><div class="kz">2 500 Kz</div></div><div class="pack"><img src="img/ui-ui-crystal.webp" alt=""><b>600</b><small>500 + 100 de bónus</small><div class="kz">5 000 Kz</div></div><div class="pack"><img src="img/ui-ui-crystal.webp" alt=""><b>1300</b><small>1000 + 300 de bónus</small><div class="kz">10 000 Kz</div></div><div class="pack hl"><span class="badge">Melhor valor</span><img src="img/ui-ui-crystal.webp" alt=""><b>2800</b><small>2000 + 800 de bónus</small><div class="kz">20 000 Kz</div></div></div>
+      <p class="muted" style="margin-top:22px">Quem compra Cristais aparece como Premium legalizado. Também há pacotes de moedas, a partir de 500 Kz.</p>
+    </div>
+
+    <div class="panel" role="tabpanel" id="p-coliseu" aria-labelledby="t-coliseu" hidden>
+      <div class="split" style="align-items:start">
+        <div>
+          <h2>O Coliseu dos Condenados</h2>
+          <p class="lead" style="margin-top:14px">O Sistema não apagou os Jogadores que quebraram as suas regras: guardou-os, transformados naquilo que fizeram. Cada arena tem 9 Guardiões em escada e, no fim, o Campeão, que luta em três fases.</p>
+          <ul class="ticks" style="margin-top:20px"><li>Abres cada arena uma vez com Cristais e fica aberta para sempre</li><li>A primeira vitória sobre um Campeão dá a sua relíquia e a sua coroa</li><li>Os vencidos podem ser revisitados, sem recompensas</li></ul>
+        </div>
+        <div class="phone sm"><div class="shots"><img class="on" src="img/app-coliseu.webp" alt="Arena do Coliseu"><img src="img/app-arenas.webp" alt="Lista de arenas"></div><div class="dots" aria-hidden="true"></div></div>
+      </div>
+      <div class="arenas" style="margin-top:34px"><div class="arena"><span class="n">ARENA I</span><b>Arena do Eclipse Escarlate</b><span>Kaelthar, o Carrasco do Eclipse · Nv 15</span><div class="c">120 Cristais</div></div><div class="arena"><span class="n">ARENA II</span><b>Arena das Mil Lâminas</b><span>Seraphine, a Dançarina das Mil Lâminas · Nv 25</span><div class="c">200 Cristais</div></div><div class="arena"><span class="n">ARENA III</span><b>Arena Abissal das Marés</b><span>Leviarch, o que Tudo Guardava · Nv 35</span><div class="c">280 Cristais</div></div><div class="arena"><span class="n">ARENA IV</span><b>Arena do Relógio Partido</b><span>Chronos-9, o Executor Temporal · Nv 45</span><div class="c">360 Cristais</div></div><div class="arena"><span class="n">ARENA V</span><b>Arena das Cinzas Coroadas</b><span>Ignivar, o Imperador Fénix · Nv 55</span><div class="c">440 Cristais</div></div><div class="arena"><span class="n">ARENA VI</span><b>Arena do Espelho Quebrado</b><span>Nyx Vel'Ara, a Rainha dos Reflexos · Nv 65</span><div class="c">520 Cristais</div></div><div class="arena"><span class="n">ARENA VII</span><b>Arena do Colosso Rúnico</b><span>Gorrath, o Colosso Rúnico · Nv 75</span><div class="c">600 Cristais</div></div><div class="arena"><span class="n">ARENA VIII</span><b>Arena da Tempestade Celeste</b><span>Valkyra, Arauto da Tempestade · Nv 85</span><div class="c">700 Cristais</div></div><div class="arena"><span class="n">ARENA IX</span><b>Arena do Jardim Necrótico</b><span>Morthis, o Jardineiro dos Mortos · Nv 95</span><div class="c">800 Cristais</div></div><div class="arena"><span class="n">ARENA X</span><b>Arena do Primeiro Jogador</b><span>O Primeiro Jogador · Nv 100</span><div class="c">1000 Cristais</div></div></div>
+      <div class="bosses" style="margin-top:30px"><figure><div class="bossart tilt"><img src="img/boss-ar1.webp" alt="" loading="lazy"></div><figcaption>Kaelthar</figcaption></figure><figure><div class="bossart tilt"><img src="img/boss-ar3.webp" alt="" loading="lazy"></div><figcaption>Leviarch</figcaption></figure><figure><div class="bossart tilt"><img src="img/boss-ar5.webp" alt="" loading="lazy"></div><figcaption>Ignivar</figcaption></figure><figure><div class="bossart tilt"><img src="img/boss-ar7.webp" alt="" loading="lazy"></div><figcaption>Gorrath</figcaption></figure><figure><div class="bossart tilt"><img src="img/boss-ar9.webp" alt="" loading="lazy"></div><figcaption>Morthis</figcaption></figure></div>
+    </div>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <div class="cta-band rv">
+      <div><h2>Começa com o essencial</h2><p>A ativação dá-te o jogo completo. As compras dentro do jogo são opcionais.</p></div>
+      <div class="btns"><a class="btn wa" data-buy href="comprar.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .2-1.2c-.1-.2-.3-.2-.5-.3Z"/></svg> Comprar o código</a><a class="btn" href="comprar.html">Ver como funciona</a></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer>
+  <div class="wrap cols">
+    <div>
+      <a class="brand" href="index.html" style="font-size:18px"><img src="img/icon-192.png" alt="">Sistema</a>
+      <p style="margin-top:12px;max-width:40ch">Um RPG para Android em que a tua vida real é o jogo. Criado em Angola por Delcio Cunha. © 2026</p>
+    </div>
+    <div>
+      <h4>Páginas</h4>
+      <ul><li><a href="index.html">Início</a></li><li><a href="jogo.html">O jogo</a></li><li><a href="duelos.html">Duelos</a></li><li><a href="lojas.html">Lojas</a></li><li><a href="sistema-vivo.html">Sistema vivo</a></li><li><a href="comprar.html">Comprar</a></li></ul>
+    </div>
+    <div>
+      <h4>Contacto</h4>
+      <ul>
+        <li><a data-buy href="comprar.html">WhatsApp</a></li>
+        <li><a href="https://www.instagram.com/delcio_369/" target="_blank" rel="noopener">Instagram</a></li>
+        <li><a href="https://www.facebook.com/delcio.cunha.2025/" target="_blank" rel="noopener">Facebook</a></li>
+        <li><a href="https://x.com/DelcioCunha369" target="_blank" rel="noopener">X</a></li>
+        <li><a href="https://delciocunha.github.io/Meu-Portfolio/" target="_blank" rel="noopener">Portfólio do criador</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+<div class="mbar" id="mbar"><a class="btn wa" data-buy href="comprar.html">Comprar código</a><a class="btn" data-apk data-apk-short href="download/sistema.apk" download>Descarregar APK</a></div>
+<script src="config.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

@@ -242,7 +242,9 @@
     g.push(['Caminho', s.cls === 'todos' ? 'Todas as classes' : (s.cls === 'secreta' ? 'Secreta' : S.CLASSES[s.cls].name)]);
     if (s.unlock) g.push(['Desbloqueia', 'Nível ' + s.unlock + (st ? (st.level >= s.unlock ? ' ✓' : ' (faltam ' + (s.unlock - st.level) + ')') : '')]);
     if (s.type !== 'passive') {
-      g.push(['Custo', s.mp ? s.mp + ' MP' : 'Sem custo de mana']);
+      var lv = st ? st.level : 1, cl = s.cls && S.CLASSES[s.cls] ? s.cls : (st ? st.cls : 'guerreiro');
+      g.push(['Custo', s.mp ? S.skillCost(s, cl, lv) + ' MP' + (st ? ' (no nível ' + lv + ')' : '') : 'Sem custo de mana']);
+      if (s.mp) g.push(['Peso', s.mp + ' · o custo sobe com o nível: ' + Math.min(S.MANA_RULES.capPct, Math.round(s.mp * S.MANA_RULES.pctPerWeight)) + '% da mana natural da classe']);
       g.push(['Recarga', s.cd ? s.cd + ' turno' + (s.cd > 1 ? 's' : '') + ' após usar' : 'Sem recarga']);
     }
     var secs = [{ title: 'Geral', rows: g }];

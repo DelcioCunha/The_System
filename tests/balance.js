@@ -32,7 +32,7 @@ function fight(S) {
     if (bt.p.stunned > 0) { C.act('pass'); continue; }
     if (bt.p.hp < bt.p.maxHp * 0.3 && E.count(E.state, 'po_vida2')) { C.act('item', 'po_vida2'); continue; }
     if (bt.p.mp < bt.p.maxMp * 0.15 && E.count(E.state, 'po_mana1')) { C.act('item', 'po_mana1'); continue; }
-    const avail = C.unlockedActiveSkills(E.state).filter(s => !(bt.p.cds[s.id] > 0) && bt.p.mp >= s.mp);
+    const avail = C.unlockedActiveSkills(E.state).filter(s => !(bt.p.cds[s.id] > 0) && bt.p.mp >= S.skillCost(s, E.state.cls, E.state.level));
     const score = (s) => s.ops.reduce((t, o) => t + (o.op === 'dmg' ? o.mult * (o.hits || 1) : o.op === 'summon' ? o.mult * o.turns * 0.8 : o.op === 'dot' ? o.mult * o.turns * 0.6 : 0), 0);
     const heal = avail.find(s => s.ops.some(o => o.op === 'heal' || o.op === 'shield'));
     if (heal && bt.p.hp < bt.p.maxHp * 0.45) { C.act('skill', heal.id); continue; }
